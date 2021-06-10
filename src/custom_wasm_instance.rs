@@ -38,13 +38,20 @@ trait WICExtension {
         &mut self,
         snapshot_ptr: AscPtr<AscString>,
     ) -> Result<(), HostExportError>;
+
     fn mock_store_set(
         &mut self,
         entity_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
         _data_ptr: AscPtr<asc_abi::class::AscEntity>,
     ) -> Result<(), HostExportError>;
+
+    fn mock_store_set_initial_value(
+        &mut self,
+        json_ptr: AscPtr<AscString>,
+    ) -> Result<(), HostExportError>;
 }
+
 impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
     fn mock_store_assert_eq(
         &mut self,
@@ -67,6 +74,22 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let id: String = asc_get(self, id_ptr)?;
 
         MOCK_STORE_LOCAL.lock().unwrap().insert(id, entity);
+
+        let mock_store_clone: IndexMap<String, String> =
+            IndexMap::from(MOCK_STORE_LOCAL.lock().unwrap().clone());
+
+        unsafe { MOCK_STORE_GLOBAL = LocalStorage::new() };
+        unsafe { MOCK_STORE_GLOBAL.set(move || serde_json::to_string(&mock_store_clone).unwrap()) };
+        Ok(())
+    }
+
+    fn mock_store_set_initial_value(
+        &mut self,
+        json_ptr: AscPtr<AscString>,
+    ) -> Result<(), HostExportError> {
+        let json: String = asc_get(self, json_ptr)?;
+
+        MOCK_STORE_LOCAL.lock().unwrap().insert("0".to_string(), json);
 
         let mock_store_clone: IndexMap<String, String> =
             IndexMap::from(MOCK_STORE_LOCAL.lock().unwrap().clone());
@@ -254,6 +277,13 @@ impl<C: Blockchain> WasmInstance<C> {
             mock_store_assert_eq,
             "host_export_store_assert_eq",
             snapshot
+        );
+
+        link!(
+            "store.setInitialValue",
+            mock_store_set_initial_value,
+            "host_export_store_set_initial_value",
+            json
         );
 
         link!("ipfs.cat", ipfs_cat, "host_export_ipfs_cat", hash_ptr);
