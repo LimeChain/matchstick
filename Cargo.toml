@@ -1,0 +1,30 @@
+[package]
+name = "subtester"
+version = "0.1.0"
+authors = ["Petko <pavlovskipetko@abv.bg>"]
+edition = "2018"
+
+[dependencies]
+graph-runtime-wasm = { git = "https://github.com/LimeChain/graph-node", member = "runtime/wasm", branch = "master" }
+ethabi = { git = "https://github.com/graphprotocol/ethabi.git", branch = "master" }
+graph = { git = "https://github.com/LimeChain/graph-node", package = "graph", branch = "master" }
+graph-mock = { git = "https://github.com/LimeChain/graph-node", package = "graph-mock", branch = "master" }
+test-store = { git = "https://github.com/LimeChain/graph-node", member = "test-store", branch = "master" }
+web3 = { git = "https://github.com/graphprotocol/rust-web3", branch = "master" }
+graph-chain-ethereum = { git = "https://github.com/LimeChain/graph-node", member = "chain/ethereum", branch = "master" }
+graph-core = { git = "https://github.com/LimeChain/graph-node", member = "core", branch = "master" }
+graph-chain-arweave = { git = "https://github.com/LimeChain/graph-node", member = "chain/arweave", branch = "master" }
+semver = "0.11.0"
+state = { version = "0.5.1", features = ["tls"] }
+serde_json = "1.0.59"
+slog = "2.7.0"
+slog-term = "2.8.0"
+wasmtime = ""
+tokio = { version = "0.2.25", features = ["stream", "rt-threaded", "rt-util", "blocking", "time", "sync", "macros", "test-util", "net"] }
+anyhow = "1.0"
+indexmap = "1.6.2"
+lazy_static = "1.4.0"
+
+[patch.crates-io]
+# Include protection against stack overflow when parsing from this PR: https://github.com/graphql-rust/graphql-parser/commit/45167b53e9533c331298683577ba8df7e43480ac
+graphql-parser = { git = "https://github.com/graphql-rust/graphql-parser", rev = "45167b53e9533c331298683577ba8df7e43480ac" }
