@@ -233,10 +233,18 @@ pub fn main() -> () {
     )
     .unwrap();
 
+    let store_initial_value_fn = module
+        .instance
+        .get_func("setInitialStoreValue")
+        .expect("Couldn't get wasm function 'setInitialStoreValue'.");
+    store_initial_value_fn
+        .call(&[])
+        .expect("Couldn't call wasm function 'setInitialStoreValue'.");
+
     let fire_events = module
         .instance
         .get_func("fireEvents")
-        .expect("Couldn't get wasm function 'assertStoreEq'.");
+        .expect("Couldn't get wasm function 'fireEvents'.");
     fire_events
         .call(&[])
         .expect("Couldn't call wasm function 'fireEvents'.");
