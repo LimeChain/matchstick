@@ -3,6 +3,7 @@ use graph::{
     blockchain::Blockchain,
     prelude::{
         anyhow::{self},
+        serde_yaml::Index,
         HostMetrics,
     },
     runtime::{self, asc_get, AscPtr},
@@ -16,6 +17,11 @@ use graph_runtime_wasm::{
     module::{ExperimentalFeatures, IntoTrap, WasmInstanceContext},
 };
 use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::TimeoutStopwatch};
+use indexmap::IndexMap;
+use serde_json::json;
+use slog::{info, Drain};
+use slog_term;
+use state::LocalStorage;
 use std::{
     cell::RefCell,
     sync::{Arc, Mutex},
@@ -23,43 +29,93 @@ use std::{
 };
 use std::{rc::Rc, time::Duration};
 
-use indexmap::IndexMap;
-use state::LocalStorage;
-
 pub static mut MOCK_STORE_GLOBAL: LocalStorage<String> = LocalStorage::new();
-pub static mut SNAPSHOT: LocalStorage<String> = LocalStorage::new();
 
 lazy_static::lazy_static! {
-    static ref MOCK_STORE_LOCAL: Mutex<IndexMap<String, String>> = Mutex::from(IndexMap::new());
+    static ref MOCK_STORE_LOCAL: Mutex<IndexMap<String, IndexMap<String, String>>> = Mutex::from(IndexMap::new());
+}
+
+fn get_inner_json(s: String) -> String {
+    let i = s.find(':').unwrap();
+    let f = s.rfind("}").unwrap();
+    String::from(&s[i + 1..f + 1])
+}
+
+fn get_type(s: String) -> String {
+    let v: Vec<&str> = s.split(':').collect();
+    String::from(*v.get(0).unwrap())
 }
 
 trait WICExtension {
-    fn mock_store_assert_eq(
-        &mut self,
-        snapshot_ptr: AscPtr<AscString>,
-    ) -> Result<(), HostExportError>;
-
     fn mock_store_set(
         &mut self,
         entity_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
-        _data_ptr: AscPtr<asc_abi::class::AscEntity>,
+        data_ptr: AscPtr<asc_abi::class::AscEntity>,
     ) -> Result<(), HostExportError>;
 
     fn mock_store_set_initial_value(
         &mut self,
         json_ptr: AscPtr<AscString>,
     ) -> Result<(), HostExportError>;
+
+    fn mock_store_assert_field_eq(
+        &mut self,
+        type_ptr: AscPtr<AscString>,
+        id_ptr: AscPtr<AscString>,
+        name_ptr: AscPtr<AscString>,
+        val_ptr: AscPtr<AscString>,
+    ) -> Result<(), HostExportError>;
 }
 
 impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
-    fn mock_store_assert_eq(
+    fn mock_store_assert_field_eq(
         &mut self,
-        snapshot_ptr: AscPtr<AscString>,
+        type_ptr: AscPtr<AscString>,
+        id_ptr: AscPtr<AscString>,
+        name_ptr: AscPtr<AscString>,
+        val_ptr: AscPtr<AscString>,
     ) -> Result<(), HostExportError> {
-        let snapshot: String = asc_get(self, snapshot_ptr)?;
-        unsafe {
-            SNAPSHOT.set(move || snapshot.clone());
+        let plain = slog_term::PlainSyncDecorator::new(std::io::stdout());
+        let logger =
+            slog::Logger::root(slog_term::FullFormat::new(plain).build().fuse(), slog::o!());
+
+        let e_type: String = asc_get(self, type_ptr)?;
+        let id: String = asc_get(self, id_ptr)?;
+        let name: String = asc_get(self, name_ptr)?;
+        let expected_val: String = asc_get(self, val_ptr)?;
+
+        let map = MOCK_STORE_LOCAL.lock().unwrap().clone();
+
+        let entity_json = json!(map);
+
+        let entity_inner_json = entity_json.get(format!("\"{}\"", e_type)).unwrap();
+
+        let value = entity_inner_json
+            .get(&id)
+            .unwrap()
+            .to_string()
+            .replace("\\", "");
+
+        let value = get_inner_json(value);
+
+        let value: serde_json::Value = serde_json::from_str(&value).unwrap();
+
+        let value: &str = value.get(&name).and_then(|value| value.as_str()).unwrap();
+
+        if &value == &expected_val {
+            info!(
+                logger,
+                "Test passed! Field '{}' on Entity with id '{}' equals '{}'.",
+                &name,
+                &id,
+                &expected_val
+            );
+        } else {
+            info!(
+                logger,
+                "Test failed! Field '{}' on Entity with id '{}' equals '{}', instead of expected '{}'.", &name, &id, &value, &expected_val
+            );
         }
         Ok(())
     }
@@ -73,9 +129,26 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let entity: String = asc_get(self, entity_ptr)?;
         let id: String = asc_get(self, id_ptr)?;
 
-        MOCK_STORE_LOCAL.lock().unwrap().insert(id, entity);
+        let entity_type = get_type(entity.clone());
 
-        let mock_store_clone: IndexMap<String, String> =
+        let mut current: IndexMap<String, String> = IndexMap::new();
+
+        if MOCK_STORE_LOCAL.lock().unwrap().contains_key(&entity_type) {
+            current = MOCK_STORE_LOCAL
+                .lock()
+                .unwrap()
+                .get(&entity_type)
+                .unwrap()
+                .clone();
+        }
+
+        current.insert(id, entity);
+        MOCK_STORE_LOCAL
+            .lock()
+            .unwrap()
+            .insert(entity_type, current);
+
+        let mock_store_clone: IndexMap<String, IndexMap<String, String>> =
             IndexMap::from(MOCK_STORE_LOCAL.lock().unwrap().clone());
 
         unsafe { MOCK_STORE_GLOBAL = LocalStorage::new() };
@@ -88,10 +161,15 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         json_ptr: AscPtr<AscString>,
     ) -> Result<(), HostExportError> {
         let json: String = asc_get(self, json_ptr)?;
+        let mut map: IndexMap<String, String> = IndexMap::new();
+        map.insert("test_value".to_string(), json);
 
-        MOCK_STORE_LOCAL.lock().unwrap().insert("0".to_string(), json);
+        MOCK_STORE_LOCAL
+            .lock()
+            .unwrap()
+            .insert("InitialValue".to_string(), map);
 
-        let mock_store_clone: IndexMap<String, String> =
+        let mock_store_clone: IndexMap<String, IndexMap<String, String>> =
             IndexMap::from(MOCK_STORE_LOCAL.lock().unwrap().clone());
 
         unsafe { MOCK_STORE_GLOBAL = LocalStorage::new() };
@@ -273,10 +351,13 @@ impl<C: Blockchain> WasmInstance<C> {
         );
 
         link!(
-            "store.assertEq",
-            mock_store_assert_eq,
-            "host_export_store_assert_eq",
-            snapshot
+            "store.assertFieldEq",
+            mock_store_assert_field_eq,
+            "host_export_store_assert_field_eq",
+            e_type,
+            id,
+            name,
+            value
         );
 
         link!(
