@@ -3,7 +3,6 @@ use graph::{
     blockchain::Blockchain,
     prelude::{
         anyhow::{self},
-        serde_yaml::Index,
         HostMetrics,
     },
     runtime::{self, asc_get, AscPtr},
