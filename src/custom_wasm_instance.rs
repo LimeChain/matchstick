@@ -85,9 +85,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let expected_val: String = asc_get(self, val_ptr)?;
 
         let map = MOCK_STORE_LOCAL.lock().unwrap().clone();
-
         let entity_json = json!(map);
-
         let entity_inner_json = entity_json.get(format!("\"{}\"", e_type)).unwrap();
 
         let value = entity_inner_json
@@ -95,11 +93,8 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             .unwrap()
             .to_string()
             .replace("\\", "");
-
         let value = get_inner_json(value);
-
         let value: serde_json::Value = serde_json::from_str(&value).unwrap();
-
         let value: &str = value.get(&name).and_then(|value| value.as_str()).unwrap();
 
         if &value == &expected_val {
@@ -129,7 +124,6 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let id: String = asc_get(self, id_ptr)?;
 
         let entity_type = get_type(entity.clone());
-
         let mut current: IndexMap<String, String> = IndexMap::new();
 
         if MOCK_STORE_LOCAL.lock().unwrap().contains_key(&entity_type) {
