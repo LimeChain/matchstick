@@ -35,9 +35,9 @@ lazy_static::lazy_static! {
 }
 
 fn get_inner_json(s: String) -> String {
-    let i = s.find(':').unwrap();
-    let f = s.rfind("}").unwrap();
-    String::from(&s[i + 1..f + 1])
+    let index = s.find(':').unwrap();
+    let ending_bracket = s.rfind("}").unwrap();
+    String::from(&s[index + 1..ending_bracket + 1])
 }
 
 fn get_type(s: String) -> String {
