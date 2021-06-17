@@ -45,9 +45,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.40"
+version = "1.0.41"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "28b2cd92db5cbd74e8e5028f7e27dd7aa3090e89e4f2a197cc7c8dfb69c7063b"
+checksum = "15af2628f6890fe2609a3b91bef4c83450512802e59489f9c1cb1fa5df064a61"
 
 [[package]]
 name = "arc-swap"
@@ -124,7 +124,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "libc",
  "miniz_oxide",
- "object 0.25.2",
+ "object 0.25.3",
  "rustc-demangle",
 ]
 
@@ -911,9 +911,9 @@ dependencies = [
 
 [[package]]
 name = "env_logger"
-version = "0.8.3"
+version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "17392a012ea30ef05a610aa97dfb49496e71c9f676b27879922ea5bdf60d9d3f"
+checksum = "a19187fea3ac7e84da7dacf48de0c45d63c6a76f9490dae389aead16c243fce3"
 dependencies = [
  "atty",
  "humantime 2.1.0",
@@ -1334,9 +1334,9 @@ checksum = "9b919933a397b79c37e33b77bb2aa3dc8eb6e165ad809e58ff75bc7db2e34574"
 
 [[package]]
 name = "globset"
-version = "0.4.6"
+version = "0.4.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c152169ef1e421390738366d2f796655fec62621dabbd0fd476f905934061e4a"
+checksum = "f0fc1b9fa0e64ffb1aa5b95daa0f0f167734fd528b7c02eabc581d9d843649b1"
 dependencies = [
  "aho-corasick",
  "bstr",
@@ -1348,7 +1348,7 @@ dependencies = [
 [[package]]
 name = "graph"
 version = "0.22.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#a7d1eec829d82da664b0fc32d1166b7934ba9a07"
+source = "git+https://github.com/LimeChain/graph-node?branch=master#931518858302322f8c66076f4b63b5a6a4ce991c"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -1403,7 +1403,7 @@ dependencies = [
 [[package]]
 name = "graph-chain-arweave"
 version = "0.22.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#a7d1eec829d82da664b0fc32d1166b7934ba9a07"
+source = "git+https://github.com/LimeChain/graph-node?branch=master#931518858302322f8c66076f4b63b5a6a4ce991c"
 dependencies = [
  "anyhow",
  "graph",
@@ -1412,7 +1412,7 @@ dependencies = [
 [[package]]
 name = "graph-chain-ethereum"
 version = "0.22.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#a7d1eec829d82da664b0fc32d1166b7934ba9a07"
+source = "git+https://github.com/LimeChain/graph-node?branch=master#931518858302322f8c66076f4b63b5a6a4ce991c"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1435,7 +1435,7 @@ dependencies = [
 [[package]]
 name = "graph-core"
 version = "0.22.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#a7d1eec829d82da664b0fc32d1166b7934ba9a07"
+source = "git+https://github.com/LimeChain/graph-node?branch=master#931518858302322f8c66076f4b63b5a6a4ce991c"
 dependencies = [
  "async-trait",
  "atomic_refcell",
@@ -1456,7 +1456,7 @@ dependencies = [
 [[package]]
 name = "graph-graphql"
 version = "0.22.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#a7d1eec829d82da664b0fc32d1166b7934ba9a07"
+source = "git+https://github.com/LimeChain/graph-node?branch=master#931518858302322f8c66076f4b63b5a6a4ce991c"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -1475,7 +1475,7 @@ dependencies = [
 [[package]]
 name = "graph-mock"
 version = "0.22.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#a7d1eec829d82da664b0fc32d1166b7934ba9a07"
+source = "git+https://github.com/LimeChain/graph-node?branch=master#931518858302322f8c66076f4b63b5a6a4ce991c"
 dependencies = [
  "futures 0.1.31",
  "graph",
@@ -1488,12 +1488,12 @@ dependencies = [
 [[package]]
 name = "graph-node"
 version = "0.22.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#a7d1eec829d82da664b0fc32d1166b7934ba9a07"
+source = "git+https://github.com/LimeChain/graph-node?branch=master#931518858302322f8c66076f4b63b5a6a4ce991c"
 dependencies = [
  "clap",
  "crossbeam-channel",
  "diesel",
- "env_logger 0.8.3",
+ "env_logger 0.8.4",
  "fail",
  "futures 0.3.15",
  "git-testament",
@@ -1523,7 +1523,7 @@ dependencies = [
 [[package]]
 name = "graph-runtime-derive"
 version = "0.22.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#a7d1eec829d82da664b0fc32d1166b7934ba9a07"
+source = "git+https://github.com/LimeChain/graph-node?branch=master#931518858302322f8c66076f4b63b5a6a4ce991c"
 dependencies = [
  "quote 1.0.9",
  "syn 1.0.73",
@@ -1532,7 +1532,7 @@ dependencies = [
 [[package]]
 name = "graph-runtime-wasm"
 version = "0.22.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#a7d1eec829d82da664b0fc32d1166b7934ba9a07"
+source = "git+https://github.com/LimeChain/graph-node?branch=master#931518858302322f8c66076f4b63b5a6a4ce991c"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1558,7 +1558,7 @@ dependencies = [
 [[package]]
 name = "graph-server-http"
 version = "0.22.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#a7d1eec829d82da664b0fc32d1166b7934ba9a07"
+source = "git+https://github.com/LimeChain/graph-node?branch=master#931518858302322f8c66076f4b63b5a6a4ce991c"
 dependencies = [
  "futures 0.1.31",
  "graph",
@@ -1572,7 +1572,7 @@ dependencies = [
 [[package]]
 name = "graph-server-index-node"
 version = "0.22.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#a7d1eec829d82da664b0fc32d1166b7934ba9a07"
+source = "git+https://github.com/LimeChain/graph-node?branch=master#931518858302322f8c66076f4b63b5a6a4ce991c"
 dependencies = [
  "futures 0.3.15",
  "graph",
@@ -1586,7 +1586,7 @@ dependencies = [
 [[package]]
 name = "graph-server-json-rpc"
 version = "0.22.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#a7d1eec829d82da664b0fc32d1166b7934ba9a07"
+source = "git+https://github.com/LimeChain/graph-node?branch=master#931518858302322f8c66076f4b63b5a6a4ce991c"
 dependencies = [
  "graph",
  "jsonrpc-http-server",
@@ -1597,7 +1597,7 @@ dependencies = [
 [[package]]
 name = "graph-server-metrics"
 version = "0.22.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#a7d1eec829d82da664b0fc32d1166b7934ba9a07"
+source = "git+https://github.com/LimeChain/graph-node?branch=master#931518858302322f8c66076f4b63b5a6a4ce991c"
 dependencies = [
  "futures 0.1.31",
  "graph",
@@ -1610,7 +1610,7 @@ dependencies = [
 [[package]]
 name = "graph-server-websocket"
 version = "0.22.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#a7d1eec829d82da664b0fc32d1166b7934ba9a07"
+source = "git+https://github.com/LimeChain/graph-node?branch=master#931518858302322f8c66076f4b63b5a6a4ce991c"
 dependencies = [
  "anyhow",
  "futures 0.1.31",
@@ -1627,7 +1627,7 @@ dependencies = [
 [[package]]
 name = "graph-store-postgres"
 version = "0.22.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#a7d1eec829d82da664b0fc32d1166b7934ba9a07"
+source = "git+https://github.com/LimeChain/graph-node?branch=master#931518858302322f8c66076f4b63b5a6a4ce991c"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -2165,9 +2165,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.96"
+version = "0.2.97"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5600b4e6efc5421841a2138a6b082e07fe12f9aaa12783d50e5d13325b26b4fc"
+checksum = "12b8adadd720df158f4d70dfe7ccc6adb0472d7c55ca83445f6a5ab3e36f8fb6"
 
 [[package]]
 name = "linked-hash-map"
@@ -2579,18 +2579,18 @@ dependencies = [
 
 [[package]]
 name = "object"
-version = "0.25.2"
+version = "0.25.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f8bc1d42047cf336f0f939c99e97183cf31551bf0f2865a2ec9c8d91fd4ffb5e"
+checksum = "a38f2be3697a57b4060074ff41b44c16870d916ad7877c17696e063257482bc7"
 dependencies = [
  "memchr",
 ]
 
 [[package]]
 name = "once_cell"
-version = "1.7.2"
+version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af8b08b04175473088b46763e51ee54da5f9a164bc162f615b91bc179dbf15a3"
+checksum = "692fcb63b64b1758029e0a96ee63e049ce8c5948587f2f7208df04625e5f6b56"
 
 [[package]]
 name = "opaque-debug"
@@ -3040,9 +3040,9 @@ dependencies = [
 
 [[package]]
 name = "protobuf"
-version = "2.23.0"
+version = "2.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "45604fc7a88158e7d514d8e22e14ac746081e7a70d7690074dd0029ee37458d6"
+checksum = "db50e77ae196458ccd3dc58a31ea1a90b0698ab1b7928d89f644c25d72070267"
 
 [[package]]
 name = "psm"
@@ -4082,7 +4082,7 @@ dependencies = [
 [[package]]
 name = "test-store"
 version = "0.22.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#a7d1eec829d82da664b0fc32d1166b7934ba9a07"
+source = "git+https://github.com/LimeChain/graph-node?branch=master#931518858302322f8c66076f4b63b5a6a4ce991c"
 dependencies = [
  "diesel",
  "graph",

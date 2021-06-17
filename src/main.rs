@@ -15,9 +15,9 @@ use graph::{
 use graph_chain_arweave::adapter::ArweaveAdapter;
 use graph_chain_ethereum::{Chain, DataSource, DataSourceTemplate, MockEthereumAdapter};
 use graph_core;
+use graph_core::three_box::ThreeBoxAdapter;
 use graph_mock::MockMetricsRegistry;
 use graph_runtime_wasm::mapping::ValidModule;
-use graph_core::three_box::ThreeBoxAdapter;
 use graph_runtime_wasm::{
     host_exports::HostExports, mapping::MappingContext, module::ExperimentalFeatures,
 };
@@ -29,6 +29,11 @@ use web3::types::Address;
 mod custom_wasm_instance;
 use custom_wasm_instance::WasmInstance;
 
+<<<<<<< HEAD
+=======
+use custom_wasm_instance::MOCK_STORE_GLOBAL;
+
+>>>>>>> main
 fn mock_host_exports(
     subgraph_id: DeploymentHash,
     data_source: DataSource,
@@ -225,6 +230,7 @@ pub fn main() -> () {
     )
     .unwrap();
 
+<<<<<<< HEAD
     let run_tests = module
         .instance
         .get_func("runTests")
@@ -232,4 +238,33 @@ pub fn main() -> () {
     run_tests
         .call(&[])
         .expect("Couldn't call wasm function 'runTests'.");
+=======
+    // let store_initial_value_fn = module
+    //     .instance
+    //     .get_func("setInitialStoreValue")
+    //     .expect("Couldn't get wasm function 'setInitialStoreValue'.");
+    // store_initial_value_fn
+    //     .call(&[])
+    //     .expect("Couldn't call wasm function 'setInitialStoreValue'.");
+
+    let fire_events = module
+        .instance
+        .get_func("fireEvents")
+        .expect("Couldn't get wasm function 'fireEvents'.");
+    fire_events
+        .call(&[])
+        .expect("Couldn't call wasm function 'fireEvents'.");
+
+    let assert_field_eq = module
+        .instance
+        .get_func("assertFieldEq")
+        .expect("Couldn't get wasm function 'assertFieldEq'.");
+
+    assert_field_eq
+        .call(&[])
+        .expect("Couldn't call wasm function 'assertFieldEq'.");
+
+    let mock_store = unsafe { MOCK_STORE_GLOBAL.get() };
+    info!(logger, "Mock store {:?}", mock_store.replace("\\", ""));
+>>>>>>> main
 }
