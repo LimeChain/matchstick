@@ -15,9 +15,9 @@ use graph::{
 use graph_chain_arweave::adapter::ArweaveAdapter;
 use graph_chain_ethereum::{Chain, DataSource, DataSourceTemplate, MockEthereumAdapter};
 use graph_core;
+use graph_core::three_box::ThreeBoxAdapter;
 use graph_mock::MockMetricsRegistry;
 use graph_runtime_wasm::mapping::ValidModule;
-use graph_core::three_box::ThreeBoxAdapter;
 use graph_runtime_wasm::{
     host_exports::HostExports, mapping::MappingContext, module::ExperimentalFeatures,
 };
@@ -32,7 +32,6 @@ mod custom_wasm_instance;
 use custom_wasm_instance::WasmInstance;
 
 use custom_wasm_instance::MOCK_STORE_GLOBAL;
-use custom_wasm_instance::SNAPSHOT;
 
 fn mock_host_exports(
     subgraph_id: DeploymentHash,
@@ -233,13 +232,13 @@ pub fn main() -> () {
     )
     .unwrap();
 
-    let store_initial_value_fn = module
-        .instance
-        .get_func("setInitialStoreValue")
-        .expect("Couldn't get wasm function 'setInitialStoreValue'.");
-    store_initial_value_fn
-        .call(&[])
-        .expect("Couldn't call wasm function 'setInitialStoreValue'.");
+    // let store_initial_value_fn = module
+    //     .instance
+    //     .get_func("setInitialStoreValue")
+    //     .expect("Couldn't get wasm function 'setInitialStoreValue'.");
+    // store_initial_value_fn
+    //     .call(&[])
+    //     .expect("Couldn't call wasm function 'setInitialStoreValue'.");
 
     let fire_events = module
         .instance
@@ -249,23 +248,15 @@ pub fn main() -> () {
         .call(&[])
         .expect("Couldn't call wasm function 'fireEvents'.");
 
-    let get_store_snapshot = module
+    let assert_field_eq = module
         .instance
-        .get_func("assertStoreEq")
-        .expect("Couldn't get wasm function 'assertStoreEq'.");
-    get_store_snapshot
-        .call(&[])
-        .expect("Couldn't call wasm function 'assertStoreEq'.");
+        .get_func("assertFieldEq")
+        .expect("Couldn't get wasm function 'assertFieldEq'.");
 
-    let snapshot = unsafe { SNAPSHOT.get() };
-    info!(logger, "Store snapshot {:?}", snapshot);
+    assert_field_eq
+        .call(&[])
+        .expect("Couldn't call wasm function 'assertFieldEq'.");
 
     let mock_store = unsafe { MOCK_STORE_GLOBAL.get() };
     info!(logger, "Mock store {:?}", mock_store.replace("\\", ""));
-
-    info!(
-        logger,
-        "Mock state equal to given snapshot: {:?}",
-        mock_store.replace("\\", "").eq(snapshot)
-    );
 }
