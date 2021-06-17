@@ -21,8 +21,6 @@ use graph_core::three_box::ThreeBoxAdapter;
 use graph_runtime_wasm::{
     host_exports::HostExports, mapping::MappingContext, module::ExperimentalFeatures,
 };
-use slog::*;
-use slog_term;
 use std::str::FromStr;
 use std::sync::Arc;
 use test_store::STORE;
@@ -30,9 +28,6 @@ use web3::types::Address;
 
 mod custom_wasm_instance;
 use custom_wasm_instance::WasmInstance;
-
-use custom_wasm_instance::MOCK_STORE_GLOBAL;
-use custom_wasm_instance::SNAPSHOT;
 
 fn mock_host_exports(
     subgraph_id: DeploymentHash,
@@ -159,9 +154,6 @@ fn mock_data_source(path: &str) -> DataSource {
 }
 
 pub fn main() -> () {
-    let plain = slog_term::PlainSyncDecorator::new(std::io::stdout());
-    let logger = Logger::root(slog_term::FullFormat::new(plain).build().fuse(), o!());
-
     let args: Vec<String> = std::env::args().collect();
 
     if args.len() == 1 {
@@ -233,39 +225,11 @@ pub fn main() -> () {
     )
     .unwrap();
 
-    let store_initial_value_fn = module
+    let run_tests = module
         .instance
-        .get_func("setInitialStoreValue")
-        .expect("Couldn't get wasm function 'setInitialStoreValue'.");
-    store_initial_value_fn
+        .get_func("runTests")
+        .expect("Couldn't get wasm function 'runTests'.");
+    run_tests
         .call(&[])
-        .expect("Couldn't call wasm function 'setInitialStoreValue'.");
-
-    let fire_events = module
-        .instance
-        .get_func("fireEvents")
-        .expect("Couldn't get wasm function 'fireEvents'.");
-    fire_events
-        .call(&[])
-        .expect("Couldn't call wasm function 'fireEvents'.");
-
-    let get_store_snapshot = module
-        .instance
-        .get_func("assertStoreEq")
-        .expect("Couldn't get wasm function 'assertStoreEq'.");
-    get_store_snapshot
-        .call(&[])
-        .expect("Couldn't call wasm function 'assertStoreEq'.");
-
-    let snapshot = unsafe { SNAPSHOT.get() };
-    info!(logger, "Store snapshot {:?}", snapshot);
-
-    let mock_store = unsafe { MOCK_STORE_GLOBAL.get() };
-    info!(logger, "Mock store {:?}", mock_store.replace("\\", ""));
-
-    info!(
-        logger,
-        "Mock state equal to given snapshot: {:?}",
-        mock_store.replace("\\", "").eq(snapshot)
-    );
+        .expect("Couldn't call wasm function 'runTests'.");
 }

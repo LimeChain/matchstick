@@ -16,18 +16,16 @@ use graph_runtime_wasm::{
     module::{ExperimentalFeatures, IntoTrap, WasmInstanceContext},
 };
 use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::TimeoutStopwatch};
+use indexmap::IndexMap;
+use serde_json::json;
+use slog::{info, Drain};
+use slog_term;
 use std::{
     cell::RefCell,
     sync::{Arc, Mutex},
     time::Instant,
 };
 use std::{rc::Rc, time::Duration};
-
-use indexmap::IndexMap;
-use state::LocalStorage;
-
-pub static mut MOCK_STORE_GLOBAL: LocalStorage<String> = LocalStorage::new();
-pub static mut SNAPSHOT: LocalStorage<String> = LocalStorage::new();
 
 lazy_static::lazy_static! {
     static ref MOCK_STORE_LOCAL: Mutex<IndexMap<String, String>> = Mutex::from(IndexMap::new());
@@ -75,11 +73,6 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
 
         MOCK_STORE_LOCAL.lock().unwrap().insert(id, entity);
 
-        let mock_store_clone: IndexMap<String, String> =
-            IndexMap::from(MOCK_STORE_LOCAL.lock().unwrap().clone());
-
-        unsafe { MOCK_STORE_GLOBAL = LocalStorage::new() };
-        unsafe { MOCK_STORE_GLOBAL.set(move || serde_json::to_string(&mock_store_clone).unwrap()) };
         Ok(())
     }
 
@@ -91,11 +84,6 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
 
         MOCK_STORE_LOCAL.lock().unwrap().insert("0".to_string(), json);
 
-        let mock_store_clone: IndexMap<String, String> =
-            IndexMap::from(MOCK_STORE_LOCAL.lock().unwrap().clone());
-
-        unsafe { MOCK_STORE_GLOBAL = LocalStorage::new() };
-        unsafe { MOCK_STORE_GLOBAL.set(move || serde_json::to_string(&mock_store_clone).unwrap()) };
         Ok(())
     }
 }
