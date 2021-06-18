@@ -83,6 +83,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
 
         let map = MOCK_STORE_LOCAL.lock().unwrap().clone();
         let entity_json = json!(map);
+
         let entity_inner_json = entity_json.get(format!("\"{}\"", e_type)).unwrap();
 
         let value = entity_inner_json
@@ -145,14 +146,10 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         &mut self,
         json_ptr: AscPtr<AscString>,
     ) -> Result<(), HostExportError> {
-        let json: String = asc_get(self, json_ptr)?;
-        let mut map: IndexMap<String, String> = IndexMap::new();
-        map.insert("test_value".to_string(), json);
+        let _json: String = asc_get(self, json_ptr)?;
+        let _map: IndexMap<String, String> = IndexMap::new();
 
-        MOCK_STORE_LOCAL
-            .lock()
-            .unwrap()
-            .insert("InitialValue".to_string(), map);
+        // TODO: Handle initial value
 
         Ok(())
     }
