@@ -5503,24 +5503,39 @@
     call_indirect (type 0))
   (func $src/test/tests/runTests~anonymous|1 (type 0)
     i32.const 0
+    i32.const 18424
+    i32.const 18304
+    call $src/mappings/betokenProxy/Burger#constructor
+    call $src/mappings/betokenProxy/Burger#save
+    i32.const 0
     i32.const 18248
     i32.const 4
     call $src/mappings/betokenProxy/TestEvent#constructor
     call $src/mappings/betokenProxy/handleTestEvent
     i32.const 0
-    i32.const 18280
-    i32.const 18424
+    i32.const 18448
+    i32.const 18472
     call $src/mappings/betokenProxy/TestEvent#constructor
     call $src/mappings/betokenProxy/handleNewBurger
     i32.const 0
-    i32.const 18440
-    i32.const 18464
+    i32.const 18488
+    i32.const 18512
     call $src/mappings/betokenProxy/TestEvent#constructor
     call $src/mappings/betokenProxy/handleNewBurger
     i32.const 14992
-    i32.const 18440
+    i32.const 18424
     i32.const 15008
-    i32.const 18464
+    i32.const 18304
+    call $~lib/@graphprotocol/graph-ts/index/store.assertFieldEq
+    i32.const 14992
+    i32.const 18448
+    i32.const 15008
+    i32.const 18472
+    call $~lib/@graphprotocol/graph-ts/index/store.assertFieldEq
+    i32.const 14992
+    i32.const 18488
+    i32.const 15008
+    i32.const 18512
     call $~lib/@graphprotocol/graph-ts/index/store.assertFieldEq
     call $~lib/@graphprotocol/graph-ts/index/store.clear)
   (func $src/test/tests/runTests (type 0)
@@ -5588,7 +5603,7 @@
     global.get 0
     global.set 1)
   (func $start (type 0)
-    i32.const 18512
+    i32.const 18560
     global.set 0
     global.get 0
     global.set 1
@@ -5973,6 +5988,8 @@
   (data (;278;) (i32.const 18280) "\08\00\00\00b\00u\00r\00g\00e\00r\00I\00d")
   (data (;279;) (i32.const 18304) "\12\00\00\00P\00u\00l\00l\00e\00d\00 \00p\00o\00r\00k\00 \00b\00u\00r\00g\00e\00r")
   (data (;280;) (i32.const 18344) "$\00\00\00C\00a\00n\00 \00c\00a\00l\00l\00 \00m\00a\00p\00p\00i\00n\00g\00s\00 \00w\00i\00t\00h\00 \00c\00u\00s\00t\00o\00m\00 \00e\00v\00e\00n\00t\00s")
-  (data (;281;) (i32.const 18424) "\06\00\00\00V\00e\00g\00g\00i\00e")
-  (data (;282;) (i32.const 18440) "\09\00\00\00b\00u\00r\00g\00e\00r\00I\00d\001")
-  (data (;283;) (i32.const 18464) "\16\00\00\00C\00h\00i\00k\00e\00n\00 \00t\00e\00r\00i\00y\00a\00k\00i\00 \00b\00u\00r\00g\00e\00r"))
+  (data (;281;) (i32.const 18424) "\09\00\00\00b\00u\00r\00g\00e\00r\00I\00d\000")
+  (data (;282;) (i32.const 18448) "\09\00\00\00b\00u\00r\00g\00e\00r\00I\00d\001")
+  (data (;283;) (i32.const 18472) "\06\00\00\00V\00e\00g\00g\00i\00e")
+  (data (;284;) (i32.const 18488) "\09\00\00\00b\00u\00r\00g\00e\00r\00I\00d\002")
+  (data (;285;) (i32.const 18512) "\16\00\00\00C\00h\00i\00k\00e\00n\00 \00t\00e\00r\00i\00y\00a\00k\00i\00 \00b\00u\00r\00g\00e\00r"))
