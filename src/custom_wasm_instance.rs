@@ -20,15 +20,12 @@ use indexmap::IndexMap;
 use serde_json::json;
 use slog::{info, Drain};
 use slog_term;
-use state::LocalStorage;
 use std::{
     cell::RefCell,
     sync::{Arc, Mutex},
     time::Instant,
 };
 use std::{rc::Rc, time::Duration};
-
-pub static mut MOCK_STORE_GLOBAL: LocalStorage<String> = LocalStorage::new();
 
 lazy_static::lazy_static! {
     static ref MOCK_STORE_LOCAL: Mutex<IndexMap<String, IndexMap<String, String>>> = Mutex::from(IndexMap::new());
@@ -53,11 +50,6 @@ trait WICExtension {
         data_ptr: AscPtr<asc_abi::class::AscEntity>,
     ) -> Result<(), HostExportError>;
 
-    fn mock_store_set_initial_value(
-        &mut self,
-        json_ptr: AscPtr<AscString>,
-    ) -> Result<(), HostExportError>;
-
     fn mock_store_assert_field_eq(
         &mut self,
         type_ptr: AscPtr<AscString>,
@@ -65,6 +57,8 @@ trait WICExtension {
         name_ptr: AscPtr<AscString>,
         val_ptr: AscPtr<AscString>,
     ) -> Result<(), HostExportError>;
+
+    fn store_clear(&mut self) -> Result<(), HostExportError>;
 }
 
 impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
@@ -86,6 +80,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
 
         let map = MOCK_STORE_LOCAL.lock().unwrap().clone();
         let entity_json = json!(map);
+
         let entity_inner_json = entity_json.get(format!("\"{}\"", e_type)).unwrap();
 
         let value = entity_inner_json
@@ -141,32 +136,12 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             .unwrap()
             .insert(entity_type, current);
 
-        let mock_store_clone: IndexMap<String, IndexMap<String, String>> =
-            IndexMap::from(MOCK_STORE_LOCAL.lock().unwrap().clone());
-
-        unsafe { MOCK_STORE_GLOBAL = LocalStorage::new() };
-        unsafe { MOCK_STORE_GLOBAL.set(move || serde_json::to_string(&mock_store_clone).unwrap()) };
         Ok(())
     }
 
-    fn mock_store_set_initial_value(
-        &mut self,
-        json_ptr: AscPtr<AscString>,
-    ) -> Result<(), HostExportError> {
-        let json: String = asc_get(self, json_ptr)?;
-        let mut map: IndexMap<String, String> = IndexMap::new();
-        map.insert("test_value".to_string(), json);
+    fn store_clear(&mut self) -> Result<(), HostExportError> {
+        MOCK_STORE_LOCAL.lock().unwrap().clear();
 
-        MOCK_STORE_LOCAL
-            .lock()
-            .unwrap()
-            .insert("InitialValue".to_string(), map);
-
-        let mock_store_clone: IndexMap<String, IndexMap<String, String>> =
-            IndexMap::from(MOCK_STORE_LOCAL.lock().unwrap().clone());
-
-        unsafe { MOCK_STORE_GLOBAL = LocalStorage::new() };
-        unsafe { MOCK_STORE_GLOBAL.set(move || serde_json::to_string(&mock_store_clone).unwrap()) };
         Ok(())
     }
 }
@@ -343,6 +318,8 @@ impl<C: Blockchain> WasmInstance<C> {
             data
         );
 
+        link!("store.clear", store_clear, "host_exports_store_clear",);
+
         link!(
             "store.assertFieldEq",
             mock_store_assert_field_eq,
@@ -351,13 +328,6 @@ impl<C: Blockchain> WasmInstance<C> {
             id,
             name,
             value
-        );
-
-        link!(
-            "store.setInitialValue",
-            mock_store_set_initial_value,
-            "host_export_store_set_initial_value",
-            json
         );
 
         link!("ipfs.cat", ipfs_cat, "host_export_ipfs_cat", hash_ptr);
