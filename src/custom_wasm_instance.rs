@@ -1,12 +1,12 @@
 use anyhow::anyhow;
 use graph::{
-    blockchain::Blockchain,
+    blockchain::{Blockchain, HostFnCtx},
+    cheap_clone::CheapClone,
     prelude::{
         anyhow::{self},
         HostMetrics,
     },
-    runtime::{self, asc_get, AscPtr},
-    semver::Version,
+    runtime::{asc_get, AscPtr},
 };
 use graph_runtime_wasm::{
     asc_abi::{self, class::AscString},
@@ -20,6 +20,8 @@ use indexmap::IndexMap;
 use serde_json::json;
 use slog::{info, Drain};
 use slog_term;
+
+use std::marker::PhantomData;
 use std::{
     cell::RefCell,
     sync::{Arc, Mutex},
@@ -146,10 +148,11 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
     }
 }
 
-#[allow(dead_code)]
+#[allow(unused)]
 pub struct WasmInstance<C: Blockchain> {
     pub instance: wasmtime::Instance,
     instance_ctx: Rc<RefCell<Option<WasmInstanceContext<C>>>>,
+    __phantom: PhantomData<C>,
 }
 
 impl<C: Blockchain> WasmInstance<C> {
@@ -163,7 +166,10 @@ impl<C: Blockchain> WasmInstance<C> {
         let mut linker = wasmtime::Linker::new(&wasmtime::Store::new(valid_module.module.engine()));
 
         let shared_ctx: Rc<RefCell<Option<WasmInstanceContext<C>>>> = Rc::new(RefCell::new(None));
+        let host_fns = ctx.host_fns.cheap_clone();
+
         let ctx: Rc<RefCell<Option<MappingContext<C>>>> = Rc::new(RefCell::new(Some(ctx)));
+
         let timeout_stopwatch = Arc::new(std::sync::Mutex::new(TimeoutStopwatch::start_new()));
         if let Some(timeout) = timeout {
             let interrupt_handle = linker.store().interrupt_handle().unwrap();
@@ -171,8 +177,8 @@ impl<C: Blockchain> WasmInstance<C> {
             graph::spawn_allow_panic(async move {
                 let minimum_wait = Duration::from_secs(1);
                 loop {
-                    let time_left =
-                        timeout.checked_sub(timeout_stopwatch.lock().unwrap().elapsed());
+                    let duration = *timeout_stopwatch.lock().unwrap();
+                    let time_left = timeout.checked_sub(duration.elapsed());
                     match time_left {
                         None => break interrupt_handle.interrupt(), // Timed out.
 
@@ -200,7 +206,7 @@ impl<C: Blockchain> WasmInstance<C> {
                     let valid_module = valid_module.clone();
                     let host_metrics = host_metrics.clone();
                     let timeout_stopwatch = timeout_stopwatch.clone();
-                    let ctx = ctx.clone();
+                    let ctx = ctx.cheap_clone();
                     linker.func(
                         module,
                         $wasm_name,
@@ -244,63 +250,62 @@ impl<C: Blockchain> WasmInstance<C> {
             };
         }
 
-        let modules = valid_module
-            .import_name_to_modules
-            .get("ethereum.call")
-            .into_iter()
-            .flatten();
+        for host_fn in host_fns.iter() {
+            let modules = valid_module
+                .import_name_to_modules
+                .get(host_fn.name)
+                .into_iter()
+                .flatten();
 
-        for module in modules {
-            let func_shared_ctx = Rc::downgrade(&shared_ctx);
-            linker.func(module, "ethereum.call", move |call_ptr: u32| {
-                let start = Instant::now();
-                let instance = func_shared_ctx.upgrade().unwrap();
-                let mut instance = instance.borrow_mut();
+            for module in modules {
+                let func_shared_ctx = Rc::downgrade(&shared_ctx);
+                let host_fn = host_fn.cheap_clone();
+                linker.func(module, host_fn.name, move |call_ptr: u32| {
+                    let start = Instant::now();
+                    let instance = func_shared_ctx.upgrade().unwrap();
+                    let mut instance = instance.borrow_mut();
 
-                let instance = match &mut *instance {
-                    Some(instance) => instance,
+                    let instance = match &mut *instance {
+                        Some(instance) => instance,
 
-                    None => {
-                        return Err(
-                            anyhow!("ethereum.call is not allowed in global variables").into()
-                        )
-                    }
-                };
+                        // Happens when calling a host fn in Wasm start.
+                        None => {
+                            return Err(anyhow!(
+                                "{} is not allowed in global variables",
+                                host_fn.name
+                            )
+                            .into())
+                        }
+                    };
 
-                let stopwatch = &instance.host_metrics.stopwatch;
-                let _section = stopwatch.start_section("host_export_ethereum_call");
+                    let name_for_metrics = host_fn.name.replace('.', "_");
+                    let stopwatch = &instance.host_metrics.stopwatch;
+                    let _section =
+                        stopwatch.start_section(&format!("host_export_{}", name_for_metrics));
 
-                let arg = if instance.ctx.host_exports.api_version >= Version::new(0, 0, 4) {
-                    runtime::asc_get::<_, asc_abi::class::AscUnresolvedContractCall_0_0_4, _>(
-                        instance,
-                        call_ptr.into(),
-                    )
-                } else {
-                    runtime::asc_get::<_, asc_abi::class::AscUnresolvedContractCall, _>(
-                        instance,
-                        call_ptr.into(),
-                    )
-                }
-                .map_err(|e| {
-                    instance.deterministic_host_trap = true;
-                    e.0
-                })?;
-
-                let ret = instance
-                    .ethereum_call(arg)
-                    .map_err(|e| match e {
+                    let ctx = HostFnCtx {
+                        logger: instance.ctx.logger.cheap_clone(),
+                        block_ptr: instance.ctx.block_ptr.cheap_clone(),
+                        heap: instance,
+                    };
+                    let ret = (host_fn.func)(ctx, call_ptr).map_err(|e| match e {
                         HostExportError::Deterministic(e) => {
                             instance.deterministic_host_trap = true;
                             e
                         }
+                        HostExportError::PossibleReorg(e) => {
+                            instance.possible_reorg = true;
+                            e
+                        }
                         HostExportError::Unknown(e) => e,
-                    })?
-                    .wasm_ptr();
-                instance
-                    .host_metrics
-                    .observe_host_fn_execution_time(start.elapsed().as_secs_f64(), "ethereum_call");
-                Ok(ret)
-            })?;
+                    })?;
+                    instance.host_metrics.observe_host_fn_execution_time(
+                        start.elapsed().as_secs_f64(),
+                        &name_for_metrics,
+                    );
+                    Ok(ret)
+                })?;
+            }
         }
 
         link!("ethereum.encode", ethereum_encode, params_ptr);
@@ -417,6 +422,7 @@ impl<C: Blockchain> WasmInstance<C> {
         Ok(WasmInstance {
             instance,
             instance_ctx: shared_ctx,
+            __phantom: PhantomData::default(),
         })
     }
 }
