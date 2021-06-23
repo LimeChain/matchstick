@@ -1,5 +1,4 @@
 use ethabi::Contract;
-use graph::components::store::CallCache;
 use graph::data::subgraph::*;
 use graph::{
     blockchain::BlockPtr,
@@ -7,13 +6,13 @@ use graph::{
     data::subgraph::{Mapping, Source, TemplateSource},
     ipfs_client::IpfsClient,
     prelude::{
-        o, slog, BlockState, DeploymentHash, EthereumCallCache, HostMetrics, Link, Logger,
+        o, slog, BlockState, DeploymentHash, HostMetrics, Link, Logger,
         StopwatchMetrics, SubgraphStore,
     },
     semver::Version,
 };
 use graph_chain_arweave::adapter::ArweaveAdapter;
-use graph_chain_ethereum::{Chain, DataSource, DataSourceTemplate, MockEthereumAdapter};
+use graph_chain_ethereum::{Chain, DataSource, DataSourceTemplate};
 use graph_core;
 use graph_core::three_box::ThreeBoxAdapter;
 use graph_mock::MockMetricsRegistry;
@@ -33,9 +32,7 @@ fn mock_host_exports(
     subgraph_id: DeploymentHash,
     data_source: DataSource,
     store: Arc<impl SubgraphStore>,
-    call_cache: Arc<impl EthereumCallCache>,
 ) -> HostExports<Chain> {
-    let mock_ethereum_adapter = Arc::new(MockEthereumAdapter::default());
     let arweave_adapter = Arc::new(ArweaveAdapter::new("https://arweave.net".to_string()));
     let three_box_adapter = Arc::new(ThreeBoxAdapter::new("https://ipfs.3box.io/".to_string()));
 
@@ -68,10 +65,8 @@ fn mock_host_exports(
         &data_source,
         network,
         Arc::new(templates),
-        mock_ethereum_adapter,
         Arc::new(graph_core::LinkResolver::from(IpfsClient::localhost())),
         store,
-        call_cache,
         arweave_adapter,
         three_box_adapter,
     )
@@ -81,7 +76,6 @@ fn mock_context(
     deployment: DeploymentLocator,
     data_source: DataSource,
     store: Arc<impl SubgraphStore>,
-    call_cache: Arc<impl EthereumCallCache>,
 ) -> MappingContext<Chain> {
     MappingContext {
         logger: test_store::LOGGER.clone(),
@@ -93,10 +87,10 @@ fn mock_context(
             deployment.hash.clone(),
             data_source,
             store.clone(),
-            call_cache,
         )),
         state: BlockState::new(store.writable(&deployment).unwrap(), Default::default()),
         proof_of_indexing: None,
+        host_fns: Arc::new(Vec::new()),
     }
 }
 
@@ -183,12 +177,6 @@ pub fn main() -> () {
 
     let store = STORE.clone();
 
-    pub const NETWORK_NAME: &str = "fake_network";
-    let call_cache = store
-        .block_store()
-        .ethereum_call_cache(NETWORK_NAME)
-        .expect("call cache for test network");
-
     let metrics_registry = Arc::new(MockMetricsRegistry::new());
 
     let stopwatch_metrics = StopwatchMetrics::new(
@@ -217,7 +205,6 @@ pub fn main() -> () {
             deployment.clone(),
             data_source,
             store.subgraph_store(),
-            call_cache,
         ),
         host_metrics,
         None,
