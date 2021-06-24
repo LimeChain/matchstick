@@ -1335,8 +1335,8 @@ dependencies = [
 
 [[package]]
 name = "graph"
-version = "0.23.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#284bcdb9671717b0ad43002a84e69aceb87bd7b1"
+version = "0.23.1"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -1390,8 +1390,8 @@ dependencies = [
 
 [[package]]
 name = "graph-chain-arweave"
-version = "0.23.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#284bcdb9671717b0ad43002a84e69aceb87bd7b1"
+version = "0.23.1"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
 dependencies = [
  "anyhow",
  "graph",
@@ -1399,8 +1399,8 @@ dependencies = [
 
 [[package]]
 name = "graph-chain-ethereum"
-version = "0.23.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#284bcdb9671717b0ad43002a84e69aceb87bd7b1"
+version = "0.23.1"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1423,8 +1423,8 @@ dependencies = [
 
 [[package]]
 name = "graph-core"
-version = "0.23.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#284bcdb9671717b0ad43002a84e69aceb87bd7b1"
+version = "0.23.1"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
 dependencies = [
  "async-trait",
  "atomic_refcell",
@@ -1445,8 +1445,8 @@ dependencies = [
 
 [[package]]
 name = "graph-graphql"
-version = "0.23.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#284bcdb9671717b0ad43002a84e69aceb87bd7b1"
+version = "0.23.1"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -1464,8 +1464,8 @@ dependencies = [
 
 [[package]]
 name = "graph-mock"
-version = "0.23.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#284bcdb9671717b0ad43002a84e69aceb87bd7b1"
+version = "0.23.1"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
 dependencies = [
  "futures 0.1.31",
  "graph",
@@ -1477,8 +1477,8 @@ dependencies = [
 
 [[package]]
 name = "graph-node"
-version = "0.23.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#284bcdb9671717b0ad43002a84e69aceb87bd7b1"
+version = "0.23.1"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
 dependencies = [
  "clap",
  "crossbeam-channel",
@@ -1513,8 +1513,8 @@ dependencies = [
 
 [[package]]
 name = "graph-runtime-derive"
-version = "0.23.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#284bcdb9671717b0ad43002a84e69aceb87bd7b1"
+version = "0.23.1"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
 dependencies = [
  "anyhow",
  "quote 1.0.9",
@@ -1523,8 +1523,8 @@ dependencies = [
 
 [[package]]
 name = "graph-runtime-wasm"
-version = "0.23.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#284bcdb9671717b0ad43002a84e69aceb87bd7b1"
+version = "0.23.1"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1548,8 +1548,8 @@ dependencies = [
 
 [[package]]
 name = "graph-server-http"
-version = "0.23.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#284bcdb9671717b0ad43002a84e69aceb87bd7b1"
+version = "0.23.1"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
 dependencies = [
  "futures 0.1.31",
  "graph",
@@ -1562,8 +1562,8 @@ dependencies = [
 
 [[package]]
 name = "graph-server-index-node"
-version = "0.23.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#284bcdb9671717b0ad43002a84e69aceb87bd7b1"
+version = "0.23.1"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
 dependencies = [
  "futures 0.3.15",
  "graph",
@@ -1576,8 +1576,8 @@ dependencies = [
 
 [[package]]
 name = "graph-server-json-rpc"
-version = "0.23.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#284bcdb9671717b0ad43002a84e69aceb87bd7b1"
+version = "0.23.1"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
 dependencies = [
  "graph",
  "jsonrpc-http-server",
@@ -1587,8 +1587,8 @@ dependencies = [
 
 [[package]]
 name = "graph-server-metrics"
-version = "0.23.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#284bcdb9671717b0ad43002a84e69aceb87bd7b1"
+version = "0.23.1"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
 dependencies = [
  "futures 0.1.31",
  "graph",
@@ -1600,8 +1600,8 @@ dependencies = [
 
 [[package]]
 name = "graph-server-websocket"
-version = "0.23.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#284bcdb9671717b0ad43002a84e69aceb87bd7b1"
+version = "0.23.1"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
 dependencies = [
  "anyhow",
  "futures 0.1.31",
@@ -1617,8 +1617,8 @@ dependencies = [
 
 [[package]]
 name = "graph-store-postgres"
-version = "0.23.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#284bcdb9671717b0ad43002a84e69aceb87bd7b1"
+version = "0.23.1"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -4048,8 +4048,8 @@ dependencies = [
 
 [[package]]
 name = "test-store"
-version = "0.23.0"
-source = "git+https://github.com/LimeChain/graph-node?branch=master#284bcdb9671717b0ad43002a84e69aceb87bd7b1"
+version = "0.23.1"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
 dependencies = [
  "diesel",
  "graph",
