@@ -188,6 +188,16 @@ impl<C: Blockchain> WasmInstance<C> {
 
         link!("abort", abort, message_ptr, file_name_ptr, line, column);
 
+        link!("store.get", store_get, "host_export_store_get", entity, id);
+        link!(
+            "store.set",
+            store_set,
+            "host_export_store_set",
+            entity,
+            id,
+            data
+        );
+
         link!("ipfs.cat", ipfs_cat, "host_export_ipfs_cat", hash_ptr);
         link!(
             "ipfs.map",
