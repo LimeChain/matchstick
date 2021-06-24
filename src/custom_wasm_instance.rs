@@ -5,148 +5,23 @@ use graph::{
     prelude::{
         anyhow::{self},
         HostMetrics,
-    },
-    runtime::{asc_get, AscPtr},
+    }
 };
 use graph_runtime_wasm::{
-    asc_abi::{self, class::AscString},
     error::DeterminismLevel,
     mapping::{MappingContext, ValidModule},
     module::IntoWasmRet,
     module::{ExperimentalFeatures, IntoTrap, WasmInstanceContext},
 };
 use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::TimeoutStopwatch};
-use indexmap::IndexMap;
-use serde_json::json;
-use slog::{info, Drain};
-use slog_term;
 
 use std::marker::PhantomData;
 use std::{
     cell::RefCell,
-    sync::{Arc, Mutex},
-    time::Instant,
+    sync::{Arc},
+    time::Instant
 };
 use std::{rc::Rc, time::Duration};
-
-lazy_static::lazy_static! {
-    static ref MOCK_STORE_LOCAL: Mutex<IndexMap<String, IndexMap<String, String>>> = Mutex::from(IndexMap::new());
-}
-
-fn get_inner_json(s: String) -> String {
-    let index = s.find(':').unwrap();
-    let ending_bracket = s.rfind("}").unwrap();
-    String::from(&s[index + 1..ending_bracket + 1])
-}
-
-fn get_type(s: String) -> String {
-    let v: Vec<&str> = s.split(':').collect();
-    String::from(*v.get(0).unwrap())
-}
-
-trait WICExtension {
-    fn mock_store_set(
-        &mut self,
-        entity_ptr: AscPtr<AscString>,
-        id_ptr: AscPtr<AscString>,
-        data_ptr: AscPtr<asc_abi::class::AscEntity>,
-    ) -> Result<(), HostExportError>;
-
-    fn mock_store_assert_field_eq(
-        &mut self,
-        type_ptr: AscPtr<AscString>,
-        id_ptr: AscPtr<AscString>,
-        name_ptr: AscPtr<AscString>,
-        val_ptr: AscPtr<AscString>,
-    ) -> Result<(), HostExportError>;
-
-    fn store_clear(&mut self) -> Result<(), HostExportError>;
-}
-
-impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
-    fn mock_store_assert_field_eq(
-        &mut self,
-        type_ptr: AscPtr<AscString>,
-        id_ptr: AscPtr<AscString>,
-        name_ptr: AscPtr<AscString>,
-        val_ptr: AscPtr<AscString>,
-    ) -> Result<(), HostExportError> {
-        let plain = slog_term::PlainSyncDecorator::new(std::io::stdout());
-        let logger =
-            slog::Logger::root(slog_term::FullFormat::new(plain).build().fuse(), slog::o!());
-
-        let e_type: String = asc_get(self, type_ptr)?;
-        let id: String = asc_get(self, id_ptr)?;
-        let name: String = asc_get(self, name_ptr)?;
-        let expected_val: String = asc_get(self, val_ptr)?;
-
-        let map = MOCK_STORE_LOCAL.lock().unwrap().clone();
-        let entity_json = json!(map);
-
-        let entity_inner_json = entity_json.get(format!("\"{}\"", e_type)).unwrap();
-
-        let value = entity_inner_json
-            .get(&id)
-            .unwrap()
-            .to_string()
-            .replace("\\", "");
-        let value = get_inner_json(value);
-        let value: serde_json::Value = serde_json::from_str(&value).unwrap();
-        let value: &str = value.get(&name).and_then(|value| value.as_str()).unwrap();
-
-        if &value == &expected_val {
-            info!(
-                logger,
-                "Test passed! Field '{}' on Entity with id '{}' equals '{}'.",
-                &name,
-                &id,
-                &expected_val
-            );
-        } else {
-            info!(
-                logger,
-                "Test failed! Field '{}' on Entity with id '{}' equals '{}', instead of expected '{}'.", &name, &id, &value, &expected_val
-            );
-        }
-        Ok(())
-    }
-
-    fn mock_store_set(
-        &mut self,
-        entity_ptr: AscPtr<AscString>,
-        id_ptr: AscPtr<AscString>,
-        _data_ptr: AscPtr<asc_abi::class::AscEntity>,
-    ) -> Result<(), HostExportError> {
-        let entity: String = asc_get(self, entity_ptr)?;
-        let id: String = asc_get(self, id_ptr)?;
-
-        let entity_type = get_type(entity.clone());
-        let mut current: IndexMap<String, String> = IndexMap::new();
-
-        if MOCK_STORE_LOCAL.lock().unwrap().contains_key(&entity_type) {
-            current = MOCK_STORE_LOCAL
-                .lock()
-                .unwrap()
-                .get(&entity_type)
-                .unwrap()
-                .clone();
-        }
-
-        current.insert(id, entity);
-        MOCK_STORE_LOCAL
-            .lock()
-            .unwrap()
-            .insert(entity_type, current);
-
-        Ok(())
-    }
-
-    fn store_clear(&mut self) -> Result<(), HostExportError> {
-        MOCK_STORE_LOCAL.lock().unwrap().clear();
-
-        Ok(())
-    }
-}
 
 #[allow(unused)]
 pub struct WasmInstance<C: Blockchain> {
@@ -316,23 +191,11 @@ impl<C: Blockchain> WasmInstance<C> {
         link!("store.get", store_get, "host_export_store_get", entity, id);
         link!(
             "store.set",
-            mock_store_set,
+            store_set,
             "host_export_store_set",
             entity,
             id,
             data
-        );
-
-        link!("store.clear", store_clear, "host_exports_store_clear",);
-
-        link!(
-            "store.assertFieldEq",
-            mock_store_assert_field_eq,
-            "host_export_store_assert_field_eq",
-            e_type,
-            id,
-            name,
-            value
         );
 
         link!("ipfs.cat", ipfs_cat, "host_export_ipfs_cat", hash_ptr);
@@ -345,8 +208,6 @@ impl<C: Blockchain> WasmInstance<C> {
             user_data,
             flags
         );
-
-        link!("store.remove", store_remove, entity_ptr, id_ptr);
 
         link!("typeConversion.bytesToString", bytes_to_string, ptr);
         link!("typeConversion.bytesToHex", bytes_to_hex, ptr);

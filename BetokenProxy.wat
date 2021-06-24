@@ -7,24 +7,18 @@
   (type (;5;) (func (param i32)))
   (type (;6;) (func (param i32 i32 i32) (result i32)))
   (type (;7;) (func (param i32 i32)))
-  (type (;8;) (func (param i32 i32 i32 i32 i32)))
-  (type (;9;) (func (param i64) (result i32)))
-  (type (;10;) (func (param i32 i64 i32)))
-  (type (;11;) (func (result i32)))
+  (type (;8;) (func (result i32)))
   (import "env" "abort" (func $~lib/env/abort (type 2)))
   (import "index" "bigDecimal.fromString" (func $~lib/@graphprotocol/graph-ts/index/bigDecimal.fromString (type 3)))
   (import "index" "bigInt.times" (func $~lib/@graphprotocol/graph-ts/index/bigInt.times (type 1)))
   (import "index" "typeConversion.stringToH160" (func $~lib/@graphprotocol/graph-ts/index/typeConversion.stringToH160 (type 3)))
-  (import "index" "store.set" (func $~lib/@graphprotocol/graph-ts/index/store.set (type 4)))
   (import "index" "store.get" (func $~lib/@graphprotocol/graph-ts/index/store.get (type 1)))
   (import "index" "bigDecimal.dividedBy" (func $~lib/@graphprotocol/graph-ts/index/bigDecimal.dividedBy (type 1)))
   (import "index" "typeConversion.bytesToHex" (func $~lib/@graphprotocol/graph-ts/index/typeConversion.bytesToHex (type 3)))
   (import "index" "bigDecimal.times" (func $~lib/@graphprotocol/graph-ts/index/bigDecimal.times (type 1)))
+  (import "index" "store.set" (func $~lib/@graphprotocol/graph-ts/index/store.set (type 4)))
   (import "index" "dataSource.create" (func $~lib/@graphprotocol/graph-ts/index/dataSource.create (type 7)))
   (import "index" "bigInt.plus" (func $~lib/@graphprotocol/graph-ts/index/bigInt.plus (type 1)))
-  (import "index" "log.log" (func $~lib/@graphprotocol/graph-ts/index/log.log (type 7)))
-  (import "index" "store.assertFieldEq" (func $~lib/@graphprotocol/graph-ts/index/store.assertFieldEq (type 2)))
-  (import "index" "store.clear" (func $~lib/@graphprotocol/graph-ts/index/store.clear (type 0)))
   (func $~lib/internal/arraybuffer/computeSize (type 3) (param i32) (result i32)
     i32.const 1
     i32.const 32
@@ -2798,7 +2792,7 @@
     call $~lib/@graphprotocol/graph-ts/index/ByteArray.fromI32
     i32.store offset=4
     local.get 1)
-  (func $src/utils/tenPow (type 11) (result i32)
+  (func $src/utils/tenPow (type 8) (result i32)
     (local i32 i32)
     i32.const 1
     call $~lib/@graphprotocol/graph-ts/index/ByteArray.fromI32
@@ -2876,6 +2870,80 @@
     i32.const 10004888
     call $~lib/@graphprotocol/graph-ts/index/ByteArray.fromI32
     global.set 16)
+  (func $~lib/arraybuffer/ArrayBuffer#constructor (type 1) (param i32 i32) (result i32)
+    (local i32)
+    local.get 0
+    i32.const 1073741816
+    i32.gt_u
+    if  ;; label = @1
+      i32.const 0
+      i32.const 14504
+      i32.const 47
+      i32.const 40
+      call $~lib/env/abort
+      unreachable
+    end
+    local.get 0
+    call $~lib/internal/arraybuffer/allocateUnsafe
+    local.set 2
+    local.get 1
+    i32.eqz
+    if  ;; label = @1
+      local.get 2
+      i32.const 8
+      i32.add
+      local.get 0
+      call $~lib/internal/memory/memset
+    end
+    local.get 2)
+  (func $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#clear (type 5) (param i32)
+    local.get 0
+    i32.const 16
+    i32.const 0
+    call $~lib/arraybuffer/ArrayBuffer#constructor
+    i32.store
+    local.get 0
+    i32.const 3
+    i32.store offset=4
+    local.get 0
+    i32.const 48
+    i32.const 1
+    call $~lib/arraybuffer/ArrayBuffer#constructor
+    i32.store offset=8
+    local.get 0
+    i32.const 4
+    i32.store offset=12
+    local.get 0
+    i32.const 0
+    i32.store offset=16
+    local.get 0
+    i32.const 0
+    i32.store offset=20)
+  (func $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#constructor (type 8) (result i32)
+    (local i32)
+    i32.const 24
+    call $~lib/allocator/arena/__memory_allocate
+    local.tee 0
+    i32.const 0
+    i32.store
+    local.get 0
+    i32.const 0
+    i32.store offset=4
+    local.get 0
+    i32.const 0
+    i32.store offset=8
+    local.get 0
+    i32.const 0
+    i32.store offset=12
+    local.get 0
+    i32.const 0
+    i32.store offset=16
+    local.get 0
+    i32.const 0
+    i32.store offset=20
+    local.get 0
+    call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#clear
+    local.get 0)
   (func $src/mappings/betokenProxy/TestEvent#constructor (type 6) (param i32 i32 i32) (result i32)
     local.get 0
     i32.eqz
@@ -2920,27 +2988,48 @@
     call $~lib/array/Array<~lib/string/String>#constructor
     i32.store
     local.get 0)
+  (func $~lib/@graphprotocol/graph-ts/index/Value#constructor (type 8) (result i32)
+    (local i32)
+    i32.const 16
+    call $~lib/allocator/arena/__memory_allocate
+    local.tee 0
+    i32.const 0
+    i32.store
+    local.get 0
+    i64.const 0
+    i64.store offset=8
+    local.get 0)
   (func $src/mappings/betokenProxy/TestEntity#constructor (type 6) (param i32 i32 i32) (result i32)
+    (local i32)
     local.get 0
     if (result i32)  ;; label = @1
       local.get 0
     else
-      i32.const 12
+      i32.const 8
       call $~lib/allocator/arena/__memory_allocate
     end
     call $~lib/@graphprotocol/graph-ts/index/Entity#constructor
     local.tee 0
     i32.const 0
     i32.store offset=4
+    call $~lib/@graphprotocol/graph-ts/index/Value#constructor
+    local.tee 3
+    i32.const 1
+    i32.store
+    local.get 3
+    local.get 2
+    i64.extend_i32_s
+    i64.store offset=8
     local.get 0
+    i32.load
     i32.const 0
-    i32.store offset=8
+    i32.const 14592
+    local.get 3
+    call $src/mappings/betokenProxy/TestEvent#constructor
+    call $~lib/array/Array<~lib/string/String>#push
     local.get 0
     local.get 1
     i32.store offset=4
-    local.get 0
-    local.get 2
-    i32.store offset=8
     local.get 0)
   (func $~lib/array/Array<~lib/@graphprotocol/graph-ts/index/TypedMapEntry<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>>#__get (type 1) (param i32 i32) (result i32)
     local.get 1
@@ -3151,17 +3240,6 @@
       end
     end
     i32.const 0)
-  (func $~lib/@graphprotocol/graph-ts/index/Value#constructor (type 11) (result i32)
-    (local i32)
-    i32.const 16
-    call $~lib/allocator/arena/__memory_allocate
-    local.tee 0
-    i32.const 0
-    i32.store
-    local.get 0
-    i64.const 0
-    i64.store offset=8
-    local.get 0)
   (func $~lib/@graphprotocol/graph-ts/index/Entity#unset (type 7) (param i32 i32)
     local.get 0
     local.get 1
@@ -3219,942 +3297,362 @@
       end
     end
     local.get 0)
-  (func $src/jsonEncoder/JSONEncoder#constructor (type 11) (result i32)
-    (local i32)
-    i32.const 8
-    call $~lib/allocator/arena/__memory_allocate
-    local.tee 0
-    i32.const 0
-    i32.store
-    local.get 0
-    i32.const 0
-    i32.store offset=4
-    local.get 0
-    i32.const 10
-    call $~lib/array/Array<~lib/string/String>#constructor
-    i32.store
-    local.get 0
-    i32.const 0
-    call $~lib/array/Array<~lib/string/String>#constructor
-    i32.store offset=4
-    local.get 0
-    i32.load
-    i32.const 1
-    call $~lib/array/Array<~lib/string/String>#push
-    local.get 0)
-  (func $src/jsonEncoder/JSONEncoder#write (type 7) (param i32 i32)
-    local.get 0
-    i32.load offset=4
-    local.get 1
-    call $~lib/array/Array<~lib/string/String>#push)
-  (func $~lib/array/Array<i32>#__set (type 4) (param i32 i32 i32)
-    (local i32)
-    local.get 1
-    local.get 0
-    i32.load
-    local.tee 3
-    i32.load
-    i32.const 2
-    i32.shr_u
-    i32.ge_u
-    if  ;; label = @1
-      local.get 1
-      i32.const 268435454
-      i32.ge_u
-      if  ;; label = @2
-        i32.const 0
-        i32.const 8
-        i32.const 107
-        i32.const 41
-        call $~lib/env/abort
-        unreachable
-      end
-      local.get 0
-      local.get 3
-      local.get 1
-      i32.const 1
-      i32.add
-      i32.const 2
-      i32.shl
-      call $~lib/internal/arraybuffer/reallocateUnsafe
-      local.tee 3
-      i32.store
-      local.get 0
-      local.get 1
-      i32.const 1
-      i32.add
-      i32.store offset=4
-    end
-    local.get 1
-    i32.const 2
-    i32.shl
-    local.get 3
-    i32.add
-    local.get 2
-    i32.store offset=8)
-  (func $~lib/string/String#charCodeAt (type 1) (param i32 i32) (result i32)
-    local.get 0
-    i32.eqz
-    if  ;; label = @1
-      i32.const 0
-      i32.const 14544
-      i32.const 75
-      i32.const 4
-      call $~lib/env/abort
-      unreachable
-    end
-    local.get 1
-    local.get 0
-    i32.load
-    i32.ge_u
-    if  ;; label = @1
-      i32.const -1
-      return
-    end
-    local.get 0
-    local.get 1
-    i32.const 1
-    i32.shl
-    i32.add
-    i32.load16_u offset=4)
-  (func $~lib/internal/string/allocateUnsafe (type 3) (param i32) (result i32)
-    (local i32)
-    local.get 0
-    i32.const 0
-    i32.gt_s
-    local.tee 1
-    if (result i32)  ;; label = @1
-      local.get 0
-      i32.const 536870910
-      i32.le_s
-    else
-      local.get 1
-    end
-    i32.eqz
-    if  ;; label = @1
-      i32.const 0
-      i32.const 14592
-      i32.const 14
-      i32.const 2
-      call $~lib/env/abort
-      unreachable
-    end
-    local.get 0
-    i32.const 1
-    i32.shl
-    i32.const 4
-    i32.add
-    call $~lib/allocator/arena/__memory_allocate
-    local.tee 1
-    local.get 0
-    i32.store
-    local.get 1)
-  (func $~lib/internal/string/copyUnsafe (type 8) (param i32 i32 i32 i32 i32)
-    local.get 0
-    local.get 1
-    i32.const 1
-    i32.shl
-    i32.add
-    i32.const 4
-    i32.add
-    local.get 2
-    local.get 3
-    i32.const 1
-    i32.shl
-    i32.add
-    i32.const 4
-    i32.add
-    local.get 4
-    i32.const 1
-    i32.shl
-    call $~lib/internal/memory/memmove)
-  (func $~lib/string/String#substring (type 6) (param i32 i32 i32) (result i32)
+  (func $~lib/internal/hash/hashStr (type 3) (param i32) (result i32)
     (local i32 i32 i32)
-    local.get 0
-    i32.eqz
-    if  ;; label = @1
-      i32.const 0
-      i32.const 14544
-      i32.const 254
-      i32.const 4
-      call $~lib/env/abort
-      unreachable
-    end
-    local.get 1
-    i32.const 0
-    local.get 1
-    local.get 3
-    i32.gt_s
-    select
-    local.tee 3
+    i32.const -2128831035
+    local.set 2
     local.get 0
     i32.load
-    local.tee 1
-    local.tee 4
-    local.get 3
-    local.get 4
-    i32.lt_s
-    select
-    local.tee 3
-    local.tee 4
-    local.get 2
-    i32.const 0
-    local.get 2
-    local.get 5
-    i32.gt_s
-    select
-    local.tee 2
-    local.get 1
-    local.get 2
-    local.get 1
-    i32.lt_s
-    select
-    local.tee 2
-    local.tee 1
-    local.get 4
-    local.get 1
-    i32.lt_s
-    select
-    local.set 1
-    local.get 3
-    local.get 2
-    local.get 3
-    local.get 2
-    i32.gt_s
-    select
-    local.tee 3
-    local.get 1
-    i32.sub
-    local.tee 2
-    i32.eqz
-    if  ;; label = @1
-      i32.const 14584
-      return
-    end
-    local.get 1
-    i32.eqz
-    local.tee 4
-    if (result i32)  ;; label = @1
-      local.get 3
-      local.get 0
-      i32.load
-      i32.eq
-    else
-      local.get 4
-    end
-    if  ;; label = @1
-      local.get 0
-      return
-    end
-    local.get 2
-    call $~lib/internal/string/allocateUnsafe
-    local.tee 3
-    i32.const 0
-    local.get 0
-    local.get 1
-    local.get 2
-    call $~lib/internal/string/copyUnsafe
-    local.get 3)
-  (func $~lib/internal/number/decimalCount32 (type 3) (param i32) (result i32)
-    (local i32)
-    i32.const 32
-    local.get 0
-    i32.clz
-    i32.sub
-    i32.const 1233
-    i32.mul
-    i32.const 12
-    i32.shr_u
-    local.tee 1
-    local.get 0
-    i32.const 14872
-    i32.load
-    local.get 1
-    i32.const 2
-    i32.shl
-    i32.add
-    i32.load offset=8
-    i32.lt_u
-    i32.sub
     i32.const 1
-    i32.add)
-  (func $~lib/internal/number/utoa_simple<u32> (type 4) (param i32 i32 i32)
-    (local i32)
+    i32.shl
+    local.set 3
     loop  ;; label = @1
-      local.get 1
-      i32.const 10
-      i32.rem_u
-      local.set 3
-      local.get 1
-      i32.const 10
-      i32.div_u
-      local.set 1
-      local.get 0
-      local.get 2
-      i32.const 1
-      i32.sub
-      local.tee 2
-      i32.const 1
-      i32.shl
-      i32.add
-      local.get 3
-      i32.const 48
-      i32.add
-      i32.store16 offset=4
-      local.get 1
-      br_if 0 (;@1;)
-    end)
-  (func $~lib/internal/number/itoa32 (type 3) (param i32) (result i32)
-    (local i32 i32 i32)
-    local.get 0
-    i32.eqz
-    if  ;; label = @1
-      i32.const 6544
-      return
-    end
-    local.get 0
-    i32.const 0
-    i32.lt_s
-    local.tee 1
-    if  ;; label = @1
-      i32.const 0
-      local.get 0
-      i32.sub
-      local.set 0
-    end
-    local.get 0
-    call $~lib/internal/number/decimalCount32
-    local.get 1
-    i32.add
-    local.tee 3
-    call $~lib/internal/string/allocateUnsafe
-    local.tee 2
-    local.get 0
-    local.get 3
-    call $~lib/internal/number/utoa_simple<u32>
-    local.get 1
-    if  ;; label = @1
-      local.get 2
-      i32.const 45
-      i32.store16 offset=4
-    end
-    local.get 2)
-  (func $~lib/string/String#concat (type 1) (param i32 i32) (result i32)
-    (local i32 i32 i32)
-    local.get 0
-    i32.eqz
-    if  ;; label = @1
-      i32.const 0
-      i32.const 14544
-      i32.const 110
-      i32.const 4
-      call $~lib/env/abort
-      unreachable
-    end
-    local.get 0
-    i32.load
-    local.tee 3
-    local.get 1
-    i32.const 14880
-    local.get 1
-    select
-    local.tee 1
-    i32.load
-    local.tee 4
-    i32.add
-    local.tee 2
-    i32.eqz
-    if  ;; label = @1
-      i32.const 14584
-      return
-    end
-    local.get 2
-    call $~lib/internal/string/allocateUnsafe
-    local.tee 2
-    i32.const 0
-    local.get 0
-    i32.const 0
-    local.get 3
-    call $~lib/internal/string/copyUnsafe
-    local.get 2
-    local.get 3
-    local.get 1
-    i32.const 0
-    local.get 4
-    call $~lib/internal/string/copyUnsafe
-    local.get 2)
-  (func $~lib/string/String.__concat (type 1) (param i32 i32) (result i32)
-    local.get 0
-    i32.const 14880
-    local.get 0
-    select
-    local.get 1
-    call $~lib/string/String#concat)
-  (func $src/jsonEncoder/JSONEncoder#writeString (type 7) (param i32 i32)
-    (local i32 i32 i32 i32)
-    local.get 0
-    i32.const 14536
-    call $src/jsonEncoder/JSONEncoder#write
-    loop  ;; label = @1
-      local.get 3
-      local.get 1
-      i32.load
-      i32.lt_s
-      if  ;; label = @2
+      block  ;; label = @2
         local.get 1
         local.get 3
-        call $~lib/string/String#charCodeAt
-        local.tee 2
-        i32.const 32
-        i32.lt_s
-        local.tee 4
-        i32.eqz
-        if  ;; label = @3
-          i32.const 14536
-          i32.const 0
-          call $~lib/string/String#charCodeAt
-          local.get 2
-          i32.eq
-          local.set 4
-        end
-        local.get 4
-        if (result i32)  ;; label = @3
-          local.get 4
-        else
-          i32.const 14576
-          i32.const 0
-          call $~lib/string/String#charCodeAt
-          local.get 2
-          i32.eq
-        end
-        if  ;; label = @3
-          local.get 0
-          local.get 1
-          local.get 5
-          local.get 3
-          call $~lib/string/String#substring
-          call $src/jsonEncoder/JSONEncoder#write
-          local.get 3
-          i32.const 1
-          i32.add
-          local.set 5
-          i32.const 14536
-          i32.const 0
-          call $~lib/string/String#charCodeAt
-          local.get 2
-          i32.eq
-          if  ;; label = @4
-            local.get 0
-            i32.const 14648
-            call $src/jsonEncoder/JSONEncoder#write
-          else
-            i32.const 14576
-            i32.const 0
-            call $~lib/string/String#charCodeAt
-            local.get 2
-            i32.eq
-            if  ;; label = @5
-              local.get 0
-              i32.const 14656
-              call $src/jsonEncoder/JSONEncoder#write
-            else
-              i32.const 14664
-              i32.const 0
-              call $~lib/string/String#charCodeAt
-              local.get 2
-              i32.eq
-              if  ;; label = @6
-                local.get 0
-                i32.const 14672
-                call $src/jsonEncoder/JSONEncoder#write
-              else
-                i32.const 14680
-                i32.const 0
-                call $~lib/string/String#charCodeAt
-                local.get 2
-                i32.eq
-                if  ;; label = @7
-                  local.get 0
-                  i32.const 14688
-                  call $src/jsonEncoder/JSONEncoder#write
-                else
-                  i32.const 14696
-                  i32.const 0
-                  call $~lib/string/String#charCodeAt
-                  local.get 2
-                  i32.eq
-                  if  ;; label = @8
-                    local.get 0
-                    i32.const 14704
-                    call $src/jsonEncoder/JSONEncoder#write
-                  else
-                    i32.const 14712
-                    i32.const 0
-                    call $~lib/string/String#charCodeAt
-                    local.get 2
-                    i32.eq
-                    if  ;; label = @9
-                      local.get 0
-                      i32.const 14720
-                      call $src/jsonEncoder/JSONEncoder#write
-                    else
-                      i32.const 14728
-                      local.get 2
-                      call $~lib/internal/number/itoa32
-                      call $~lib/string/String.__concat
-                      i32.const 14896
-                      i32.const 142
-                      i32.const 10
-                      call $~lib/env/abort
-                      unreachable
-                    end
-                  end
-                end
-              end
-            end
-          end
-        end
-        local.get 3
+        i32.ge_u
+        br_if 0 (;@2;)
+        local.get 2
+        local.get 0
+        local.get 1
+        i32.add
+        i32.load8_u offset=4
+        i32.xor
+        i32.const 16777619
+        i32.mul
+        local.set 2
+        local.get 1
         i32.const 1
         i32.add
-        local.set 3
+        local.set 1
         br 1 (;@1;)
       end
     end
-    local.get 0
-    local.get 1
-    local.get 5
-    local.get 1
-    i32.load
-    call $~lib/string/String#substring
-    call $src/jsonEncoder/JSONEncoder#write
-    local.get 0
-    i32.const 14536
-    call $src/jsonEncoder/JSONEncoder#write)
-  (func $src/jsonEncoder/JSONEncoder#writeKey (type 7) (param i32 i32)
-    (local i32)
+    local.get 2)
+  (func $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#find (type 6) (param i32 i32 i32) (result i32)
     local.get 0
     i32.load
-    local.get 0
-    i32.load
-    i32.load offset=4
-    i32.const 1
-    i32.sub
-    call $~lib/array/Array<~lib/@graphprotocol/graph-ts/index/TypedMapEntry<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>>#__get
-    if  ;; label = @1
-      local.get 0
-      i32.load
-      local.get 0
-      i32.load
-      i32.load offset=4
-      i32.const 1
-      i32.sub
-      i32.const 0
-      call $~lib/array/Array<i32>#__set
-    else
-      local.get 0
-      i32.const 14528
-      call $src/jsonEncoder/JSONEncoder#write
-    end
-    local.get 1
-    i32.const 0
-    call $~lib/string/String.__eq
-    i32.eqz
-    local.tee 2
-    if (result i32)  ;; label = @1
-      local.get 1
-      i32.load
-      i32.const 0
-      i32.gt_s
-    else
-      local.get 2
-    end
-    if  ;; label = @1
-      local.get 0
-      local.get 1
-      call $src/jsonEncoder/JSONEncoder#writeString
-      local.get 0
-      i32.const 14936
-      call $src/jsonEncoder/JSONEncoder#write
-    end)
-  (func $src/jsonEncoder/JSONEncoder#pushObject (type 7) (param i32 i32)
-    local.get 0
-    local.get 1
-    call $src/jsonEncoder/JSONEncoder#writeKey
-    local.get 0
-    i32.const 14944
-    call $src/jsonEncoder/JSONEncoder#write
-    local.get 0
-    i32.load
-    i32.const 1
-    call $~lib/array/Array<~lib/string/String>#push)
-  (func $~lib/internal/number/decimalCount64 (type 9) (param i64) (result i32)
-    (local i32)
-    i32.const 64
-    local.get 0
-    i64.clz
-    i32.wrap_i64
-    i32.sub
-    i32.const 1233
-    i32.mul
-    i32.const 12
-    i32.shr_u
-    local.tee 1
-    local.get 0
-    i32.const 14872
-    i32.load
-    local.get 1
-    i32.const 10
-    i32.sub
-    i32.const 2
-    i32.shl
-    i32.add
-    i64.load32_u offset=8
-    i64.const 10000000000
-    i64.mul
-    i64.lt_u
-    i32.sub
-    i32.const 1
-    i32.add)
-  (func $~lib/internal/number/utoa_simple<u64> (type 10) (param i32 i64 i32)
-    (local i32)
-    loop  ;; label = @1
-      local.get 1
-      i64.const 10
-      i64.rem_u
-      i32.wrap_i64
-      local.set 3
-      local.get 1
-      i64.const 10
-      i64.div_u
-      local.set 1
-      local.get 0
-      local.get 2
-      i32.const 1
-      i32.sub
-      local.tee 2
-      i32.const 1
-      i32.shl
-      i32.add
-      local.get 3
-      i32.const 48
-      i32.add
-      i32.store16 offset=4
-      local.get 1
-      i64.const 0
-      i64.ne
-      br_if 0 (;@1;)
-    end)
-  (func $~lib/internal/number/itoa64 (type 9) (param i64) (result i32)
-    (local i32 i32 i32 i32)
-    local.get 0
-    i64.eqz
-    if  ;; label = @1
-      i32.const 6544
-      return
-    end
-    local.get 0
-    i64.const 0
-    i64.lt_s
-    local.tee 1
-    if  ;; label = @1
-      i64.const 0
-      local.get 0
-      i64.sub
-      local.set 0
-    end
-    local.get 0
-    i64.const 4294967295
-    i64.le_u
-    if  ;; label = @1
-      local.get 0
-      i32.wrap_i64
-      local.tee 2
-      call $~lib/internal/number/decimalCount32
-      local.get 1
-      i32.add
-      local.tee 4
-      call $~lib/internal/string/allocateUnsafe
-      local.tee 3
-      local.get 2
-      local.get 4
-      call $~lib/internal/number/utoa_simple<u32>
-    else
-      local.get 0
-      call $~lib/internal/number/decimalCount64
-      local.get 1
-      i32.add
-      local.tee 2
-      call $~lib/internal/string/allocateUnsafe
-      local.tee 3
-      local.get 0
-      local.get 2
-      call $~lib/internal/number/utoa_simple<u64>
-    end
-    local.get 1
-    if  ;; label = @1
-      local.get 3
-      i32.const 45
-      i32.store16 offset=4
-    end
-    local.get 3)
-  (func $~lib/array/Array<i32>#pop (type 5) (param i32)
-    (local i32)
+    local.get 2
     local.get 0
     i32.load offset=4
-    local.tee 1
-    i32.const 1
-    i32.lt_s
-    if  ;; label = @1
-      i32.const 0
-      i32.const 8
-      i32.const 244
-      i32.const 20
-      call $~lib/env/abort
-      unreachable
-    end
-    local.get 0
-    i32.load
-    local.get 1
-    i32.const 1
-    i32.sub
-    local.tee 1
+    i32.and
     i32.const 2
     i32.shl
     i32.add
     i32.load offset=8
-    drop
-    local.get 0
-    local.get 1
-    i32.store offset=4)
-  (func $src/jsonEncoder/JSONEncoder#popObject (type 5) (param i32)
-    local.get 0
-    i32.const 14968
-    call $src/jsonEncoder/JSONEncoder#write
-    local.get 0
-    i32.load
-    call $~lib/array/Array<i32>#pop)
-  (func $~lib/array/Array<~lib/string/String>#join (type 3) (param i32) (result i32)
-    (local i32 i32 i32 i32 i32 i32 i32)
-    local.get 0
-    i32.load offset=4
-    i32.const 1
-    i32.sub
-    local.tee 1
-    i32.const 0
-    i32.lt_s
-    if  ;; label = @1
-      i32.const 14584
-      return
-    end
-    local.get 0
-    i32.load
-    local.set 4
-    i32.const 14584
-    i32.load
-    local.set 5
-    local.get 1
-    i32.eqz
-    if  ;; label = @1
-      local.get 4
-      i32.load offset=8
-      return
-    end
-    local.get 5
-    i32.const 0
-    i32.ne
-    local.set 7
-    i32.const 0
     local.set 0
-    local.get 1
-    i32.const 1
-    i32.add
-    local.set 3
     loop  ;; label = @1
       local.get 0
-      local.get 3
-      i32.lt_s
       if  ;; label = @2
-        local.get 2
         local.get 0
-        i32.const 2
-        i32.shl
-        local.get 4
-        i32.add
         i32.load offset=8
-        i32.load
-        i32.add
-        local.set 2
-        local.get 0
         i32.const 1
-        i32.add
+        i32.and
+        i32.eqz
+        local.tee 2
+        if (result i32)  ;; label = @3
+          local.get 0
+          i32.load
+          local.get 1
+          call $~lib/string/String.__eq
+        else
+          local.get 2
+        end
+        if  ;; label = @3
+          local.get 0
+          return
+        end
+        local.get 0
+        i32.load offset=8
+        i32.const -2
+        i32.and
         local.set 0
         br 1 (;@1;)
       end
     end
-    i32.const 0
-    local.set 0
-    local.get 2
+    i32.const 0)
+  (func $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#has (type 1) (param i32 i32) (result i32)
+    local.get 0
     local.get 1
-    local.get 5
+    local.get 1
+    call $~lib/internal/hash/hashStr
+    call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#find
+    i32.const 0
+    i32.ne)
+  (func $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#rehash (type 7) (param i32 i32)
+    (local i32 i32 i32 i32 i32 i32 i32)
+    local.get 1
+    i32.const 1
+    i32.add
+    local.tee 3
+    i32.const 2
+    i32.shl
+    i32.const 0
+    call $~lib/arraybuffer/ArrayBuffer#constructor
+    local.set 5
+    local.get 3
+    f64.convert_i32_s
+    f64.const 0x1.5555555555555p+1 (;=2.66667;)
+    f64.mul
+    i32.trunc_f64_s
+    local.tee 7
+    i32.const 12
+    i32.mul
+    i32.const 1
+    call $~lib/arraybuffer/ArrayBuffer#constructor
+    local.set 6
+    local.get 0
+    i32.load offset=8
+    i32.const 8
+    i32.add
+    local.tee 3
+    local.get 0
+    i32.load offset=16
+    i32.const 12
     i32.mul
     i32.add
-    call $~lib/internal/string/allocateUnsafe
+    local.set 8
+    local.get 6
+    i32.const 8
+    i32.add
     local.set 2
-    i32.const 0
-    local.set 3
     loop  ;; label = @1
       local.get 3
-      local.get 1
-      i32.lt_s
+      local.get 8
+      i32.ne
       if  ;; label = @2
         local.get 3
-        i32.const 2
-        i32.shl
-        local.get 4
-        i32.add
+        local.tee 4
         i32.load offset=8
-        local.tee 6
+        i32.const 1
+        i32.and
+        i32.eqz
         if  ;; label = @3
           local.get 2
-          local.get 0
-          local.get 6
-          i32.const 0
-          local.get 6
+          local.get 4
           i32.load
-          local.tee 6
-          call $~lib/internal/string/copyUnsafe
-          local.get 0
-          local.get 6
-          i32.add
-          local.set 0
-        end
-        local.get 7
-        if  ;; label = @3
+          i32.store
           local.get 2
-          local.get 0
-          i32.const 14584
-          i32.const 0
+          local.get 4
+          i32.load offset=4
+          i32.store offset=4
+          local.get 2
           local.get 5
-          call $~lib/internal/string/copyUnsafe
-          local.get 0
-          local.get 5
+          local.get 4
+          i32.load
+          call $~lib/internal/hash/hashStr
+          local.get 1
+          i32.and
+          i32.const 2
+          i32.shl
           i32.add
-          local.set 0
+          local.tee 4
+          i32.load offset=8
+          i32.store offset=8
+          local.get 4
+          local.get 2
+          i32.store offset=8
+          local.get 2
+          i32.const 12
+          i32.add
+          local.set 2
         end
         local.get 3
-        i32.const 1
+        i32.const 12
         i32.add
         local.set 3
         br 1 (;@1;)
       end
     end
+    local.get 0
+    local.get 5
+    i32.store
+    local.get 0
     local.get 1
-    i32.const 2
-    i32.shl
-    local.get 4
-    i32.add
-    i32.load offset=8
-    local.tee 1
+    i32.store offset=4
+    local.get 0
+    local.get 6
+    i32.store offset=8
+    local.get 0
+    local.get 7
+    i32.store offset=12
+    local.get 0
+    local.get 0
+    i32.load offset=20
+    i32.store offset=16)
+  (func $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#set (type 4) (param i32 i32 i32)
+    (local i32 i32)
+    local.get 0
+    local.get 1
+    local.get 1
+    call $~lib/internal/hash/hashStr
+    local.tee 4
+    call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#find
+    local.tee 3
     if  ;; label = @1
+      local.get 3
       local.get 2
+      i32.store offset=4
+    else
       local.get 0
+      i32.load offset=16
+      local.get 0
+      i32.load offset=12
+      i32.eq
+      if  ;; label = @2
+        local.get 0
+        local.get 0
+        i32.load offset=20
+        local.get 0
+        i32.load offset=12
+        f64.convert_i32_s
+        f64.const 0x1.8p-1 (;=0.75;)
+        f64.mul
+        i32.trunc_f64_s
+        i32.lt_s
+        if (result i32)  ;; label = @3
+          local.get 0
+          i32.load offset=4
+        else
+          local.get 0
+          i32.load offset=4
+          i32.const 1
+          i32.shl
+          i32.const 1
+          i32.or
+        end
+        call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#rehash
+      end
+      local.get 0
+      i32.load offset=8
+      i32.const 8
+      i32.add
+      local.get 0
+      local.get 0
+      i32.load offset=16
+      local.tee 3
+      i32.const 1
+      i32.add
+      i32.store offset=16
+      local.get 3
+      i32.const 12
+      i32.mul
+      i32.add
+      local.tee 3
       local.get 1
-      i32.const 0
-      local.get 1
+      i32.store
+      local.get 3
+      local.get 2
+      i32.store offset=4
+      local.get 0
+      local.get 0
+      i32.load offset=20
+      i32.const 1
+      i32.add
+      i32.store offset=20
+      local.get 3
+      local.get 0
       i32.load
-      call $~lib/internal/string/copyUnsafe
-    end
-    local.get 2)
-  (func $src/jsonEncoder/JSONEncoder#toString (type 3) (param i32) (result i32)
+      local.get 4
+      local.get 0
+      i32.load offset=4
+      i32.and
+      i32.const 2
+      i32.shl
+      i32.add
+      local.tee 0
+      i32.load offset=8
+      i32.store offset=8
+      local.get 0
+      local.get 3
+      i32.store offset=8
+    end)
+  (func $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#get (type 1) (param i32 i32) (result i32)
     local.get 0
-    i32.load offset=4
-    call $~lib/array/Array<~lib/string/String>#join)
-  (func $src/mappings/betokenProxy/TestEntity#save (type 5) (param i32)
-    (local i32 i64)
-    call $src/jsonEncoder/JSONEncoder#constructor
-    local.tee 1
-    i32.const 14504
-    call $src/jsonEncoder/JSONEncoder#pushObject
-    local.get 0
-    i32.load offset=8
-    i64.extend_i32_s
-    local.set 2
     local.get 1
-    i32.const 14952
-    call $src/jsonEncoder/JSONEncoder#writeKey
+    local.get 1
+    call $~lib/internal/hash/hashStr
+    call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#find
+    local.tee 0
+    if (result i32)  ;; label = @1
+      local.get 0
+      i32.load offset=4
+    else
+      unreachable
+    end)
+  (func $~lib/subtest-as/assembly/store/store.set (type 4) (param i32 i32 i32)
+    global.get 18
+    local.get 0
+    call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#has
+    i32.eqz
+    if  ;; label = @1
+      global.get 18
+      local.get 0
+      call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#constructor
+      call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#set
+    end
+    global.get 18
+    local.get 0
+    call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#get
     local.get 1
     local.get 2
-    call $~lib/internal/number/itoa64
-    call $src/jsonEncoder/JSONEncoder#write
-    local.get 1
-    call $src/jsonEncoder/JSONEncoder#popObject
-    local.get 1
-    call $src/jsonEncoder/JSONEncoder#toString
-    i32.const 14976
-    local.get 0
-    call $~lib/@graphprotocol/graph-ts/index/store.set)
+    call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#set)
   (func $src/mappings/betokenProxy/handleTestEvent (type 5) (param i32)
+    i32.const 14568
     i32.const 0
     local.get 0
     i32.load
     local.get 0
     i32.load offset=4
     call $src/mappings/betokenProxy/TestEntity#constructor
-    call $src/mappings/betokenProxy/TestEntity#save)
+    local.tee 0
+    i32.load offset=4
+    local.get 0
+    call $~lib/subtest-as/assembly/store/store.set)
   (func $src/mappings/betokenProxy/Burger#constructor (type 6) (param i32 i32 i32) (result i32)
+    (local i32)
     local.get 0
     if (result i32)  ;; label = @1
       local.get 0
     else
-      i32.const 12
+      i32.const 8
       call $~lib/allocator/arena/__memory_allocate
     end
     call $~lib/@graphprotocol/graph-ts/index/Entity#constructor
     local.tee 0
     i32.const 0
     i32.store offset=4
-    local.get 0
+    call $~lib/@graphprotocol/graph-ts/index/Value#constructor
+    local.tee 3
     i32.const 0
-    i32.store offset=8
-    local.get 0
+    i32.store
+    local.get 3
     local.get 2
-    i32.store offset=8
+    i64.extend_i32_u
+    i64.store offset=8
+    local.get 0
+    i32.load
+    i32.const 0
+    i32.const 14592
+    local.get 3
+    call $src/mappings/betokenProxy/TestEvent#constructor
+    call $~lib/array/Array<~lib/string/String>#push
     local.get 0
     local.get 1
     i32.store offset=4
     local.get 0)
-  (func $src/mappings/betokenProxy/Burger#save (type 5) (param i32)
-    (local i32 i32)
-    call $src/jsonEncoder/JSONEncoder#constructor
-    local.tee 1
-    i32.const 14992
-    call $src/jsonEncoder/JSONEncoder#pushObject
-    local.get 0
-    i32.load offset=8
-    local.set 2
-    local.get 1
-    i32.const 15008
-    call $src/jsonEncoder/JSONEncoder#writeKey
-    local.get 1
-    local.get 2
-    call $src/jsonEncoder/JSONEncoder#writeString
-    local.get 1
-    call $src/jsonEncoder/JSONEncoder#popObject
-    local.get 1
-    call $src/jsonEncoder/JSONEncoder#toString
-    local.get 0
-    i32.load offset=4
-    local.get 0
-    call $~lib/@graphprotocol/graph-ts/index/store.set)
   (func $src/mappings/betokenProxy/handleNewBurger (type 5) (param i32)
+    i32.const 14552
     i32.const 0
     local.get 0
     i32.load
     local.get 0
     i32.load offset=4
     call $src/mappings/betokenProxy/Burger#constructor
-    call $src/mappings/betokenProxy/Burger#save)
+    local.tee 0
+    i32.load offset=4
+    local.get 0
+    call $~lib/subtest-as/assembly/store/store.set)
   (func $~lib/@graphprotocol/graph-ts/index/Value.fromString (type 3) (param i32) (result i32)
     (local i32)
     call $~lib/@graphprotocol/graph-ts/index/Value#constructor
@@ -4172,7 +3670,7 @@
     call $~lib/allocator/arena/__memory_allocate
     call $~lib/@graphprotocol/graph-ts/index/Entity#constructor
     local.tee 1
-    i32.const 15040
+    i32.const 14624
     local.get 0
     call $~lib/@graphprotocol/graph-ts/index/Value.fromString
     call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
@@ -4192,9 +3690,9 @@
     local.get 0
     i32.load
     if  ;; label = @1
-      i32.const 15048
-      i32.const 15120
-      i32.const 690
+      i32.const 14632
+      i32.const 14704
+      i32.const 685
       i32.const 4
       call $~lib/env/abort
       unreachable
@@ -4244,6 +3742,102 @@
     local.get 4
     local.get 3
     i32.store offset=12)
+  (func $~lib/internal/string/allocateUnsafe (type 3) (param i32) (result i32)
+    (local i32)
+    local.get 0
+    i32.const 0
+    i32.gt_s
+    local.tee 1
+    if (result i32)  ;; label = @1
+      local.get 0
+      i32.const 536870910
+      i32.le_s
+    else
+      local.get 1
+    end
+    i32.eqz
+    if  ;; label = @1
+      i32.const 0
+      i32.const 15112
+      i32.const 14
+      i32.const 2
+      call $~lib/env/abort
+      unreachable
+    end
+    local.get 0
+    i32.const 1
+    i32.shl
+    i32.const 4
+    i32.add
+    call $~lib/allocator/arena/__memory_allocate
+    local.tee 1
+    local.get 0
+    i32.store
+    local.get 1)
+  (func $~lib/internal/string/copyUnsafe (type 2) (param i32 i32 i32 i32)
+    local.get 0
+    local.get 1
+    i32.const 1
+    i32.shl
+    i32.add
+    i32.const 4
+    i32.add
+    local.get 2
+    i32.const 4
+    i32.add
+    local.get 3
+    i32.const 1
+    i32.shl
+    call $~lib/internal/memory/memmove)
+  (func $~lib/string/String#concat (type 1) (param i32 i32) (result i32)
+    (local i32 i32 i32)
+    local.get 0
+    i32.eqz
+    if  ;; label = @1
+      i32.const 0
+      i32.const 15072
+      i32.const 110
+      i32.const 4
+      call $~lib/env/abort
+      unreachable
+    end
+    local.get 0
+    i32.load
+    local.tee 3
+    local.get 1
+    i32.const 15056
+    local.get 1
+    select
+    local.tee 1
+    i32.load
+    local.tee 4
+    i32.add
+    local.tee 2
+    i32.eqz
+    if  ;; label = @1
+      i32.const 15104
+      return
+    end
+    local.get 2
+    call $~lib/internal/string/allocateUnsafe
+    local.tee 2
+    i32.const 0
+    local.get 0
+    local.get 3
+    call $~lib/internal/string/copyUnsafe
+    local.get 2
+    local.get 3
+    local.get 1
+    local.get 4
+    call $~lib/internal/string/copyUnsafe
+    local.get 2)
+  (func $~lib/string/String.__concat (type 1) (param i32 i32) (result i32)
+    local.get 0
+    i32.const 15056
+    local.get 0
+    select
+    local.get 1
+    call $~lib/string/String#concat)
   (func $~lib/@graphprotocol/graph-ts/index/SmartContract#call (type 6) (param i32 i32 i32) (result i32)
     local.get 0
     i32.load
@@ -4256,28 +3850,28 @@
     local.tee 0
     i32.eqz
     if  ;; label = @1
-      i32.const 15256
-      i32.const 15424
+      i32.const 14840
+      i32.const 15008
       call $~lib/string/String.__concat
       local.get 1
       call $~lib/string/String.__concat
-      i32.const 15472
+      i32.const 15168
       call $~lib/string/String.__concat
-      i32.const 15120
-      i32.const 1358
+      i32.const 14704
+      i32.const 1353
       i32.const 4
       call $~lib/env/abort
       unreachable
     end
     local.get 0)
   (func $generated/templates/MiniMeToken/MiniMeToken/MiniMeToken.bind (type 3) (param i32) (result i32)
-    i32.const 15544
+    i32.const 15240
     local.get 0
     call $generated/templates/BetokenFund/BetokenFund/BetokenFund#constructor)
   (func $generated/templates/BetokenFund/BetokenFund/BetokenFund#shareTokenAddr (type 3) (param i32) (result i32)
     local.get 0
-    i32.const 15576
-    i32.const 15616
+    i32.const 15272
+    i32.const 15312
     call $~lib/@graphprotocol/graph-ts/index/SmartContract#call
     i32.const 0
     call $~lib/array/Array<~lib/@graphprotocol/graph-ts/index/TypedMapEntry<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>>#__get
@@ -4299,9 +3893,9 @@
     end
     i32.eqz
     if  ;; label = @1
-      i32.const 15680
-      i32.const 15120
-      i32.const 717
+      i32.const 15376
+      i32.const 14704
+      i32.const 712
       i32.const 4
       call $~lib/env/abort
       unreachable
@@ -4335,9 +3929,9 @@
     i32.const 2
     i32.ne
     if  ;; label = @1
-      i32.const 15760
-      i32.const 15120
-      i32.const 1043
+      i32.const 15456
+      i32.const 14704
+      i32.const 1038
       i32.const 4
       call $~lib/env/abort
       unreachable
@@ -4347,13 +3941,13 @@
     i32.wrap_i64)
   (func $generated/schema/Fund#get:totalFundsInDAI (type 3) (param i32) (result i32)
     local.get 0
-    i32.const 15624
+    i32.const 15320
     call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#get
     call $~lib/@graphprotocol/graph-ts/index/Value#toBigDecimal)
   (func $generated/templates/MiniMeToken/MiniMeToken/MiniMeToken#totalSupply (type 3) (param i32) (result i32)
     local.get 0
-    i32.const 15904
-    i32.const 15944
+    i32.const 15600
+    i32.const 15640
     call $~lib/@graphprotocol/graph-ts/index/SmartContract#call
     i32.const 0
     call $~lib/array/Array<~lib/@graphprotocol/graph-ts/index/TypedMapEntry<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>>#__get
@@ -4628,10 +4222,55 @@
     i32.const 0)
   (func $generated/schema/Fund#set:sharesPrice (type 7) (param i32 i32)
     local.get 0
-    i32.const 15992
+    i32.const 15688
     local.get 1
     call $~lib/@graphprotocol/graph-ts/index/Value.fromBigDecimal
     call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set)
+  (func $~lib/array/Array<~lib/@graphprotocol/graph-ts/index/Value>#__set (type 4) (param i32 i32 i32)
+    (local i32)
+    local.get 1
+    local.get 0
+    i32.load
+    local.tee 3
+    i32.load
+    i32.const 2
+    i32.shr_u
+    i32.ge_u
+    if  ;; label = @1
+      local.get 1
+      i32.const 268435454
+      i32.ge_u
+      if  ;; label = @2
+        i32.const 0
+        i32.const 8
+        i32.const 107
+        i32.const 41
+        call $~lib/env/abort
+        unreachable
+      end
+      local.get 0
+      local.get 3
+      local.get 1
+      i32.const 1
+      i32.add
+      i32.const 2
+      i32.shl
+      call $~lib/internal/arraybuffer/reallocateUnsafe
+      local.tee 3
+      i32.store
+      local.get 0
+      local.get 1
+      i32.const 1
+      i32.add
+      i32.store offset=4
+    end
+    local.get 1
+    i32.const 2
+    i32.shl
+    local.get 3
+    i32.add
+    local.get 2
+    i32.store offset=8)
   (func $~lib/@graphprotocol/graph-ts/index/Value.fromArray (type 3) (param i32) (result i32)
     (local i32)
     call $~lib/@graphprotocol/graph-ts/index/Value#constructor
@@ -4662,7 +4301,7 @@
         local.get 1
         call $~lib/array/Array<~lib/@graphprotocol/graph-ts/index/TypedMapEntry<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>>#__get
         call $~lib/@graphprotocol/graph-ts/index/Value.fromString
-        call $~lib/array/Array<i32>#__set
+        call $~lib/array/Array<~lib/@graphprotocol/graph-ts/index/Value>#__set
         local.get 1
         i32.const 1
         i32.add
@@ -4674,7 +4313,7 @@
     call $~lib/@graphprotocol/graph-ts/index/Value.fromArray)
   (func $generated/schema/Fund#set:managers (type 7) (param i32 i32)
     local.get 0
-    i32.const 16192
+    i32.const 15888
     local.get 1
     call $~lib/@graphprotocol/graph-ts/index/Value.fromStringArray
     call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set)
@@ -4732,14 +4371,14 @@
         local.get 2
         i32.ne
         if  ;; label = @3
-          i32.const 16304
+          i32.const 16000
           local.get 0
           call $~lib/@graphprotocol/graph-ts/index/typeConversion.bytesToHex
           call $~lib/string/String.__concat
-          i32.const 16352
+          i32.const 16048
           call $~lib/string/String.__concat
-          i32.const 15120
-          i32.const 326
+          i32.const 14704
+          i32.const 321
           i32.const 8
           call $~lib/env/abort
           unreachable
@@ -4853,9 +4492,9 @@
     end
     i32.eqz
     if  ;; label = @1
-      i32.const 15680
-      i32.const 15120
-      i32.const 708
+      i32.const 15376
+      i32.const 14704
+      i32.const 703
       i32.const 4
       call $~lib/env/abort
       unreachable
@@ -4883,7 +4522,7 @@
         local.get 1
         call $~lib/array/Array<~lib/@graphprotocol/graph-ts/index/TypedMapEntry<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>>#__get
         call $~lib/@graphprotocol/graph-ts/index/Value.fromBigDecimal
-        call $~lib/array/Array<i32>#__set
+        call $~lib/array/Array<~lib/@graphprotocol/graph-ts/index/Value>#__set
         local.get 1
         i32.const 1
         i32.add
@@ -4895,7 +4534,7 @@
     call $~lib/@graphprotocol/graph-ts/index/Value.fromArray)
   (func $generated/schema/Fund#set:versionNum (type 7) (param i32 i32)
     local.get 0
-    i32.const 16464
+    i32.const 16160
     local.get 1
     call $~lib/@graphprotocol/graph-ts/index/Value.fromBigInt
     call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set)
@@ -4906,9 +4545,9 @@
     i32.const 20
     i32.ne
     if  ;; label = @1
-      i32.const 16536
-      i32.const 15120
-      i32.const 834
+      i32.const 16232
+      i32.const 14704
+      i32.const 829
       i32.const 4
       call $~lib/env/abort
       unreachable
@@ -4924,10 +4563,10 @@
     local.get 1)
   (func $generated/schema/Manager#get:kairoBalance (type 3) (param i32) (result i32)
     local.get 0
-    i32.const 16616
+    i32.const 16312
     call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#get
     call $~lib/@graphprotocol/graph-ts/index/Value#toBigDecimal)
-  (func $~lib/@graphprotocol/graph-ts/index/Value.fromBoolean (type 11) (result i32)
+  (func $~lib/@graphprotocol/graph-ts/index/Value.fromBoolean (type 8) (result i32)
     (local i32)
     call $~lib/@graphprotocol/graph-ts/index/Value#constructor
     local.tee 0
@@ -4941,9 +4580,9 @@
     local.get 0
     i32.load
     if  ;; label = @1
-      i32.const 17464
-      i32.const 15120
-      i32.const 1033
+      i32.const 17160
+      i32.const 14704
+      i32.const 1028
       i32.const 4
       call $~lib/env/abort
       unreachable
@@ -4954,13 +4593,13 @@
   (func $generated/schema/Manager#save (type 5) (param i32)
     (local i32)
     local.get 0
-    i32.const 15040
+    i32.const 14624
     call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#get
     local.tee 1
     i32.eqz
     if  ;; label = @1
-      i32.const 17096
-      i32.const 17184
+      i32.const 16792
+      i32.const 16880
       i32.const 23
       i32.const 4
       call $~lib/env/abort
@@ -4969,16 +4608,16 @@
     local.get 1
     i32.load
     if  ;; label = @1
-      i32.const 17232
-      i32.const 17336
+      i32.const 16928
+      i32.const 17032
       call $~lib/string/String.__concat
-      i32.const 17184
+      i32.const 16880
       i32.const 24
       i32.const 4
       call $~lib/env/abort
       unreachable
     end
-    i32.const 16488
+    i32.const 16184
     local.get 1
     call $~lib/@graphprotocol/graph-ts/index/Value#toString
     local.get 0
@@ -4989,9 +4628,9 @@
     i32.const 4
     i32.ne
     if  ;; label = @1
-      i32.const 17512
-      i32.const 15120
-      i32.const 1048
+      i32.const 17208
+      i32.const 14704
+      i32.const 1043
       i32.const 4
       call $~lib/env/abort
       unreachable
@@ -5022,7 +4661,7 @@
         local.get 0
         call $~lib/array/Array<~lib/@graphprotocol/graph-ts/index/TypedMapEntry<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>>#__get
         call $~lib/@graphprotocol/graph-ts/index/Value#toString
-        call $~lib/array/Array<i32>#__set
+        call $~lib/array/Array<~lib/@graphprotocol/graph-ts/index/Value>#__set
         local.get 0
         i32.const 1
         i32.add
@@ -5041,9 +4680,9 @@
     i32.const 7
     i32.ne
     if  ;; label = @1
-      i32.const 17560
-      i32.const 15120
-      i32.const 1038
+      i32.const 17256
+      i32.const 14704
+      i32.const 1033
       i32.const 4
       call $~lib/env/abort
       unreachable
@@ -5054,13 +4693,13 @@
   (func $generated/schema/Fund#save (type 5) (param i32)
     (local i32)
     local.get 0
-    i32.const 15040
+    i32.const 14624
     call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#get
     local.tee 1
     i32.eqz
     if  ;; label = @1
-      i32.const 17960
-      i32.const 17184
+      i32.const 17656
+      i32.const 16880
       i32.const 900
       i32.const 4
       call $~lib/env/abort
@@ -5069,30 +4708,30 @@
     local.get 1
     i32.load
     if  ;; label = @1
-      i32.const 18040
-      i32.const 17336
+      i32.const 17736
+      i32.const 17032
       call $~lib/string/String.__concat
-      i32.const 17184
+      i32.const 16880
       i32.const 901
       i32.const 4
       call $~lib/env/abort
       unreachable
     end
-    i32.const 15024
+    i32.const 14608
     local.get 1
     call $~lib/@graphprotocol/graph-ts/index/Value#toString
     local.get 0
     call $~lib/@graphprotocol/graph-ts/index/store.set)
   (func $src/mappings/betokenProxy/handleUpdatedFundAddress (type 5) (param i32)
     (local i32 i32 i32 i32 i32 i32 i32)
-    i32.const 15024
+    i32.const 14608
     global.get 11
     call $~lib/@graphprotocol/graph-ts/index/store.get
     local.tee 1
     if  ;; label = @1
       local.get 1
       local.get 1
-      i32.const 16464
+      i32.const 16160
       call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#get
       call $~lib/@graphprotocol/graph-ts/index/Value#toBigInt
       i32.const 1
@@ -5109,8 +4748,8 @@
       call $generated/BetokenProxy/BetokenProxy/UpdatedFundAddress__Params#get:_newFundAddr
       call $generated/templates/BetokenFund/BetokenFund/BetokenFund#constructor
       local.tee 3
-      i32.const 15200
-      i32.const 15248
+      i32.const 14784
+      i32.const 14832
       call $~lib/@graphprotocol/graph-ts/index/SmartContract#call
       i32.const 0
       call $~lib/array/Array<~lib/@graphprotocol/graph-ts/index/TypedMapEntry<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>>#__get
@@ -5122,10 +4761,10 @@
       call $generated/templates/MiniMeToken/MiniMeToken/MiniMeToken.bind
       local.set 2
       local.get 1
-      i32.const 15624
+      i32.const 15320
       local.get 3
-      i32.const 15624
-      i32.const 15672
+      i32.const 15320
+      i32.const 15368
       call $~lib/@graphprotocol/graph-ts/index/SmartContract#call
       i32.const 0
       call $~lib/array/Array<~lib/@graphprotocol/graph-ts/index/TypedMapEntry<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>>#__get
@@ -5134,16 +4773,16 @@
       call $~lib/@graphprotocol/graph-ts/index/Value.fromBigDecimal
       call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
       local.get 1
-      i32.const 15816
+      i32.const 15512
       local.get 1
       call $generated/schema/Fund#get:totalFundsInDAI
       call $~lib/@graphprotocol/graph-ts/index/Value.fromBigDecimal
       call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
       local.get 1
-      i32.const 15864
+      i32.const 15560
       local.get 3
-      i32.const 15864
-      i32.const 15896
+      i32.const 15560
+      i32.const 15592
       call $~lib/@graphprotocol/graph-ts/index/SmartContract#call
       i32.const 0
       call $~lib/array/Array<~lib/@graphprotocol/graph-ts/index/TypedMapEntry<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>>#__get
@@ -5152,7 +4791,7 @@
       call $~lib/@graphprotocol/graph-ts/index/Value.fromBigDecimal
       call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
       local.get 1
-      i32.const 15952
+      i32.const 15648
       local.get 6
       call $generated/templates/MiniMeToken/MiniMeToken/MiniMeToken#totalSupply
       call $src/utils/normalize
@@ -5178,32 +4817,32 @@
         call $generated/schema/Fund#set:sharesPrice
       end
       local.get 1
-      i32.const 16024
+      i32.const 15720
       local.get 2
       call $generated/templates/MiniMeToken/MiniMeToken/MiniMeToken#totalSupply
       call $src/utils/normalize
       call $~lib/@graphprotocol/graph-ts/index/Value.fromBigDecimal
       call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
       local.get 1
-      i32.const 16064
+      i32.const 15760
       i32.const 0
       call $~lib/array/Array<~lib/string/String>#constructor
       call $~lib/@graphprotocol/graph-ts/index/Value.fromStringArray
       call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
       local.get 1
-      i32.const 16104
+      i32.const 15800
       local.get 1
       call $generated/schema/Fund#get:totalFundsInDAI
       call $~lib/@graphprotocol/graph-ts/index/Value.fromBigDecimal
       call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
       local.get 1
-      i32.const 16120
+      i32.const 15816
       i32.const 0
       call $~lib/array/Array<~lib/string/String>#constructor
       call $~lib/@graphprotocol/graph-ts/index/Value.fromStringArray
       call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
       local.get 1
-      i32.const 16144
+      i32.const 15840
       global.get 7
       call $~lib/@graphprotocol/graph-ts/index/Value.fromBigDecimal
       call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
@@ -5212,10 +4851,10 @@
       call $~lib/array/Array<~lib/string/String>#constructor
       call $generated/schema/Fund#set:managers
       local.get 1
-      i32.const 16216
+      i32.const 15912
       local.get 3
-      i32.const 16216
-      i32.const 16256
+      i32.const 15912
+      i32.const 15952
       call $~lib/@graphprotocol/graph-ts/index/SmartContract#call
       i32.const 0
       call $~lib/array/Array<~lib/@graphprotocol/graph-ts/index/TypedMapEntry<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>>#__get
@@ -5223,11 +4862,11 @@
       call $~lib/@graphprotocol/graph-ts/index/Value.fromBigInt
       call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
       local.get 1
-      i32.const 16264
+      i32.const 15960
       global.get 2
       local.get 3
-      i32.const 16264
-      i32.const 16296
+      i32.const 15960
+      i32.const 15992
       call $~lib/@graphprotocol/graph-ts/index/SmartContract#call
       i32.const 0
       call $~lib/array/Array<~lib/@graphprotocol/graph-ts/index/TypedMapEntry<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>>#__get
@@ -5236,12 +4875,12 @@
       call $~lib/@graphprotocol/graph-ts/index/Value.fromString
       call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
       local.get 1
-      i32.const 16376
+      i32.const 16072
       global.get 6
       call $~lib/@graphprotocol/graph-ts/index/Value.fromBigInt
       call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
       local.get 1
-      i32.const 16424
+      i32.const 16120
       i32.const 0
       call $~lib/array/Array<~lib/string/String>#constructor
       call $~lib/@graphprotocol/graph-ts/index/Value.fromBigDecimalArray
@@ -5255,7 +4894,7 @@
         i32.load offset=4
         i32.lt_s
         if  ;; label = @3
-          i32.const 16488
+          i32.const 16184
           global.get 17
           local.get 5
           call $~lib/array/Array<~lib/@graphprotocol/graph-ts/index/TypedMapEntry<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>>#__get
@@ -5266,12 +4905,12 @@
             local.get 4
             call $generated/schema/Fund#constructor
             local.tee 2
-            i32.const 16616
+            i32.const 16312
             local.get 4
             call $~lib/@graphprotocol/graph-ts/index/typeConversion.stringToH160
             local.set 4
             local.get 6
-            i32.const 16512
+            i32.const 16208
             i32.const 1
             call $~lib/array/Array<~lib/string/String>#constructor
             local.tee 7
@@ -5288,26 +4927,26 @@
             call $~lib/@graphprotocol/graph-ts/index/Value.fromBigDecimal
             call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
             local.get 2
-            i32.const 16648
+            i32.const 16344
             local.get 2
             call $generated/schema/Manager#get:kairoBalance
             call $~lib/@graphprotocol/graph-ts/index/Value.fromBigDecimal
             call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
             local.get 2
-            i32.const 16696
+            i32.const 16392
             local.get 2
             call $generated/schema/Manager#get:kairoBalance
             call $~lib/@graphprotocol/graph-ts/index/Value.fromBigDecimal
             call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
             local.get 2
-            i32.const 16720
+            i32.const 16416
             global.get 7
             call $~lib/@graphprotocol/graph-ts/index/Value.fromBigDecimal
             call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
             local.get 2
-            i32.const 16744
+            i32.const 16440
             local.get 2
-            i32.const 16696
+            i32.const 16392
             call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#get
             call $~lib/@graphprotocol/graph-ts/index/Value#toBigDecimal
             global.get 13
@@ -5315,51 +4954,51 @@
             call $~lib/@graphprotocol/graph-ts/index/Value.fromBigDecimal
             call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
             local.get 2
-            i32.const 16776
+            i32.const 16472
             global.get 6
             call $~lib/@graphprotocol/graph-ts/index/Value.fromBigInt
             call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
             local.get 2
-            i32.const 16832
+            i32.const 16528
             i32.const 0
             call $~lib/array/Array<~lib/string/String>#constructor
             call $~lib/@graphprotocol/graph-ts/index/Value.fromStringArray
             call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
             local.get 2
-            i32.const 16864
+            i32.const 16560
             i32.const 0
             call $~lib/array/Array<~lib/string/String>#constructor
             call $~lib/@graphprotocol/graph-ts/index/Value.fromStringArray
             call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
             local.get 2
-            i32.const 16896
+            i32.const 16592
             i32.const 0
             call $~lib/array/Array<~lib/string/String>#constructor
             call $~lib/@graphprotocol/graph-ts/index/Value.fromStringArray
             call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
             local.get 2
-            i32.const 16928
+            i32.const 16624
             i32.const 0
             call $~lib/array/Array<~lib/string/String>#constructor
             call $~lib/@graphprotocol/graph-ts/index/Value.fromStringArray
             call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
             local.get 2
-            i32.const 16968
+            i32.const 16664
             i32.const 0
             call $~lib/array/Array<~lib/string/String>#constructor
             call $~lib/@graphprotocol/graph-ts/index/Value.fromStringArray
             call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
             local.get 2
-            i32.const 16984
+            i32.const 16680
             call $~lib/@graphprotocol/graph-ts/index/Value.fromBoolean
             call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
             local.get 2
-            i32.const 17016
+            i32.const 16712
             global.get 7
             call $~lib/@graphprotocol/graph-ts/index/Value.fromBigDecimal
             call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
             local.get 2
-            i32.const 17072
+            i32.const 16768
             i32.const 0
             call $~lib/array/Array<~lib/string/String>#constructor
             call $~lib/@graphprotocol/graph-ts/index/Value.fromStringArray
@@ -5367,12 +5006,12 @@
             local.get 2
             call $generated/schema/Manager#save
             local.get 1
-            i32.const 16192
+            i32.const 15888
             call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#get
             call $~lib/@graphprotocol/graph-ts/index/Value#toStringArray
             local.tee 4
             local.get 2
-            i32.const 15040
+            i32.const 14624
             call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#get
             call $~lib/@graphprotocol/graph-ts/index/Value#toString
             call $~lib/array/Array<~lib/string/String>#push
@@ -5390,7 +5029,7 @@
       local.get 3
       call $generated/templates/BetokenFund/BetokenFund/BetokenFund#shareTokenAddr
       local.set 2
-      i32.const 15544
+      i32.const 15240
       i32.const 1
       call $~lib/array/Array<~lib/string/String>#constructor
       local.tee 3
@@ -5402,7 +5041,7 @@
       call $~lib/@graphprotocol/graph-ts/index/DataSourceTemplate.create
     end
     local.get 1
-    i32.const 17608
+    i32.const 17304
     local.get 0
     call $generated/BetokenProxy/BetokenProxy/UpdatedFundAddress__Params#constructor
     call $generated/BetokenProxy/BetokenProxy/UpdatedFundAddress__Params#get:_newFundAddr
@@ -5410,51 +5049,51 @@
     call $~lib/@graphprotocol/graph-ts/index/Value.fromString
     call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
     local.get 1
-    i32.const 17632
+    i32.const 17328
     local.get 0
     i32.load offset=16
     i32.load offset=28
     call $~lib/@graphprotocol/graph-ts/index/Value.fromBigInt
     call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
     local.get 1
-    i32.const 17672
+    i32.const 17368
     call $~lib/@graphprotocol/graph-ts/index/Value.fromBoolean
     call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
     local.get 1
-    i32.const 17728
+    i32.const 17424
     call $~lib/@graphprotocol/graph-ts/index/Value.fromBoolean
     call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
     local.get 1
-    i32.const 17776
-    i32.const 14584
+    i32.const 17472
+    i32.const 15104
     call $~lib/@graphprotocol/graph-ts/index/Value.fromString
     call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
     local.get 1
-    i32.const 17808
+    i32.const 17504
     i32.const 0
     call $~lib/array/Array<~lib/string/String>#constructor
     call $~lib/@graphprotocol/graph-ts/index/Value.fromStringArray
     call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
     local.get 1
-    i32.const 17832
+    i32.const 17528
     i32.const 0
     call $~lib/array/Array<~lib/string/String>#constructor
     call $~lib/@graphprotocol/graph-ts/index/Value.fromStringArray
     call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
     local.get 1
-    i32.const 17856
+    i32.const 17552
     i32.const 0
     call $~lib/array/Array<~lib/string/String>#constructor
     call $~lib/@graphprotocol/graph-ts/index/Value.fromBigDecimalArray
     call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
     local.get 1
-    i32.const 17880
+    i32.const 17576
     i32.const 0
     call $~lib/array/Array<~lib/string/String>#constructor
     call $~lib/@graphprotocol/graph-ts/index/Value.fromBigDecimalArray
     call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
     local.get 1
-    i32.const 17912
+    i32.const 17608
     global.get 7
     call $~lib/@graphprotocol/graph-ts/index/Value.fromBigDecimal
     call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#set
@@ -5474,101 +5113,275 @@
     call $~lib/array/Array<src/fulcrum_tokens/pTokenInfo>#__unchecked_set
     local.get 1
     call $~lib/@graphprotocol/graph-ts/index/DataSourceTemplate.create)
-  (func $~lib/string/String#charAt (type 3) (param i32) (result i32)
+  (func $~lib/subtest-as/assembly/store/store.assertFieldEq (type 7) (param i32 i32)
     (local i32)
+    global.get 18
+    i32.const 14552
+    call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#has
+    local.tee 2
+    if  ;; label = @1
+      global.get 18
+      i32.const 14552
+      call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#get
+      local.get 0
+      call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#has
+      local.set 2
+    end
+    local.get 2
+    if (result i32)  ;; label = @1
+      global.get 18
+      i32.const 14552
+      call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#get
+      local.get 0
+      call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#get
+      i32.const 14592
+      call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#get
+    else
+      local.get 2
+    end
+    if  ;; label = @1
+      global.get 18
+      i32.const 14552
+      call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#get
+      local.get 0
+      call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#get
+      i32.const 14592
+      call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#get
+      call $~lib/@graphprotocol/graph-ts/index/Value#toString
+      local.get 1
+      call $~lib/string/String.__eq
+      drop
+    end)
+  (func $src/test/tests/runTests~anonymous|0 (type 0)
+    (local i32 i32)
+    i32.const 0
+    i32.const 17944
+    i32.const 4
+    call $src/mappings/betokenProxy/TestEntity#constructor
+    local.set 0
+    i32.const 0
+    i32.const 17976
+    i32.const 18000
+    call $src/mappings/betokenProxy/Burger#constructor
+    local.set 1
+    i32.const 14568
+    local.get 0
+    i32.load offset=4
+    local.get 0
+    call $~lib/subtest-as/assembly/store/store.set
+    i32.const 14552
+    local.get 1
+    i32.load offset=4
+    local.get 1
+    call $~lib/subtest-as/assembly/store/store.set
+    i32.const 17976
+    i32.const 18000
+    call $~lib/subtest-as/assembly/store/store.assertFieldEq
+    global.get 18
+    call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#clear)
+  (func $~lib/subtest-as/assembly/index/test (type 5) (param i32)
+    i32.const 0
+    global.set 22
+    local.get 0
+    call_indirect (type 0))
+  (func $src/test/tests/runTests~anonymous|1 (type 0)
+    (local i32)
+    i32.const 14552
+    i32.const 0
+    i32.const 18120
+    i32.const 18000
+    call $src/mappings/betokenProxy/Burger#constructor
+    local.tee 0
+    i32.load offset=4
+    local.get 0
+    call $~lib/subtest-as/assembly/store/store.set
+    i32.const 0
+    i32.const 17944
+    i32.const 4
+    call $src/mappings/betokenProxy/TestEvent#constructor
+    call $src/mappings/betokenProxy/handleTestEvent
+    i32.const 0
+    i32.const 18144
+    i32.const 18168
+    call $src/mappings/betokenProxy/TestEvent#constructor
+    call $src/mappings/betokenProxy/handleNewBurger
+    i32.const 0
+    i32.const 18184
+    i32.const 18208
+    call $src/mappings/betokenProxy/TestEvent#constructor
+    call $src/mappings/betokenProxy/handleNewBurger
+    i32.const 18120
+    i32.const 18000
+    call $~lib/subtest-as/assembly/store/store.assertFieldEq
+    i32.const 18144
+    i32.const 18168
+    call $~lib/subtest-as/assembly/store/store.assertFieldEq
+    i32.const 18184
+    i32.const 18208
+    call $~lib/subtest-as/assembly/store/store.assertFieldEq
+    global.get 18
+    call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#clear)
+  (func $~lib/subtest-as/assembly/store/store.get (type 8) (result i32)
+    global.get 18
+    i32.const 14552
+    call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#has
+    if  ;; label = @1
+      global.get 18
+      i32.const 14552
+      call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#get
+      i32.const 18344
+      call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#get
+      return
+    end
+    i32.const 0
+    i32.const 18376
+    i32.const 10
+    i32.const 8
+    call $~lib/env/abort
+    unreachable)
+  (func $~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>#delete (type 5) (param i32)
+    (local i32 i32)
     local.get 0
     i32.const 18344
+    i32.const 18344
+    call $~lib/internal/hash/hashStr
+    call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#find
+    local.tee 1
+    i32.eqz
+    if  ;; label = @1
+      return
+    end
+    local.get 1
+    local.get 1
+    i32.load offset=8
+    i32.const 1
+    i32.or
+    i32.store offset=8
+    local.get 0
+    local.get 0
+    i32.load offset=20
+    i32.const 1
+    i32.sub
+    i32.store offset=20
+    local.get 0
+    i32.load offset=4
+    i32.const 1
+    i32.shr_u
+    local.tee 1
+    i32.const 1
+    i32.add
+    i32.const 4
+    local.get 0
+    i32.load offset=20
+    local.tee 2
+    i32.const 4
+    local.get 2
+    i32.gt_u
+    select
+    i32.ge_u
+    local.tee 2
+    if (result i32)  ;; label = @1
+      local.get 0
+      i32.load offset=20
+      local.get 0
+      i32.load offset=12
+      f64.convert_i32_s
+      f64.const 0x1.8p-1 (;=0.75;)
+      f64.mul
+      i32.trunc_f64_s
+      i32.lt_s
+    else
+      local.get 2
+    end
+    if  ;; label = @1
+      local.get 0
+      local.get 1
+      call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#rehash
+    end)
+  (func $~lib/subtest-as/assembly/store/store.remove (type 0)
+    (local i32)
+    global.get 18
+    i32.const 14552
+    call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#has
+    local.tee 0
+    if (result i32)  ;; label = @1
+      global.get 18
+      i32.const 14552
+      call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#get
+      i32.const 18344
+      call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#has
+    else
+      local.get 0
+    end
+    if  ;; label = @1
+      global.get 18
+      i32.const 14552
+      call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#get
+      call $~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>#delete
+    end)
+  (func $src/test/tests/runTests~anonymous|2 (type 0)
+    (local i32)
+    i32.const 14552
+    i32.const 0
+    i32.const 18344
+    i32.const 18352
+    call $src/mappings/betokenProxy/Burger#constructor
+    local.tee 0
+    i32.load offset=4
+    local.get 0
+    call $~lib/subtest-as/assembly/store/store.set
+    i32.const 18344
+    call $~lib/subtest-as/assembly/store/store.get
+    i32.const 14592
+    call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#get
+    call $~lib/@graphprotocol/graph-ts/index/Value#toString
+    call $~lib/subtest-as/assembly/store/store.assertFieldEq
+    call $~lib/subtest-as/assembly/store/store.remove
+    global.get 18
+    call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#clear)
+  (func $~lib/string/String#charCodeAt (type 1) (param i32 i32) (result i32)
+    local.get 0
+    i32.eqz
+    if  ;; label = @1
+      i32.const 0
+      i32.const 15072
+      i32.const 75
+      i32.const 4
+      call $~lib/env/abort
+      unreachable
+    end
+    local.get 1
+    local.get 0
     i32.load
     i32.ge_u
     if  ;; label = @1
-      i32.const 14584
+      i32.const -1
       return
     end
-    i32.const 1
-    call $~lib/internal/string/allocateUnsafe
-    local.tee 1
     local.get 0
+    local.get 1
     i32.const 1
     i32.shl
-    i32.const 18344
     i32.add
-    i32.load16_u offset=4
-    i32.store16 offset=4
-    local.get 1)
-  (func $~lib/@graphprotocol/graph-ts/index/format (type 3) (param i32) (result i32)
-    (local i32 i32 i32 i32 i32)
-    i32.const 14584
+    i32.load16_u offset=4)
+  (func $~lib/subtest-as/assembly/index/createHash (type 3) (param i32) (result i32)
+    (local i32 i32)
+    i32.const 18448
+    i32.const 18480
+    call $~lib/string/String.__concat
     local.set 2
-    i32.const 18344
-    i32.load
-    local.set 4
     loop  ;; label = @1
       local.get 1
-      local.get 4
+      local.get 0
+      i32.load offset=4
       i32.lt_s
       if  ;; label = @2
+        local.get 2
+        local.get 0
         local.get 1
-        local.get 4
-        i32.const 1
-        i32.sub
-        i32.lt_s
-        local.tee 3
-        if  ;; label = @3
-          i32.const 18344
-          local.get 1
-          call $~lib/string/String#charCodeAt
-          i32.const 123
-          i32.eq
-          local.set 3
-        end
-        local.get 3
-        if (result i32)  ;; label = @3
-          i32.const 18344
-          local.get 1
-          i32.const 1
-          i32.add
-          call $~lib/string/String#charCodeAt
-          i32.const 125
-          i32.eq
-        else
-          local.get 3
-        end
-        if  ;; label = @3
-          local.get 5
-          local.get 0
-          i32.load offset=4
-          i32.ge_s
-          if (result i32)  ;; label = @4
-            i32.const 0
-            i32.const 15120
-            i32.const 106
-            i32.const 8
-            call $~lib/env/abort
-            unreachable
-          else
-            local.get 2
-            local.get 0
-            local.get 5
-            local.tee 2
-            i32.const 1
-            i32.add
-            local.set 5
-            local.get 2
-            call $~lib/array/Array<~lib/@graphprotocol/graph-ts/index/TypedMapEntry<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>>#__get
-            call $~lib/string/String.__concat
-            local.set 2
-            local.get 1
-            i32.const 1
-            i32.add
-          end
-          local.set 1
-        else
-          local.get 2
-          local.get 1
-          call $~lib/string/String#charAt
-          call $~lib/string/String.__concat
-          local.set 2
-        end
+        call $~lib/array/Array<~lib/@graphprotocol/graph-ts/index/TypedMapEntry<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>>#__get
+        call $~lib/string/String#concat
+        drop
         local.get 1
         i32.const 1
         i32.add
@@ -5576,83 +5389,365 @@
         br 1 (;@1;)
       end
     end
-    local.get 2)
-  (func $~lib/@graphprotocol/graph-ts/index/log.info (type 5) (param i32)
-    i32.const 3
-    local.get 0
-    call $~lib/@graphprotocol/graph-ts/index/format
-    call $~lib/@graphprotocol/graph-ts/index/log.log)
-  (func $src/test/tests/runTests~anonymous|0 (type 0)
-    (local i32 i32)
     i32.const 0
-    i32.const 18248
-    i32.const 4
-    call $src/mappings/betokenProxy/TestEntity#constructor
-    i32.const 0
-    i32.const 18280
-    i32.const 18304
-    call $src/mappings/betokenProxy/Burger#constructor
     local.set 1
-    call $src/mappings/betokenProxy/TestEntity#save
-    i32.const 18376
-    call $~lib/@graphprotocol/graph-ts/index/log.info
-    local.get 1
-    call $src/mappings/betokenProxy/Burger#save
-    i32.const 18392
-    call $~lib/@graphprotocol/graph-ts/index/log.info
-    i32.const 14992
-    i32.const 18280
-    i32.const 15008
-    i32.const 18304
-    call $~lib/@graphprotocol/graph-ts/index/store.assertFieldEq
-    call $~lib/@graphprotocol/graph-ts/index/store.clear)
-  (func $node_modules/subtest-as/assembly/index/test (type 5) (param i32)
+    local.get 2
+    i32.load
+    i32.eqz
+    if  ;; label = @1
+      i32.const 0
+      return
+    end
     i32.const 0
-    global.set 18
+    local.set 0
+    loop  ;; label = @1
+      local.get 0
+      local.get 2
+      i32.load
+      i32.lt_s
+      if  ;; label = @2
+        local.get 2
+        local.get 0
+        call $~lib/string/String#charCodeAt
+        local.get 1
+        i32.const 5
+        i32.shl
+        local.get 1
+        i32.sub
+        i32.add
+        local.set 1
+        local.get 0
+        i32.const 1
+        i32.add
+        local.set 0
+        br 1 (;@1;)
+      end
+    end
+    local.get 1)
+  (func $~lib/internal/hash/hash32 (type 3) (param i32) (result i32)
     local.get 0
-    call_indirect (type 0))
-  (func $src/test/tests/runTests~anonymous|1 (type 0)
+    i32.const 255
+    i32.and
+    i32.const -2128831035
+    i32.xor
+    i32.const 16777619
+    i32.mul
+    local.get 0
+    i32.const 8
+    i32.shr_u
+    i32.const 255
+    i32.and
+    i32.xor
+    i32.const 16777619
+    i32.mul
+    local.get 0
+    i32.const 16
+    i32.shr_u
+    i32.const 255
+    i32.and
+    i32.xor
+    i32.const 16777619
+    i32.mul
+    local.get 0
+    i32.const 24
+    i32.shr_u
+    i32.xor
+    i32.const 16777619
+    i32.mul)
+  (func $~lib/map/Map<i32_~lib/string/String>#find (type 6) (param i32 i32 i32) (result i32)
+    local.get 0
+    i32.load
+    local.get 2
+    local.get 0
+    i32.load offset=4
+    i32.and
+    i32.const 2
+    i32.shl
+    i32.add
+    i32.load offset=8
+    local.set 0
+    loop  ;; label = @1
+      local.get 0
+      if  ;; label = @2
+        local.get 0
+        i32.load offset=8
+        i32.const 1
+        i32.and
+        i32.eqz
+        local.tee 2
+        if (result i32)  ;; label = @3
+          local.get 0
+          i32.load
+          local.get 1
+          i32.eq
+        else
+          local.get 2
+        end
+        if  ;; label = @3
+          local.get 0
+          return
+        end
+        local.get 0
+        i32.load offset=8
+        i32.const -2
+        i32.and
+        local.set 0
+        br 1 (;@1;)
+      end
+    end
+    i32.const 0)
+  (func $~lib/map/Map<i32_~lib/string/String>#rehash (type 7) (param i32 i32)
+    (local i32 i32 i32 i32 i32 i32 i32)
+    local.get 1
+    i32.const 1
+    i32.add
+    local.tee 3
+    i32.const 2
+    i32.shl
     i32.const 0
+    call $~lib/arraybuffer/ArrayBuffer#constructor
+    local.set 5
+    local.get 3
+    f64.convert_i32_s
+    f64.const 0x1.5555555555555p+1 (;=2.66667;)
+    f64.mul
+    i32.trunc_f64_s
+    local.tee 7
+    i32.const 12
+    i32.mul
+    i32.const 1
+    call $~lib/arraybuffer/ArrayBuffer#constructor
+    local.set 6
+    local.get 0
+    i32.load offset=8
+    i32.const 8
+    i32.add
+    local.tee 3
+    local.get 0
+    i32.load offset=16
+    i32.const 12
+    i32.mul
+    i32.add
+    local.set 8
+    local.get 6
+    i32.const 8
+    i32.add
+    local.set 2
+    loop  ;; label = @1
+      local.get 3
+      local.get 8
+      i32.ne
+      if  ;; label = @2
+        local.get 3
+        local.tee 4
+        i32.load offset=8
+        i32.const 1
+        i32.and
+        i32.eqz
+        if  ;; label = @3
+          local.get 2
+          local.get 4
+          i32.load
+          i32.store
+          local.get 2
+          local.get 4
+          i32.load offset=4
+          i32.store offset=4
+          local.get 2
+          local.get 5
+          local.get 4
+          i32.load
+          call $~lib/internal/hash/hash32
+          local.get 1
+          i32.and
+          i32.const 2
+          i32.shl
+          i32.add
+          local.tee 4
+          i32.load offset=8
+          i32.store offset=8
+          local.get 4
+          local.get 2
+          i32.store offset=8
+          local.get 2
+          i32.const 12
+          i32.add
+          local.set 2
+        end
+        local.get 3
+        i32.const 12
+        i32.add
+        local.set 3
+        br 1 (;@1;)
+      end
+    end
+    local.get 0
+    local.get 5
+    i32.store
+    local.get 0
+    local.get 1
+    i32.store offset=4
+    local.get 0
+    local.get 6
+    i32.store offset=8
+    local.get 0
+    local.get 7
+    i32.store offset=12
+    local.get 0
+    local.get 0
+    i32.load offset=20
+    i32.store offset=16)
+  (func $~lib/map/Map<i32_~lib/string/String>#set (type 7) (param i32 i32)
+    (local i32 i32)
+    local.get 0
+    local.get 1
+    local.get 1
+    call $~lib/internal/hash/hash32
+    local.tee 3
+    call $~lib/map/Map<i32_~lib/string/String>#find
+    local.tee 2
+    if  ;; label = @1
+      local.get 2
+      i32.const 18576
+      i32.store offset=4
+    else
+      local.get 0
+      i32.load offset=16
+      local.get 0
+      i32.load offset=12
+      i32.eq
+      if  ;; label = @2
+        local.get 0
+        local.get 0
+        i32.load offset=20
+        local.get 0
+        i32.load offset=12
+        f64.convert_i32_s
+        f64.const 0x1.8p-1 (;=0.75;)
+        f64.mul
+        i32.trunc_f64_s
+        i32.lt_s
+        if (result i32)  ;; label = @3
+          local.get 0
+          i32.load offset=4
+        else
+          local.get 0
+          i32.load offset=4
+          i32.const 1
+          i32.shl
+          i32.const 1
+          i32.or
+        end
+        call $~lib/map/Map<i32_~lib/string/String>#rehash
+      end
+      local.get 0
+      i32.load offset=8
+      i32.const 8
+      i32.add
+      local.get 0
+      local.get 0
+      i32.load offset=16
+      local.tee 2
+      i32.const 1
+      i32.add
+      i32.store offset=16
+      local.get 2
+      i32.const 12
+      i32.mul
+      i32.add
+      local.tee 2
+      local.get 1
+      i32.store
+      local.get 2
+      i32.const 18576
+      i32.store offset=4
+      local.get 0
+      local.get 0
+      i32.load offset=20
+      i32.const 1
+      i32.add
+      i32.store offset=20
+      local.get 2
+      local.get 0
+      i32.load
+      local.get 3
+      local.get 0
+      i32.load offset=4
+      i32.and
+      i32.const 2
+      i32.shl
+      i32.add
+      local.tee 0
+      i32.load offset=8
+      i32.store offset=8
+      local.get 0
+      local.get 2
+      i32.store offset=8
+    end)
+  (func $~lib/subtest-as/assembly/index/callFunction (type 8) (result i32)
+    (local i32 i32)
+    i32.const 18648
+    call $~lib/subtest-as/assembly/index/createHash
+    local.tee 0
+    local.set 1
+    global.get 19
+    local.get 1
+    local.get 1
+    call $~lib/internal/hash/hash32
+    call $~lib/map/Map<i32_~lib/string/String>#find
+    if  ;; label = @1
+      global.get 19
+      local.get 0
+      local.get 0
+      call $~lib/internal/hash/hash32
+      call $~lib/map/Map<i32_~lib/string/String>#find
+      local.tee 0
+      if (result i32)  ;; label = @2
+        local.get 0
+        i32.load offset=4
+      else
+        unreachable
+      end
+      return
+    end
+    i32.const 18656
     i32.const 18480
-    i32.const 18304
-    call $src/mappings/betokenProxy/Burger#constructor
-    call $src/mappings/betokenProxy/Burger#save
-    i32.const 0
-    i32.const 18248
-    i32.const 4
-    call $src/mappings/betokenProxy/TestEvent#constructor
-    call $src/mappings/betokenProxy/handleTestEvent
-    i32.const 0
-    i32.const 18504
-    i32.const 18528
-    call $src/mappings/betokenProxy/TestEvent#constructor
-    call $src/mappings/betokenProxy/handleNewBurger
-    i32.const 0
-    i32.const 18544
+    call $~lib/string/String.__concat
+    i32.const 18712
+    call $~lib/string/String.__concat
+    i32.const 18448
+    call $~lib/string/String.__concat
+    i32.const 18760
+    call $~lib/string/String.__concat)
+  (func $src/test/tests/runTests~anonymous|3 (type 0)
+    (local i32)
     i32.const 18568
-    call $src/mappings/betokenProxy/TestEvent#constructor
-    call $src/mappings/betokenProxy/handleNewBurger
-    i32.const 14992
-    i32.const 18480
-    i32.const 15008
-    i32.const 18304
-    call $~lib/@graphprotocol/graph-ts/index/store.assertFieldEq
-    i32.const 14992
-    i32.const 18504
-    i32.const 15008
-    i32.const 18528
-    call $~lib/@graphprotocol/graph-ts/index/store.assertFieldEq
-    i32.const 14992
-    i32.const 18544
-    i32.const 15008
-    i32.const 18568
-    call $~lib/@graphprotocol/graph-ts/index/store.assertFieldEq
-    call $~lib/@graphprotocol/graph-ts/index/store.clear)
+    call $~lib/subtest-as/assembly/index/createHash
+    local.set 0
+    global.get 19
+    local.get 0
+    call $~lib/map/Map<i32_~lib/string/String>#set
+    i32.const 18576
+    call $~lib/subtest-as/assembly/index/callFunction
+    call $~lib/string/String.__eq
+    i32.eqz
+    if  ;; label = @1
+      i32.const 0
+      i32.const 18824
+      i32.const 63
+      i32.const 6
+      call $~lib/env/abort
+      unreachable
+    end)
   (func $src/test/tests/runTests (type 0)
     i32.const 1
-    call $node_modules/subtest-as/assembly/index/test
+    call $~lib/subtest-as/assembly/index/test
     i32.const 2
-    call $node_modules/subtest-as/assembly/index/test)
+    call $~lib/subtest-as/assembly/index/test
+    i32.const 3
+    call $~lib/subtest-as/assembly/index/test
+    i32.const 4
+    call $~lib/subtest-as/assembly/index/test)
   (func $~lib/internal/memory/memcmp (type 6) (param i32 i32 i32) (result i32)
     (local i32)
     local.get 0
@@ -5713,11 +5808,15 @@
     global.get 0
     global.set 1)
   (func $start (type 0)
-    i32.const 18616
+    i32.const 18864
     global.set 0
     global.get 0
     global.set 1
-    call $start:src/utils)
+    call $start:src/utils
+    call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#constructor
+    global.set 18
+    call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#constructor
+    global.set 19)
   (func $null (type 0)
     nop)
   (func $TestEvent#get:id (type 3) (param i32) (result i32)
@@ -5734,14 +5833,7 @@
     local.get 0
     local.get 1
     i32.store offset=4)
-  (func $TestEntity#get:num (type 3) (param i32) (result i32)
-    local.get 0
-    i32.load offset=8)
-  (func $TestEntity#set:num (type 7) (param i32 i32)
-    local.get 0
-    local.get 1
-    i32.store offset=8)
-  (table (;0;) 3 funcref)
+  (table (;0;) 5 funcref)
   (memory (;0;) 1)
   (global (;0;) (mut i32) (i32.const 0))
   (global (;1;) (mut i32) (i32.const 0))
@@ -5762,8 +5854,14 @@
   (global (;16;) (mut i32) (i32.const 0))
   (global (;17;) (mut i32) (i32.const 14496))
   (global (;18;) (mut i32) (i32.const 0))
+  (global (;19;) (mut i32) (i32.const 0))
+  (global (;20;) i32 (i32.const 14552))
+  (global (;21;) i32 (i32.const 14568))
+  (global (;22;) (mut i32) (i32.const 0))
   (export "memory" (memory 0))
   (export "table" (table 0))
+  (export "EntityTypes.BURGER" (global 20))
+  (export "EntityTypes.TEST_ENTITY" (global 21))
   (export "TestEvent#get:id" (func $TestEvent#get:id))
   (export "TestEvent#set:id" (func $TestEvent#set:id))
   (export "TestEvent#get:num" (func $TestEvent#get:num))
@@ -5780,9 +5878,6 @@
   (export "TestEntity#merge" (func $~lib/@graphprotocol/graph-ts/index/Entity#merge))
   (export "TestEntity#get:id" (func $TestEvent#get:num))
   (export "TestEntity#set:id" (func $TestEvent#set:num))
-  (export "TestEntity#get:num" (func $TestEntity#get:num))
-  (export "TestEntity#set:num" (func $TestEntity#set:num))
-  (export "TestEntity#save" (func $src/mappings/betokenProxy/TestEntity#save))
   (export "handleTestEvent" (func $src/mappings/betokenProxy/handleTestEvent))
   (export "NewFruitEvent#get:id" (func $TestEvent#get:id))
   (export "NewFruitEvent#set:id" (func $TestEvent#set:id))
@@ -5805,9 +5900,6 @@
   (export "Burger#merge" (func $~lib/@graphprotocol/graph-ts/index/Entity#merge))
   (export "Burger#get:id" (func $TestEvent#get:num))
   (export "Burger#set:id" (func $TestEvent#set:num))
-  (export "Burger#get:name" (func $TestEntity#get:num))
-  (export "Burger#set:name" (func $TestEntity#set:num))
-  (export "Burger#save" (func $src/mappings/betokenProxy/Burger#save))
   (export "handleNewBurger" (func $src/mappings/betokenProxy/handleNewBurger))
   (export "handleUpdatedFundAddress" (func $src/mappings/betokenProxy/handleUpdatedFundAddress))
   (export "runTests" (func $src/test/tests/runTests))
@@ -5816,7 +5908,7 @@
   (export "memory.free" (func $~lib/memory/memory.free))
   (export "memory.reset" (func $~lib/memory/memory.reset))
   (start $start)
-  (elem (;0;) (i32.const 0) func $null $src/test/tests/runTests~anonymous|0 $src/test/tests/runTests~anonymous|1)
+  (elem (;0;) (i32.const 0) func $null $src/test/tests/runTests~anonymous|0 $src/test/tests/runTests~anonymous|1 $src/test/tests/runTests~anonymous|2 $src/test/tests/runTests~anonymous|3)
   (data (;0;) (i32.const 8) "\0d\00\00\00~\00l\00i\00b\00/\00a\00r\00r\00a\00y\00.\00t\00s")
   (data (;1;) (i32.const 40) "\1c\00\00\00~\00l\00i\00b\00/\00i\00n\00t\00e\00r\00n\00a\00l\00/\00a\00r\00r\00a\00y\00b\00u\00f\00f\00e\00r\00.\00t\00s")
   (data (;2;) (i32.const 104) "\0c\00\00\00I\00N\00T\00E\00R\00M\00I\00S\00S\00I\00O\00N")
@@ -5991,118 +6083,111 @@
   (data (;171;) (i32.const 13896) "*\00\00\000\00x\000\009\007\002\003\007\005\00c\000\008\006\00a\006\006\009\00f\00c\00d\007\00b\00a\003\002\007\004\006\008\009\000\002\007\00a\00c\008\004\004\00e\001\00c\005")
   (data (;172;) (i32.const 13984) "L\01\00\00\00\00\00\00\18\1a\00\00p\1a\00\00\c8\1a\00\00 \1b\00\00x\1b\00\00\d0\1b\00\00(\1c\00\00\80\1c\00\00\d8\1c\00\000\1d\00\00\88\1d\00\00\e0\1d\00\008\1e\00\00\90\1e\00\00\e8\1e\00\00@\1f\00\00\98\1f\00\00\f0\1f\00\00H \00\00\a0 \00\00\f8 \00\00P!\00\00\a8!\00\00\00\22\00\00X\22\00\00\b0\22\00\00\08#\00\00`#\00\00\b8#\00\00\10$\00\00h$\00\00\c0$\00\00\18%\00\00p%\00\00\c8%\00\00 &\00\00x&\00\00\d0&\00\00('\00\00\80'\00\00\d8'\00\000(\00\00\88(\00\00\e0(\00\008)\00\00\90)\00\00\e8)\00\00@*\00\00\98*\00\00\f0*\00\00H+\00\00\a0+\00\00\f8+\00\00P,\00\00\a8,\00\00\00-\00\00X-\00\00\b0-\00\00\08.\00\00`.\00\00\b8.\00\00\10/\00\00h/\00\00\c0/\00\00\180\00\00p0\00\00\c80\00\00 1\00\00x1\00\00\d01\00\00(2\00\00\802\00\00\d82\00\0003\00\00\883\00\00\e03\00\0084\00\00\904\00\00\e84\00\00@5\00\00\985\00\00\f05\00\00H6")
   (data (;173;) (i32.const 14496) "\a06\00\00S")
-  (data (;174;) (i32.const 14504) "\0a\00\00\00T\00e\00s\00t\00E\00n\00t\00i\00t\00y")
-  (data (;175;) (i32.const 14528) "\01\00\00\00,")
-  (data (;176;) (i32.const 14536) "\01\00\00\00\22")
-  (data (;177;) (i32.const 14544) "\0e\00\00\00~\00l\00i\00b\00/\00s\00t\00r\00i\00n\00g\00.\00t\00s")
-  (data (;178;) (i32.const 14576) "\01\00\00\00\5c")
-  (data (;179;) (i32.const 14592) "\17\00\00\00~\00l\00i\00b\00/\00i\00n\00t\00e\00r\00n\00a\00l\00/\00s\00t\00r\00i\00n\00g\00.\00t\00s")
-  (data (;180;) (i32.const 14648) "\02\00\00\00\5c\00\22")
-  (data (;181;) (i32.const 14656) "\02\00\00\00\5c\00\5c")
-  (data (;182;) (i32.const 14664) "\01\00\00\00\08")
-  (data (;183;) (i32.const 14672) "\02\00\00\00\5c\00b")
-  (data (;184;) (i32.const 14680) "\01\00\00\00\0a")
-  (data (;185;) (i32.const 14688) "\02\00\00\00\5c\00n")
-  (data (;186;) (i32.const 14696) "\01\00\00\00\0d")
-  (data (;187;) (i32.const 14704) "\02\00\00\00\5c\00r")
-  (data (;188;) (i32.const 14712) "\01\00\00\00\09")
-  (data (;189;) (i32.const 14720) "\02\00\00\00\5c\00t")
-  (data (;190;) (i32.const 14728) "$\00\00\00U\00n\00s\00u\00p\00p\00o\00r\00t\00e\00d\00 \00c\00o\00n\00t\00r\00o\00l\00 \00c\00h\00a\00r\00a\00c\00t\00e\00r\00 \00c\00o\00d\00e\00:\00 ")
-  (data (;191;) (i32.const 14808) "(\00\00\00\00\00\00\00\01\00\00\00\0a\00\00\00d\00\00\00\e8\03\00\00\10'\00\00\a0\86\01\00@B\0f\00\80\96\98\00\00\e1\f5\05\00\ca\9a;")
-  (data (;192;) (i32.const 14872) "\d89\00\00\0a")
-  (data (;193;) (i32.const 14880) "\04\00\00\00n\00u\00l\00l")
-  (data (;194;) (i32.const 14896) "\12\00\00\00s\00r\00c\00/\00j\00s\00o\00n\00E\00n\00c\00o\00d\00e\00r\00.\00t\00s")
-  (data (;195;) (i32.const 14936) "\01\00\00\00:")
-  (data (;196;) (i32.const 14944) "\01\00\00\00{")
-  (data (;197;) (i32.const 14952) "\03\00\00\00n\00u\00m")
-  (data (;198;) (i32.const 14968) "\01\00\00\00}")
-  (data (;199;) (i32.const 14976) "\06\00\00\00t\00e\00s\00t\00I\00d")
-  (data (;200;) (i32.const 14992) "\06\00\00\00B\00u\00r\00g\00e\00r")
-  (data (;201;) (i32.const 15008) "\04\00\00\00n\00a\00m\00e")
-  (data (;202;) (i32.const 15024) "\04\00\00\00F\00u\00n\00d")
-  (data (;203;) (i32.const 15040) "\02\00\00\00i\00d")
-  (data (;204;) (i32.const 15048) "\1f\00\00\00E\00t\00h\00e\00r\00e\00u\00m\00V\00a\00l\00u\00e\00 \00i\00s\00 \00n\00o\00t\00 \00a\00n\00 \00a\00d\00d\00r\00e\00s\00s")
-  (data (;205;) (i32.const 15120) "%\00\00\00~\00l\00i\00b\00/\00@\00g\00r\00a\00p\00h\00p\00r\00o\00t\00o\00c\00o\00l\00/\00g\00r\00a\00p\00h\00-\00t\00s\00/\00i\00n\00d\00e\00x\00.\00t\00s")
-  (data (;206;) (i32.const 15200) "\10\00\00\00c\00o\00n\00t\00r\00o\00l\00T\00o\00k\00e\00n\00A\00d\00d\00r")
-  (data (;207;) (i32.const 15248) "\88;")
-  (data (;208;) (i32.const 15256) "Q\00\00\00C\00a\00l\00l\00 \00r\00e\00v\00e\00r\00t\00e\00d\00,\00 \00p\00r\00o\00b\00a\00b\00l\00y\00 \00b\00e\00c\00a\00u\00s\00e\00 \00a\00n\00 \00`\00a\00s\00s\00e\00r\00t\00`\00 \00o\00r\00 \00`\00r\00e\00q\00u\00i\00r\00e\00`\00 \00i\00n\00 \00t\00h\00e\00 \00c\00o\00n\00t\00r\00a\00c\00t\00 \00f\00a\00i\00l\00e\00d\00,\00 ")
-  (data (;209;) (i32.const 15424) "\14\00\00\00c\00o\00n\00s\00i\00d\00e\00r\00 \00u\00s\00i\00n\00g\00 \00`\00t\00r\00y\00_")
-  (data (;210;) (i32.const 15472) " \00\00\00`\00 \00t\00o\00 \00h\00a\00n\00d\00l\00e\00 \00t\00h\00i\00s\00 \00i\00n\00 \00t\00h\00e\00 \00m\00a\00p\00p\00i\00n\00g\00.")
-  (data (;211;) (i32.const 15544) "\0b\00\00\00M\00i\00n\00i\00M\00e\00T\00o\00k\00e\00n")
-  (data (;212;) (i32.const 15576) "\0e\00\00\00s\00h\00a\00r\00e\00T\00o\00k\00e\00n\00A\00d\00d\00r")
-  (data (;213;) (i32.const 15616) "\f8<")
-  (data (;214;) (i32.const 15624) "\0f\00\00\00t\00o\00t\00a\00l\00F\00u\00n\00d\00s\00I\00n\00D\00A\00I")
-  (data (;215;) (i32.const 15672) "0=")
-  (data (;216;) (i32.const 15680) "$\00\00\00E\00t\00h\00e\00r\00e\00u\00m\00V\00a\00l\00u\00e\00 \00i\00s\00 \00n\00o\00t\00 \00a\00n\00 \00i\00n\00t\00 \00o\00r\00 \00u\00i\00n\00t\00.")
-  (data (;217;) (i32.const 15760) "\1a\00\00\00V\00a\00l\00u\00e\00 \00i\00s\00 \00n\00o\00t\00 \00a\00 \00B\00i\00g\00D\00e\00c\00i\00m\00a\00l\00.")
-  (data (;218;) (i32.const 15816) "\16\00\00\00t\00o\00t\00a\00l\00F\00u\00n\00d\00s\00A\00t\00P\00h\00a\00s\00e\00S\00t\00a\00r\00t")
-  (data (;219;) (i32.const 15864) "\0a\00\00\00k\00a\00i\00r\00o\00P\00r\00i\00c\00e")
-  (data (;220;) (i32.const 15896) "\10>")
-  (data (;221;) (i32.const 15904) "\0b\00\00\00t\00o\00t\00a\00l\00S\00u\00p\00p\00l\00y")
-  (data (;222;) (i32.const 15944) "@>")
-  (data (;223;) (i32.const 15952) "\10\00\00\00k\00a\00i\00r\00o\00T\00o\00t\00a\00l\00S\00u\00p\00p\00l\00y")
-  (data (;224;) (i32.const 15992) "\0b\00\00\00s\00h\00a\00r\00e\00s\00P\00r\00i\00c\00e")
-  (data (;225;) (i32.const 16024) "\11\00\00\00s\00h\00a\00r\00e\00s\00T\00o\00t\00a\00l\00S\00u\00p\00p\00l\00y")
-  (data (;226;) (i32.const 16064) "\12\00\00\00s\00h\00a\00r\00e\00s\00P\00r\00i\00c\00e\00H\00i\00s\00t\00o\00r\00y")
-  (data (;227;) (i32.const 16104) "\03\00\00\00a\00u\00m")
-  (data (;228;) (i32.const 16120) "\0a\00\00\00a\00u\00m\00H\00i\00s\00t\00o\00r\00y")
-  (data (;229;) (i32.const 16144) "\14\00\00\00c\00y\00c\00l\00e\00T\00o\00t\00a\00l\00C\00o\00m\00m\00i\00s\00s\00i\00o\00n")
-  (data (;230;) (i32.const 16192) "\08\00\00\00m\00a\00n\00a\00g\00e\00r\00s")
-  (data (;231;) (i32.const 16216) "\0b\00\00\00c\00y\00c\00l\00e\00N\00u\00m\00b\00e\00r")
-  (data (;232;) (i32.const 16256) "x?")
-  (data (;233;) (i32.const 16264) "\0a\00\00\00c\00y\00c\00l\00e\00P\00h\00a\00s\00e")
-  (data (;234;) (i32.const 16296) "\a0?")
-  (data (;235;) (i32.const 16304) "\14\00\00\00o\00v\00e\00r\00f\00l\00o\00w\00 \00c\00o\00n\00v\00e\00r\00t\00i\00n\00g\00 ")
-  (data (;236;) (i32.const 16352) "\07\00\00\00 \00t\00o\00 \00u\003\002")
-  (data (;237;) (i32.const 16376) "\15\00\00\00s\00t\00a\00r\00t\00T\00i\00m\00e\00O\00f\00C\00y\00c\00l\00e\00P\00h\00a\00s\00e")
-  (data (;238;) (i32.const 16424) "\0f\00\00\00c\00y\00c\00l\00e\00R\00O\00I\00H\00i\00s\00t\00o\00r\00y")
-  (data (;239;) (i32.const 16464) "\0a\00\00\00v\00e\00r\00s\00i\00o\00n\00N\00u\00m")
-  (data (;240;) (i32.const 16488) "\07\00\00\00M\00a\00n\00a\00g\00e\00r")
-  (data (;241;) (i32.const 16512) "\09\00\00\00b\00a\00l\00a\00n\00c\00e\00O\00f")
-  (data (;242;) (i32.const 16536) "%\00\00\00A\00d\00d\00r\00e\00s\00s\00 \00m\00u\00s\00t\00 \00c\00o\00n\00t\00a\00i\00n\00 \00e\00x\00a\00c\00t\00l\00y\00 \002\000\00 \00b\00y\00t\00e\00s")
-  (data (;243;) (i32.const 16616) "\0c\00\00\00k\00a\00i\00r\00o\00B\00a\00l\00a\00n\00c\00e")
-  (data (;244;) (i32.const 16648) "\15\00\00\00k\00a\00i\00r\00o\00B\00a\00l\00a\00n\00c\00e\00W\00i\00t\00h\00S\00t\00a\00k\00e")
-  (data (;245;) (i32.const 16696) "\09\00\00\00b\00a\00s\00e\00S\00t\00a\00k\00e")
-  (data (;246;) (i32.const 16720) "\09\00\00\00r\00i\00s\00k\00T\00a\00k\00e\00n")
-  (data (;247;) (i32.const 16744) "\0d\00\00\00r\00i\00s\00k\00T\00h\00r\00e\00s\00h\00o\00l\00d")
-  (data (;248;) (i32.const 16776) "\18\00\00\00l\00a\00s\00t\00C\00o\00m\00m\00i\00s\00s\00i\00o\00n\00R\00e\00d\00e\00m\00p\00t\00i\00o\00n")
-  (data (;249;) (i32.const 16832) "\0b\00\00\00b\00a\00s\00i\00c\00O\00r\00d\00e\00r\00s")
-  (data (;250;) (i32.const 16864) "\0d\00\00\00f\00u\00l\00c\00r\00u\00m\00O\00r\00d\00e\00r\00s")
-  (data (;251;) (i32.const 16896) "\0e\00\00\00c\00o\00m\00p\00o\00u\00n\00d\00O\00r\00d\00e\00r\00s")
-  (data (;252;) (i32.const 16928) "\11\00\00\00c\00o\00m\00m\00i\00s\00s\00i\00o\00n\00H\00i\00s\00t\00o\00r\00y")
-  (data (;253;) (i32.const 16968) "\05\00\00\00v\00o\00t\00e\00s")
-  (data (;254;) (i32.const 16984) "\0d\00\00\00u\00p\00g\00r\00a\00d\00e\00S\00i\00g\00n\00a\00l")
-  (data (;255;) (i32.const 17016) "\17\00\00\00t\00o\00t\00a\00l\00C\00o\00m\00m\00i\00s\00s\00i\00o\00n\00R\00e\00c\00e\00i\00v\00e\00d")
-  (data (;256;) (i32.const 17072) "\0a\00\00\00r\00o\00i\00H\00i\00s\00t\00o\00r\00y")
-  (data (;257;) (i32.const 17096) "(\00\00\00C\00a\00n\00n\00o\00t\00 \00s\00a\00v\00e\00 \00M\00a\00n\00a\00g\00e\00r\00 \00e\00n\00t\00i\00t\00y\00 \00w\00i\00t\00h\00o\00u\00t\00 \00a\00n\00 \00I\00D")
-  (data (;258;) (i32.const 17184) "\13\00\00\00g\00e\00n\00e\00r\00a\00t\00e\00d\00/\00s\00c\00h\00e\00m\00a\00.\00t\00s")
-  (data (;259;) (i32.const 17232) "/\00\00\00C\00a\00n\00n\00o\00t\00 \00s\00a\00v\00e\00 \00M\00a\00n\00a\00g\00e\00r\00 \00e\00n\00t\00i\00t\00y\00 \00w\00i\00t\00h\00 \00n\00o\00n\00-\00s\00t\00r\00i\00n\00g\00 \00I\00D\00.\00 ")
-  (data (;260;) (i32.const 17336) ";\00\00\00C\00o\00n\00s\00i\00d\00e\00r\00i\00n\00g\00 \00u\00s\00i\00n\00g\00 \00.\00t\00o\00H\00e\00x\00(\00)\00 \00t\00o\00 \00c\00o\00n\00v\00e\00r\00t\00 \00t\00h\00e\00 \00\22\00i\00d\00\22\00 \00t\00o\00 \00a\00 \00s\00t\00r\00i\00n\00g\00.")
-  (data (;261;) (i32.const 17464) "\16\00\00\00V\00a\00l\00u\00e\00 \00i\00s\00 \00n\00o\00t\00 \00a\00 \00s\00t\00r\00i\00n\00g\00.")
-  (data (;262;) (i32.const 17512) "\16\00\00\00V\00a\00l\00u\00e\00 \00i\00s\00 \00n\00o\00t\00 \00a\00n\00 \00a\00r\00r\00a\00y\00.")
-  (data (;263;) (i32.const 17560) "\16\00\00\00V\00a\00l\00u\00e\00 \00i\00s\00 \00n\00o\00t\00 \00a\00 \00B\00i\00g\00I\00n\00t\00.")
-  (data (;264;) (i32.const 17608) "\07\00\00\00a\00d\00d\00r\00e\00s\00s")
-  (data (;265;) (i32.const 17632) "\12\00\00\00l\00a\00s\00t\00P\00r\00o\00c\00e\00s\00s\00e\00d\00B\00l\00o\00c\00k")
-  (data (;266;) (i32.const 17672) "\17\00\00\00h\00a\00s\00F\00i\00n\00a\00l\00i\00z\00e\00d\00N\00e\00x\00t\00V\00e\00r\00s\00i\00o\00n")
-  (data (;267;) (i32.const 17728) "\13\00\00\00u\00p\00g\00r\00a\00d\00e\00V\00o\00t\00i\00n\00g\00A\00c\00t\00i\00v\00e")
-  (data (;268;) (i32.const 17776) "\0b\00\00\00n\00e\00x\00t\00V\00e\00r\00s\00i\00o\00n")
-  (data (;269;) (i32.const 17808) "\09\00\00\00p\00r\00o\00p\00o\00s\00e\00r\00s")
-  (data (;270;) (i32.const 17832) "\0a\00\00\00c\00a\00n\00d\00i\00d\00a\00t\00e\00s")
-  (data (;271;) (i32.const 17856) "\08\00\00\00f\00o\00r\00V\00o\00t\00e\00s")
-  (data (;272;) (i32.const 17880) "\0c\00\00\00a\00g\00a\00i\00n\00s\00t\00V\00o\00t\00e\00s")
-  (data (;273;) (i32.const 17912) "\15\00\00\00u\00p\00g\00r\00a\00d\00e\00S\00i\00g\00n\00a\00l\00S\00t\00r\00e\00n\00g\00t\00h")
-  (data (;274;) (i32.const 17960) "%\00\00\00C\00a\00n\00n\00o\00t\00 \00s\00a\00v\00e\00 \00F\00u\00n\00d\00 \00e\00n\00t\00i\00t\00y\00 \00w\00i\00t\00h\00o\00u\00t\00 \00a\00n\00 \00I\00D")
-  (data (;275;) (i32.const 18040) ",\00\00\00C\00a\00n\00n\00o\00t\00 \00s\00a\00v\00e\00 \00F\00u\00n\00d\00 \00e\00n\00t\00i\00t\00y\00 \00w\00i\00t\00h\00 \00n\00o\00n\00-\00s\00t\00r\00i\00n\00g\00 \00I\00D\00.\00 ")
-  (data (;276;) (i32.const 18136) "4\00\00\00C\00a\00n\00 \00i\00n\00i\00t\00i\00a\00l\00i\00s\00e\00 \00s\00t\00o\00r\00e\00 \00w\00i\00t\00h\00 \00a\00n\00 \00a\00r\00r\00a\00y\00 \00o\00f\00 \00E\00n\00t\00i\00t\00y\00 \00o\00b\00j\00e\00c\00t\00s")
-  (data (;277;) (i32.const 18248) "\0c\00\00\00t\00e\00s\00t\00E\00n\00t\00i\00t\00y\00I\00d")
-  (data (;278;) (i32.const 18280) "\08\00\00\00b\00u\00r\00g\00e\00r\00I\00d")
-  (data (;279;) (i32.const 18304) "\12\00\00\00P\00u\00l\00l\00e\00d\00 \00p\00o\00r\00k\00 \00b\00u\00r\00g\00e\00r")
-  (data (;280;) (i32.const 18344) "\09\00\00\00S\00a\00v\00i\00n\00g\00.\00.\00.")
-  (data (;281;) (i32.const 18376) "\c0G")
-  (data (;282;) (i32.const 18392) "\d0G")
-  (data (;283;) (i32.const 18400) "$\00\00\00C\00a\00n\00 \00c\00a\00l\00l\00 \00m\00a\00p\00p\00i\00n\00g\00s\00 \00w\00i\00t\00h\00 \00c\00u\00s\00t\00o\00m\00 \00e\00v\00e\00n\00t\00s")
-  (data (;284;) (i32.const 18480) "\09\00\00\00b\00u\00r\00g\00e\00r\00I\00d\000")
-  (data (;285;) (i32.const 18504) "\09\00\00\00b\00u\00r\00g\00e\00r\00I\00d\001")
-  (data (;286;) (i32.const 18528) "\06\00\00\00V\00e\00g\00g\00i\00e")
-  (data (;287;) (i32.const 18544) "\09\00\00\00b\00u\00r\00g\00e\00r\00I\00d\002")
-  (data (;288;) (i32.const 18568) "\16\00\00\00C\00h\00i\00k\00e\00n\00 \00t\00e\00r\00i\00y\00a\00k\00i\00 \00b\00u\00r\00g\00e\00r"))
+  (data (;174;) (i32.const 14504) "\13\00\00\00~\00l\00i\00b\00/\00a\00r\00r\00a\00y\00b\00u\00f\00f\00e\00r\00.\00t\00s")
+  (data (;175;) (i32.const 14552) "\06\00\00\00B\00u\00r\00g\00e\00r")
+  (data (;176;) (i32.const 14568) "\0a\00\00\00T\00e\00s\00t\00E\00n\00t\00i\00t\00y")
+  (data (;177;) (i32.const 14592) "\04\00\00\00n\00a\00m\00e")
+  (data (;178;) (i32.const 14608) "\04\00\00\00F\00u\00n\00d")
+  (data (;179;) (i32.const 14624) "\02\00\00\00i\00d")
+  (data (;180;) (i32.const 14632) "\1f\00\00\00E\00t\00h\00e\00r\00e\00u\00m\00V\00a\00l\00u\00e\00 \00i\00s\00 \00n\00o\00t\00 \00a\00n\00 \00a\00d\00d\00r\00e\00s\00s")
+  (data (;181;) (i32.const 14704) "%\00\00\00~\00l\00i\00b\00/\00@\00g\00r\00a\00p\00h\00p\00r\00o\00t\00o\00c\00o\00l\00/\00g\00r\00a\00p\00h\00-\00t\00s\00/\00i\00n\00d\00e\00x\00.\00t\00s")
+  (data (;182;) (i32.const 14784) "\10\00\00\00c\00o\00n\00t\00r\00o\00l\00T\00o\00k\00e\00n\00A\00d\00d\00r")
+  (data (;183;) (i32.const 14832) "\e89")
+  (data (;184;) (i32.const 14840) "Q\00\00\00C\00a\00l\00l\00 \00r\00e\00v\00e\00r\00t\00e\00d\00,\00 \00p\00r\00o\00b\00a\00b\00l\00y\00 \00b\00e\00c\00a\00u\00s\00e\00 \00a\00n\00 \00`\00a\00s\00s\00e\00r\00t\00`\00 \00o\00r\00 \00`\00r\00e\00q\00u\00i\00r\00e\00`\00 \00i\00n\00 \00t\00h\00e\00 \00c\00o\00n\00t\00r\00a\00c\00t\00 \00f\00a\00i\00l\00e\00d\00,\00 ")
+  (data (;185;) (i32.const 15008) "\14\00\00\00c\00o\00n\00s\00i\00d\00e\00r\00 \00u\00s\00i\00n\00g\00 \00`\00t\00r\00y\00_")
+  (data (;186;) (i32.const 15056) "\04\00\00\00n\00u\00l\00l")
+  (data (;187;) (i32.const 15072) "\0e\00\00\00~\00l\00i\00b\00/\00s\00t\00r\00i\00n\00g\00.\00t\00s")
+  (data (;188;) (i32.const 15112) "\17\00\00\00~\00l\00i\00b\00/\00i\00n\00t\00e\00r\00n\00a\00l\00/\00s\00t\00r\00i\00n\00g\00.\00t\00s")
+  (data (;189;) (i32.const 15168) " \00\00\00`\00 \00t\00o\00 \00h\00a\00n\00d\00l\00e\00 \00t\00h\00i\00s\00 \00i\00n\00 \00t\00h\00e\00 \00m\00a\00p\00p\00i\00n\00g\00.")
+  (data (;190;) (i32.const 15240) "\0b\00\00\00M\00i\00n\00i\00M\00e\00T\00o\00k\00e\00n")
+  (data (;191;) (i32.const 15272) "\0e\00\00\00s\00h\00a\00r\00e\00T\00o\00k\00e\00n\00A\00d\00d\00r")
+  (data (;192;) (i32.const 15312) "\c8;")
+  (data (;193;) (i32.const 15320) "\0f\00\00\00t\00o\00t\00a\00l\00F\00u\00n\00d\00s\00I\00n\00D\00A\00I")
+  (data (;194;) (i32.const 15369) "<")
+  (data (;195;) (i32.const 15376) "$\00\00\00E\00t\00h\00e\00r\00e\00u\00m\00V\00a\00l\00u\00e\00 \00i\00s\00 \00n\00o\00t\00 \00a\00n\00 \00i\00n\00t\00 \00o\00r\00 \00u\00i\00n\00t\00.")
+  (data (;196;) (i32.const 15456) "\1a\00\00\00V\00a\00l\00u\00e\00 \00i\00s\00 \00n\00o\00t\00 \00a\00 \00B\00i\00g\00D\00e\00c\00i\00m\00a\00l\00.")
+  (data (;197;) (i32.const 15512) "\16\00\00\00t\00o\00t\00a\00l\00F\00u\00n\00d\00s\00A\00t\00P\00h\00a\00s\00e\00S\00t\00a\00r\00t")
+  (data (;198;) (i32.const 15560) "\0a\00\00\00k\00a\00i\00r\00o\00P\00r\00i\00c\00e")
+  (data (;199;) (i32.const 15592) "\e0<")
+  (data (;200;) (i32.const 15600) "\0b\00\00\00t\00o\00t\00a\00l\00S\00u\00p\00p\00l\00y")
+  (data (;201;) (i32.const 15640) "\10=")
+  (data (;202;) (i32.const 15648) "\10\00\00\00k\00a\00i\00r\00o\00T\00o\00t\00a\00l\00S\00u\00p\00p\00l\00y")
+  (data (;203;) (i32.const 15688) "\0b\00\00\00s\00h\00a\00r\00e\00s\00P\00r\00i\00c\00e")
+  (data (;204;) (i32.const 15720) "\11\00\00\00s\00h\00a\00r\00e\00s\00T\00o\00t\00a\00l\00S\00u\00p\00p\00l\00y")
+  (data (;205;) (i32.const 15760) "\12\00\00\00s\00h\00a\00r\00e\00s\00P\00r\00i\00c\00e\00H\00i\00s\00t\00o\00r\00y")
+  (data (;206;) (i32.const 15800) "\03\00\00\00a\00u\00m")
+  (data (;207;) (i32.const 15816) "\0a\00\00\00a\00u\00m\00H\00i\00s\00t\00o\00r\00y")
+  (data (;208;) (i32.const 15840) "\14\00\00\00c\00y\00c\00l\00e\00T\00o\00t\00a\00l\00C\00o\00m\00m\00i\00s\00s\00i\00o\00n")
+  (data (;209;) (i32.const 15888) "\08\00\00\00m\00a\00n\00a\00g\00e\00r\00s")
+  (data (;210;) (i32.const 15912) "\0b\00\00\00c\00y\00c\00l\00e\00N\00u\00m\00b\00e\00r")
+  (data (;211;) (i32.const 15952) "H>")
+  (data (;212;) (i32.const 15960) "\0a\00\00\00c\00y\00c\00l\00e\00P\00h\00a\00s\00e")
+  (data (;213;) (i32.const 15992) "p>")
+  (data (;214;) (i32.const 16000) "\14\00\00\00o\00v\00e\00r\00f\00l\00o\00w\00 \00c\00o\00n\00v\00e\00r\00t\00i\00n\00g\00 ")
+  (data (;215;) (i32.const 16048) "\07\00\00\00 \00t\00o\00 \00u\003\002")
+  (data (;216;) (i32.const 16072) "\15\00\00\00s\00t\00a\00r\00t\00T\00i\00m\00e\00O\00f\00C\00y\00c\00l\00e\00P\00h\00a\00s\00e")
+  (data (;217;) (i32.const 16120) "\0f\00\00\00c\00y\00c\00l\00e\00R\00O\00I\00H\00i\00s\00t\00o\00r\00y")
+  (data (;218;) (i32.const 16160) "\0a\00\00\00v\00e\00r\00s\00i\00o\00n\00N\00u\00m")
+  (data (;219;) (i32.const 16184) "\07\00\00\00M\00a\00n\00a\00g\00e\00r")
+  (data (;220;) (i32.const 16208) "\09\00\00\00b\00a\00l\00a\00n\00c\00e\00O\00f")
+  (data (;221;) (i32.const 16232) "%\00\00\00A\00d\00d\00r\00e\00s\00s\00 \00m\00u\00s\00t\00 \00c\00o\00n\00t\00a\00i\00n\00 \00e\00x\00a\00c\00t\00l\00y\00 \002\000\00 \00b\00y\00t\00e\00s")
+  (data (;222;) (i32.const 16312) "\0c\00\00\00k\00a\00i\00r\00o\00B\00a\00l\00a\00n\00c\00e")
+  (data (;223;) (i32.const 16344) "\15\00\00\00k\00a\00i\00r\00o\00B\00a\00l\00a\00n\00c\00e\00W\00i\00t\00h\00S\00t\00a\00k\00e")
+  (data (;224;) (i32.const 16392) "\09\00\00\00b\00a\00s\00e\00S\00t\00a\00k\00e")
+  (data (;225;) (i32.const 16416) "\09\00\00\00r\00i\00s\00k\00T\00a\00k\00e\00n")
+  (data (;226;) (i32.const 16440) "\0d\00\00\00r\00i\00s\00k\00T\00h\00r\00e\00s\00h\00o\00l\00d")
+  (data (;227;) (i32.const 16472) "\18\00\00\00l\00a\00s\00t\00C\00o\00m\00m\00i\00s\00s\00i\00o\00n\00R\00e\00d\00e\00m\00p\00t\00i\00o\00n")
+  (data (;228;) (i32.const 16528) "\0b\00\00\00b\00a\00s\00i\00c\00O\00r\00d\00e\00r\00s")
+  (data (;229;) (i32.const 16560) "\0d\00\00\00f\00u\00l\00c\00r\00u\00m\00O\00r\00d\00e\00r\00s")
+  (data (;230;) (i32.const 16592) "\0e\00\00\00c\00o\00m\00p\00o\00u\00n\00d\00O\00r\00d\00e\00r\00s")
+  (data (;231;) (i32.const 16624) "\11\00\00\00c\00o\00m\00m\00i\00s\00s\00i\00o\00n\00H\00i\00s\00t\00o\00r\00y")
+  (data (;232;) (i32.const 16664) "\05\00\00\00v\00o\00t\00e\00s")
+  (data (;233;) (i32.const 16680) "\0d\00\00\00u\00p\00g\00r\00a\00d\00e\00S\00i\00g\00n\00a\00l")
+  (data (;234;) (i32.const 16712) "\17\00\00\00t\00o\00t\00a\00l\00C\00o\00m\00m\00i\00s\00s\00i\00o\00n\00R\00e\00c\00e\00i\00v\00e\00d")
+  (data (;235;) (i32.const 16768) "\0a\00\00\00r\00o\00i\00H\00i\00s\00t\00o\00r\00y")
+  (data (;236;) (i32.const 16792) "(\00\00\00C\00a\00n\00n\00o\00t\00 \00s\00a\00v\00e\00 \00M\00a\00n\00a\00g\00e\00r\00 \00e\00n\00t\00i\00t\00y\00 \00w\00i\00t\00h\00o\00u\00t\00 \00a\00n\00 \00I\00D")
+  (data (;237;) (i32.const 16880) "\13\00\00\00g\00e\00n\00e\00r\00a\00t\00e\00d\00/\00s\00c\00h\00e\00m\00a\00.\00t\00s")
+  (data (;238;) (i32.const 16928) "/\00\00\00C\00a\00n\00n\00o\00t\00 \00s\00a\00v\00e\00 \00M\00a\00n\00a\00g\00e\00r\00 \00e\00n\00t\00i\00t\00y\00 \00w\00i\00t\00h\00 \00n\00o\00n\00-\00s\00t\00r\00i\00n\00g\00 \00I\00D\00.\00 ")
+  (data (;239;) (i32.const 17032) ";\00\00\00C\00o\00n\00s\00i\00d\00e\00r\00i\00n\00g\00 \00u\00s\00i\00n\00g\00 \00.\00t\00o\00H\00e\00x\00(\00)\00 \00t\00o\00 \00c\00o\00n\00v\00e\00r\00t\00 \00t\00h\00e\00 \00\22\00i\00d\00\22\00 \00t\00o\00 \00a\00 \00s\00t\00r\00i\00n\00g\00.")
+  (data (;240;) (i32.const 17160) "\16\00\00\00V\00a\00l\00u\00e\00 \00i\00s\00 \00n\00o\00t\00 \00a\00 \00s\00t\00r\00i\00n\00g\00.")
+  (data (;241;) (i32.const 17208) "\16\00\00\00V\00a\00l\00u\00e\00 \00i\00s\00 \00n\00o\00t\00 \00a\00n\00 \00a\00r\00r\00a\00y\00.")
+  (data (;242;) (i32.const 17256) "\16\00\00\00V\00a\00l\00u\00e\00 \00i\00s\00 \00n\00o\00t\00 \00a\00 \00B\00i\00g\00I\00n\00t\00.")
+  (data (;243;) (i32.const 17304) "\07\00\00\00a\00d\00d\00r\00e\00s\00s")
+  (data (;244;) (i32.const 17328) "\12\00\00\00l\00a\00s\00t\00P\00r\00o\00c\00e\00s\00s\00e\00d\00B\00l\00o\00c\00k")
+  (data (;245;) (i32.const 17368) "\17\00\00\00h\00a\00s\00F\00i\00n\00a\00l\00i\00z\00e\00d\00N\00e\00x\00t\00V\00e\00r\00s\00i\00o\00n")
+  (data (;246;) (i32.const 17424) "\13\00\00\00u\00p\00g\00r\00a\00d\00e\00V\00o\00t\00i\00n\00g\00A\00c\00t\00i\00v\00e")
+  (data (;247;) (i32.const 17472) "\0b\00\00\00n\00e\00x\00t\00V\00e\00r\00s\00i\00o\00n")
+  (data (;248;) (i32.const 17504) "\09\00\00\00p\00r\00o\00p\00o\00s\00e\00r\00s")
+  (data (;249;) (i32.const 17528) "\0a\00\00\00c\00a\00n\00d\00i\00d\00a\00t\00e\00s")
+  (data (;250;) (i32.const 17552) "\08\00\00\00f\00o\00r\00V\00o\00t\00e\00s")
+  (data (;251;) (i32.const 17576) "\0c\00\00\00a\00g\00a\00i\00n\00s\00t\00V\00o\00t\00e\00s")
+  (data (;252;) (i32.const 17608) "\15\00\00\00u\00p\00g\00r\00a\00d\00e\00S\00i\00g\00n\00a\00l\00S\00t\00r\00e\00n\00g\00t\00h")
+  (data (;253;) (i32.const 17656) "%\00\00\00C\00a\00n\00n\00o\00t\00 \00s\00a\00v\00e\00 \00F\00u\00n\00d\00 \00e\00n\00t\00i\00t\00y\00 \00w\00i\00t\00h\00o\00u\00t\00 \00a\00n\00 \00I\00D")
+  (data (;254;) (i32.const 17736) ",\00\00\00C\00a\00n\00n\00o\00t\00 \00s\00a\00v\00e\00 \00F\00u\00n\00d\00 \00e\00n\00t\00i\00t\00y\00 \00w\00i\00t\00h\00 \00n\00o\00n\00-\00s\00t\00r\00i\00n\00g\00 \00I\00D\00.\00 ")
+  (data (;255;) (i32.const 17832) "4\00\00\00C\00a\00n\00 \00i\00n\00i\00t\00i\00a\00l\00i\00s\00e\00 \00s\00t\00o\00r\00e\00 \00w\00i\00t\00h\00 \00a\00n\00 \00a\00r\00r\00a\00y\00 \00o\00f\00 \00E\00n\00t\00i\00t\00y\00 \00o\00b\00j\00e\00c\00t\00s")
+  (data (;256;) (i32.const 17944) "\0c\00\00\00t\00e\00s\00t\00E\00n\00t\00i\00t\00y\00I\00d")
+  (data (;257;) (i32.const 17976) "\08\00\00\00b\00u\00r\00g\00e\00r\00I\00d")
+  (data (;258;) (i32.const 18000) "\12\00\00\00P\00u\00l\00l\00e\00d\00 \00p\00o\00r\00k\00 \00b\00u\00r\00g\00e\00r")
+  (data (;259;) (i32.const 18040) "$\00\00\00C\00a\00n\00 \00c\00a\00l\00l\00 \00m\00a\00p\00p\00i\00n\00g\00s\00 \00w\00i\00t\00h\00 \00c\00u\00s\00t\00o\00m\00 \00e\00v\00e\00n\00t\00s")
+  (data (;260;) (i32.const 18120) "\09\00\00\00b\00u\00r\00g\00e\00r\00I\00d\000")
+  (data (;261;) (i32.const 18144) "\09\00\00\00b\00u\00r\00g\00e\00r\00I\00d\001")
+  (data (;262;) (i32.const 18168) "\06\00\00\00V\00e\00g\00g\00i\00e")
+  (data (;263;) (i32.const 18184) "\09\00\00\00b\00u\00r\00g\00e\00r\00I\00d\002")
+  (data (;264;) (i32.const 18208) "\16\00\00\00C\00h\00i\00k\00e\00n\00 \00t\00e\00r\00i\00y\00a\00k\00i\00 \00b\00u\00r\00g\00e\00r")
+  (data (;265;) (i32.const 18256) "*\00\00\00C\00a\00n\00 \00a\00d\00d\00,\00 \00g\00e\00t\00,\00 \00a\00s\00s\00e\00r\00t\00 \00a\00n\00d\00 \00r\00e\00m\00o\00v\00e\00 \00f\00r\00o\00m\00 \00s\00t\00o\00r\00e")
+  (data (;266;) (i32.const 18344) "\02\00\00\002\003")
+  (data (;267;) (i32.const 18352) "\09\00\00\00H\00a\00m\00b\00u\00r\00g\00e\00r")
+  (data (;268;) (i32.const 18376) "!\00\00\00~\00l\00i\00b\00/\00s\00u\00b\00t\00e\00s\00t\00-\00a\00s\00/\00a\00s\00s\00e\00m\00b\00l\00y\00/\00s\00t\00o\00r\00e\00.\00t\00s")
+  (data (;269;) (i32.const 18448) "\0e\00\00\000\00x\000\000\000\000\000\001\002\003\004\001\002\003")
+  (data (;270;) (i32.const 18480) "\0f\00\00\00e\00x\00a\00m\00p\00l\00e\00F\00u\00n\00c\00N\00a\00m\00e")
+  (data (;271;) (i32.const 18520) "\06\00\00\00r\00a\00n\00d\00o\00m")
+  (data (;272;) (i32.const 18536) "\05\00\00\00P\00a\00r\00a\00m")
+  (data (;273;) (i32.const 18552) "\08\00\00\00\00\00\00\00XH\00\00hH")
+  (data (;274;) (i32.const 18568) "xH\00\00\02")
+  (data (;275;) (i32.const 18576) "\1a\00\00\00a\00c\00t\00u\00a\00l\00l\00y\00 \00r\00e\00t\00u\00r\00n\00e\00d\00 \00a\00 \00s\00t\00r\00i\00n\00g")
+  (data (;276;) (i32.const 18632) "\08\00\00\00\00\00\00\00XH\00\00hH")
+  (data (;277;) (i32.const 18648) "\c8H\00\00\02")
+  (data (;278;) (i32.const 18656) "\17\00\00\00N\00o\00 \00f\00u\00n\00c\00t\00i\00o\00n\00 \00w\00i\00t\00h\00 \00n\00a\00m\00e\00 \00'")
+  (data (;279;) (i32.const 18712) "\15\00\00\00'\00,\00 \00c\00o\00n\00t\00r\00a\00c\00t\00 \00a\00d\00d\00r\00e\00s\00s\00 \00'")
+  (data (;280;) (i32.const 18760) "\1c\00\00\00'\00 \00a\00n\00d\00 \00g\00i\00v\00e\00n\00 \00a\00r\00g\00u\00m\00e\00n\00t\00s\00 \00f\00o\00u\00n\00d\00.")
+  (data (;281;) (i32.const 18824) "\11\00\00\00s\00r\00c\00/\00t\00e\00s\00t\00/\00t\00e\00s\00t\00s\00.\00t\00s"))
