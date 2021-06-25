@@ -1336,7 +1336,7 @@ dependencies = [
 [[package]]
 name = "graph"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -1391,7 +1391,7 @@ dependencies = [
 [[package]]
 name = "graph-chain-arweave"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
 dependencies = [
  "anyhow",
  "graph",
@@ -1400,7 +1400,7 @@ dependencies = [
 [[package]]
 name = "graph-chain-ethereum"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1424,7 +1424,7 @@ dependencies = [
 [[package]]
 name = "graph-core"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
 dependencies = [
  "async-trait",
  "atomic_refcell",
@@ -1446,7 +1446,7 @@ dependencies = [
 [[package]]
 name = "graph-graphql"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -1465,7 +1465,7 @@ dependencies = [
 [[package]]
 name = "graph-mock"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
 dependencies = [
  "futures 0.1.31",
  "graph",
@@ -1478,7 +1478,7 @@ dependencies = [
 [[package]]
 name = "graph-node"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
 dependencies = [
  "clap",
  "crossbeam-channel",
@@ -1514,7 +1514,7 @@ dependencies = [
 [[package]]
 name = "graph-runtime-derive"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
 dependencies = [
  "anyhow",
  "quote 1.0.9",
@@ -1524,7 +1524,7 @@ dependencies = [
 [[package]]
 name = "graph-runtime-wasm"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1549,7 +1549,7 @@ dependencies = [
 [[package]]
 name = "graph-server-http"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
 dependencies = [
  "futures 0.1.31",
  "graph",
@@ -1563,7 +1563,7 @@ dependencies = [
 [[package]]
 name = "graph-server-index-node"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
 dependencies = [
  "futures 0.3.15",
  "graph",
@@ -1577,7 +1577,7 @@ dependencies = [
 [[package]]
 name = "graph-server-json-rpc"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
 dependencies = [
  "graph",
  "jsonrpc-http-server",
@@ -1588,7 +1588,7 @@ dependencies = [
 [[package]]
 name = "graph-server-metrics"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
 dependencies = [
  "futures 0.1.31",
  "graph",
@@ -1601,7 +1601,7 @@ dependencies = [
 [[package]]
 name = "graph-server-websocket"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
 dependencies = [
  "anyhow",
  "futures 0.1.31",
@@ -1618,7 +1618,7 @@ dependencies = [
 [[package]]
 name = "graph-store-postgres"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -1713,9 +1713,9 @@ dependencies = [
 
 [[package]]
 name = "hermit-abi"
-version = "0.1.18"
+version = "0.1.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "322f4de77956e22ed0e5032c359a0f1273f1f7f0d79bfa3b8ffbc730d7fbcc5c"
+checksum = "62b467343b94ba476dcb2500d242dadbb39557df889310ac77c5d99100aaac33"
 dependencies = [
  "libc",
 ]
@@ -4049,7 +4049,7 @@ dependencies = [
 [[package]]
 name = "test-store"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#bf5c9781c4ffe3b7cdaad77bb0fa05e918a47328"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
 dependencies = [
  "diesel",
  "graph",

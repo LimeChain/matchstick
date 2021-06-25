@@ -19,6 +19,7 @@
   (import "index" "store.set" (func $~lib/@graphprotocol/graph-ts/index/store.set (type 4)))
   (import "index" "dataSource.create" (func $~lib/@graphprotocol/graph-ts/index/dataSource.create (type 7)))
   (import "index" "bigInt.plus" (func $~lib/@graphprotocol/graph-ts/index/bigInt.plus (type 1)))
+  (import "log" "log.log" (func $~lib/subtest-as/assembly/log/log.log (type 7)))
   (func $~lib/internal/arraybuffer/computeSize (type 3) (param i32) (result i32)
     i32.const 1
     i32.const 32
@@ -3692,7 +3693,7 @@
     if  ;; label = @1
       i32.const 14632
       i32.const 14704
-      i32.const 685
+      i32.const 688
       i32.const 4
       call $~lib/env/abort
       unreachable
@@ -3858,7 +3859,7 @@
       i32.const 15168
       call $~lib/string/String.__concat
       i32.const 14704
-      i32.const 1353
+      i32.const 1356
       i32.const 4
       call $~lib/env/abort
       unreachable
@@ -3895,7 +3896,7 @@
     if  ;; label = @1
       i32.const 15376
       i32.const 14704
-      i32.const 712
+      i32.const 715
       i32.const 4
       call $~lib/env/abort
       unreachable
@@ -3931,7 +3932,7 @@
     if  ;; label = @1
       i32.const 15456
       i32.const 14704
-      i32.const 1038
+      i32.const 1041
       i32.const 4
       call $~lib/env/abort
       unreachable
@@ -4378,7 +4379,7 @@
           i32.const 16048
           call $~lib/string/String.__concat
           i32.const 14704
-          i32.const 321
+          i32.const 324
           i32.const 8
           call $~lib/env/abort
           unreachable
@@ -4494,7 +4495,7 @@
     if  ;; label = @1
       i32.const 15376
       i32.const 14704
-      i32.const 703
+      i32.const 706
       i32.const 4
       call $~lib/env/abort
       unreachable
@@ -4547,7 +4548,7 @@
     if  ;; label = @1
       i32.const 16232
       i32.const 14704
-      i32.const 829
+      i32.const 832
       i32.const 4
       call $~lib/env/abort
       unreachable
@@ -4582,7 +4583,7 @@
     if  ;; label = @1
       i32.const 17160
       i32.const 14704
-      i32.const 1028
+      i32.const 1031
       i32.const 4
       call $~lib/env/abort
       unreachable
@@ -4630,7 +4631,7 @@
     if  ;; label = @1
       i32.const 17208
       i32.const 14704
-      i32.const 1043
+      i32.const 1046
       i32.const 4
       call $~lib/env/abort
       unreachable
@@ -4682,7 +4683,7 @@
     if  ;; label = @1
       i32.const 17256
       i32.const 14704
-      i32.const 1033
+      i32.const 1036
       i32.const 4
       call $~lib/env/abort
       unreachable
@@ -5140,6 +5141,9 @@
       local.get 2
     end
     if  ;; label = @1
+      i32.const 3
+      i32.const 18040
+      call $~lib/subtest-as/assembly/log/log.log
       global.get 18
       i32.const 14552
       call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#get
@@ -5188,7 +5192,7 @@
     (local i32)
     i32.const 14552
     i32.const 0
-    i32.const 18120
+    i32.const 18336
     i32.const 18000
     call $src/mappings/betokenProxy/Burger#constructor
     local.tee 0
@@ -5201,23 +5205,23 @@
     call $src/mappings/betokenProxy/TestEvent#constructor
     call $src/mappings/betokenProxy/handleTestEvent
     i32.const 0
-    i32.const 18144
-    i32.const 18168
+    i32.const 18360
+    i32.const 18384
     call $src/mappings/betokenProxy/TestEvent#constructor
     call $src/mappings/betokenProxy/handleNewBurger
     i32.const 0
-    i32.const 18184
-    i32.const 18208
+    i32.const 18400
+    i32.const 18424
     call $src/mappings/betokenProxy/TestEvent#constructor
     call $src/mappings/betokenProxy/handleNewBurger
-    i32.const 18120
+    i32.const 18336
     i32.const 18000
     call $~lib/subtest-as/assembly/store/store.assertFieldEq
-    i32.const 18144
-    i32.const 18168
+    i32.const 18360
+    i32.const 18384
     call $~lib/subtest-as/assembly/store/store.assertFieldEq
-    i32.const 18184
-    i32.const 18208
+    i32.const 18400
+    i32.const 18424
     call $~lib/subtest-as/assembly/store/store.assertFieldEq
     global.get 18
     call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#clear)
@@ -5229,21 +5233,21 @@
       global.get 18
       i32.const 14552
       call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#get
-      i32.const 18344
+      i32.const 18560
       call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#get
       return
     end
     i32.const 0
-    i32.const 18376
-    i32.const 10
+    i32.const 18592
+    i32.const 11
     i32.const 8
     call $~lib/env/abort
     unreachable)
   (func $~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>#delete (type 5) (param i32)
     (local i32 i32)
     local.get 0
-    i32.const 18344
-    i32.const 18344
+    i32.const 18560
+    i32.const 18560
     call $~lib/internal/hash/hashStr
     call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#find
     local.tee 1
@@ -5308,7 +5312,7 @@
       global.get 18
       i32.const 14552
       call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#get
-      i32.const 18344
+      i32.const 18560
       call $~lib/map/Map<~lib/string/String_~lib/map/Map<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Entity>>#has
     else
       local.get 0
@@ -5323,14 +5327,14 @@
     (local i32)
     i32.const 14552
     i32.const 0
-    i32.const 18344
-    i32.const 18352
+    i32.const 18560
+    i32.const 18568
     call $src/mappings/betokenProxy/Burger#constructor
     local.tee 0
     i32.load offset=4
     local.get 0
     call $~lib/subtest-as/assembly/store/store.set
-    i32.const 18344
+    i32.const 18560
     call $~lib/subtest-as/assembly/store/store.get
     i32.const 14592
     call $~lib/@graphprotocol/graph-ts/index/TypedMap<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>#get
@@ -5366,8 +5370,8 @@
     i32.load16_u offset=4)
   (func $~lib/subtest-as/assembly/index/createHash (type 3) (param i32) (result i32)
     (local i32 i32)
-    i32.const 18448
-    i32.const 18480
+    i32.const 18664
+    i32.const 18696
     call $~lib/string/String.__concat
     local.set 2
     loop  ;; label = @1
@@ -5608,7 +5612,7 @@
     local.tee 2
     if  ;; label = @1
       local.get 2
-      i32.const 18576
+      i32.const 18792
       i32.store offset=4
     else
       local.get 0
@@ -5659,7 +5663,7 @@
       local.get 1
       i32.store
       local.get 2
-      i32.const 18576
+      i32.const 18792
       i32.store offset=4
       local.get 0
       local.get 0
@@ -5686,7 +5690,7 @@
     end)
   (func $~lib/subtest-as/assembly/index/callFunction (type 8) (result i32)
     (local i32 i32)
-    i32.const 18648
+    i32.const 18864
     call $~lib/subtest-as/assembly/index/createHash
     local.tee 0
     local.set 1
@@ -5710,30 +5714,30 @@
       end
       return
     end
-    i32.const 18656
-    i32.const 18480
+    i32.const 18872
+    i32.const 18696
     call $~lib/string/String.__concat
-    i32.const 18712
+    i32.const 18928
     call $~lib/string/String.__concat
-    i32.const 18448
+    i32.const 18664
     call $~lib/string/String.__concat
-    i32.const 18760
+    i32.const 18976
     call $~lib/string/String.__concat)
   (func $src/test/tests/runTests~anonymous|3 (type 0)
     (local i32)
-    i32.const 18568
+    i32.const 18784
     call $~lib/subtest-as/assembly/index/createHash
     local.set 0
     global.get 19
     local.get 0
     call $~lib/map/Map<i32_~lib/string/String>#set
-    i32.const 18576
+    i32.const 18792
     call $~lib/subtest-as/assembly/index/callFunction
     call $~lib/string/String.__eq
     i32.eqz
     if  ;; label = @1
       i32.const 0
-      i32.const 18824
+      i32.const 19040
       i32.const 63
       i32.const 6
       call $~lib/env/abort
@@ -5808,7 +5812,7 @@
     global.get 0
     global.set 1)
   (func $start (type 0)
-    i32.const 18864
+    i32.const 19080
     global.set 0
     global.get 0
     global.set 1
@@ -6168,26 +6172,28 @@
   (data (;256;) (i32.const 17944) "\0c\00\00\00t\00e\00s\00t\00E\00n\00t\00i\00t\00y\00I\00d")
   (data (;257;) (i32.const 17976) "\08\00\00\00b\00u\00r\00g\00e\00r\00I\00d")
   (data (;258;) (i32.const 18000) "\12\00\00\00P\00u\00l\00l\00e\00d\00 \00p\00o\00r\00k\00 \00b\00u\00r\00g\00e\00r")
-  (data (;259;) (i32.const 18040) "$\00\00\00C\00a\00n\00 \00c\00a\00l\00l\00 \00m\00a\00p\00p\00i\00n\00g\00s\00 \00w\00i\00t\00h\00 \00c\00u\00s\00t\00o\00m\00 \00e\00v\00e\00n\00t\00s")
-  (data (;260;) (i32.const 18120) "\09\00\00\00b\00u\00r\00g\00e\00r\00I\00d\000")
-  (data (;261;) (i32.const 18144) "\09\00\00\00b\00u\00r\00g\00e\00r\00I\00d\001")
-  (data (;262;) (i32.const 18168) "\06\00\00\00V\00e\00g\00g\00i\00e")
-  (data (;263;) (i32.const 18184) "\09\00\00\00b\00u\00r\00g\00e\00r\00I\00d\002")
-  (data (;264;) (i32.const 18208) "\16\00\00\00C\00h\00i\00k\00e\00n\00 \00t\00e\00r\00i\00y\00a\00k\00i\00 \00b\00u\00r\00g\00e\00r")
-  (data (;265;) (i32.const 18256) "*\00\00\00C\00a\00n\00 \00a\00d\00d\00,\00 \00g\00e\00t\00,\00 \00a\00s\00s\00e\00r\00t\00 \00a\00n\00d\00 \00r\00e\00m\00o\00v\00e\00 \00f\00r\00o\00m\00 \00s\00t\00o\00r\00e")
-  (data (;266;) (i32.const 18344) "\02\00\00\002\003")
-  (data (;267;) (i32.const 18352) "\09\00\00\00H\00a\00m\00b\00u\00r\00g\00e\00r")
-  (data (;268;) (i32.const 18376) "!\00\00\00~\00l\00i\00b\00/\00s\00u\00b\00t\00e\00s\00t\00-\00a\00s\00/\00a\00s\00s\00e\00m\00b\00l\00y\00/\00s\00t\00o\00r\00e\00.\00t\00s")
-  (data (;269;) (i32.const 18448) "\0e\00\00\000\00x\000\000\000\000\000\001\002\003\004\001\002\003")
-  (data (;270;) (i32.const 18480) "\0f\00\00\00e\00x\00a\00m\00p\00l\00e\00F\00u\00n\00c\00N\00a\00m\00e")
-  (data (;271;) (i32.const 18520) "\06\00\00\00r\00a\00n\00d\00o\00m")
-  (data (;272;) (i32.const 18536) "\05\00\00\00P\00a\00r\00a\00m")
-  (data (;273;) (i32.const 18552) "\08\00\00\00\00\00\00\00XH\00\00hH")
-  (data (;274;) (i32.const 18568) "xH\00\00\02")
-  (data (;275;) (i32.const 18576) "\1a\00\00\00a\00c\00t\00u\00a\00l\00l\00y\00 \00r\00e\00t\00u\00r\00n\00e\00d\00 \00a\00 \00s\00t\00r\00i\00n\00g")
-  (data (;276;) (i32.const 18632) "\08\00\00\00\00\00\00\00XH\00\00hH")
-  (data (;277;) (i32.const 18648) "\c8H\00\00\02")
-  (data (;278;) (i32.const 18656) "\17\00\00\00N\00o\00 \00f\00u\00n\00c\00t\00i\00o\00n\00 \00w\00i\00t\00h\00 \00n\00a\00m\00e\00 \00'")
-  (data (;279;) (i32.const 18712) "\15\00\00\00'\00,\00 \00c\00o\00n\00t\00r\00a\00c\00t\00 \00a\00d\00d\00r\00e\00s\00s\00 \00'")
-  (data (;280;) (i32.const 18760) "\1c\00\00\00'\00 \00a\00n\00d\00 \00g\00i\00v\00e\00n\00 \00a\00r\00g\00u\00m\00e\00n\00t\00s\00 \00f\00o\00u\00n\00d\00.")
-  (data (;281;) (i32.const 18824) "\11\00\00\00s\00r\00c\00/\00t\00e\00s\00t\00/\00t\00e\00s\00t\00s\00.\00t\00s"))
+  (data (;259;) (i32.const 18040) "a\00\00\00S\00u\00c\00c\00e\00s\00s\00!\00 \00F\00i\00e\00l\00d\00 \00$\00{\00f\00i\00e\00l\00d\00N\00a\00m\00e\00}\00 \00o\00n\00 \00e\00n\00t\00i\00t\00y\00 \00w\00i\00t\00h\00 \00t\00y\00p\00e\00 \00$\00{\00e\00n\00t\00i\00t\00y\00T\00y\00p\00e\00}\00 \00a\00n\00d\00 \00i\00d\00 \00$\00{\00i\00d\00}\00 \00e\00q\00u\00a\00l\00s\00 \00$\00{\00e\00x\00p\00e\00c\00t\00e\00d\00V\00a\00l\00}\00!")
+  (data (;260;) (i32.const 18248) "@G")
+  (data (;261;) (i32.const 18256) "$\00\00\00C\00a\00n\00 \00c\00a\00l\00l\00 \00m\00a\00p\00p\00i\00n\00g\00s\00 \00w\00i\00t\00h\00 \00c\00u\00s\00t\00o\00m\00 \00e\00v\00e\00n\00t\00s")
+  (data (;262;) (i32.const 18336) "\09\00\00\00b\00u\00r\00g\00e\00r\00I\00d\000")
+  (data (;263;) (i32.const 18360) "\09\00\00\00b\00u\00r\00g\00e\00r\00I\00d\001")
+  (data (;264;) (i32.const 18384) "\06\00\00\00V\00e\00g\00g\00i\00e")
+  (data (;265;) (i32.const 18400) "\09\00\00\00b\00u\00r\00g\00e\00r\00I\00d\002")
+  (data (;266;) (i32.const 18424) "\16\00\00\00C\00h\00i\00k\00e\00n\00 \00t\00e\00r\00i\00y\00a\00k\00i\00 \00b\00u\00r\00g\00e\00r")
+  (data (;267;) (i32.const 18472) "*\00\00\00C\00a\00n\00 \00a\00d\00d\00,\00 \00g\00e\00t\00,\00 \00a\00s\00s\00e\00r\00t\00 \00a\00n\00d\00 \00r\00e\00m\00o\00v\00e\00 \00f\00r\00o\00m\00 \00s\00t\00o\00r\00e")
+  (data (;268;) (i32.const 18560) "\02\00\00\002\003")
+  (data (;269;) (i32.const 18568) "\09\00\00\00H\00a\00m\00b\00u\00r\00g\00e\00r")
+  (data (;270;) (i32.const 18592) "!\00\00\00~\00l\00i\00b\00/\00s\00u\00b\00t\00e\00s\00t\00-\00a\00s\00/\00a\00s\00s\00e\00m\00b\00l\00y\00/\00s\00t\00o\00r\00e\00.\00t\00s")
+  (data (;271;) (i32.const 18664) "\0e\00\00\000\00x\000\000\000\000\000\001\002\003\004\001\002\003")
+  (data (;272;) (i32.const 18696) "\0f\00\00\00e\00x\00a\00m\00p\00l\00e\00F\00u\00n\00c\00N\00a\00m\00e")
+  (data (;273;) (i32.const 18736) "\06\00\00\00r\00a\00n\00d\00o\00m")
+  (data (;274;) (i32.const 18752) "\05\00\00\00P\00a\00r\00a\00m")
+  (data (;275;) (i32.const 18768) "\08\00\00\00\00\00\00\000I\00\00@I")
+  (data (;276;) (i32.const 18784) "PI\00\00\02")
+  (data (;277;) (i32.const 18792) "\1a\00\00\00a\00c\00t\00u\00a\00l\00l\00y\00 \00r\00e\00t\00u\00r\00n\00e\00d\00 \00a\00 \00s\00t\00r\00i\00n\00g")
+  (data (;278;) (i32.const 18848) "\08\00\00\00\00\00\00\000I\00\00@I")
+  (data (;279;) (i32.const 18864) "\a0I\00\00\02")
+  (data (;280;) (i32.const 18872) "\17\00\00\00N\00o\00 \00f\00u\00n\00c\00t\00i\00o\00n\00 \00w\00i\00t\00h\00 \00n\00a\00m\00e\00 \00'")
+  (data (;281;) (i32.const 18928) "\15\00\00\00'\00,\00 \00c\00o\00n\00t\00r\00a\00c\00t\00 \00a\00d\00d\00r\00e\00s\00s\00 \00'")
+  (data (;282;) (i32.const 18976) "\1c\00\00\00'\00 \00a\00n\00d\00 \00g\00i\00v\00e\00n\00 \00a\00r\00g\00u\00m\00e\00n\00t\00s\00 \00f\00o\00u\00n\00d\00.")
+  (data (;283;) (i32.const 19040) "\11\00\00\00s\00r\00c\00/\00t\00e\00s\00t\00/\00t\00e\00s\00t\00s\00.\00t\00s"))

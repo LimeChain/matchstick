@@ -5,23 +5,35 @@ use graph::{
     prelude::{
         anyhow::{self},
         HostMetrics,
-    }
+    },
 };
-use graph_runtime_wasm::{
-    error::DeterminismLevel,
-    mapping::{MappingContext, ValidModule},
-    module::IntoWasmRet,
-    module::{ExperimentalFeatures, IntoTrap, WasmInstanceContext},
-};
+use graph_runtime_wasm::{error::DeterminismLevel, mapping::{MappingContext, ValidModule}, module::IntoWasmRet, module::{ExperimentalFeatures, IntoTrap, WasmInstanceContext}};
 use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::TimeoutStopwatch};
 
 use std::marker::PhantomData;
-use std::{
-    cell::RefCell,
-    sync::{Arc},
-    time::Instant
-};
+use std::{cell::RefCell, sync::Arc, time::Instant};
 use std::{rc::Rc, time::Duration};
+use graph::runtime::{AscPtr, asc_get};
+use graph_runtime_wasm::asc_abi::class::AscString;
+use slog::{info, Drain};
+use slog_term;
+
+trait WICExtension {
+    fn log(&mut self, level: u32, msg: AscPtr<AscString>) -> Result<(), HostExportError>;
+}
+
+impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
+    fn log(&mut self, _level: u32, msg: AscPtr<AscString>) -> Result<(), HostExportError> {
+        let plain = slog_term::PlainSyncDecorator::new(std::io::stdout());
+        let logger =
+            slog::Logger::root(slog_term::FullFormat::new(plain).build().fuse(), slog::o!());
+
+        let msg: String = asc_get(self, msg)?;
+        info!(logger, "{}", msg);
+
+        Ok(())
+    }
+}
 
 #[allow(unused)]
 pub struct WasmInstance<C: Blockchain> {
@@ -260,7 +272,7 @@ impl<C: Blockchain> WasmInstance<C> {
 
         link!("ens.nameByHash", ens_name_by_hash, ptr);
 
-        link!("log.log", log_log, level, msg_ptr);
+        link!("log.log", log, level, msg_ptr);
 
         link!("arweave.transactionData", arweave_transaction_data, ptr);
 
