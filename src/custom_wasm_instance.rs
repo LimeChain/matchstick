@@ -24,14 +24,13 @@ trait WICExtension {
 
 
 impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
-    fn log(&mut self, level: u32, msg: AscPtr<AscString>) -> Result<(), HostExportError> {
+    fn log(&mut self, _level: u32, msg: AscPtr<AscString>) -> Result<(), HostExportError> {
         let plain = slog_term::PlainSyncDecorator::new(std::io::stdout());
         let logger =
             slog::Logger::root(slog_term::FullFormat::new(plain).build().fuse(), slog::o!());
 
         let msg: String = asc_get(self, msg)?;
         info!(logger, "{}", msg);
-        info!(logger, "{}", level);
 
         Ok(())
     }
@@ -274,7 +273,7 @@ impl<C: Blockchain> WasmInstance<C> {
 
         link!("ens.nameByHash", ens_name_by_hash, ptr);
 
-        link!("log.log", log_log, level, msg_ptr);
+        link!("log.log", log, level, msg_ptr);
 
         link!("arweave.transactionData", arweave_transaction_data, ptr);
 
