@@ -22,7 +22,6 @@ trait WICExtension {
     fn log(&mut self, level: u32, msg: AscPtr<AscString>) -> Result<(), HostExportError>;
 }
 
-
 impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
     fn log(&mut self, _level: u32, msg: AscPtr<AscString>) -> Result<(), HostExportError> {
         let plain = slog_term::PlainSyncDecorator::new(std::io::stdout());
