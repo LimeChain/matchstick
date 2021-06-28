@@ -1,7 +1,7 @@
 # Subtest 🧪⚙️
 👋 Welcome to **Subtest** - a unit testing framework for The Graph protocol. Try out your mapping logic in a sandboxed environment and ensure your handlers run correctly when deploying your awesome subgraph!
 
-## Quickstart 🚀
+## Quick Start 🚀
 If you want to get **Subtest** up and running on your system with the minimal amount of hassle, this section is for you. This guide is aimed at both **macOS** and **Linux** systems.
 
 ### Prerequisites
@@ -24,12 +24,12 @@ Then you need to start up postgres with the following command:
 Clone this repository and run `cargo build`. If that executes successfully congratulations 🎉 you're all set.
 
 ### Run
-To run the framework, you just have to provide a path to a valid wasm instance where you have written and compiled your mappings along with your tests. To learn how to do that, proceed to the next section with user stories and practical examples. 
+To run the framework, you just have to provide a path to a valid WASM instance where you have written and compiled your mappings along with your tests. To learn how to do that, proceed to the next section with user stories and practical examples. 
 
 `cargo run "MyWasmFile.wasm"`
 
 ## Example Usage 📖
-Let's explore a few common scenarios where we'd want to test our handler functions. Imagine you're building a subgraph for some burger joint dApp. Occassionally the chefs will introduce new types of burgers to the menu, each burger will have a unique id and a name that describes its contents Let's assume we have the following simple event:
+Let's explore a few common scenarios where we'd want to test our handler functions. Imagine you're building a subgraph for some burger joint dApp. Occasionally the chefs will introduce new types of burgers to the menu, each burger will have a unique id and a name that describes its contents Let's assume we have the following simple event:
 ```typescript
 export class NewBurgerEvent {
   id: string;
