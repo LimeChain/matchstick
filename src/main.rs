@@ -152,8 +152,6 @@ fn mock_data_source(path: &str) -> DataSource {
 pub fn main() -> () {
     let plain = slog_term::PlainSyncDecorator::new(std::io::stdout());
     let logger = Logger::root(slog_term::FullFormat::new(plain).build().fuse(), o!());
-
-    info!(logger, "Logging ready!");
     let now = Instant::now();
     let args: Vec<String> = std::env::args().collect();
 
