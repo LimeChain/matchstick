@@ -219,6 +219,11 @@ Running the assertFieldEq() function will check for equality of the given field 
 
 And if they're not equal, the test block will fail and a relevant error message will be shown.
 
+### As a user I want to see test run time durations
+The log output includes the test run duration. Here's an example:
+
+`Jun 28 17:24:46.312 INFO Program execution time: 775.439512ms`
+
 ## Next steps 🎯
 The **Subtest** framework is still very much a work in progress. There is a lot of room for improvements to everything we've talked about above. We're trying to gather as much feedback from subgraph developers as we can, to understand how we can solve the problems they face when building subgraphs, as well as how we can make the overall testing process as smooth and streamlined as possible.
 
