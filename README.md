@@ -247,4 +247,4 @@ Estimated time for those tasks: ~ 7.5 weeks
 
 The **Subtest** framework is built in **Rust** and acts as a wrapper for the generated WebAssembly module that contains the mappings and the unit tests. It passes the host function implementations down to the module, to be used in the tests (and in the mappings if needed). The framework also acts as a proxy for structs defined in the [graph-node repo](https://github.com/graphprotocol/graph-node/tree/master/graph "graph-node repo"), because it needs to pass down all the usual imports, as well as a few bonus/mocked ones glued on top.
 
-**Subtest** also relies on a helper library - [subtest-as](https://github.com/LimeChain/subtest-ashttp:// "subtest-as"), written in **AssemblyScript** and used as an import in the unit tests.
+**Subtest** also relies on a helper library - [subtest-as](https://github.com/LimeChain/subtest-as "subtest-as"), written in **AssemblyScript** and used as an import in the unit tests.
