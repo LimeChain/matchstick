@@ -24,6 +24,8 @@ use std::str::FromStr;
 use std::sync::Arc;
 use test_store::STORE;
 use web3::types::Address;
+use std::time::Instant;
+use slog::*;
 
 mod custom_wasm_instance;
 use custom_wasm_instance::WasmInstance;
@@ -148,6 +150,9 @@ fn mock_data_source(path: &str) -> DataSource {
 }
 
 pub fn main() -> () {
+    let plain = slog_term::PlainSyncDecorator::new(std::io::stdout());
+    let logger = Logger::root(slog_term::FullFormat::new(plain).build().fuse(), o!());
+    let now = Instant::now();
     let args: Vec<String> = std::env::args().collect();
 
     if args.len() == 1 {
@@ -219,4 +224,6 @@ pub fn main() -> () {
     run_tests
         .call(&[])
         .expect("Couldn't call wasm function 'runTests'.");
+
+    info!(logger, "Program execution time: {:?}", now.elapsed());
 }
