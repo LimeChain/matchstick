@@ -194,6 +194,28 @@ In order to mock a contract call and hardcore a return value (string), the user 
 
 After that, calling `callFunction()` with the same address, name and parameters will return the specified value in `mockFunction()`.
 
+### As a user I want to assert the state of the store
+Users are able to assert the final (or midway) state of the store through asserting entities. In order to do this, the user has to supply an Entity type, the specific ID of an Entity, a name of a field on that Entity, and the expected value of the field. Here's a quick example:
+```typescript
+import { store } from "subtest-as/assembly/store";
+import {
+  handleNewBurger,
+  NewBurgerEvent,
+  Burger,
+  EntityTypes,
+} from "../mappings/burger";
+
+let burger = new Burger("burgerId", "Pulled pork burger")
+store.set(EntityTypes.BURGER, burger.id, burger);
+
+store.assertFieldEq(EntityTypes.BURGER, "burgerId", "name", "Pulled pork burger");
+```
+Running the assertFieldEq() function will check for equality of the given field against the given expected value and return the following log message if the fields are equal:
+
+`Jun 28 17:00:42.019 INFO Success! Field 'name' on entity with type 'Burger' and id 'burgerId' equals 'Pulled pork burger'.`
+
+And if they're not equal, the test block will fail and a relevant error message will be shown.
+
 ## Next steps 🎯
 The **Subtest** framework is still very much a work in progress. There is a lot of room for improvements to everything we've talked about above. We're trying to gather as much feedback from subgraph developers as we can, to understand how we can solve the problems they face when building subgraphs, as well as how we can make the overall testing process as smooth and streamlined as possible.
 
@@ -209,6 +231,7 @@ Here are some of the areas we're set to focus on from here on out:
 - Unit tests;
 - Style terminal output;
 - Remove need for using PostgreSQL;
+- Output test run duration;
 - Integrate framework in graph-cli.
 
 Estimated time for those tasks: ~ 7.5 weeks
