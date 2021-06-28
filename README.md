@@ -102,7 +102,7 @@ export function runTests(): void {
 }
 ```
 
-**DISCLAIMER: ** *In order for that to work, we need to import the `runTests()` function in our mappings file. It won't be used there, but it has to be imported there so that it can get picked up by Rust later, when running the tests.*
+**DISCLAIMER:** *In order for that to work, we need to import the `runTests()` function in our mappings file. It won't be used there, but it has to be imported there so that it can get picked up by Rust later, when running the tests.*
 
 That's a lot to unpack! First off, an important thing to notice is that we're importing things from `subtest-as`, that's our AssemblyScript helper library (distributed as an npm module), which you can check out [here](https://github.com/LimeChain/subtest-as "here"). It provides us with useful testing methods and also defines the `test()` function which we will use to build our test blocks. It also gives us a mock implementation of the `store` and all of its functions. The rest of it is pretty straightforward - here's what happens:
 - We're setting up our initial state and adding one custom Burger entity;
