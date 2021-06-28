@@ -234,7 +234,6 @@ Here are some of the areas we're set to focus on from here on out:
 - Unit tests;
 - Style terminal output;
 - Remove need for using PostgreSQL;
-- Output test run duration;
 - Integrate framework in graph-cli.
 
 Estimated time for those tasks: ~ 7.5 weeks
