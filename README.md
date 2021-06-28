@@ -198,3 +198,17 @@ After that, calling `callFunction()` with the same address, name and parameters 
 The **Subtest** framework is still very much a work in progress. There is a lot of room for improvements to everything we've talked about above. We're trying to gather as much feedback from subgraph developers as we can, to understand how we can solve the problems they face when building subgraphs, as well as how we can make the overall testing process as smooth and streamlined as possible.
 
 There's a GitHub project board where we keep track of day to day work which you can check out [here](https://github.com/LimeChain/subtest/projects/1 "here").
+
+Here are some of the areas we're set to focus on from here on out: 
+- Hold transaction information in Event object;
+- Mock contract function reverts;
+- Create a demo subgraph for showcasing the framework;
+- Set up CI/CD;
+- Refactor Rust code to remove as much hardcoded structs and functions as possible (import them from graph-node instead);
+- Add detailed error messages;
+- Unit tests;
+- Style terminal output;
+- Remove need for using PostgreSQL;
+- Integrate framework in graph-cli.
+
+Estimated time for those tasks: ~ 7.5 weeks
