@@ -19,7 +19,7 @@ Then you need to start up postgres with the following command:
 
 `pg_ctl -D /usr/local/var/postgres start`
 
-**NOTE:** This step will not be needed in the future are we are not actually spinning up and using a DB anywhere within **Subtest**.
+**NOTE:** *This step will not be needed in the future are we are not actually spinning up and using a DB anywhere within **Subtest**.*
 
 Clone this repository and run `cargo build`. If that executes successfully congratulations 🎉 you're all set.
 
@@ -101,6 +101,9 @@ export function runTests(): void {
   });
 }
 ```
+
+**DISCLAIMER: ** *In order for that to work, we need to import the `runTests()` function in our mappings file. It won't be used there, but it has to be imported there so that it can get picked up by Rust later, when running the tests.*
+
 That's a lot to unpack! First off, an important thing to notice is that we're importing things from `subtest-as`, that's our AssemblyScript helper library (distributed as an npm module), which you can check out [here](https://github.com/LimeChain/subtest-as "here"). It provides us with useful testing methods and also defines the `test()` function which we will use to build our test blocks. It also gives us a mock implementation of the `store` and all of its functions. The rest of it is pretty straightforward - here's what happens:
 - We're setting up our initial state and adding one custom Burger entity;
 - We define our `NewBurgerEvent` along with its information for the burger id and burger name;
@@ -227,7 +230,7 @@ Here are some of the areas we're set to focus on from here on out:
 - Create a demo subgraph for showcasing the framework;
 - Set up CI/CD;
 - Refactor Rust code to remove as much hardcoded structs and functions as possible (import them from graph-node instead);
-- Add detailed error messages;
+- Add detailed error messages and test failure information;
 - Unit tests;
 - Style terminal output;
 - Remove need for using PostgreSQL;
@@ -235,3 +238,9 @@ Here are some of the areas we're set to focus on from here on out:
 - Integrate framework in graph-cli.
 
 Estimated time for those tasks: ~ 7.5 weeks
+
+## Technologies used 💻
+
+The **Subtest** framework is built in **Rust** and acts as a wrapper for the generated WebAssembly module that contains the mappings and the unit tests. It passes the host function implementations down to the module, to be used in the tests (and in the mappings if needed). The framework also acts as a proxy for structs defined in the [graph-node repo](https://github.com/graphprotocol/graph-node/tree/master/graph "graph-node repo"), because it needs to pass down all the usual imports, as well as a few bonus/mocked ones glued on top.
+
+**Subtest** also relies on a helper library - [subtest-as](https://github.com/LimeChain/subtest-ashttp:// "subtest-as"), written in **AssemblyScript** and used as an import in the unit tests.
