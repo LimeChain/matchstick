@@ -7,29 +7,54 @@ use graph::{
         HostMetrics,
     },
 };
-use graph_runtime_wasm::{error::DeterminismLevel, mapping::{MappingContext, ValidModule}, module::IntoWasmRet, module::{ExperimentalFeatures, IntoTrap, WasmInstanceContext}};
+use graph_runtime_wasm::{
+    error::DeterminismLevel,
+    mapping::{MappingContext, ValidModule},
+    module::IntoWasmRet,
+    module::{ExperimentalFeatures, IntoTrap, WasmInstanceContext},
+};
 use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::TimeoutStopwatch};
 
-use std::marker::PhantomData;
-use std::{cell::RefCell, sync::Arc, time::Instant};
-use std::{rc::Rc, time::Duration};
-use graph::runtime::{AscPtr, asc_get};
+use graph::runtime::{asc_get, AscPtr};
 use graph_runtime_wasm::asc_abi::class::AscString;
 use slog::{info, Drain};
 use slog_term;
+use std::marker::PhantomData;
+use std::{cell::RefCell, sync::Arc, time::Instant};
+use std::{rc::Rc, time::Duration};
 
 trait WICExtension {
     fn log(&mut self, level: u32, msg: AscPtr<AscString>) -> Result<(), HostExportError>;
 }
 
 impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
-    fn log(&mut self, _level: u32, msg: AscPtr<AscString>) -> Result<(), HostExportError> {
+    fn log(&mut self, level: u32, msg: AscPtr<AscString>) -> Result<(), HostExportError> {
         let plain = slog_term::PlainSyncDecorator::new(std::io::stdout());
         let logger =
             slog::Logger::root(slog_term::FullFormat::new(plain).build().fuse(), slog::o!());
 
         let msg: String = asc_get(self, msg)?;
-        info!(logger, "{}", msg);
+
+        // TODO: get and display test block key (test name)
+        match level {
+            // CRITICAL (for expected logic errors)
+            0 => {
+                panic!("{}", msg);
+            }
+            // ERROR (for test failure)
+            1 => {
+                info!(logger, "{}", msg);
+            }
+            // WARNING
+            2 => {
+                info!(logger, "WARNING {}", msg);
+            }
+            // INFO and DEBUG (most common)
+            3 | 4 => {
+                info!(logger, "{}", msg);
+            }
+            _ => unreachable!(),
+        }
 
         Ok(())
     }
