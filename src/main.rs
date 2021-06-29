@@ -118,7 +118,7 @@ fn mock_abi() -> MappingABI {
 }
 
 fn mock_data_source(path: &str) -> DataSource {
-    let runtime = std::fs::read(path).unwrap();
+    let runtime = std::fs::read(path).expect("Could not resolve path to wasm file.");
 
     DataSource {
         kind: String::from("ethereum/contract"),
