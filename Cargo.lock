@@ -3939,7 +3939,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "subtester"
+name = "subtest"
 version = "0.1.0"
 dependencies = [
  "anyhow",
