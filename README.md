@@ -3,6 +3,31 @@
 
 ![miro2](https://user-images.githubusercontent.com/32264020/123761690-bcf37f80-d8ca-11eb-9950-6452d7e972cd.jpeg)
 
+## Quick Start 🚀
+
+### Prerequisites
+To run **Subtest**, simply go to the [Releases page](https://github.com/LimeChain/subtest/releases "Releases page") on this repository and download the latest binary.
+
+**You will also need:**
+
+- PostgreSQL - [PostgreSQL Downloads](https://www.postgresql.org/download/ "PostgreSQL Downloads")
+
+### Setup
+Now that you have Postgres installed and you've downloaded the binary you need to get a few things set up before we can run **Subtest**. First off, run this in the terminal:
+
+`export THEGRAPH_STORE_POSTGRES_DIESEL_URL=postgresql://<your_username>:@localhost:5432/thegraph`
+
+Then you need to start up postgres with the following command:
+
+`pg_ctl -D /usr/local/var/postgres start`
+
+**NOTE:** *This step will not be needed in the future are we are not actually spinning up and using a DB anywhere within **Subtest**.*
+
+### Run
+To run the framework, you just have to provide a path to a valid WASM instance where you have written and compiled your mappings along with your tests. To learn how to do that, proceed to the next section with user stories and practical examples. 
+
+`./subtest "MyWasmFile.wasm"`
+
 ## Setting up locally 📍
 If you want to get **Subtest** up and running on your system with the minimal amount of hassle, this section is for you. This guide is aimed at both **macOS** and **Linux** systems.
 
