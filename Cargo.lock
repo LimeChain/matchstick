@@ -1226,7 +1226,7 @@ dependencies = [
  "futures-sink",
  "futures-task",
  "memchr",
- "pin-project-lite 0.2.6",
+ "pin-project-lite 0.2.7",
  "pin-utils",
  "proc-macro-hack",
  "proc-macro-nested",
@@ -1336,7 +1336,7 @@ dependencies = [
 [[package]]
 name = "graph"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -1391,7 +1391,7 @@ dependencies = [
 [[package]]
 name = "graph-chain-arweave"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
 dependencies = [
  "anyhow",
  "graph",
@@ -1400,7 +1400,7 @@ dependencies = [
 [[package]]
 name = "graph-chain-ethereum"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1424,7 +1424,7 @@ dependencies = [
 [[package]]
 name = "graph-core"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
 dependencies = [
  "async-trait",
  "atomic_refcell",
@@ -1446,7 +1446,7 @@ dependencies = [
 [[package]]
 name = "graph-graphql"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -1465,7 +1465,7 @@ dependencies = [
 [[package]]
 name = "graph-mock"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
 dependencies = [
  "futures 0.1.31",
  "graph",
@@ -1478,7 +1478,7 @@ dependencies = [
 [[package]]
 name = "graph-node"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
 dependencies = [
  "clap",
  "crossbeam-channel",
@@ -1514,7 +1514,7 @@ dependencies = [
 [[package]]
 name = "graph-runtime-derive"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
 dependencies = [
  "anyhow",
  "quote 1.0.9",
@@ -1524,7 +1524,7 @@ dependencies = [
 [[package]]
 name = "graph-runtime-wasm"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1549,7 +1549,7 @@ dependencies = [
 [[package]]
 name = "graph-server-http"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
 dependencies = [
  "futures 0.1.31",
  "graph",
@@ -1563,7 +1563,7 @@ dependencies = [
 [[package]]
 name = "graph-server-index-node"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
 dependencies = [
  "futures 0.3.15",
  "graph",
@@ -1577,7 +1577,7 @@ dependencies = [
 [[package]]
 name = "graph-server-json-rpc"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
 dependencies = [
  "graph",
  "jsonrpc-http-server",
@@ -1588,7 +1588,7 @@ dependencies = [
 [[package]]
 name = "graph-server-metrics"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
 dependencies = [
  "futures 0.1.31",
  "graph",
@@ -1601,7 +1601,7 @@ dependencies = [
 [[package]]
 name = "graph-server-websocket"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
 dependencies = [
  "anyhow",
  "futures 0.1.31",
@@ -1618,7 +1618,7 @@ dependencies = [
 [[package]]
 name = "graph-store-postgres"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -2810,9 +2810,9 @@ checksum = "257b64915a082f7811703966789728173279bdebb956b143dbcd23f6f970a777"
 
 [[package]]
 name = "pin-project-lite"
-version = "0.2.6"
+version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc0e1f259c92177c30a4c9d177246edd0a3568b25756a977d0632cf8fa37e905"
+checksum = "8d31d11c69a6b52a174b42bdc0c30e5e11670f90788b2c471c31c1d17d449443"
 
 [[package]]
 name = "pin-utils"
@@ -3412,7 +3412,7 @@ dependencies = [
  "mime_guess",
  "native-tls",
  "percent-encoding 2.1.0",
- "pin-project-lite 0.2.6",
+ "pin-project-lite 0.2.7",
  "serde",
  "serde_json",
  "serde_urlencoded",
@@ -3533,7 +3533,7 @@ dependencies = [
 [[package]]
 name = "secp256k1"
 version = "0.20.3"
-source = "git+https://github.com/rust-bitcoin/rust-secp256k1#05f4278499a8b3df838d99f7ea74aefb16366634"
+source = "git+https://github.com/rust-bitcoin/rust-secp256k1#6ac9f4d4535db0dac995d1a65a9543b2b37d3e94"
 dependencies = [
  "secp256k1-sys",
 ]
@@ -3541,7 +3541,7 @@ dependencies = [
 [[package]]
 name = "secp256k1-sys"
 version = "0.4.1"
-source = "git+https://github.com/rust-bitcoin/rust-secp256k1#05f4278499a8b3df838d99f7ea74aefb16366634"
+source = "git+https://github.com/rust-bitcoin/rust-secp256k1#6ac9f4d4535db0dac995d1a65a9543b2b37d3e94"
 dependencies = [
  "cc",
 ]
@@ -4049,7 +4049,7 @@ dependencies = [
 [[package]]
 name = "test-store"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#5613dca92213810b3cca57979f5facc2d670e34a"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
 dependencies = [
  "diesel",
  "graph",
@@ -4202,7 +4202,7 @@ dependencies = [
  "libc",
  "memchr",
  "mio 0.7.13",
- "pin-project-lite 0.2.6",
+ "pin-project-lite 0.2.7",
  "winapi 0.3.9",
 ]
 
@@ -4315,7 +4315,7 @@ dependencies = [
  "parking_lot 0.11.1",
  "percent-encoding 2.1.0",
  "phf",
- "pin-project-lite 0.2.6",
+ "pin-project-lite 0.2.7",
  "postgres-protocol",
  "postgres-types",
  "socket2 0.4.0",
@@ -4360,7 +4360,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8864d706fdb3cc0843a49647ac892720dac98a6eeb818b77190592cf4994066"
 dependencies = [
  "futures-core",
- "pin-project-lite 0.2.6",
+ "pin-project-lite 0.2.7",
  "tokio 1.7.1",
  "tokio-util 0.6.7",
 ]
@@ -4536,7 +4536,7 @@ dependencies = [
  "futures-core",
  "futures-sink",
  "log 0.4.14",
- "pin-project-lite 0.2.6",
+ "pin-project-lite 0.2.7",
  "tokio 1.7.1",
 ]
 
@@ -4563,7 +4563,7 @@ checksum = "09adeb8c97449311ccd28a427f96fb563e7fd31aabf994189879d9da2394b89d"
 dependencies = [
  "cfg-if 1.0.0",
  "log 0.4.14",
- "pin-project-lite 0.2.6",
+ "pin-project-lite 0.2.7",
  "tracing-core",
 ]
 
