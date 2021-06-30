@@ -14,7 +14,7 @@ Now that you have Postgres installed and you've downloaded the binary you need t
 
 `export THEGRAPH_STORE_POSTGRES_DIESEL_URL=postgresql://<your_username>:@localhost:5432/thegraph`
 
-Then you need to start up postgres with the following command:
+Then you need to start up postgres with the following command (or something similar, depending on your system):
 
 `pg_ctl -D /usr/local/var/postgres start`
 
@@ -39,13 +39,15 @@ Now that you have those installed you need to get a few things set up before we 
 
 `export THEGRAPH_STORE_POSTGRES_DIESEL_URL=postgresql://<your_username>:@localhost:5432/thegraph`
 
-Then you need to start up postgres with the following command:
+Then you need to start up postgres with the following command (or something similar, depending on your system):
 
 `pg_ctl -D /usr/local/var/postgres start`
 
 **NOTE:** *This step will not be needed in the future are we are not actually spinning up and using a DB anywhere within **Subtest**.*
 
 Clone this repository and run `cargo build`. If that executes successfully congratulations 🎉 you're all set.
+
+**NOTE:** *You may encounter an error, related to missing `libpq` dependencies on your system. In that case - install the missing dependencies (listed in the error log) with your package manager.*
 
 ### Run
 To run the framework, you just have to provide a path to a valid WASM instance where you have written and compiled your mappings along with your tests. To learn how to do that, proceed to the next section with user stories and practical examples. 
