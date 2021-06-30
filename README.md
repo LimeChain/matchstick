@@ -4,12 +4,9 @@
 ![miro2](https://user-images.githubusercontent.com/32264020/123761690-bcf37f80-d8ca-11eb-9950-6452d7e972cd.jpeg)
 
 ## Quick Start 🚀
+To use **Subtest**, simply go to the [Releases page](https://github.com/LimeChain/subtest/releases "Releases page") on this repository and download the latest binary.
 
 ### Prerequisites
-To run **Subtest**, simply go to the [Releases page](https://github.com/LimeChain/subtest/releases "Releases page") on this repository and download the latest binary.
-
-**You will also need:**
-
 - PostgreSQL - [PostgreSQL Downloads](https://www.postgresql.org/download/ "PostgreSQL Downloads")
 
 ### Setup
