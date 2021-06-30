@@ -17,7 +17,7 @@ use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::Timeo
 
 use graph::runtime::{asc_get, AscPtr};
 use graph_runtime_wasm::asc_abi::class::AscString;
-use slog::{info, Drain};
+use slog::{info, debug, error, warn, Drain};
 use slog_term;
 use std::marker::PhantomData;
 use std::{cell::RefCell, sync::Arc, time::Instant};
@@ -43,15 +43,19 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             }
             // ERROR (for test failure)
             1 => {
-                info!(logger, "{}", msg);
+                error!(logger, "{}", msg);
             }
             // WARNING
             2 => {
-                info!(logger, "WARNING {}", msg);
+                warn!(logger, "{}", msg);
             }
-            // INFO and DEBUG (most common)
-            3 | 4 => {
+            // INFO
+            3 => {
                 info!(logger, "{}", msg);
+            }
+            // DEBUG
+            4 => {
+                debug!(logger, "{}", msg);
             }
             _ => unreachable!(),
         }
