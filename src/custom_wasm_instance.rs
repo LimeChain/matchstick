@@ -35,7 +35,6 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
 
         let msg: String = asc_get(self, msg)?;
 
-        // TODO: get and display test block key (test name)
         match level {
             // CRITICAL (for expected logic errors)
             0 => {
