@@ -6099,7 +6099,7 @@
     if  ;; label = @1
       global.get 25
       local.get 0
-      i32.const 18832
+      i32.const 15232
       call $~lib/map/Map<i32_~lib/string/String>#set
     else
       global.get 25
@@ -6135,14 +6135,14 @@
       end
       return
     end
-    i32.const 18896
+    i32.const 18856
     local.get 1
     call $~lib/string/String.__concat
-    i32.const 18952
+    i32.const 18912
     call $~lib/string/String.__concat
     local.get 0
     call $~lib/string/String.__concat
-    i32.const 19000
+    i32.const 18960
     call $~lib/string/String.__concat
     call $~lib/subtest-as/assembly/log/log.error
     i32.const 15232)
@@ -6166,33 +6166,33 @@
     i32.const 18800
     i32.const 18672
     i32.const 18704
-    i32.const 18888
+    i32.const 18848
     call $~lib/subtest-as/assembly/index/callFunction
     local.tee 0
     call $~lib/string/String.__ne
     if  ;; label = @1
-      i32.const 19064
+      i32.const 19024
       local.get 0
       call $~lib/string/String.__concat
-      i32.const 19160
+      i32.const 19120
       call $~lib/string/String.__concat
       call $~lib/subtest-as/assembly/log/log.critical
     end)
   (func $src/test/tests/runTests~anonymous|4 (type 0)
+    i32.const 19224
     i32.const 19264
-    i32.const 19304
-    i32.const 19328
-    i32.const 19336
+    i32.const 19288
+    i32.const 19296
     i32.const 1
     call $~lib/subtest-as/assembly/index/mockFunction
+    i32.const 19224
     i32.const 19264
-    i32.const 19304
-    i32.const 19360
+    i32.const 19320
     call $~lib/subtest-as/assembly/index/callFunction
-    i32.const 18832
+    i32.const 15232
     call $~lib/string/String.__ne
     if  ;; label = @1
-      i32.const 19368
+      i32.const 19328
       call $~lib/subtest-as/assembly/log/log.critical
     end)
   (func $~lib/subtest-as/assembly/event/addMetadata (type 3) (param i32) (result i32)
@@ -6511,10 +6511,10 @@
     i32.const 2
     i32.rem_s
     if  ;; label = @1
-      i32.const 19936
+      i32.const 19896
       local.get 0
       call $~lib/string/String.__concat
-      i32.const 19952
+      i32.const 19912
       call $~lib/string/String.__concat
       i32.const 14832
       i32.const 258
@@ -6540,7 +6540,7 @@
       local.get 0
       i32.const 1
       call $~lib/string/String#charAt
-      i32.const 19992
+      i32.const 19952
       call $~lib/string/String.__eq
     else
       local.get 1
@@ -6617,15 +6617,15 @@
     i32.const 14656
     call $~lib/string/String.__ne
     if  ;; label = @1
-      i32.const 19576
+      i32.const 19536
       i32.const 14656
       call $~lib/string/String.__concat
-      i32.const 19664
+      i32.const 19624
       call $~lib/string/String.__concat
       local.get 0
       i32.load offset=12
       call $~lib/string/String.__concat
-      i32.const 19160
+      i32.const 19120
       call $~lib/string/String.__concat
       call $~lib/subtest-as/assembly/log/log.error
     end
@@ -6635,16 +6635,16 @@
     call $~lib/@graphprotocol/graph-ts/index/typeConversion.stringToH160
     call $~lib/@graphprotocol/graph-ts/index/ByteArray#notEqual
     if  ;; label = @1
-      i32.const 19712
+      i32.const 19672
       i32.const 14552
       call $~lib/string/String.__concat
-      i32.const 19784
+      i32.const 19744
       call $~lib/string/String.__concat
       local.get 0
       i32.load
       call $~lib/@graphprotocol/graph-ts/index/typeConversion.bytesToHex
       call $~lib/string/String.__concat
-      i32.const 19160
+      i32.const 19120
       call $~lib/string/String.__concat
       call $~lib/subtest-as/assembly/log/log.error
     end
@@ -6654,16 +6654,16 @@
     call $~lib/@graphprotocol/graph-ts/index/ByteArray.fromI32
     call $~lib/@graphprotocol/graph-ts/index/BigInt#notEqual
     if  ;; label = @1
-      i32.const 19848
+      i32.const 19808
       i32.const 6552
       call $~lib/string/String.__concat
-      i32.const 19664
+      i32.const 19624
       call $~lib/string/String.__concat
       local.get 0
       i32.load offset=4
       call $~lib/@graphprotocol/graph-ts/index/typeConversion.bigIntToString
       call $~lib/string/String.__concat
-      i32.const 19160
+      i32.const 19120
       call $~lib/string/String.__concat
       call $~lib/subtest-as/assembly/log/log.error
     end
@@ -6674,17 +6674,17 @@
     call $~lib/@graphprotocol/graph-ts/index/ByteArray.fromHexString
     call $~lib/@graphprotocol/graph-ts/index/ByteArray#notEqual
     if  ;; label = @1
-      i32.const 20000
+      i32.const 19960
       i32.const 14552
       call $~lib/string/String.__concat
-      i32.const 19784
+      i32.const 19744
       call $~lib/string/String.__concat
       local.get 0
       i32.load offset=16
       i32.load
       call $~lib/@graphprotocol/graph-ts/index/typeConversion.bytesToHex
       call $~lib/string/String.__concat
-      i32.const 19160
+      i32.const 19120
       call $~lib/string/String.__concat
       call $~lib/subtest-as/assembly/log/log.error
     end
@@ -6696,10 +6696,10 @@
     i32.const 14640
     call $~lib/string/String.__ne
     if  ;; label = @1
-      i32.const 20080
+      i32.const 20040
       i32.const 14640
       call $~lib/string/String.__concat
-      i32.const 20176
+      i32.const 20136
       call $~lib/string/String.__concat
       local.get 0
       i32.load offset=24
@@ -6707,7 +6707,7 @@
       call $~lib/array/Array<~lib/@graphprotocol/graph-ts/index/TypedMapEntry<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>>#__get
       i32.load
       call $~lib/string/String.__concat
-      i32.const 19160
+      i32.const 19120
       call $~lib/string/String.__concat
       call $~lib/subtest-as/assembly/log/log.error
     end)
@@ -6719,15 +6719,15 @@
     call $src/mappings/betokenProxy/NewBurgerEvent#constructor
     call $~lib/subtest-as/assembly/event/addMetadata
     local.tee 0
-    i32.const 20256
+    i32.const 20216
     i32.store offset=12
     local.get 0
-    i32.const 20296
+    i32.const 20256
     call $~lib/@graphprotocol/graph-ts/index/typeConversion.stringToH160
     i32.store
     local.get 0
     i32.load offset=16
-    i32.const 20384
+    i32.const 20344
     call $~lib/@graphprotocol/graph-ts/index/ByteArray.fromHexString
     i32.store
     local.get 0
@@ -6738,41 +6738,41 @@
     i32.load offset=24
     i32.const 0
     call $~lib/array/Array<~lib/@graphprotocol/graph-ts/index/TypedMapEntry<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>>#__get
-    i32.const 20480
+    i32.const 20440
     i32.store
     local.get 0
     i32.load offset=12
-    i32.const 20256
+    i32.const 20216
     call $~lib/string/String.__ne
     if  ;; label = @1
-      i32.const 20504
-      i32.const 20256
+      i32.const 20464
+      i32.const 20216
       call $~lib/string/String.__concat
-      i32.const 20176
+      i32.const 20136
       call $~lib/string/String.__concat
       local.get 0
       i32.load offset=12
       call $~lib/string/String.__concat
-      i32.const 19160
+      i32.const 19120
       call $~lib/string/String.__concat
       call $~lib/subtest-as/assembly/log/log.error
     end
     local.get 0
     i32.load
-    i32.const 20296
+    i32.const 20256
     call $~lib/@graphprotocol/graph-ts/index/typeConversion.stringToH160
     call $~lib/@graphprotocol/graph-ts/index/ByteArray#notEqual
     if  ;; label = @1
-      i32.const 19712
-      i32.const 20296
+      i32.const 19672
+      i32.const 20256
       call $~lib/string/String.__concat
-      i32.const 19784
+      i32.const 19744
       call $~lib/string/String.__concat
       local.get 0
       i32.load
       call $~lib/@graphprotocol/graph-ts/index/typeConversion.bytesToHex
       call $~lib/string/String.__concat
-      i32.const 19160
+      i32.const 19120
       call $~lib/string/String.__concat
       call $~lib/subtest-as/assembly/log/log.error
     end
@@ -6782,37 +6782,37 @@
     call $~lib/@graphprotocol/graph-ts/index/ByteArray.fromI32
     call $~lib/@graphprotocol/graph-ts/index/BigInt#notEqual
     if  ;; label = @1
-      i32.const 19848
-      i32.const 20472
+      i32.const 19808
+      i32.const 20432
       call $~lib/string/String.__concat
-      i32.const 19664
+      i32.const 19624
       call $~lib/string/String.__concat
       local.get 0
       i32.load offset=4
       call $~lib/@graphprotocol/graph-ts/index/typeConversion.bigIntToString
       call $~lib/string/String.__concat
-      i32.const 19160
+      i32.const 19120
       call $~lib/string/String.__concat
       call $~lib/subtest-as/assembly/log/log.error
     end
     local.get 0
     i32.load offset=16
     i32.load
-    i32.const 20384
+    i32.const 20344
     call $~lib/@graphprotocol/graph-ts/index/ByteArray.fromHexString
     call $~lib/@graphprotocol/graph-ts/index/ByteArray#notEqual
     if  ;; label = @1
-      i32.const 20000
-      i32.const 20384
+      i32.const 19960
+      i32.const 20344
       call $~lib/string/String.__concat
-      i32.const 19784
+      i32.const 19744
       call $~lib/string/String.__concat
       local.get 0
       i32.load offset=16
       i32.load
       call $~lib/@graphprotocol/graph-ts/index/typeConversion.bytesToHex
       call $~lib/string/String.__concat
-      i32.const 19160
+      i32.const 19120
       call $~lib/string/String.__concat
       call $~lib/subtest-as/assembly/log/log.error
     end
@@ -6821,13 +6821,13 @@
     i32.const 0
     call $~lib/array/Array<~lib/@graphprotocol/graph-ts/index/TypedMapEntry<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>>#__get
     i32.load
-    i32.const 20480
+    i32.const 20440
     call $~lib/string/String.__ne
     if  ;; label = @1
-      i32.const 20080
-      i32.const 20480
+      i32.const 20040
+      i32.const 20440
       call $~lib/string/String.__concat
-      i32.const 20176
+      i32.const 20136
       call $~lib/string/String.__concat
       local.get 0
       i32.load offset=24
@@ -6835,7 +6835,7 @@
       call $~lib/array/Array<~lib/@graphprotocol/graph-ts/index/TypedMapEntry<~lib/string/String_~lib/@graphprotocol/graph-ts/index/Value>>#__get
       i32.load
       call $~lib/string/String.__concat
-      i32.const 19160
+      i32.const 19120
       call $~lib/string/String.__concat
       call $~lib/subtest-as/assembly/log/log.error
     end)
@@ -6852,13 +6852,13 @@
     i32.const 18408
     i32.const 7
     call $~lib/subtest-as/assembly/index/test
-    i32.const 19184
+    i32.const 19144
     i32.const 8
     call $~lib/subtest-as/assembly/index/test
-    i32.const 19488
+    i32.const 19448
     i32.const 9
     call $~lib/subtest-as/assembly/index/test
-    i32.const 20200
+    i32.const 20160
     i32.const 10
     call $~lib/subtest-as/assembly/index/test)
   (func $~lib/internal/memory/memcmp (type 6) (param i32 i32 i32) (result i32)
@@ -6921,7 +6921,7 @@
     global.get 0
     global.set 1)
   (func $start (type 0)
-    i32.const 20576
+    i32.const 20536
     global.set 0
     global.get 0
     global.set 1
@@ -7376,37 +7376,36 @@
   (data (;278;) (i32.const 18776) "\08\00\00\00\00\00\00\008I\00\00HI")
   (data (;279;) (i32.const 18792) "XI\00\00\02")
   (data (;280;) (i32.const 18800) "\0b\00\00\00r\00e\00t\00u\00r\00n\00V\00a\00l\00u\00e")
-  (data (;281;) (i32.const 18832) "\11\00\00\00F\00u\00n\00c\00t\00i\00o\00n\00 \00r\00e\00v\00e\00r\00t\00e\00d")
-  (data (;282;) (i32.const 18872) "\08\00\00\00\00\00\00\008I\00\00HI")
-  (data (;283;) (i32.const 18888) "\b8I\00\00\02")
-  (data (;284;) (i32.const 18896) "\17\00\00\00N\00o\00 \00f\00u\00n\00c\00t\00i\00o\00n\00 \00w\00i\00t\00h\00 \00n\00a\00m\00e\00 \00'")
-  (data (;285;) (i32.const 18952) "\15\00\00\00'\00,\00 \00c\00o\00n\00t\00r\00a\00c\00t\00 \00a\00d\00d\00r\00e\00s\00s\00 \00'")
-  (data (;286;) (i32.const 19000) "\1c\00\00\00'\00 \00a\00n\00d\00 \00g\00i\00v\00e\00n\00 \00a\00r\00g\00u\00m\00e\00n\00t\00s\00 \00f\00o\00u\00n\00d\00.")
-  (data (;287;) (i32.const 19064) ",\00\00\00E\00x\00p\00e\00c\00t\00e\00d\00 \00v\00a\00l\00u\00e\00 \00t\00o\00 \00b\00e\00 \00'\00r\00e\00t\00u\00r\00n\00V\00a\00l\00u\00e\00'\00 \00b\00u\00t\00 \00w\00a\00s\00 \00'")
-  (data (;288;) (i32.const 19160) "\0a\00\00\00'\00 \00i\00n\00s\00t\00e\00a\00d\00.")
-  (data (;289;) (i32.const 19184) "#\00\00\00C\00a\00n\00 \00t\00e\00s\00t\00 \00i\00f\00 \00m\00o\00c\00k\00e\00d\00 \00f\00u\00n\00c\00t\00i\00o\00n\00 \00r\00e\00v\00e\00r\00t\00s")
-  (data (;290;) (i32.const 19264) "\11\00\00\000\00x\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000")
-  (data (;291;) (i32.const 19304) "\06\00\00\00r\00e\00v\00e\00r\00t")
-  (data (;292;) (i32.const 19328) "xK")
-  (data (;293;) (i32.const 19336) "\03\00\00\00v\00a\00l")
-  (data (;294;) (i32.const 19360) "\98K")
-  (data (;295;) (i32.const 19368) "8\00\00\00F\00u\00n\00c\00t\00i\00o\00n\00 \00s\00h\00o\00u\00l\00d\00 \00r\00e\00v\00e\00r\00t\00 \00w\00h\00e\00n\00 \00b\00o\00o\00l\00 \00r\00e\00v\00e\00r\00t\00s\00 \00i\00s\00 \00s\00e\00t\00 \00t\00o\00 \00t\00r\00u\00e\00.")
-  (data (;296;) (i32.const 19488) "*\00\00\00C\00a\00n\00 \00i\00n\00i\00t\00i\00a\00l\00i\00s\00e\00 \00e\00v\00e\00n\00t\00 \00w\00i\00t\00h\00 \00d\00e\00f\00a\00u\00l\00t\00 \00m\00e\00t\00a\00d\00a\00t\00a")
-  (data (;297;) (i32.const 19576) "'\00\00\00n\00e\00w\00B\00u\00r\00g\00e\00r\00E\00v\00e\00n\00t\00.\00l\00o\00g\00T\00y\00p\00e\00 \00e\00x\00p\00e\00c\00t\00e\00d\00 \00t\00o\00 \00b\00e\00 \00'")
-  (data (;298;) (i32.const 19664) "\13\00\00\00'\00 \00b\00u\00t\00 \00a\00c\00t\00u\00a\00l\00l\00y\00 \00i\00s\00 \00'")
-  (data (;299;) (i32.const 19712) "\22\00\00\00n\00e\00w\00B\00u\00r\00g\00e\00r\00E\00v\00e\00n\00t\00.\00a\00d\00d\00r\00e\00s\00s\00 \00s\00h\00o\00u\00l\00d\00 \00b\00e\00 \00'")
-  (data (;300;) (i32.const 19784) "\1d\00\00\00'\00 \00(\00c\00a\00s\00e\00 \00i\00n\00s\00e\00n\00s\00i\00t\00i\00v\00e\00)\00 \00b\00u\00t\00 \00i\00s\00 \00'")
-  (data (;301;) (i32.const 19848) "(\00\00\00n\00e\00w\00B\00u\00r\00g\00e\00r\00E\00v\00e\00n\00t\00.\00l\00o\00g\00I\00n\00d\00e\00x\00 \00e\00x\00p\00e\00c\00t\00e\00d\00 \00t\00o\00 \00b\00e\00 \00'")
-  (data (;302;) (i32.const 19936) "\06\00\00\00i\00n\00p\00u\00t\00 ")
-  (data (;303;) (i32.const 19952) "\0f\00\00\00 \00h\00a\00s\00 \00o\00d\00d\00 \00l\00e\00n\00g\00t\00h")
-  (data (;304;) (i32.const 19992) "\01\00\00\00x")
-  (data (;305;) (i32.const 20000) "%\00\00\00n\00e\00w\00B\00u\00r\00g\00e\00r\00E\00v\00e\00n\00t\00.\00b\00l\00o\00c\00k\00.\00h\00a\00s\00h\00 \00s\00h\00o\00u\00l\00d\00 \00b\00e\00 \00'")
-  (data (;306;) (i32.const 20080) "-\00\00\00n\00e\00w\00B\00u\00r\00g\00e\00r\00E\00v\00e\00n\00t\00.\00p\00a\00r\00a\00m\00e\00t\00e\00r\00s\00[\000\00]\00.\00n\00a\00m\00e\00 \00s\00h\00o\00u\00l\00d\00 \00b\00e\00 \00'")
-  (data (;307;) (i32.const 20176) "\0a\00\00\00'\00 \00b\00u\00t\00 \00i\00s\00 \00'")
-  (data (;308;) (i32.const 20200) "\19\00\00\00C\00a\00n\00 \00u\00p\00d\00a\00t\00e\00 \00e\00v\00e\00n\00t\00 \00m\00e\00t\00a\00d\00a\00t\00a")
-  (data (;309;) (i32.const 20256) "\10\00\00\00u\00p\00d\00a\00t\00e\00d\00_\00l\00o\00g\00_\00t\00y\00p\00e")
-  (data (;310;) (i32.const 20296) "*\00\00\000\00x\00B\001\006\000\008\001\00F\003\006\000\00e\003\008\004\007\000\000\006\00d\00B\006\006\000\00b\00a\00e\001\00c\006\00d\001\00b\002\00e\001\007\00e\00C\002\00A")
-  (data (;311;) (i32.const 20384) "*\00\00\000\00x\00C\001\006\000\008\001\00F\003\006\000\00e\003\008\004\007\000\000\006\00d\00B\006\006\000\00b\00a\00e\001\00c\006\00d\001\00b\002\00e\001\007\00e\00C\002\00A")
-  (data (;312;) (i32.const 20472) "\02\00\00\004\002")
-  (data (;313;) (i32.const 20480) "\08\00\00\00n\00e\00w\00_\00n\00a\00m\00e")
-  (data (;314;) (i32.const 20504) "\22\00\00\00n\00e\00w\00B\00u\00r\00g\00e\00r\00E\00v\00e\00n\00t\00.\00l\00o\00g\00T\00y\00p\00e\00 \00s\00h\00o\00u\00l\00d\00 \00b\00e\00 \00'"))
+  (data (;281;) (i32.const 18832) "\08\00\00\00\00\00\00\008I\00\00HI")
+  (data (;282;) (i32.const 18848) "\90I\00\00\02")
+  (data (;283;) (i32.const 18856) "\17\00\00\00N\00o\00 \00f\00u\00n\00c\00t\00i\00o\00n\00 \00w\00i\00t\00h\00 \00n\00a\00m\00e\00 \00'")
+  (data (;284;) (i32.const 18912) "\15\00\00\00'\00,\00 \00c\00o\00n\00t\00r\00a\00c\00t\00 \00a\00d\00d\00r\00e\00s\00s\00 \00'")
+  (data (;285;) (i32.const 18960) "\1c\00\00\00'\00 \00a\00n\00d\00 \00g\00i\00v\00e\00n\00 \00a\00r\00g\00u\00m\00e\00n\00t\00s\00 \00f\00o\00u\00n\00d\00.")
+  (data (;286;) (i32.const 19024) ",\00\00\00E\00x\00p\00e\00c\00t\00e\00d\00 \00v\00a\00l\00u\00e\00 \00t\00o\00 \00b\00e\00 \00'\00r\00e\00t\00u\00r\00n\00V\00a\00l\00u\00e\00'\00 \00b\00u\00t\00 \00w\00a\00s\00 \00'")
+  (data (;287;) (i32.const 19120) "\0a\00\00\00'\00 \00i\00n\00s\00t\00e\00a\00d\00.")
+  (data (;288;) (i32.const 19144) "#\00\00\00C\00a\00n\00 \00t\00e\00s\00t\00 \00i\00f\00 \00m\00o\00c\00k\00e\00d\00 \00f\00u\00n\00c\00t\00i\00o\00n\00 \00r\00e\00v\00e\00r\00t\00s")
+  (data (;289;) (i32.const 19224) "\11\00\00\000\00x\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000")
+  (data (;290;) (i32.const 19264) "\06\00\00\00r\00e\00v\00e\00r\00t")
+  (data (;291;) (i32.const 19288) "PK")
+  (data (;292;) (i32.const 19296) "\03\00\00\00v\00a\00l")
+  (data (;293;) (i32.const 19320) "pK")
+  (data (;294;) (i32.const 19328) "8\00\00\00F\00u\00n\00c\00t\00i\00o\00n\00 \00s\00h\00o\00u\00l\00d\00 \00r\00e\00v\00e\00r\00t\00 \00w\00h\00e\00n\00 \00b\00o\00o\00l\00 \00r\00e\00v\00e\00r\00t\00s\00 \00i\00s\00 \00s\00e\00t\00 \00t\00o\00 \00t\00r\00u\00e\00.")
+  (data (;295;) (i32.const 19448) "*\00\00\00C\00a\00n\00 \00i\00n\00i\00t\00i\00a\00l\00i\00s\00e\00 \00e\00v\00e\00n\00t\00 \00w\00i\00t\00h\00 \00d\00e\00f\00a\00u\00l\00t\00 \00m\00e\00t\00a\00d\00a\00t\00a")
+  (data (;296;) (i32.const 19536) "'\00\00\00n\00e\00w\00B\00u\00r\00g\00e\00r\00E\00v\00e\00n\00t\00.\00l\00o\00g\00T\00y\00p\00e\00 \00e\00x\00p\00e\00c\00t\00e\00d\00 \00t\00o\00 \00b\00e\00 \00'")
+  (data (;297;) (i32.const 19624) "\13\00\00\00'\00 \00b\00u\00t\00 \00a\00c\00t\00u\00a\00l\00l\00y\00 \00i\00s\00 \00'")
+  (data (;298;) (i32.const 19672) "\22\00\00\00n\00e\00w\00B\00u\00r\00g\00e\00r\00E\00v\00e\00n\00t\00.\00a\00d\00d\00r\00e\00s\00s\00 \00s\00h\00o\00u\00l\00d\00 \00b\00e\00 \00'")
+  (data (;299;) (i32.const 19744) "\1d\00\00\00'\00 \00(\00c\00a\00s\00e\00 \00i\00n\00s\00e\00n\00s\00i\00t\00i\00v\00e\00)\00 \00b\00u\00t\00 \00i\00s\00 \00'")
+  (data (;300;) (i32.const 19808) "(\00\00\00n\00e\00w\00B\00u\00r\00g\00e\00r\00E\00v\00e\00n\00t\00.\00l\00o\00g\00I\00n\00d\00e\00x\00 \00e\00x\00p\00e\00c\00t\00e\00d\00 \00t\00o\00 \00b\00e\00 \00'")
+  (data (;301;) (i32.const 19896) "\06\00\00\00i\00n\00p\00u\00t\00 ")
+  (data (;302;) (i32.const 19912) "\0f\00\00\00 \00h\00a\00s\00 \00o\00d\00d\00 \00l\00e\00n\00g\00t\00h")
+  (data (;303;) (i32.const 19952) "\01\00\00\00x")
+  (data (;304;) (i32.const 19960) "%\00\00\00n\00e\00w\00B\00u\00r\00g\00e\00r\00E\00v\00e\00n\00t\00.\00b\00l\00o\00c\00k\00.\00h\00a\00s\00h\00 \00s\00h\00o\00u\00l\00d\00 \00b\00e\00 \00'")
+  (data (;305;) (i32.const 20040) "-\00\00\00n\00e\00w\00B\00u\00r\00g\00e\00r\00E\00v\00e\00n\00t\00.\00p\00a\00r\00a\00m\00e\00t\00e\00r\00s\00[\000\00]\00.\00n\00a\00m\00e\00 \00s\00h\00o\00u\00l\00d\00 \00b\00e\00 \00'")
+  (data (;306;) (i32.const 20136) "\0a\00\00\00'\00 \00b\00u\00t\00 \00i\00s\00 \00'")
+  (data (;307;) (i32.const 20160) "\19\00\00\00C\00a\00n\00 \00u\00p\00d\00a\00t\00e\00 \00e\00v\00e\00n\00t\00 \00m\00e\00t\00a\00d\00a\00t\00a")
+  (data (;308;) (i32.const 20216) "\10\00\00\00u\00p\00d\00a\00t\00e\00d\00_\00l\00o\00g\00_\00t\00y\00p\00e")
+  (data (;309;) (i32.const 20256) "*\00\00\000\00x\00B\001\006\000\008\001\00F\003\006\000\00e\003\008\004\007\000\000\006\00d\00B\006\006\000\00b\00a\00e\001\00c\006\00d\001\00b\002\00e\001\007\00e\00C\002\00A")
+  (data (;310;) (i32.const 20344) "*\00\00\000\00x\00C\001\006\000\008\001\00F\003\006\000\00e\003\008\004\007\000\000\006\00d\00B\006\006\000\00b\00a\00e\001\00c\006\00d\001\00b\002\00e\001\007\00e\00C\002\00A")
+  (data (;311;) (i32.const 20432) "\02\00\00\004\002")
+  (data (;312;) (i32.const 20440) "\08\00\00\00n\00e\00w\00_\00n\00a\00m\00e")
+  (data (;313;) (i32.const 20464) "\22\00\00\00n\00e\00w\00B\00u\00r\00g\00e\00r\00E\00v\00e\00n\00t\00.\00l\00o\00g\00T\00y\00p\00e\00 \00s\00h\00o\00u\00l\00d\00 \00b\00e\00 \00'"))
