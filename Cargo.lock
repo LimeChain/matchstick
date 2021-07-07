@@ -1336,7 +1336,7 @@ dependencies = [
 [[package]]
 name = "graph"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#9c45f1ade8b8fcc8009d26c05e60adc2e61a6231"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -1355,6 +1355,7 @@ dependencies = [
  "hex",
  "http 0.2.4",
  "isatty",
+ "itertools",
  "lazy_static",
  "mockall 0.8.3",
  "num-bigint",
@@ -1391,7 +1392,7 @@ dependencies = [
 [[package]]
 name = "graph-chain-arweave"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#9c45f1ade8b8fcc8009d26c05e60adc2e61a6231"
 dependencies = [
  "anyhow",
  "graph",
@@ -1400,7 +1401,7 @@ dependencies = [
 [[package]]
 name = "graph-chain-ethereum"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#9c45f1ade8b8fcc8009d26c05e60adc2e61a6231"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1424,7 +1425,7 @@ dependencies = [
 [[package]]
 name = "graph-core"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#9c45f1ade8b8fcc8009d26c05e60adc2e61a6231"
 dependencies = [
  "async-trait",
  "atomic_refcell",
@@ -1446,7 +1447,7 @@ dependencies = [
 [[package]]
 name = "graph-graphql"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#9c45f1ade8b8fcc8009d26c05e60adc2e61a6231"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -1465,7 +1466,7 @@ dependencies = [
 [[package]]
 name = "graph-mock"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#9c45f1ade8b8fcc8009d26c05e60adc2e61a6231"
 dependencies = [
  "futures 0.1.31",
  "graph",
@@ -1478,7 +1479,7 @@ dependencies = [
 [[package]]
 name = "graph-node"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#9c45f1ade8b8fcc8009d26c05e60adc2e61a6231"
 dependencies = [
  "clap",
  "crossbeam-channel",
@@ -1514,7 +1515,7 @@ dependencies = [
 [[package]]
 name = "graph-runtime-derive"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#9c45f1ade8b8fcc8009d26c05e60adc2e61a6231"
 dependencies = [
  "anyhow",
  "quote 1.0.9",
@@ -1524,7 +1525,7 @@ dependencies = [
 [[package]]
 name = "graph-runtime-wasm"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#9c45f1ade8b8fcc8009d26c05e60adc2e61a6231"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1549,7 +1550,7 @@ dependencies = [
 [[package]]
 name = "graph-server-http"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#9c45f1ade8b8fcc8009d26c05e60adc2e61a6231"
 dependencies = [
  "futures 0.1.31",
  "graph",
@@ -1563,7 +1564,7 @@ dependencies = [
 [[package]]
 name = "graph-server-index-node"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#9c45f1ade8b8fcc8009d26c05e60adc2e61a6231"
 dependencies = [
  "futures 0.3.15",
  "graph",
@@ -1577,7 +1578,7 @@ dependencies = [
 [[package]]
 name = "graph-server-json-rpc"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#9c45f1ade8b8fcc8009d26c05e60adc2e61a6231"
 dependencies = [
  "graph",
  "jsonrpc-http-server",
@@ -1588,7 +1589,7 @@ dependencies = [
 [[package]]
 name = "graph-server-metrics"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#9c45f1ade8b8fcc8009d26c05e60adc2e61a6231"
 dependencies = [
  "futures 0.1.31",
  "graph",
@@ -1601,7 +1602,7 @@ dependencies = [
 [[package]]
 name = "graph-server-websocket"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#9c45f1ade8b8fcc8009d26c05e60adc2e61a6231"
 dependencies = [
  "anyhow",
  "futures 0.1.31",
@@ -1618,7 +1619,7 @@ dependencies = [
 [[package]]
 name = "graph-store-postgres"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#9c45f1ade8b8fcc8009d26c05e60adc2e61a6231"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -1698,9 +1699,9 @@ dependencies = [
 
 [[package]]
 name = "hashbrown"
-version = "0.9.1"
+version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d7afe4a420e3fe79967a00898cc1f4db7c8a49a9333a29f8a4bd76a253d5cd04"
+checksum = "ab5ef0d4909ef3724cc8cce6ccc8572c5c817592e9285f5464f8e86f8bd3726e"
 
 [[package]]
 name = "heck"
@@ -1728,9 +1729,9 @@ checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
 name = "hex-literal"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5af1f635ef1bc545d78392b136bfe1c9809e029023c84a3638a864a10b8819c8"
+checksum = "76505e26b6ca3bbdbbb360b68472abbb80998c5fa5dc43672eca34f28258e138"
 
 [[package]]
 name = "hmac"
@@ -1982,9 +1983,9 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "1.6.2"
+version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "824845a0bf897a9042383849b02c1bc219c2383772efcd5c6f9766fa4b81aef3"
+checksum = "bc633605454125dec4b66843673f01c7df2b89479b32e0ed634e43a91cff62a5"
 dependencies = [
  "autocfg 1.0.1",
  "hashbrown",
@@ -2836,7 +2837,7 @@ dependencies = [
  "fallible-iterator 0.2.0",
  "futures 0.3.15",
  "log 0.4.14",
- "tokio 1.7.1",
+ "tokio 1.8.0",
  "tokio-postgres",
 ]
 
@@ -3533,7 +3534,7 @@ dependencies = [
 [[package]]
 name = "secp256k1"
 version = "0.20.3"
-source = "git+https://github.com/rust-bitcoin/rust-secp256k1#6ac9f4d4535db0dac995d1a65a9543b2b37d3e94"
+source = "git+https://github.com/rust-bitcoin/rust-secp256k1#12e3c66bec7d0fd6f46090e1e34a3fbd2fa1a681"
 dependencies = [
  "secp256k1-sys",
 ]
@@ -3541,7 +3542,7 @@ dependencies = [
 [[package]]
 name = "secp256k1-sys"
 version = "0.4.1"
-source = "git+https://github.com/rust-bitcoin/rust-secp256k1#6ac9f4d4535db0dac995d1a65a9543b2b37d3e94"
+source = "git+https://github.com/rust-bitcoin/rust-secp256k1#12e3c66bec7d0fd6f46090e1e34a3fbd2fa1a681"
 dependencies = [
  "cc",
 ]
@@ -3898,9 +3899,9 @@ checksum = "8ea5119cdb4c55b55d432abb513a0429384878c15dde60cc77b1c99de1a95a6a"
 
 [[package]]
 name = "structopt"
-version = "0.3.21"
+version = "0.3.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5277acd7ee46e63e5168a80734c9f6ee81b1367a7d8772a2d765df2a3705d28c"
+checksum = "69b041cdcb67226aca307e6e7be44c8806423d83e018bd662360a93dabce4d71"
 dependencies = [
  "clap",
  "lazy_static",
@@ -3909,9 +3910,9 @@ dependencies = [
 
 [[package]]
 name = "structopt-derive"
-version = "0.4.14"
+version = "0.4.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ba9cdfda491b814720b6b06e0cac513d922fc407582032e8706e9f137976f90"
+checksum = "7813934aecf5f51a54775e00068c237de98489463968231a51746bbbc03f9c10"
 dependencies = [
  "heck",
  "proc-macro-error",
@@ -4049,7 +4050,7 @@ dependencies = [
 [[package]]
 name = "test-store"
 version = "0.23.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#6e0bb3a37a4e44c8984084e335cfbbcb11ebf069"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#9c45f1ade8b8fcc8009d26c05e60adc2e61a6231"
 dependencies = [
  "diesel",
  "graph",
@@ -4075,18 +4076,18 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "1.0.25"
+version = "1.0.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa6f76457f59514c7eeb4e59d891395fab0b2fd1d40723ae737d64153392e9c6"
+checksum = "93119e4feac1cbe6c798c34d3a53ea0026b0b1de6a120deef895137c0529bfe2"
 dependencies = [
  "thiserror-impl",
 ]
 
 [[package]]
 name = "thiserror-impl"
-version = "1.0.25"
+version = "1.0.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a36768c0fbf1bb15eca10defa29526bda730a2376c2ab4393ccfa16fb1a318d"
+checksum = "060d69a0afe7796bf42e9e2ff91f5ee691fb15c53d38b4b62a9a53eb23164745"
 dependencies = [
  "proc-macro2 1.0.27",
  "quote 1.0.9",
@@ -4193,9 +4194,9 @@ dependencies = [
 
 [[package]]
 name = "tokio"
-version = "1.7.1"
+version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5fb2ed024293bb19f7a5dc54fe83bf86532a44c12a2bb8ba40d64a4509395ca2"
+checksum = "570c2eb13b3ab38208130eccd41be92520388791207fde783bda7c1e8ace28d4"
 dependencies = [
  "autocfg 1.0.1",
  "bytes 1.0.1",
@@ -4319,7 +4320,7 @@ dependencies = [
  "postgres-protocol",
  "postgres-types",
  "socket2 0.4.0",
- "tokio 1.7.1",
+ "tokio 1.8.0",
  "tokio-util 0.6.7",
 ]
 
@@ -4361,7 +4362,7 @@ checksum = "f8864d706fdb3cc0843a49647ac892720dac98a6eeb818b77190592cf4994066"
 dependencies = [
  "futures-core",
  "pin-project-lite 0.2.7",
- "tokio 1.7.1",
+ "tokio 1.8.0",
  "tokio-util 0.6.7",
 ]
 
@@ -4537,7 +4538,7 @@ dependencies = [
  "futures-sink",
  "log 0.4.14",
  "pin-project-lite 0.2.7",
- "tokio 1.7.1",
+ "tokio 1.8.0",
 ]
 
 [[package]]
@@ -4691,9 +4692,9 @@ dependencies = [
 
 [[package]]
 name = "unicode-segmentation"
-version = "1.7.1"
+version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb0d2e7be6ae3a5fa87eed5fb451aff96f2573d2694942e40543ae0bbe19c796"
+checksum = "8895849a949e7845e06bd6dc1aa51731a103c42707010a5b591c0038fb73385b"
 
 [[package]]
 name = "unicode-width"
