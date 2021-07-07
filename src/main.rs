@@ -6,26 +6,25 @@ use graph::{
     data::subgraph::{Mapping, Source, TemplateSource},
     ipfs_client::IpfsClient,
     prelude::{
-        o, slog, BlockState, DeploymentHash, HostMetrics, Link, Logger,
-        StopwatchMetrics, SubgraphStore,
+        o, slog, BlockState, DeploymentHash, HostMetrics, Link, Logger, StopwatchMetrics,
+        SubgraphStore,
     },
     semver::Version,
 };
 use graph_chain_arweave::adapter::ArweaveAdapter;
 use graph_chain_ethereum::{Chain, DataSource, DataSourceTemplate};
-use graph_core;
 use graph_core::three_box::ThreeBoxAdapter;
 use graph_mock::MockMetricsRegistry;
 use graph_runtime_wasm::mapping::ValidModule;
 use graph_runtime_wasm::{
     host_exports::HostExports, mapping::MappingContext, module::ExperimentalFeatures,
 };
+use slog::*;
 use std::str::FromStr;
 use std::sync::Arc;
+use std::time::Instant;
 use test_store::STORE;
 use web3::types::Address;
-use std::time::Instant;
-use slog::*;
 
 mod custom_wasm_instance;
 use custom_wasm_instance::WasmInstance;
@@ -141,7 +140,7 @@ fn mock_data_source(path: &str) -> DataSource {
             link: Link {
                 link: "link".to_owned(),
             },
-            runtime: Arc::new(runtime.clone()),
+            runtime: Arc::new(runtime),
         },
         context: Default::default(),
         creation_block: None,
@@ -149,7 +148,7 @@ fn mock_data_source(path: &str) -> DataSource {
     }
 }
 
-pub fn main() -> () {
+pub fn main() {
     let plain = slog_term::PlainSyncDecorator::new(std::io::stdout());
     let logger = Logger::root(slog_term::FullFormat::new(plain).build().fuse(), o!());
     let now = Instant::now();
@@ -206,11 +205,7 @@ pub fn main() -> () {
 
     let module = WasmInstance::from_valid_module_with_ctx(
         valid_module,
-        mock_context(
-            deployment.clone(),
-            data_source,
-            store.subgraph_store(),
-        ),
+        mock_context(deployment, data_source, store.subgraph_store()),
         host_metrics,
         None,
         experimental_features,
