@@ -5,6 +5,8 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  schedule:
+    - cron: '0 6 * * *'
 
 env:
   CARGO_TERM_COLOR: always
@@ -16,7 +18,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Update dependencies
+      run: cargo update
     - name: Build
       run: cargo build --verbose
     - name: Run tests
       run: cargo test --verbose
+    - name: Rustfmt
+      run: /usr/share/rust/.cargo/bin/cargo fmt --all -- --check

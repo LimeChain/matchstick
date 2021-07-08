@@ -1,4 +1,9 @@
+use std::marker::PhantomData;
+use std::{cell::RefCell, sync::Arc, time::Instant};
+use std::{rc::Rc, time::Duration};
+
 use anyhow::anyhow;
+use graph::runtime::{asc_get, AscPtr};
 use graph::{
     blockchain::{Blockchain, HostFnCtx},
     cheap_clone::CheapClone,
@@ -7,6 +12,7 @@ use graph::{
         HostMetrics,
     },
 };
+use graph_runtime_wasm::asc_abi::class::AscString;
 use graph_runtime_wasm::{
     error::DeterminismLevel,
     mapping::{MappingContext, ValidModule},
@@ -14,14 +20,7 @@ use graph_runtime_wasm::{
     module::{ExperimentalFeatures, IntoTrap, WasmInstanceContext},
 };
 use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::TimeoutStopwatch};
-
-use graph::runtime::{asc_get, AscPtr};
-use graph_runtime_wasm::asc_abi::class::AscString;
-use slog::{info, debug, error, warn, Drain};
-use slog_term;
-use std::marker::PhantomData;
-use std::{cell::RefCell, sync::Arc, time::Instant};
-use std::{rc::Rc, time::Duration};
+use slog::{debug, error, info, warn, Drain};
 
 trait WICExtension {
     fn log(&mut self, level: u32, msg: AscPtr<AscString>) -> Result<(), HostExportError>;
@@ -189,7 +188,7 @@ impl<C: Blockchain> WasmInstance<C> {
                                 "{} is not allowed in global variables",
                                 host_fn.name
                             )
-                            .into())
+                            .into());
                         }
                     };
 
