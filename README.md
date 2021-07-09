@@ -26,7 +26,7 @@ In order to run the framework with your compiled WASM binary, simply run:
 Now you can jump straight to the [test examples](https://github.com/LimeChain/demo-subgraph/blob/main/src/tests.ts "examples of tests") we have in our [demo subgraph](https://github.com/LimeChain/demo-subgraph "demo subgraph") and start your journey in Subgraph unit testing!
 
 ## Setting up locally 📍
-If you want to get **Subtest** up and running on your system with the minimal amount of hassle, this section is for you. This guide is aimed at both **macOS** and **Linux** systems.
+If you want to get the **Subtest** project up and running on your system, follow these simple steps. This guide is aimed at both **macOS** and **Linux** systems.
 
 ### Prerequisites
 To build and run **Subtest**  you need to have the following installed on your system:
