@@ -6,6 +6,13 @@
 ## Quick Start 🚀
 To use **Subtest**, simply go to the [Releases page](https://github.com/LimeChain/subtest/releases "Releases page") on this repository and download the latest binary.
 
+You can also run this one liner in the terminal to download the binary:
+`curl -OL https://github.com/LimeChain/subtest/releases/download/0.0.2/subtest`
+
+It will download the **subtest** binary, after that you just need to make it executable with this:
+
+`chmod a+x subtest`
+
 ### Run
 To run the framework, you just have to provide a path to a valid WASM instance where you have written and compiled your mappings along with your tests. To learn how to do that, proceed to the next section with user stories and practical examples. 
 
