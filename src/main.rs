@@ -3,26 +3,26 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use ethabi::Contract;
+use graph::data::subgraph::*;
 use graph::{
     blockchain::BlockPtr,
     components::store::DeploymentLocator,
     data::subgraph::{Mapping, Source, TemplateSource},
     ipfs_client::IpfsClient,
     prelude::{
-        BlockState, DeploymentHash, HostMetrics, Link, Logger, o, slog, StopwatchMetrics,
+        o, slog, BlockState, DeploymentHash, HostMetrics, Link, Logger, StopwatchMetrics,
         SubgraphStore,
     },
     semver::Version,
 };
-use graph::data::subgraph::*;
 use graph_chain_arweave::adapter::ArweaveAdapter;
 use graph_chain_ethereum::{Chain, DataSource, DataSourceTemplate};
 use graph_core::three_box::ThreeBoxAdapter;
 use graph_mock::MockMetricsRegistry;
+use graph_runtime_wasm::mapping::ValidModule;
 use graph_runtime_wasm::{
     host_exports::HostExports, mapping::MappingContext, module::ExperimentalFeatures,
 };
-use graph_runtime_wasm::mapping::ValidModule;
 use slog::*;
 use test_store::STORE;
 use web3::types::Address;
@@ -91,7 +91,12 @@ fn mock_context(
             data_source,
             store.clone(),
         )),
-        state: BlockState::new(store.writable(&deployment).expect("Could not create BlockState."), Default::default()),
+        state: BlockState::new(
+            store
+                .writable(&deployment)
+                .expect("Could not create BlockState."),
+            Default::default(),
+        ),
         proof_of_indexing: None,
         host_fns: Arc::new(Vec::new()),
     }
@@ -112,9 +117,9 @@ fn mock_abi() -> MappingABI {
                 "type": "constructor"
             }
         ]"#
-                .as_bytes(),
+            .as_bytes(),
         )
-            .expect("Could not load contract."),
+        .expect("Could not load contract."),
     }
 }
 
@@ -126,7 +131,10 @@ fn mock_data_source(path: &str) -> DataSource {
         name: String::from("example data source"),
         network: Some(String::from("mainnet")),
         source: Source {
-            address: Some(Address::from_str("0123123123012312312301231231230123123123").expect("Could not create address from string.")),
+            address: Some(
+                Address::from_str("0123123123012312312301231231230123123123")
+                    .expect("Could not create address from string."),
+            ),
             abi: String::from("123123"),
             start_block: 0,
         },
@@ -203,7 +211,10 @@ pub fn main() {
         allow_non_deterministic_3box: true,
     };
 
-    let valid_module = Arc::new(ValidModule::new(data_source.mapping.runtime.as_ref()).expect("Could not create ValidModule."));
+    let valid_module = Arc::new(
+        ValidModule::new(data_source.mapping.runtime.as_ref())
+            .expect("Could not create ValidModule."),
+    );
 
     let module = WasmInstance::from_valid_module_with_ctx(
         valid_module,
@@ -212,7 +223,7 @@ pub fn main() {
         None,
         experimental_features,
     )
-        .expect("Could not create WasmInstance from valid module with context.");
+    .expect("Could not create WasmInstance from valid module with context.");
 
     let run_tests = module
         .instance
