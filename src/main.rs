@@ -1,9 +1,9 @@
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Instant;
-
+use wasm_instance::WasmInstance;
 use ethabi::Contract;
-use graph::components::store::{DeploymentId, WritableStore};
+use graph::components::store::DeploymentId;
 use graph::data::subgraph::*;
 use graph::{
     blockchain::BlockPtr,
@@ -25,13 +25,13 @@ use graph_runtime_wasm::{
     host_exports::HostExports, mapping::MappingContext, module::ExperimentalFeatures,
 };
 use slog::*;
-use std::result::Result;
 use web3::types::Address;
 
-use async_trait::async_trait;
-use custom_wasm_instance::WasmInstance;
+use subgraph_store::MockSubgraphStore;
 
-mod custom_wasm_instance;
+mod wasm_instance;
+mod writable_store;
+mod subgraph_store;
 
 fn mock_host_exports(
     subgraph_id: DeploymentHash,
@@ -75,191 +75,6 @@ fn mock_host_exports(
         arweave_adapter,
         three_box_adapter,
     )
-}
-
-struct MockWritableStore {}
-
-#[async_trait]
-impl WritableStore for MockWritableStore {
-    fn block_ptr(&self) -> Result<Option<BlockPtr>, anyhow::Error> {
-        unreachable!()
-    }
-
-    fn start_subgraph_deployment(
-        &self,
-        _logger: &Logger,
-    ) -> Result<(), graph::prelude::StoreError> {
-        unreachable!()
-    }
-
-    fn revert_block_operations(
-        &self,
-        _block_ptr_to: BlockPtr,
-    ) -> Result<(), graph::prelude::StoreError> {
-        unreachable!()
-    }
-
-    fn unfail(&self) -> Result<(), graph::prelude::StoreError> {
-        unreachable!()
-    }
-
-    async fn fail_subgraph(
-        &self,
-        _error: schema::SubgraphError,
-    ) -> Result<(), graph::prelude::StoreError> {
-        unreachable!()
-    }
-
-    fn supports_proof_of_indexing<'a>(self: Arc<Self>) -> graph::prelude::DynTryFuture<'a, bool> {
-        unreachable!()
-    }
-
-    fn get(
-        &self,
-        _key: graph::prelude::EntityKey,
-    ) -> Result<Option<graph::prelude::Entity>, graph::prelude::QueryExecutionError> {
-        unreachable!()
-    }
-
-    fn transact_block_operations(
-        &self,
-        _block_ptr_to: BlockPtr,
-        _mods: Vec<graph::prelude::EntityModification>,
-        _stopwatch: StopwatchMetrics,
-        _data_sources: Vec<graph::components::store::StoredDynamicDataSource>,
-        _deterministic_errors: Vec<schema::SubgraphError>,
-    ) -> Result<(), graph::prelude::StoreError> {
-        unreachable!()
-    }
-
-    fn get_many(
-        &self,
-        _ids_for_type: std::collections::BTreeMap<&graph::components::store::EntityType, Vec<&str>>,
-    ) -> Result<
-        std::collections::BTreeMap<
-            graph::components::store::EntityType,
-            Vec<graph::prelude::Entity>,
-        >,
-        graph::prelude::StoreError,
-    > {
-        unreachable!()
-    }
-
-    fn deployment_synced(&self) -> Result<(), anyhow::Error> {
-        unreachable!()
-    }
-
-    async fn is_deployment_synced(&self) -> Result<bool, anyhow::Error> {
-        unreachable!()
-    }
-
-    fn unassign_subgraph(&self) -> Result<(), graph::prelude::StoreError> {
-        unreachable!()
-    }
-
-    async fn load_dynamic_data_sources(
-        &self,
-    ) -> Result<Vec<graph::components::store::StoredDynamicDataSource>, graph::prelude::StoreError>
-    {
-        unreachable!()
-    }
-}
-
-struct MockSubgraphStore {}
-impl SubgraphStore for MockSubgraphStore {
-    fn find_ens_name(
-        &self,
-        _hash: &str,
-    ) -> std::result::Result<Option<String>, graph::prelude::QueryExecutionError> {
-        Ok(Some(String::from("ds")))
-    }
-
-    fn is_deployed(&self, _id: &DeploymentHash) -> Result<bool, anyhow::Error> {
-        unreachable!()
-    }
-
-    fn create_subgraph_deployment(
-        &self,
-        _name: SubgraphName,
-        _schema: &graph::prelude::Schema,
-        _deployment: graph::prelude::SubgraphDeploymentEntity,
-        _node_id: graph::prelude::NodeId,
-        _network: String,
-        _mode: graph::prelude::SubgraphVersionSwitchingMode,
-    ) -> Result<DeploymentLocator, graph::prelude::StoreError> {
-        unreachable!()
-    }
-
-    fn create_subgraph(&self, _name: SubgraphName) -> Result<String, graph::prelude::StoreError> {
-        unreachable!()
-    }
-
-    fn remove_subgraph(&self, _name: SubgraphName) -> Result<(), graph::prelude::StoreError> {
-        unreachable!()
-    }
-
-    fn reassign_subgraph(
-        &self,
-        _deployment: &DeploymentLocator,
-        _node_id: &graph::prelude::NodeId,
-    ) -> Result<(), graph::prelude::StoreError> {
-        unreachable!()
-    }
-
-    fn assigned_node(
-        &self,
-        _deployment: &DeploymentLocator,
-    ) -> Result<Option<graph::prelude::NodeId>, graph::prelude::StoreError> {
-        unreachable!()
-    }
-
-    fn assignments(
-        &self,
-        _node: &graph::prelude::NodeId,
-    ) -> Result<Vec<DeploymentLocator>, graph::prelude::StoreError> {
-        unreachable!()
-    }
-
-    fn subgraph_exists(&self, _name: &SubgraphName) -> Result<bool, graph::prelude::StoreError> {
-        unreachable!()
-    }
-
-    fn input_schema(
-        &self,
-        _subgraph_id: &DeploymentHash,
-    ) -> Result<Arc<graph::prelude::Schema>, graph::prelude::StoreError> {
-        unreachable!()
-    }
-
-    fn api_schema(
-        &self,
-        _subgraph_id: &DeploymentHash,
-    ) -> Result<Arc<graph::prelude::ApiSchema>, graph::prelude::StoreError> {
-        unreachable!()
-    }
-
-    fn writable(
-        &self,
-        _deployment: &DeploymentLocator,
-    ) -> Result<Arc<dyn graph::components::store::WritableStore>, graph::prelude::StoreError> {
-        let mock_writable_store = MockWritableStore {};
-        Ok(Arc::from(mock_writable_store))
-    }
-
-    fn writable_for_network_indexer(
-        &self,
-        _id: &DeploymentHash,
-    ) -> Result<Arc<dyn graph::components::store::WritableStore>, graph::prelude::StoreError> {
-        unreachable!()
-    }
-
-    fn least_block_ptr(&self, _id: &DeploymentHash) -> Result<Option<BlockPtr>, anyhow::Error> {
-        unreachable!()
-    }
-
-    fn locators(&self, _hash: &str) -> Result<Vec<DeploymentLocator>, graph::prelude::StoreError> {
-        unreachable!()
-    }
 }
 
 fn mock_context(
@@ -362,11 +177,7 @@ pub fn main() {
         &DeploymentHash::new(subgraph_id).expect("Could not create DeploymentHash.");
 
     let deployment = DeploymentLocator::new(DeploymentId::new(42), deployment_id.clone());
-
     let data_source = mock_data_source(path_to_wasm);
-
-    // let store = STORE.clone();
-
     let metrics_registry = Arc::new(MockMetricsRegistry::new());
 
     let stopwatch_metrics = StopwatchMetrics::new(
@@ -392,7 +203,7 @@ pub fn main() {
             .expect("Could not create ValidModule."),
     );
 
-    let mock_subgraph_store: MockSubgraphStore = MockSubgraphStore {};
+    let mock_subgraph_store = MockSubgraphStore {};
 
     let module = WasmInstance::from_valid_module_with_ctx(
         valid_module,
