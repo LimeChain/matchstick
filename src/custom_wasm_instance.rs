@@ -86,12 +86,12 @@ impl<C: Blockchain> WasmInstance<C> {
 
         let timeout_stopwatch = Arc::new(std::sync::Mutex::new(TimeoutStopwatch::start_new()));
         if let Some(timeout) = timeout {
-            let interrupt_handle = linker.store().interrupt_handle().unwrap();
+            let interrupt_handle = linker.store().interrupt_handle().expect("Could not interrupt handle.");
             let timeout_stopwatch = timeout_stopwatch.clone();
             graph::spawn_allow_panic(async move {
                 let minimum_wait = Duration::from_secs(1);
                 loop {
-                    let duration = *timeout_stopwatch.lock().unwrap();
+                    let duration = *timeout_stopwatch.lock().expect("Could not unlock timeout stopwatch.");
                     let time_left = timeout.checked_sub(duration.elapsed());
                     match time_left {
                         None => break interrupt_handle.interrupt(), // Timed out.
@@ -125,22 +125,22 @@ impl<C: Blockchain> WasmInstance<C> {
                         module,
                         $wasm_name,
                         move |caller: wasmtime::Caller, $($param: u32),*| {
-                            let instance = func_shared_ctx.upgrade().unwrap();
+                            let instance = func_shared_ctx.upgrade().expect("Could not get instance.");
                             let mut instance = instance.borrow_mut();
 
                             if instance.is_none() {
                                 *instance = Some(WasmInstanceContext::from_caller(
                                     caller,
-                                    ctx.borrow_mut().take().unwrap(),
+                                    ctx.borrow_mut().take().expect("Could not borrow ctx as mutable."),
                                     valid_module.clone(),
                                     host_metrics.clone(),
                                     timeout,
                                     timeout_stopwatch.clone(),
                                     experimental_features.clone()
-                                ).unwrap())
+                                ).expect("Could not generate instance."))
                             }
 
-                            let instance = instance.as_mut().unwrap();
+                            let instance = instance.as_mut().expect("Could not borrow instance as mutable.");
                             let _section = instance.host_metrics.stopwatch.start_section($section);
 
                             let result = instance.$rust_name(
@@ -176,7 +176,7 @@ impl<C: Blockchain> WasmInstance<C> {
                 let host_fn = host_fn.cheap_clone();
                 linker.func(module, host_fn.name, move |call_ptr: u32| {
                     let start = Instant::now();
-                    let instance = func_shared_ctx.upgrade().unwrap();
+                    let instance = func_shared_ctx.upgrade().expect("Could not upgrade shared context.");
                     let mut instance = instance.borrow_mut();
 
                     let instance = match &mut *instance {
@@ -310,7 +310,7 @@ impl<C: Blockchain> WasmInstance<C> {
         if shared_ctx.borrow().is_none() {
             *shared_ctx.borrow_mut() = Some(WasmInstanceContext::from_instance(
                 &instance,
-                ctx.borrow_mut().take().unwrap(),
+                ctx.borrow_mut().take().expect("Could not borrow context as mutable."),
                 valid_module,
                 host_metrics,
                 timeout,
