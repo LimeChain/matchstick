@@ -4,9 +4,7 @@
 ![miro2](https://user-images.githubusercontent.com/32264020/123761690-bcf37f80-d8ca-11eb-9950-6452d7e972cd.jpeg)
 
 ## Quick Start 🚀
-To use **Subtest**, simply go to the [Releases page](https://github.com/LimeChain/subtest/releases "Releases page") on this repository and download the latest binary.
-
-You can also run this one liner in the terminal to download the binary:
+To download **Subtest**, simply run this command in the terminal:
 
 `curl -OL https://github.com/LimeChain/subtest/releases/download/0.0.2/subtest`
 
