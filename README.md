@@ -8,7 +8,7 @@ To download **Subtest**, simply run the following command in you terminal:
 
 `curl -OL https://github.com/LimeChain/subtest/releases/download/0.0.2/subtest`
 
-It will download the **subtest** binary, after that you just need to make it executable with this:
+After that you just need to turn it to an executable binary with this:
 
 `chmod a+x subtest`
 
