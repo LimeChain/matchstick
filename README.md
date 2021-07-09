@@ -48,7 +48,7 @@ To run the framework, you just have to provide a path to a valid WASM instance w
 `cargo run "Gravity.wasm"`
 
 ## Example Usage 📖
-To use **Subtest** you also need to have a generated WASM binary, which includes your mappings and your unit tests. To get that file simply run `graph build` the same way you would normally build your subgraph. The generated WASM file will be located in the `/build` folder of your subgraph project.
+To use **Subtest** you also need to have a generated WASM binary, which includes your mappings and your unit tests. To get that file simply run `graph build` the same way you would normally build your subgraph. The generated WASM file will be located in the `/build` folder of your subgraph project. **Tip:** You can move the **subtest** binary straight to the `/build` folder too, so you can just run `./subtest "WasmFile.wasm"` from there.
 
 Let's explore a few common scenarios where we'd want to test our handler functions. We've created a [**demo subgraph repo**](https://github.com/LimeChain/demo-subgraph "demo subgraph") ❗to fully demonstrate how to use the framework and all its functionality using the [Example Subgraph](https://thegraph.com/docs/developer/create-subgraph-hosted "Example Subgraph"), provided by [The Graph Docs](https://thegraph.com/docs "The Graph Docs"), which you most likely will be familiar with. For the full examples, feel free to check it out in depth. Let's dive in straight to the code on there! We've got the following simple generated event:
 ```typescript
