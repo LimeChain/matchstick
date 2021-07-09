@@ -1,8 +1,5 @@
-use std::str::FromStr;
-use std::sync::Arc;
-use std::time::Instant;
-
 use ethabi::Contract;
+use graph::components::store::DeploymentId;
 use graph::data::subgraph::*;
 use graph::{
     blockchain::BlockPtr,
@@ -24,12 +21,17 @@ use graph_runtime_wasm::{
     host_exports::HostExports, mapping::MappingContext, module::ExperimentalFeatures,
 };
 use slog::*;
-use test_store::STORE;
+use std::str::FromStr;
+use std::sync::Arc;
+use std::time::Instant;
+use wasm_instance::WasmInstance;
 use web3::types::Address;
 
-use custom_wasm_instance::WasmInstance;
+use subgraph_store::MockSubgraphStore;
 
-mod custom_wasm_instance;
+mod subgraph_store;
+mod wasm_instance;
+mod writable_store;
 
 fn mock_host_exports(
     subgraph_id: DeploymentHash,
@@ -171,26 +173,11 @@ pub fn main() {
     let path_to_wasm = &args[1];
 
     let subgraph_id = "ipfsMap";
-    let deployment_id = DeploymentHash::new(subgraph_id).expect("Could not create DeploymentHash.");
+    let deployment_id =
+        &DeploymentHash::new(subgraph_id).expect("Could not create DeploymentHash.");
 
-    let deployment = test_store::create_test_subgraph(
-        &deployment_id,
-        "type User @entity {
-            id: ID!,
-            name: String,
-        }
-    
-        type Thing @entity {
-            id: ID!,
-            value: String,
-            extra: String
-        }",
-    );
-
+    let deployment = DeploymentLocator::new(DeploymentId::new(42), deployment_id.clone());
     let data_source = mock_data_source(path_to_wasm);
-
-    let store = STORE.clone();
-
     let metrics_registry = Arc::new(MockMetricsRegistry::new());
 
     let stopwatch_metrics = StopwatchMetrics::new(
@@ -216,9 +203,11 @@ pub fn main() {
             .expect("Could not create ValidModule."),
     );
 
+    let mock_subgraph_store = MockSubgraphStore {};
+
     let module = WasmInstance::from_valid_module_with_ctx(
         valid_module,
-        mock_context(deployment, data_source, store.subgraph_store()),
+        mock_context(deployment, data_source, Arc::from(mock_subgraph_store)),
         host_metrics,
         None,
         experimental_features,
