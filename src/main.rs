@@ -1,3 +1,7 @@
+use std::str::FromStr;
+use std::sync::Arc;
+use std::time::Instant;
+
 use ethabi::Contract;
 use graph::data::subgraph::*;
 use graph::{
@@ -20,14 +24,12 @@ use graph_runtime_wasm::{
     host_exports::HostExports, mapping::MappingContext, module::ExperimentalFeatures,
 };
 use slog::*;
-use std::str::FromStr;
-use std::sync::Arc;
-use std::time::Instant;
 use test_store::STORE;
 use web3::types::Address;
 
-mod custom_wasm_instance;
 use custom_wasm_instance::WasmInstance;
+
+mod custom_wasm_instance;
 
 fn mock_host_exports(
     subgraph_id: DeploymentHash,
@@ -46,7 +48,7 @@ fn mock_host_exports(
         },
         mapping: Mapping {
             kind: String::from("ethereum/events"),
-            api_version: Version::parse("0.1.0").unwrap(),
+            api_version: Version::parse("0.1.0").expect("Could not parse api version."),
             language: String::from("wasm/assemblyscript"),
             entities: vec![],
             abis: vec![],
@@ -60,7 +62,7 @@ fn mock_host_exports(
         },
     }];
 
-    let network = data_source.network.clone().unwrap();
+    let network = data_source.network.clone().expect("Could not get network.");
     HostExports::new(
         subgraph_id,
         &data_source,
@@ -89,7 +91,12 @@ fn mock_context(
             data_source,
             store.clone(),
         )),
-        state: BlockState::new(store.writable(&deployment).unwrap(), Default::default()),
+        state: BlockState::new(
+            store
+                .writable(&deployment)
+                .expect("Could not create BlockState."),
+            Default::default(),
+        ),
         proof_of_indexing: None,
         host_fns: Arc::new(Vec::new()),
     }
@@ -112,7 +119,7 @@ fn mock_abi() -> MappingABI {
         ]"#
             .as_bytes(),
         )
-        .unwrap(),
+        .expect("Could not load contract."),
     }
 }
 
@@ -124,13 +131,16 @@ fn mock_data_source(path: &str) -> DataSource {
         name: String::from("example data source"),
         network: Some(String::from("mainnet")),
         source: Source {
-            address: Some(Address::from_str("0123123123012312312301231231230123123123").unwrap()),
+            address: Some(
+                Address::from_str("0123123123012312312301231231230123123123")
+                    .expect("Could not create address from string."),
+            ),
             abi: String::from("123123"),
             start_block: 0,
         },
         mapping: Mapping {
             kind: String::from("ethereum/events"),
-            api_version: Version::parse("0.1.0").unwrap(),
+            api_version: Version::parse("0.1.0").expect("Could not parse api version."),
             language: String::from("wasm/assemblyscript"),
             entities: vec![],
             abis: vec![],
@@ -161,7 +171,7 @@ pub fn main() {
     let path_to_wasm = &args[1];
 
     let subgraph_id = "ipfsMap";
-    let deployment_id = DeploymentHash::new(subgraph_id).unwrap();
+    let deployment_id = DeploymentHash::new(subgraph_id).expect("Could not create DeploymentHash.");
 
     let deployment = test_store::create_test_subgraph(
         &deployment_id,
@@ -201,7 +211,10 @@ pub fn main() {
         allow_non_deterministic_3box: true,
     };
 
-    let valid_module = Arc::new(ValidModule::new(data_source.mapping.runtime.as_ref()).unwrap());
+    let valid_module = Arc::new(
+        ValidModule::new(data_source.mapping.runtime.as_ref())
+            .expect("Could not create ValidModule."),
+    );
 
     let module = WasmInstance::from_valid_module_with_ctx(
         valid_module,
@@ -210,7 +223,7 @@ pub fn main() {
         None,
         experimental_features,
     )
-    .unwrap();
+    .expect("Could not create WasmInstance from valid module with context.");
 
     let run_tests = module
         .instance
