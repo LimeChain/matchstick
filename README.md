@@ -170,7 +170,7 @@ export function createNewGravatarEvent(id: i32, ownerAddress: string, displayNam
     return newGravatarEvent;
 }
 ```
-That's all well and good, but what if we had more complex login in the handler function? We would want to check that the event that gets saved in the store looks the way we want it to look like.
+That's all well and good, but what if we had more complex logic in the handler function? We would want to check that the event that gets saved in the store looks the way we want it to look like.
 
 What we need to do is create a test file, we can name it however we want - let's say `tests.ts`, somewhere in our project. In our test file we need to define a function named `runTests()`, it's important that the function has that exact name (for now). This is an example of how our tests might look like:
 
