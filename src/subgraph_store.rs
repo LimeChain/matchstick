@@ -1,3 +1,4 @@
+use crate::writable_store::MockWritableStore;
 use graph::data::subgraph::*;
 use graph::{
     blockchain::BlockPtr,
@@ -6,7 +7,6 @@ use graph::{
 };
 use std::result::Result;
 use std::sync::Arc;
-use crate::writable_store::MockWritableStore;
 
 pub struct MockSubgraphStore {}
 

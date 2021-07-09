@@ -1,12 +1,12 @@
-use std::sync::Arc;
+use async_trait::async_trait;
 use graph::components::store::WritableStore;
 use graph::data::subgraph::*;
 use graph::{
     blockchain::BlockPtr,
     prelude::{Logger, StopwatchMetrics},
 };
-use async_trait::async_trait;
 use std::result::Result;
+use std::sync::Arc;
 
 pub struct MockWritableStore {}
 

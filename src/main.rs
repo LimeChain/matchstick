@@ -1,7 +1,3 @@
-use std::str::FromStr;
-use std::sync::Arc;
-use std::time::Instant;
-use wasm_instance::WasmInstance;
 use ethabi::Contract;
 use graph::components::store::DeploymentId;
 use graph::data::subgraph::*;
@@ -25,13 +21,17 @@ use graph_runtime_wasm::{
     host_exports::HostExports, mapping::MappingContext, module::ExperimentalFeatures,
 };
 use slog::*;
+use std::str::FromStr;
+use std::sync::Arc;
+use std::time::Instant;
+use wasm_instance::WasmInstance;
 use web3::types::Address;
 
 use subgraph_store::MockSubgraphStore;
 
+mod subgraph_store;
 mod wasm_instance;
 mod writable_store;
-mod subgraph_store;
 
 fn mock_host_exports(
     subgraph_id: DeploymentHash,
