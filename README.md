@@ -7,6 +7,7 @@
 To use **Subtest**, simply go to the [Releases page](https://github.com/LimeChain/subtest/releases "Releases page") on this repository and download the latest binary.
 
 You can also run this one liner in the terminal to download the binary:
+
 `curl -OL https://github.com/LimeChain/subtest/releases/download/0.0.2/subtest`
 
 It will download the **subtest** binary, after that you just need to make it executable with this:
