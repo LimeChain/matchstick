@@ -17,6 +17,8 @@ In order to run the framework with your compiled WASM binary, simply run:
 
 `./subtest "Gravity.wasm"`
 
+Now you can jump straight to the [test examples](https://github.com/LimeChain/demo-subgraph/blob/main/src/tests.ts "examples of tests") we have in our [demo subgraph](https://github.com/LimeChain/demo-subgraph "demo subgraph") and start your journey in Subgraph unit testing!
+
 ## Setting up locally 📍
 If you want to get **Subtest** up and running on your system with the minimal amount of hassle, this section is for you. This guide is aimed at both **macOS** and **Linux** systems.
 
@@ -40,7 +42,7 @@ To run the framework, you just have to provide a path to a valid WASM instance w
 `cargo run "Gravity.wasm"`
 
 ## Example Usage 📖
-Let's explore a few common scenarios where we'd want to test our handler functions. We've created a [demo subgraph repo](https://github.com/LimeChain/demo-subgraph "demo subgraph") to fully demonstrate how to use the framework and all its functionality using the [Example Subgraph](https://thegraph.com/docs/developer/create-subgraph-hosted "Example Subgraph"), provided by [The Graph Docs](https://thegraph.com/docs "The Graph Docs"), which you most likely will be familiar with. For the full examples, feel free to check it out in depth. Let's dive in straight to the code on there! We've got the following simple generated event:
+Let's explore a few common scenarios where we'd want to test our handler functions. We've created a [**demo subgraph repo**](https://github.com/LimeChain/demo-subgraph "demo subgraph") ❗to fully demonstrate how to use the framework and all its functionality using the [Example Subgraph](https://thegraph.com/docs/developer/create-subgraph-hosted "Example Subgraph"), provided by [The Graph Docs](https://thegraph.com/docs "The Graph Docs"), which you most likely will be familiar with. For the full examples, feel free to check it out in depth. Let's dive in straight to the code on there! We've got the following simple generated event:
 ```typescript
 export class NewGravatar extends ethereum.Event {
   get params(): NewGravatar__Params {
@@ -278,10 +280,30 @@ store.assertFieldEq(GRAVATAR_ENTITY_TYPE, "gravatarId0", "id", "gravatarId0");
 ```
 Running the assertFieldEq() function will check for equality of the given field against the given expected value. The test will fail and an error message will be outputted if the values are **NOT** equal. Otherwise the test will pass successfully.
 
+### As a user I want be able to interact with Event metadata
+Users can *inject* default transaction data into any event object, as long as it inherits the base `ethereum.Event`. The following example shows how you can wrap any event with default metadata:
+```typescript
+import { store } from "subtest-as/assembly/store";
+import { addMetadata } from "subtest-as/assembly/index";
+import { Address, BigInt, Bytes, ethereum } from "@graphprotocol/graph-ts";
+import { NewGravatar } from "../generated/Gravity/Gravity";
+
+let base: ethereum.Event = new NewGravatar();
+let newGravatarEvent = addMetadata(base);
+```
+
+Then you can read/write to those fiels like this:
+```tyepscript
+let logType = newGravatarEvent.logType;
+
+let UPDATED_ADDRESS = "0xB16081F360e3847006dB660bae1c6d1b2e17eC2A";
+newGravatarEvent.address = Address.fromString(UPDATED_ADDRESS);
+```
+
 ### As a user I want to see test run time durations
 The log output includes the test run duration. Here's an example:
 
-`Jul 09 17:45:53.190 INFO Program execution time: 119.132726ms`
+`Jul 09 14:54:42.420 INFO Program execution time: 10.06022ms`
 
 ## Next steps 🎯
 The **Subtest** framework is currently live for beta testing. There is a lot of room for improvements to everything we've talked about above. We're trying to gather as much feedback from subgraph developers as we can, to understand how we can solve the problems they face when building subgraphs, as well as how we can make the overall testing process as smooth and streamlined as possible.
