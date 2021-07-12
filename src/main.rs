@@ -25,6 +25,8 @@ use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Instant;
 use wasm_instance::WasmInstance;
+use wasm_instance::SUCCESSFUL_TESTS;
+use wasm_instance::FAILED_TESTS;
 use web3::types::Address;
 
 use subgraph_store::MockSubgraphStore;
@@ -222,5 +224,6 @@ pub fn main() {
         .call(&[])
         .expect("Couldn't call wasm function 'runTests'.");
 
+    info!(logger, "Successful tests: {}, Failed tests: {}", *SUCCESSFUL_TESTS.lock().expect("Could not obtain SUCCESSFUL_TESTS lock."), *FAILED_TESTS.lock().expect("Could not obtain FAILED_TESTS lock."));
     info!(logger, "Program execution time: {:?}", now.elapsed());
 }
