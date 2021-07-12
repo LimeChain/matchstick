@@ -12,6 +12,7 @@ use graph::{
         HostMetrics,
     },
 };
+use graph_runtime_wasm::asc_abi::class::AscEntity;
 use graph_runtime_wasm::asc_abi::class::AscString;
 use graph_runtime_wasm::{
     error::DeterminismLevel,
@@ -28,10 +29,29 @@ lazy_static! {
     pub static ref FAILED_TESTS: Mutex<i32> = Mutex::new(0);
 }
 
+const WRONG_STORE_MESSAGE: &str =
+    "Please use the store from subtest-as and not the one from graph-ts.";
+
 trait WICExtension {
     fn log(&mut self, level: u32, msg: AscPtr<AscString>) -> Result<(), HostExportError>;
     fn increment_successful_tests_count(&mut self) -> Result<(), HostExportError>;
     fn increment_failed_tests_count(&mut self) -> Result<(), HostExportError>;
+    fn mock_store_get(
+        &mut self,
+        _entity_ptr: AscPtr<AscString>,
+        _id_ptr: AscPtr<AscString>,
+    ) -> Result<i32, HostExportError>;
+    fn mock_store_set(
+        &mut self,
+        _entity_ptr: AscPtr<AscString>,
+        _id_ptr: AscPtr<AscString>,
+        _data_ptr: AscPtr<AscEntity>,
+    ) -> Result<(), HostExportError>;
+    fn mock_store_remove(
+        &mut self,
+        _entity_ptr: AscPtr<AscString>,
+        _id_ptr: AscPtr<AscString>,
+    ) -> Result<(), HostExportError>;
 }
 
 impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
@@ -81,6 +101,31 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             .lock()
             .expect("Could not obtain FAILED_TESTS lock.") += 1;
         Ok(())
+    }
+
+    fn mock_store_get(
+        &mut self,
+        _entity_ptr: AscPtr<AscString>,
+        _id_ptr: AscPtr<AscString>,
+    ) -> Result<i32, HostExportError> {
+        panic!("{}", WRONG_STORE_MESSAGE);
+    }
+
+    fn mock_store_set(
+        &mut self,
+        _entity_ptr: AscPtr<AscString>,
+        _id_ptr: AscPtr<AscString>,
+        _data_ptr: AscPtr<AscEntity>,
+    ) -> Result<(), HostExportError> {
+        panic!("{}", WRONG_STORE_MESSAGE);
+    }
+
+    fn mock_store_remove(
+        &mut self,
+        _entity_ptr: AscPtr<AscString>,
+        _id_ptr: AscPtr<AscString>,
+    ) -> Result<(), HostExportError> {
+        panic!("{}", WRONG_STORE_MESSAGE)
     }
 }
 
@@ -265,14 +310,27 @@ impl<C: Blockchain> WasmInstance<C> {
             increment_failed_tests_count,
         );
 
-        link!("store.get", store_get, "host_export_store_get", entity, id);
+        link!(
+            "store.get",
+            mock_store_get,
+            "host_export_store_get",
+            entity,
+            id
+        );
         link!(
             "store.set",
-            store_set,
+            mock_store_set,
             "host_export_store_set",
             entity,
             id,
             data
+        );
+        link!(
+            "store.remove",
+            mock_store_remove,
+            "host_export_store_remove",
+            entity,
+            id
         );
 
         link!("ipfs.cat", ipfs_cat, "host_export_ipfs_cat", hash_ptr);
