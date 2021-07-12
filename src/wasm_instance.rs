@@ -19,8 +19,8 @@ use graph_runtime_wasm::{
     module::IntoWasmRet,
     module::{ExperimentalFeatures, IntoTrap, WasmInstanceContext},
 };
-use lazy_static::lazy_static;
 use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::TimeoutStopwatch};
+use lazy_static::lazy_static;
 use slog::{debug, error, info, warn, Drain};
 
 lazy_static! {
@@ -70,12 +70,16 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
     }
 
     fn increment_successful_tests_count(&mut self) -> Result<(), HostExportError> {
-        *SUCCESSFUL_TESTS.lock().expect("Could not obtain SUCCESSFUL_TESTS lock.") += 1;
+        *SUCCESSFUL_TESTS
+            .lock()
+            .expect("Could not obtain SUCCESSFUL_TESTS lock.") += 1;
         Ok(())
     }
 
     fn increment_failed_tests_count(&mut self) -> Result<(), HostExportError> {
-        *FAILED_TESTS.lock().expect("Could not obtain FAILED_TESTS lock.") += 1;
+        *FAILED_TESTS
+            .lock()
+            .expect("Could not obtain FAILED_TESTS lock.") += 1;
         Ok(())
     }
 }
@@ -252,8 +256,14 @@ impl<C: Blockchain> WasmInstance<C> {
 
         link!("abort", abort, message_ptr, file_name_ptr, line, column);
 
-        link!("testUtil.incrementSuccessfulTestsCount", increment_successful_tests_count,);
-        link!("testUtil.incrementFailedTestsCount", increment_failed_tests_count,);
+        link!(
+            "testUtil.incrementSuccessfulTestsCount",
+            increment_successful_tests_count,
+        );
+        link!(
+            "testUtil.incrementFailedTestsCount",
+            increment_failed_tests_count,
+        );
 
         link!("store.get", store_get, "host_export_store_get", entity, id);
         link!(
