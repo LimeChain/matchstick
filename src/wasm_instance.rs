@@ -1,5 +1,5 @@
 use std::marker::PhantomData;
-use std::{cell::RefCell, sync::Arc, time::Instant};
+use std::{cell::RefCell, sync::Arc, sync::Mutex, time::Instant};
 use std::{rc::Rc, time::Duration};
 
 use anyhow::anyhow;
@@ -20,10 +20,18 @@ use graph_runtime_wasm::{
     module::{ExperimentalFeatures, IntoTrap, WasmInstanceContext},
 };
 use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::TimeoutStopwatch};
+use lazy_static::lazy_static;
 use slog::{debug, error, info, warn, Drain};
+
+lazy_static! {
+    pub static ref SUCCESSFUL_TESTS: Mutex<i32> = Mutex::new(0);
+    pub static ref FAILED_TESTS: Mutex<i32> = Mutex::new(0);
+}
 
 trait WICExtension {
     fn log(&mut self, level: u32, msg: AscPtr<AscString>) -> Result<(), HostExportError>;
+    fn increment_successful_tests_count(&mut self) -> Result<(), HostExportError>;
+    fn increment_failed_tests_count(&mut self) -> Result<(), HostExportError>;
 }
 
 impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
@@ -58,6 +66,20 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             _ => unreachable!(),
         }
 
+        Ok(())
+    }
+
+    fn increment_successful_tests_count(&mut self) -> Result<(), HostExportError> {
+        *SUCCESSFUL_TESTS
+            .lock()
+            .expect("Could not obtain SUCCESSFUL_TESTS lock.") += 1;
+        Ok(())
+    }
+
+    fn increment_failed_tests_count(&mut self) -> Result<(), HostExportError> {
+        *FAILED_TESTS
+            .lock()
+            .expect("Could not obtain FAILED_TESTS lock.") += 1;
         Ok(())
     }
 }
@@ -233,6 +255,15 @@ impl<C: Blockchain> WasmInstance<C> {
         link!("ethereum.decode", ethereum_decode, params_ptr, data_ptr);
 
         link!("abort", abort, message_ptr, file_name_ptr, line, column);
+
+        link!(
+            "testUtil.incrementSuccessfulTestsCount",
+            increment_successful_tests_count,
+        );
+        link!(
+            "testUtil.incrementFailedTestsCount",
+            increment_failed_tests_count,
+        );
 
         link!("store.get", store_get, "host_export_store_get", entity, id);
         link!(
