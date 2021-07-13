@@ -3958,7 +3958,7 @@ dependencies = [
 
 [[package]]
 name = "subtest"
-version = "0.0.2"
+version = "0.0.4"
 dependencies = [
  "anyhow",
  "async-trait",
