@@ -12,7 +12,6 @@ use graph::{
         HostMetrics,
     },
 };
-use termion::{color, style};
 use graph_runtime_wasm::asc_abi::class::AscEntity;
 use graph_runtime_wasm::asc_abi::class::AscString;
 use graph_runtime_wasm::{
@@ -24,6 +23,7 @@ use graph_runtime_wasm::{
 use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::TimeoutStopwatch};
 use lazy_static::lazy_static;
 use slog::{debug, error, info, warn, Drain};
+use termion::{color, style};
 
 lazy_static! {
     pub static ref SUCCESSFUL_TESTS: Mutex<i32> = Mutex::new(0);
@@ -74,7 +74,13 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             }
             // WARNING
             2 => {
-                warn!(logger, "{}{}{}", color::Fg(color::Yellow), msg, style::Reset);
+                warn!(
+                    logger,
+                    "{}{}{}",
+                    color::Fg(color::Yellow),
+                    msg,
+                    style::Reset
+                );
             }
             // INFO
             3 => {
