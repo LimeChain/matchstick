@@ -12,6 +12,7 @@ use graph::{
         HostMetrics,
     },
 };
+use termion::{color, style};
 use graph_runtime_wasm::asc_abi::class::AscEntity;
 use graph_runtime_wasm::asc_abi::class::AscString;
 use graph_runtime_wasm::{
@@ -65,15 +66,15 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         match level {
             // CRITICAL (for expected logic errors)
             0 => {
-                panic!("{}", msg);
+                panic!("{}{}{}", color::Fg(color::Blue), msg, style::Reset);
             }
             // ERROR (for test failure)
             1 => {
-                error!(logger, "{}", msg);
+                error!(logger, "{}{}{}", color::Fg(color::Red), msg, style::Reset);
             }
             // WARNING
             2 => {
-                warn!(logger, "{}", msg);
+                warn!(logger, "{}{}{}", color::Fg(color::Yellow), msg, style::Reset);
             }
             // INFO
             3 => {
@@ -81,7 +82,11 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             }
             // DEBUG
             4 => {
-                debug!(logger, "{}", msg);
+                debug!(logger, "{}{}{}", color::Fg(color::Cyan), msg, style::Reset);
+            }
+            // SUCCESS
+            5 => {
+                info!(logger, "{}{}{}", color::Fg(color::Green), msg, style::Reset);
             }
             _ => unreachable!(),
         }
