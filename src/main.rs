@@ -163,6 +163,14 @@ fn mock_data_source(path: &str) -> DataSource {
 }
 
 pub fn main() {
+    println!(
+        "     _____       _     _            _  
+    / ____|     | |   | |          | |   
+   | (___  _   _| |__ | |_ ___  ___| |_ 
+    \\___ \\| | | | '_ \\| __/ _ \\/ __| __|
+    ____) | |_| | |_) | ||  __/\\__ \\ |_ 
+   |_____/ \\__,_|_.__/ \\__\\___||___/\\__|"
+    );
     let plain = slog_term::PlainSyncDecorator::new(std::io::stdout());
     let logger = Logger::root(slog_term::FullFormat::new(plain).build().fuse(), o!());
     let now = Instant::now();
@@ -220,19 +228,28 @@ pub fn main() {
         .instance
         .get_func("runTests")
         .expect("Couldn't get wasm function 'runTests'.");
+    println!("Running tests... 🚀");
     run_tests
         .call(&[])
         .expect("Couldn't call wasm function 'runTests'.");
 
-    info!(
-        logger,
-        "Successful tests: {}, Failed tests: {}",
-        *SUCCESSFUL_TESTS
-            .lock()
-            .expect("Could not obtain SUCCESSFUL_TESTS lock."),
-        *FAILED_TESTS
-            .lock()
-            .expect("Could not obtain FAILED_TESTS lock.")
-    );
+    let successful_tests = *SUCCESSFUL_TESTS
+        .lock()
+        .expect("Could not obtain SUCCESSFUL_TESTS lock.");
+    let failed_tests = *FAILED_TESTS
+        .lock()
+        .expect("Could not obtain FAILED_TESTS lock.");
+    if failed_tests > 0 {
+        info!(
+            logger,
+            "Successful tests ✅: {}, Failed tests ❌: {} 😐", successful_tests, failed_tests
+        );
+    } else {
+        info!(
+            logger,
+            "Successful tests ✅: {}, Failed tests ❌: {} 😎", successful_tests, failed_tests
+        );
+    }
+
     info!(logger, "Program execution time: {:?}", now.elapsed());
 }
