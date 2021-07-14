@@ -244,6 +244,8 @@ pub fn main() {
             logger,
             "Successful tests ✅: {}, Failed tests ❌: {} 😐", successful_tests, failed_tests
         );
+        info!(logger, "Program execution time: {:?}", now.elapsed());
+        std::process::exit(1);
     } else {
         info!(
             logger,

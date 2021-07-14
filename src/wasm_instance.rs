@@ -1,8 +1,5 @@
-use std::marker::PhantomData;
-use std::{cell::RefCell, sync::Arc, sync::Mutex, time::Instant};
-use std::{rc::Rc, time::Duration};
-
 use anyhow::anyhow;
+use colored::*;
 use graph::runtime::{asc_get, AscPtr};
 use graph::{
     blockchain::{Blockchain, HostFnCtx},
@@ -23,7 +20,9 @@ use graph_runtime_wasm::{
 use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::TimeoutStopwatch};
 use lazy_static::lazy_static;
 use slog::{debug, error, info, warn, Drain};
-use termion::{color, style};
+use std::marker::PhantomData;
+use std::{cell::RefCell, sync::Arc, sync::Mutex, time::Instant};
+use std::{rc::Rc, time::Duration};
 
 lazy_static! {
     pub static ref SUCCESSFUL_TESTS: Mutex<i32> = Mutex::new(0);
@@ -66,21 +65,15 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         match level {
             // CRITICAL (for expected logic errors)
             0 => {
-                panic!("{}{}{}", color::Fg(color::Blue), msg, style::Reset);
+                panic!("{}", msg.purple());
             }
             // ERROR (for test failure)
             1 => {
-                error!(logger, "{}{}{}", color::Fg(color::Red), msg, style::Reset);
+                error!(logger, "{}", msg.red());
             }
             // WARNING
             2 => {
-                warn!(
-                    logger,
-                    "{}{}{}",
-                    color::Fg(color::Yellow),
-                    msg,
-                    style::Reset
-                );
+                warn!(logger, "{}", msg.yellow());
             }
             // INFO
             3 => {
@@ -88,11 +81,11 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             }
             // DEBUG
             4 => {
-                debug!(logger, "{}{}{}", color::Fg(color::Cyan), msg, style::Reset);
+                debug!(logger, "{}", msg.cyan());
             }
             // SUCCESS
             5 => {
-                info!(logger, "{}{}{}", color::Fg(color::Green), msg, style::Reset);
+                info!(logger, "{}", msg.green());
             }
             _ => unreachable!(),
         }
