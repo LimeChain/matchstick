@@ -1,6 +1,10 @@
+use std::{cell::RefCell, sync::Arc, sync::Mutex, time::Instant};
+use std::{rc::Rc, time::Duration};
+use std::collections::HashMap;
+use std::marker::PhantomData;
+
 use anyhow::anyhow;
 use colored::*;
-use graph::runtime::{asc_get, AscPtr};
 use graph::{
     blockchain::{Blockchain, HostFnCtx},
     cheap_clone::CheapClone,
@@ -9,22 +13,25 @@ use graph::{
         HostMetrics,
     },
 };
-use graph_runtime_wasm::asc_abi::class::AscEntity;
-use graph_runtime_wasm::asc_abi::class::AscString;
+use graph::data::store::Value;
+use graph::runtime::{asc_get, AscPtr, try_asc_get, asc_new};
 use graph_runtime_wasm::{
     error::DeterminismLevel,
     mapping::{MappingContext, ValidModule},
-    module::IntoWasmRet,
     module::{ExperimentalFeatures, IntoTrap, WasmInstanceContext},
+    module::IntoWasmRet,
 };
 use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::TimeoutStopwatch};
+use graph_runtime_wasm::asc_abi::class::{AscEntity, AscTypedMap};
+use graph_runtime_wasm::asc_abi::class::AscString;
+use indexmap::IndexMap;
 use lazy_static::lazy_static;
-use slog::{debug, error, info, warn, Drain};
-use std::marker::PhantomData;
-use std::{cell::RefCell, sync::Arc, sync::Mutex, time::Instant};
-use std::{rc::Rc, time::Duration};
+use slog::{debug, Drain, error, info, warn};
+use graph::prelude::Entity;
 
 lazy_static! {
+    static ref STORE: Mutex<IndexMap<String, IndexMap<String, HashMap<String, Value>>>> =
+        Mutex::from(IndexMap::new());
     pub static ref SUCCESSFUL_TESTS: Mutex<i32> = Mutex::new(0);
     pub static ref FAILED_TESTS: Mutex<i32> = Mutex::new(0);
 }
@@ -40,7 +47,7 @@ trait WICExtension {
         &mut self,
         _entity_ptr: AscPtr<AscString>,
         _id_ptr: AscPtr<AscString>,
-    ) -> Result<i32, HostExportError>;
+    ) -> Result<AscPtr<AscEntity>, HostExportError>;
     fn mock_store_set(
         &mut self,
         _entity_ptr: AscPtr<AscString>,
@@ -107,21 +114,55 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         Ok(())
     }
 
+    // asc_new(self, &entity.sorted())
+
     fn mock_store_get(
         &mut self,
-        _entity_ptr: AscPtr<AscString>,
-        _id_ptr: AscPtr<AscString>,
-    ) -> Result<i32, HostExportError> {
-        panic!("{}", WRONG_STORE_MESSAGE);
+        entity_type_ptr: AscPtr<AscString>,
+        id_ptr: AscPtr<AscString>,
+    ) -> Result<AscPtr<AscEntity>, HostExportError> {
+        let entity_type: String = asc_get(self, entity_type_ptr)?;
+        let id: String = asc_get(self, id_ptr)?;
+
+        // TODO: Handle unhappy paths
+
+        let map = STORE.lock().unwrap();
+        let entity = map.get(&entity_type).unwrap().get(&id).unwrap().clone();
+        let entity = Entity::from(entity);
+
+        let res = asc_new(self, &entity.sorted())?;
+        Ok(res)
     }
 
     fn mock_store_set(
         &mut self,
-        _entity_ptr: AscPtr<AscString>,
-        _id_ptr: AscPtr<AscString>,
-        _data_ptr: AscPtr<AscEntity>,
+        entity_type_ptr: AscPtr<AscString>,
+        id_ptr: AscPtr<AscString>,
+        data_ptr: AscPtr<AscEntity>,
     ) -> Result<(), HostExportError> {
-        panic!("{}", WRONG_STORE_MESSAGE);
+        let entity_type: String = asc_get(self, entity_type_ptr)?;
+        let id: String = asc_get(self, id_ptr)?;
+        let data: HashMap<String, Value> = try_asc_get(self, data_ptr)?;
+
+        let mut map = STORE.lock().unwrap();
+        let mut inner_map = IndexMap::new();
+
+        // Check if there's already a collection with entities of this type
+        if map.contains_key(&entity_type) {
+            inner_map = map.get(&entity_type).unwrap().clone();
+
+            if inner_map.contains_key(&id) {
+                // TODO: Switch to log instead of panicking
+                panic!("Entity with this id already exists.");
+            }
+        }
+
+        inner_map.insert(id, data);
+        map.insert(entity_type, inner_map);
+
+        println!("{:?}", map);
+
+        Ok(())
     }
 
     fn mock_store_remove(
@@ -129,7 +170,8 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         _entity_ptr: AscPtr<AscString>,
         _id_ptr: AscPtr<AscString>,
     ) -> Result<(), HostExportError> {
-        panic!("{}", WRONG_STORE_MESSAGE)
+        // panic!("{}", WRONG_STORE_MESSAGE)
+        Ok(())
     }
 }
 
@@ -266,7 +308,7 @@ impl<C: Blockchain> WasmInstance<C> {
                                 "{} is not allowed in global variables",
                                 host_fn.name
                             )
-                            .into());
+                                .into());
                         }
                     };
 

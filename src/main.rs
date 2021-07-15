@@ -228,7 +228,7 @@ pub fn main() {
         .instance
         .get_func("runTests")
         .expect("Couldn't get wasm function 'runTests'.");
-    println!("Running tests... 🚀");
+    info!(logger, "Running tests... 🚀");
     run_tests
         .call(&[])
         .expect("Couldn't call wasm function 'runTests'.");
