@@ -94,7 +94,6 @@ pub fn flush_logs() -> () {
             println!("{}", styled(k, v));
         }
     }
-    println!();
 }
 
 lazy_static! {

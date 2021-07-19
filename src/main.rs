@@ -241,11 +241,11 @@ pub fn main() {
         let passed = format!("{} passed", successful_tests).green();
         let all = format!("{} total", failed_tests + successful_tests);
 
-        println!("{}, {}, {}", failed, passed, all);
+        println!("\n{}, {}, {}", failed, passed, all);
         println!("Program execution time: {:?}", now.elapsed());
         std::process::exit(1);
     } else {
-        println!("{}", ("All tests passed! 😎").to_string().green());
+        println!("\n{}", ("All tests passed! 😎").to_string().green());
     }
 
     println!("{} tests executed in {:?}.", failed_tests + successful_tests,  now.elapsed());
