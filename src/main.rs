@@ -245,7 +245,7 @@ pub fn main() {
         println!("Program execution time: {:?}", now.elapsed());
         std::process::exit(1);
     } else {
-        println!("{}", ("All tests pass! 😎").to_string().green());
+        println!("{}", ("All tests passed! 😎").to_string().green());
     }
 
     println!("{} tests executed in {:?}.", failed_tests + successful_tests,  now.elapsed());
