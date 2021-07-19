@@ -1,35 +1,34 @@
+use std::str::FromStr;
+use std::sync::Arc;
+use std::time::Instant;
+
+use colored::*;
 use ethabi::Contract;
-use graph::components::store::DeploymentId;
-use graph::data::subgraph::*;
 use graph::{
     blockchain::BlockPtr,
     components::store::DeploymentLocator,
     data::subgraph::{Mapping, Source, TemplateSource},
     ipfs_client::IpfsClient,
     prelude::{
-        o, slog, BlockState, DeploymentHash, HostMetrics, Link, Logger, StopwatchMetrics,
+        BlockState, DeploymentHash, HostMetrics, Link, Logger, o, slog, StopwatchMetrics,
         SubgraphStore,
     },
     semver::Version,
 };
+use graph::components::store::DeploymentId;
+use graph::data::subgraph::*;
 use graph_chain_arweave::adapter::ArweaveAdapter;
 use graph_chain_ethereum::{Chain, DataSource, DataSourceTemplate};
 use graph_core::three_box::ThreeBoxAdapter;
 use graph_mock::MockMetricsRegistry;
-use graph_runtime_wasm::mapping::ValidModule;
 use graph_runtime_wasm::{
     host_exports::HostExports, mapping::MappingContext, module::ExperimentalFeatures,
 };
-use slog::*;
-use std::str::FromStr;
-use std::sync::Arc;
-use std::time::Instant;
-use wasm_instance::WasmInstance;
-use wasm_instance::FAILED_TESTS;
-use wasm_instance::SUCCESSFUL_TESTS;
+use graph_runtime_wasm::mapping::ValidModule;
 use web3::types::Address;
 
 use subgraph_store::MockSubgraphStore;
+use wasm_instance::{flush_logs, get_failed_tests, get_successful_tests, WasmInstance};
 
 mod subgraph_store;
 mod wasm_instance;
@@ -121,9 +120,9 @@ fn mock_abi() -> MappingABI {
                 "type": "constructor"
             }
         ]"#
-            .as_bytes(),
+                .as_bytes(),
         )
-        .expect("Could not load contract."),
+            .expect("Could not load contract."),
     }
 }
 
@@ -163,16 +162,15 @@ fn mock_data_source(path: &str) -> DataSource {
 }
 
 pub fn main() {
-    println!(
-        "     _____       _     _            _  
+    println!("{}",
+             ("     _____       _     _            _
     / ____|     | |   | |          | |   
    | (___  _   _| |__ | |_ ___  ___| |_ 
     \\___ \\| | | | '_ \\| __/ _ \\/ __| __|
     ____) | |_| | |_) | ||  __/\\__ \\ |_ 
-   |_____/ \\__,_|_.__/ \\__\\___||___/\\__|"
+   |_____/ \\__,_|_.__/ \\__\\___||___/\\__|\n").to_string().purple()
     );
-    let plain = slog_term::PlainSyncDecorator::new(std::io::stdout());
-    let logger = Logger::root(slog_term::FullFormat::new(plain).build().fuse(), o!());
+
     let now = Instant::now();
     let args: Vec<String> = std::env::args().collect();
 
@@ -222,36 +220,33 @@ pub fn main() {
         None,
         experimental_features,
     )
-    .expect("Could not create WasmInstance from valid module with context.");
+        .expect("Could not create WasmInstance from valid module with context.");
 
     let run_tests = module
         .instance
         .get_func("runTests")
         .expect("Couldn't get wasm function 'runTests'.");
-    info!(logger, "Running tests... 🚀");
+    println!("{}", ("Starting tests 🧪🚀\n").to_string().purple());
     run_tests
         .call(&[])
         .expect("Couldn't call wasm function 'runTests'.");
 
-    let successful_tests = *SUCCESSFUL_TESTS
-        .lock()
-        .expect("Could not obtain SUCCESSFUL_TESTS lock.");
-    let failed_tests = *FAILED_TESTS
-        .lock()
-        .expect("Could not obtain FAILED_TESTS lock.");
+    flush_logs();
+
+    let successful_tests = get_successful_tests();
+    let failed_tests = get_failed_tests();
+
     if failed_tests > 0 {
-        info!(
-            logger,
-            "Successful tests ✅: {}, Failed tests ❌: {} 😐", successful_tests, failed_tests
-        );
-        info!(logger, "Program execution time: {:?}", now.elapsed());
+        let failed = format!("{} failed", failed_tests).red();
+        let passed = format!("{} passed", successful_tests).green();
+        let all = format!("{} total", failed_tests + successful_tests);
+
+        println!("{}, {}, {}", failed, passed, all);
+        println!("Program execution time: {:?}", now.elapsed());
         std::process::exit(1);
     } else {
-        info!(
-            logger,
-            "Successful tests ✅: {}, Failed tests ❌: {} 😎", successful_tests, failed_tests
-        );
+        println!("{}", ("All tests pass! 😎").to_string().green());
     }
 
-    info!(logger, "Program execution time: {:?}", now.elapsed());
+    println!("{} tests executed in {:?}.", failed_tests + successful_tests,  now.elapsed());
 }
