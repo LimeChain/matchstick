@@ -4,9 +4,9 @@
 ![miro2](https://user-images.githubusercontent.com/32264020/123761690-bcf37f80-d8ca-11eb-9950-6452d7e972cd.jpeg)
 
 ## Quick Start 🚀
-To download **Subtest**, simply run the following command in you terminal:
+The release binary is aimed at both **macOS** and **Linux** systems (Windows coming soon). To download **Subtest**, simply run the following command in you terminal:
 
-`curl -OL https://github.com/LimeChain/subtest/releases/download/0.0.4/subtest`
+`curl -OL https://github.com/LimeChain/subtest/releases/download/0.0.5/subtest`
 
 After that you just need to turn it to an executable binary with this:
 
