@@ -208,7 +208,10 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
 
         let map = STORE.lock().expect("Cannot access STORE.");
         if !map.contains_key(&entity_type) {
-            let msg = format!("(assertFieldEquals) No entities with type '{}' found.", &entity_type);
+            let msg = format!(
+                "(assertFieldEquals) No entities with type '{}' found.",
+                &entity_type
+            );
             fail_test(msg);
             return Ok(());
         }
@@ -256,7 +259,10 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
 
         let map = STORE.lock().expect("Cannot access STORE.");
         if !map.contains_key(&entity_type) {
-            let msg = format!("(store.get) No entities with type '{}' found.", &entity_type);
+            let msg = format!(
+                "(store.get) No entities with type '{}' found.",
+                &entity_type
+            );
             fail_test(msg);
 
             let empty_entity = Entity::new();
