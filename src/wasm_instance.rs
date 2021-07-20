@@ -1,13 +1,10 @@
-use std::collections::HashMap;
-use std::marker::PhantomData;
 use std::{cell::RefCell, sync::Arc, sync::Mutex, time::Instant};
 use std::{rc::Rc, time::Duration};
+use std::collections::HashMap;
+use std::marker::PhantomData;
 
 use anyhow::anyhow;
 use colored::*;
-use graph::data::store::Value;
-use graph::prelude::Entity;
-use graph::runtime::{asc_get, asc_new, try_asc_get, AscPtr};
 use graph::{
     blockchain::{Blockchain, HostFnCtx},
     cheap_clone::CheapClone,
@@ -16,15 +13,18 @@ use graph::{
         HostMetrics,
     },
 };
-use graph_runtime_wasm::asc_abi::class::AscEntity;
-use graph_runtime_wasm::asc_abi::class::AscString;
+use graph::data::store::Value;
+use graph::prelude::Entity;
+use graph::runtime::{asc_get, asc_new, AscPtr, try_asc_get};
 use graph_runtime_wasm::{
     error::DeterminismLevel,
     mapping::{MappingContext, ValidModule},
-    module::IntoWasmRet,
     module::{ExperimentalFeatures, IntoTrap, WasmInstanceContext},
+    module::IntoWasmRet,
 };
 use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::TimeoutStopwatch};
+use graph_runtime_wasm::asc_abi::class::AscEntity;
+use graph_runtime_wasm::asc_abi::class::AscString;
 use indexmap::IndexMap;
 use lazy_static::lazy_static;
 
@@ -152,7 +152,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         match level {
             // CRITICAL (for expected logic errors)
             0 => {
-                panic!("{}", msg.red());
+                panic!("❌ {}", msg.red());
             }
             1 => {
                 fail_test(msg);
@@ -180,7 +180,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             .expect("Cannot access TEST_RESULTS.")
             .contains_key(&name)
         {
-            panic!("Test with name '{}' already exists.", name)
+            panic!("❌ Test with name '{}' already exists.", name)
         }
 
         TEST_RESULTS
@@ -266,9 +266,17 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
 
         let entities = map.get(&entity_type).unwrap();
         if !entities.contains_key(&id) {
+            let test_name = TEST_RESULTS
+                .lock()
+                .expect("Cannot access TEST_RESULTS.")
+                .keys()
+                .last()
+                .unwrap()
+                .clone();
+
             let msg = format!(
-                "FATAL ERROR: Cannot GET Entity. No entity with type '{}' and id '{}' found in the store.",
-                &entity_type, &id
+                "❌ {} FATAL ERROR: Cannot GET Entity. No entity with type '{}' and id '{}' found in the store.",
+                test_name, &entity_type, &id
             );
             panic!("{}", msg.red());
         }
@@ -467,7 +475,7 @@ impl<C: Blockchain> WasmInstance<C> {
                                 "{} is not allowed in global variables",
                                 host_fn.name
                             )
-                            .into());
+                                .into());
                         }
                     };
 
