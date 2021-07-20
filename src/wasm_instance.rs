@@ -28,6 +28,9 @@ use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::Timeo
 use indexmap::IndexMap;
 use lazy_static::lazy_static;
 use unwrap::unwrap;
+use graph_chain_ethereum::EthereumAdapter;
+use graph::prelude::{EthereumCallCache, MappingABI};
+use graph_runtime_wasm::asc_abi::class::{AscEnumArray, EthereumValueKind};
 
 pub enum Level {
     ERROR,
@@ -147,6 +150,14 @@ trait WICExtension {
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
     ) -> Result<(), HostExportError>;
+    fn ethereum_call(
+        &mut self,
+        eth_adapter: &EthereumAdapter,
+        call_cache: Arc<dyn EthereumCallCache>,
+        ctx: HostFnCtx<'_>,
+        wasm_ptr: u32,
+        abis: &[Arc<MappingABI>],
+    ) -> Result<AscEnumArray<EthereumValueKind>, HostExportError>;
 }
 
 impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
@@ -329,6 +340,17 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         }
         Ok(())
     }
+
+    fn ethereum_call(
+        &mut self,
+        eth_adapter: &EthereumAdapter,
+        call_cache: Arc<dyn EthereumCallCache>,
+        ctx: HostFnCtx<'_>,
+        wasm_ptr: u32,
+        abis: &[Arc<MappingABI>],
+    ) -> Result<AscEnumArray<EthereumValueKind>, HostExportError> {
+        panic!("at least i reached");
+    }
 }
 
 #[allow(unused)]
@@ -497,6 +519,13 @@ impl<C: Blockchain> WasmInstance<C> {
                 })?;
             }
         }
+
+        // eth_adapter: &EthereumAdapter,
+        // call_cache: Arc<dyn EthereumCallCache>,
+        // ctx: HostFnCtx<'_>,
+        // wasm_ptr: u32,
+        // abis: &[Arc<MappingABI>],
+        link!("ethereum.call", ethereum_call, eth_adapter, call_cache, ctx, wasm_ptr, abis);
 
         link!("ethereum.encode", ethereum_encode, params_ptr);
         link!("ethereum.decode", ethereum_decode, params_ptr, data_ptr);
