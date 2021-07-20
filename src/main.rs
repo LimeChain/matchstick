@@ -163,10 +163,10 @@ fn mock_data_source(path: &str) -> DataSource {
 }
 
 pub fn main() {
-    let matches = App::new("My Super Program")
-        .version("1.0")
-        .author("Kevin K. <kbknapp@gmail.com>")
-        .about("Does awesome things")
+    let matches = App::new("Subtest")
+        .version("0.0.5")
+        .author("Limechain <https://limechain.tech>")
+        .about("Unit testing framework for Subgraph development on The Graph protocol.")
         .arg(Arg::with_name("DATASOURCE")
             .help("Sets the name of the datasource to use.")
             .required(true)
