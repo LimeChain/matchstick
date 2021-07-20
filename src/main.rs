@@ -4,27 +4,27 @@ use std::time::Instant;
 
 use colored::*;
 use ethabi::Contract;
+use graph::components::store::DeploymentId;
+use graph::data::subgraph::*;
 use graph::{
     blockchain::BlockPtr,
     components::store::DeploymentLocator,
     data::subgraph::{Mapping, Source, TemplateSource},
     ipfs_client::IpfsClient,
     prelude::{
-        BlockState, DeploymentHash, HostMetrics, Link, Logger, o, slog, StopwatchMetrics,
+        o, slog, BlockState, DeploymentHash, HostMetrics, Link, Logger, StopwatchMetrics,
         SubgraphStore,
     },
     semver::Version,
 };
-use graph::components::store::DeploymentId;
-use graph::data::subgraph::*;
 use graph_chain_arweave::adapter::ArweaveAdapter;
 use graph_chain_ethereum::{Chain, DataSource, DataSourceTemplate};
 use graph_core::three_box::ThreeBoxAdapter;
 use graph_mock::MockMetricsRegistry;
+use graph_runtime_wasm::mapping::ValidModule;
 use graph_runtime_wasm::{
     host_exports::HostExports, mapping::MappingContext, module::ExperimentalFeatures,
 };
-use graph_runtime_wasm::mapping::ValidModule;
 use web3::types::Address;
 
 use subgraph_store::MockSubgraphStore;
@@ -120,9 +120,9 @@ fn mock_abi() -> MappingABI {
                 "type": "constructor"
             }
         ]"#
-                .as_bytes(),
+            .as_bytes(),
         )
-            .expect("Could not load contract."),
+        .expect("Could not load contract."),
     }
 }
 
@@ -162,13 +162,16 @@ fn mock_data_source(path: &str) -> DataSource {
 }
 
 pub fn main() {
-    println!("{}",
-             ("     _____       _     _            _
+    println!(
+        "{}",
+        ("     _____       _     _            _
     / ____|     | |   | |          | |   
    | (___  _   _| |__ | |_ ___  ___| |_ 
     \\___ \\| | | | '_ \\| __/ _ \\/ __| __|
     ____) | |_| | |_) | ||  __/\\__ \\ |_ 
-   |_____/ \\__,_|_.__/ \\__\\___||___/\\__|\n").to_string().purple()
+   |_____/ \\__,_|_.__/ \\__\\___||___/\\__|\n")
+            .to_string()
+            .purple()
     );
 
     let now = Instant::now();
@@ -220,7 +223,7 @@ pub fn main() {
         None,
         experimental_features,
     )
-        .expect("Could not create WasmInstance from valid module with context.");
+    .expect("Could not create WasmInstance from valid module with context.");
 
     let run_tests = module
         .instance
@@ -248,5 +251,9 @@ pub fn main() {
         println!("\n{}", ("All tests passed! 😎").to_string().green());
     }
 
-    println!("{} tests executed in {:?}.", failed_tests + successful_tests,  now.elapsed());
+    println!(
+        "{} tests executed in {:?}.",
+        failed_tests + successful_tests,
+        now.elapsed()
+    );
 }

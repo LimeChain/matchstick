@@ -1,10 +1,13 @@
-use std::{cell::RefCell, sync::Arc, sync::Mutex, time::Instant};
-use std::{rc::Rc, time::Duration};
 use std::collections::HashMap;
 use std::marker::PhantomData;
+use std::{cell::RefCell, sync::Arc, sync::Mutex, time::Instant};
+use std::{rc::Rc, time::Duration};
 
 use anyhow::anyhow;
 use colored::*;
+use graph::data::store::Value;
+use graph::prelude::Entity;
+use graph::runtime::{asc_get, asc_new, try_asc_get, AscPtr};
 use graph::{
     blockchain::{Blockchain, HostFnCtx},
     cheap_clone::CheapClone,
@@ -13,18 +16,15 @@ use graph::{
         HostMetrics,
     },
 };
-use graph::data::store::Value;
-use graph::prelude::Entity;
-use graph::runtime::{asc_get, asc_new, AscPtr, try_asc_get};
+use graph_runtime_wasm::asc_abi::class::AscEntity;
+use graph_runtime_wasm::asc_abi::class::AscString;
 use graph_runtime_wasm::{
     error::DeterminismLevel,
     mapping::{MappingContext, ValidModule},
-    module::{ExperimentalFeatures, IntoTrap, WasmInstanceContext},
     module::IntoWasmRet,
+    module::{ExperimentalFeatures, IntoTrap, WasmInstanceContext},
 };
 use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::TimeoutStopwatch};
-use graph_runtime_wasm::asc_abi::class::AscEntity;
-use graph_runtime_wasm::asc_abi::class::AscString;
 use indexmap::IndexMap;
 use lazy_static::lazy_static;
 use unwrap::unwrap;
@@ -45,7 +45,7 @@ fn level_from_u32(n: u32) -> Level {
         3 => Level::INFO,
         4 => Level::DEBUG,
         5 => Level::SUCCESS,
-        _ => Level::UNKNOWN
+        _ => Level::UNKNOWN,
     }
 }
 
@@ -71,9 +71,20 @@ fn styled(s: &str, n: &Level) -> ColoredString {
 }
 
 fn fail_test(msg: String) {
-    let test_name = TEST_RESULTS.lock().expect("Cannot access TEST_RESULTS.").keys().last().unwrap().clone();
-    TEST_RESULTS.lock().expect("Cannot access TEST_RESULTS.").insert(test_name, false);
-    LOGS.lock().expect("Cannot access LOGS.").insert(msg, Level::ERROR);
+    let test_name = TEST_RESULTS
+        .lock()
+        .expect("Cannot access TEST_RESULTS.")
+        .keys()
+        .last()
+        .unwrap()
+        .clone();
+    TEST_RESULTS
+        .lock()
+        .expect("Cannot access TEST_RESULTS.")
+        .insert(test_name, false);
+    LOGS.lock()
+        .expect("Cannot access LOGS.")
+        .insert(msg, Level::ERROR);
 }
 
 pub fn flush_logs() -> () {
@@ -83,7 +94,11 @@ pub fn flush_logs() -> () {
     for (k, v) in logs.iter() {
         // Test name
         if test_results.contains_key(k) {
-            let passed = *unwrap!(test_results.get(k), "No entry corresponding to the given key '{}'", k);
+            let passed = *unwrap!(
+                test_results.get(k),
+                "No entry corresponding to the given key '{}'",
+                k
+            );
             if passed {
                 println!("✅ {}", k.green());
             } else {
@@ -146,7 +161,9 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
                 fail_test(msg);
             }
             _ => {
-                LOGS.lock().expect("Cannot access LOGS.").insert(msg, level_from_u32(level));
+                LOGS.lock()
+                    .expect("Cannot access LOGS.")
+                    .insert(msg, level_from_u32(level));
             }
         }
 
@@ -161,12 +178,21 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
     fn register_test(&mut self, name_ptr: AscPtr<AscString>) -> Result<(), HostExportError> {
         let name: String = asc_get(self, name_ptr)?;
 
-        if TEST_RESULTS.lock().expect("Cannot access TEST_RESULTS.").contains_key(&name) {
+        if TEST_RESULTS
+            .lock()
+            .expect("Cannot access TEST_RESULTS.")
+            .contains_key(&name)
+        {
             panic!("Test with name '{}' already exists.", name)
         }
 
-        TEST_RESULTS.lock().expect("Cannot access TEST_RESULTS.").insert(name.clone(), true);
-        LOGS.lock().expect("Cannot access LOGS.").insert(name, Level::INFO);
+        TEST_RESULTS
+            .lock()
+            .expect("Cannot access TEST_RESULTS.")
+            .insert(name.clone(), true);
+        LOGS.lock()
+            .expect("Cannot access LOGS.")
+            .insert(name, Level::INFO);
 
         Ok(())
     }
@@ -193,21 +219,30 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
 
         let entities = map.get(&entity_type).unwrap();
         if !entities.contains_key(&id) {
-            let msg = format!("No entity with type '{}' and id '{}' found.", &entity_type, &id);
+            let msg = format!(
+                "No entity with type '{}' and id '{}' found.",
+                &entity_type, &id
+            );
             fail_test(msg);
             return Ok(());
         }
 
         let entity = entities.get(&id).unwrap();
         if !entity.contains_key(&field_name) {
-            let msg = format!("No field named '{}' on entity with type '{}' and id '{}' found.", &field_name, &entity_type, &id);
+            let msg = format!(
+                "No field named '{}' on entity with type '{}' and id '{}' found.",
+                &field_name, &entity_type, &id
+            );
             fail_test(msg);
             return Ok(());
         }
 
         let val = entity.get(&field_name).unwrap();
         if val.to_string() != expected_val {
-            let msg = format!("Expected field '{}' to equal '{}', but was '{}' instead.", &field_name, &expected_val, val);
+            let msg = format!(
+                "Expected field '{}' to equal '{}', but was '{}' instead.",
+                &field_name, &expected_val, val
+            );
             fail_test(msg);
             return Ok(());
         };
@@ -226,7 +261,10 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let map = STORE.lock().unwrap();
 
         if !map.contains_key(&entity_type) || !map.get(&entity_type).unwrap().contains_key(&id) {
-            let msg = format!("Entity with type '{}' and id '{}' does not exist.", &entity_type, &id);
+            let msg = format!(
+                "Entity with type '{}' and id '{}' does not exist.",
+                &entity_type, &id
+            );
             fail_test(msg);
         }
 
@@ -282,7 +320,10 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
 
             map.insert(entity_type, inner_map);
         } else {
-            let msg = format!("Entity with type '{}' and id '{}' does not exist.", &entity_type, &id);
+            let msg = format!(
+                "Entity with type '{}' and id '{}' does not exist.",
+                &entity_type, &id
+            );
             fail_test(msg);
         }
         Ok(())
@@ -422,7 +463,7 @@ impl<C: Blockchain> WasmInstance<C> {
                                 "{} is not allowed in global variables",
                                 host_fn.name
                             )
-                                .into());
+                            .into());
                         }
                     };
 
@@ -552,7 +593,14 @@ impl<C: Blockchain> WasmInstance<C> {
 
         link!("registerTest", register_test, name_ptr);
 
-        link!("assert.fieldEquals", assert_field_equals, entity_type_ptr, id_ptr, field_name_ptr, expected_val_ptr);
+        link!(
+            "assert.fieldEquals",
+            assert_field_equals,
+            entity_type_ptr,
+            id_ptr,
+            field_name_ptr,
+            expected_val_ptr
+        );
 
         link!("arweave.transactionData", arweave_transaction_data, ptr);
 
