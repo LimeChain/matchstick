@@ -87,7 +87,7 @@ fn fail_test(msg: String) {
         .insert(msg, Level::ERROR);
 }
 
-pub fn flush_logs() -> () {
+pub fn flush_logs() {
     let test_results = TEST_RESULTS.lock().expect("Cannot access TEST_RESULTS.");
     let logs = LOGS.lock().expect("Cannot access LOGS.");
 
@@ -112,9 +112,10 @@ pub fn flush_logs() -> () {
     }
 }
 
+type Store = Mutex<IndexMap<String, IndexMap<String, HashMap<String, Value>>>>;
+
 lazy_static! {
-    static ref STORE: Mutex<IndexMap<String, IndexMap<String, HashMap<String, Value>>>> =
-        Mutex::from(IndexMap::new());
+    static ref STORE: Store = Mutex::from(IndexMap::new());
     pub static ref LOGS: Mutex<IndexMap<String, Level>> = Mutex::new(IndexMap::new());
     pub static ref TEST_RESULTS: Mutex<IndexMap<String, bool>> = Mutex::new(IndexMap::new());
 }
