@@ -275,7 +275,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
                 .clone();
 
             let msg = format!(
-                "❌ {} FATAL ERROR: Cannot GET Entity. No entity with type '{}' and id '{}' found in the store.",
+                "❌  '{}' FATAL ERROR: Cannot GET Entity. No entity with type '{}' and id '{}' found in the store.",
                 test_name, &entity_type, &id
             );
             panic!("{}", msg.red());
