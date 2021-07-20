@@ -3974,6 +3974,7 @@ dependencies = [
  "slog-term",
  "test-store",
  "tokio 0.2.25",
+ "unwrap",
  "wasmtime",
  "web3",
 ]
@@ -4737,6 +4738,12 @@ checksum = "382810877fe448991dfc7f0dd6e3ae5d58088fd0ea5e35189655f84e6814fa56"
 dependencies = [
  "void",
 ]
+
+[[package]]
+name = "unwrap"
+version = "1.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e33648dd74328e622c7be51f3b40a303c63f93e6fa5f08778b6203a4c25c20f"
 
 [[package]]
 name = "url"

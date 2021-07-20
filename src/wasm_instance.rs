@@ -1,6 +1,13 @@
+use std::collections::HashMap;
+use std::marker::PhantomData;
+use std::{cell::RefCell, sync::Arc, sync::Mutex, time::Instant};
+use std::{rc::Rc, time::Duration};
+
 use anyhow::anyhow;
 use colored::*;
-use graph::runtime::{asc_get, AscPtr};
+use graph::data::store::Value;
+use graph::prelude::Entity;
+use graph::runtime::{asc_get, asc_new, try_asc_get, AscPtr};
 use graph::{
     blockchain::{Blockchain, HostFnCtx},
     cheap_clone::CheapClone,
@@ -18,118 +25,309 @@ use graph_runtime_wasm::{
     module::{ExperimentalFeatures, IntoTrap, WasmInstanceContext},
 };
 use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::TimeoutStopwatch};
+use indexmap::IndexMap;
 use lazy_static::lazy_static;
-use slog::{debug, error, info, warn, Drain};
-use std::marker::PhantomData;
-use std::{cell::RefCell, sync::Arc, sync::Mutex, time::Instant};
-use std::{rc::Rc, time::Duration};
+use unwrap::unwrap;
 
-lazy_static! {
-    pub static ref SUCCESSFUL_TESTS: Mutex<i32> = Mutex::new(0);
-    pub static ref FAILED_TESTS: Mutex<i32> = Mutex::new(0);
+pub enum Level {
+    ERROR,
+    WARNING,
+    INFO,
+    DEBUG,
+    SUCCESS,
+    UNKNOWN,
 }
 
-const WRONG_STORE_MESSAGE: &str =
-    "Please use the store from subtest-as and not the one from graph-ts.";
+fn level_from_u32(n: u32) -> Level {
+    match n {
+        1 => Level::ERROR,
+        2 => Level::WARNING,
+        3 => Level::INFO,
+        4 => Level::DEBUG,
+        5 => Level::SUCCESS,
+        _ => Level::UNKNOWN,
+    }
+}
+
+pub fn get_successful_tests() -> usize {
+    let map = TEST_RESULTS.lock().expect("Cannot access TEST_RESULTS.");
+    map.iter().filter(|(_, &v)| v).count()
+}
+
+pub fn get_failed_tests() -> usize {
+    let map = TEST_RESULTS.lock().expect("Cannot access TEST_RESULTS.");
+    map.iter().filter(|(_, &v)| !v).count()
+}
+
+fn styled(s: &str, n: &Level) -> ColoredString {
+    match n {
+        Level::ERROR => format!("ERROR {}", s).red(),
+        Level::WARNING => format!("WARNING {}", s).yellow(),
+        Level::INFO => format!("INFO {}", s).normal(),
+        Level::DEBUG => format!("DEBUG {}", s).cyan(),
+        Level::SUCCESS => format!("SUCCESS {}", s).green(),
+        _ => s.normal(),
+    }
+}
+
+fn fail_test(msg: String) {
+    let test_name = TEST_RESULTS
+        .lock()
+        .expect("Cannot access TEST_RESULTS.")
+        .keys()
+        .last()
+        .unwrap()
+        .clone();
+    TEST_RESULTS
+        .lock()
+        .expect("Cannot access TEST_RESULTS.")
+        .insert(test_name, false);
+    LOGS.lock()
+        .expect("Cannot access LOGS.")
+        .insert(msg, Level::ERROR);
+}
+
+pub fn flush_logs() {
+    let test_results = TEST_RESULTS.lock().expect("Cannot access TEST_RESULTS.");
+    let logs = LOGS.lock().expect("Cannot access LOGS.");
+
+    for (k, v) in logs.iter() {
+        // Test name
+        if test_results.contains_key(k) {
+            let passed = *unwrap!(
+                test_results.get(k),
+                "No entry corresponding to the given key '{}'",
+                k
+            );
+            if passed {
+                println!("✅ {}", k.green());
+            } else {
+                println!("❌ {}", k.red());
+            }
+        }
+        // Normal log
+        else {
+            println!("{}", styled(k, v));
+        }
+    }
+}
+
+type Store = Mutex<IndexMap<String, IndexMap<String, HashMap<String, Value>>>>;
+
+lazy_static! {
+    static ref STORE: Store = Mutex::from(IndexMap::new());
+    pub static ref LOGS: Mutex<IndexMap<String, Level>> = Mutex::new(IndexMap::new());
+    pub static ref TEST_RESULTS: Mutex<IndexMap<String, bool>> = Mutex::new(IndexMap::new());
+}
 
 trait WICExtension {
     fn log(&mut self, level: u32, msg: AscPtr<AscString>) -> Result<(), HostExportError>;
-    fn increment_successful_tests_count(&mut self) -> Result<(), HostExportError>;
-    fn increment_failed_tests_count(&mut self) -> Result<(), HostExportError>;
+    fn clear_store(&mut self) -> Result<(), HostExportError>;
+    fn register_test(&mut self, name: AscPtr<AscString>) -> Result<(), HostExportError>;
+    fn assert_field_equals(
+        &mut self,
+        entity_type_ptr: AscPtr<AscString>,
+        id_ptr: AscPtr<AscString>,
+        field_name_ptr: AscPtr<AscString>,
+        expected_val_ptr: AscPtr<AscString>,
+    ) -> Result<(), HostExportError>;
     fn mock_store_get(
         &mut self,
-        _entity_ptr: AscPtr<AscString>,
-        _id_ptr: AscPtr<AscString>,
-    ) -> Result<i32, HostExportError>;
+        entity_type_ptr: AscPtr<AscString>,
+        id_ptr: AscPtr<AscString>,
+    ) -> Result<AscPtr<AscEntity>, HostExportError>;
     fn mock_store_set(
         &mut self,
-        _entity_ptr: AscPtr<AscString>,
-        _id_ptr: AscPtr<AscString>,
-        _data_ptr: AscPtr<AscEntity>,
+        entity_type_ptr: AscPtr<AscString>,
+        id_ptr: AscPtr<AscString>,
+        data_ptr: AscPtr<AscEntity>,
     ) -> Result<(), HostExportError>;
     fn mock_store_remove(
         &mut self,
-        _entity_ptr: AscPtr<AscString>,
-        _id_ptr: AscPtr<AscString>,
+        entity_type_ptr: AscPtr<AscString>,
+        id_ptr: AscPtr<AscString>,
     ) -> Result<(), HostExportError>;
 }
 
 impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
     fn log(&mut self, level: u32, msg: AscPtr<AscString>) -> Result<(), HostExportError> {
-        let plain = slog_term::PlainSyncDecorator::new(std::io::stdout());
-        let logger =
-            slog::Logger::root(slog_term::FullFormat::new(plain).build().fuse(), slog::o!());
-
         let msg: String = asc_get(self, msg)?;
 
         match level {
             // CRITICAL (for expected logic errors)
             0 => {
-                panic!("{}", msg.purple());
+                panic!("{}", msg.red());
             }
-            // ERROR (for test failure)
             1 => {
-                error!(logger, "{}", msg.red());
+                fail_test(msg);
             }
-            // WARNING
-            2 => {
-                warn!(logger, "{}", msg.yellow());
+            _ => {
+                LOGS.lock()
+                    .expect("Cannot access LOGS.")
+                    .insert(msg, level_from_u32(level));
             }
-            // INFO
-            3 => {
-                info!(logger, "{}", msg);
-            }
-            // DEBUG
-            4 => {
-                debug!(logger, "{}", msg.cyan());
-            }
-            // SUCCESS
-            5 => {
-                info!(logger, "{}", msg.green());
-            }
-            _ => unreachable!(),
         }
 
         Ok(())
     }
 
-    fn increment_successful_tests_count(&mut self) -> Result<(), HostExportError> {
-        *SUCCESSFUL_TESTS
-            .lock()
-            .expect("Could not obtain SUCCESSFUL_TESTS lock.") += 1;
+    fn clear_store(&mut self) -> Result<(), HostExportError> {
+        STORE.lock().expect("Cannot access STORE.").clear();
         Ok(())
     }
 
-    fn increment_failed_tests_count(&mut self) -> Result<(), HostExportError> {
-        *FAILED_TESTS
+    fn register_test(&mut self, name_ptr: AscPtr<AscString>) -> Result<(), HostExportError> {
+        let name: String = asc_get(self, name_ptr)?;
+
+        if TEST_RESULTS
             .lock()
-            .expect("Could not obtain FAILED_TESTS lock.") += 1;
+            .expect("Cannot access TEST_RESULTS.")
+            .contains_key(&name)
+        {
+            panic!("Test with name '{}' already exists.", name)
+        }
+
+        TEST_RESULTS
+            .lock()
+            .expect("Cannot access TEST_RESULTS.")
+            .insert(name.clone(), true);
+        LOGS.lock()
+            .expect("Cannot access LOGS.")
+            .insert(name, Level::INFO);
+
+        Ok(())
+    }
+
+    fn assert_field_equals(
+        &mut self,
+        entity_type_ptr: AscPtr<AscString>,
+        id_ptr: AscPtr<AscString>,
+        field_name_ptr: AscPtr<AscString>,
+        expected_val_ptr: AscPtr<AscString>,
+    ) -> Result<(), HostExportError> {
+        let entity_type: String = asc_get(self, entity_type_ptr)?;
+        let id: String = asc_get(self, id_ptr)?;
+        let field_name: String = asc_get(self, field_name_ptr)?;
+        let expected_val: String = asc_get(self, expected_val_ptr)?;
+
+        let map = STORE.lock().expect("Cannot access STORE.");
+
+        if !map.contains_key(&entity_type) {
+            let msg = format!("No entities with type '{}' found.", &entity_type);
+            fail_test(msg);
+            return Ok(());
+        }
+
+        let entities = map.get(&entity_type).unwrap();
+        if !entities.contains_key(&id) {
+            let msg = format!(
+                "No entity with type '{}' and id '{}' found.",
+                &entity_type, &id
+            );
+            fail_test(msg);
+            return Ok(());
+        }
+
+        let entity = entities.get(&id).unwrap();
+        if !entity.contains_key(&field_name) {
+            let msg = format!(
+                "No field named '{}' on entity with type '{}' and id '{}' found.",
+                &field_name, &entity_type, &id
+            );
+            fail_test(msg);
+            return Ok(());
+        }
+
+        let val = entity.get(&field_name).unwrap();
+        if val.to_string() != expected_val {
+            let msg = format!(
+                "Expected field '{}' to equal '{}', but was '{}' instead.",
+                &field_name, &expected_val, val
+            );
+            fail_test(msg);
+            return Ok(());
+        };
+
         Ok(())
     }
 
     fn mock_store_get(
         &mut self,
-        _entity_ptr: AscPtr<AscString>,
-        _id_ptr: AscPtr<AscString>,
-    ) -> Result<i32, HostExportError> {
-        panic!("{}", WRONG_STORE_MESSAGE);
+        entity_type_ptr: AscPtr<AscString>,
+        id_ptr: AscPtr<AscString>,
+    ) -> Result<AscPtr<AscEntity>, HostExportError> {
+        let entity_type: String = asc_get(self, entity_type_ptr)?;
+        let id: String = asc_get(self, id_ptr)?;
+
+        let map = STORE.lock().unwrap();
+
+        if !map.contains_key(&entity_type) || !map.get(&entity_type).unwrap().contains_key(&id) {
+            let msg = format!(
+                "Entity with type '{}' and id '{}' does not exist.",
+                &entity_type, &id
+            );
+            fail_test(msg);
+        }
+
+        let entity = map.get(&entity_type).unwrap().get(&id).unwrap().clone();
+        let entity = Entity::from(entity);
+
+        let res = asc_new(self, &entity.sorted())?;
+
+        Ok(res)
     }
 
     fn mock_store_set(
         &mut self,
-        _entity_ptr: AscPtr<AscString>,
-        _id_ptr: AscPtr<AscString>,
-        _data_ptr: AscPtr<AscEntity>,
+        entity_type_ptr: AscPtr<AscString>,
+        id_ptr: AscPtr<AscString>,
+        data_ptr: AscPtr<AscEntity>,
     ) -> Result<(), HostExportError> {
-        panic!("{}", WRONG_STORE_MESSAGE);
+        let entity_type: String = asc_get(self, entity_type_ptr)?;
+        let id: String = asc_get(self, id_ptr)?;
+        let data: HashMap<String, Value> = try_asc_get(self, data_ptr)?;
+
+        let mut map = STORE.lock().unwrap();
+        let mut inner_map = IndexMap::new();
+
+        // Check if there's already a collection with entities of this type
+        if map.contains_key(&entity_type) {
+            inner_map = map.get(&entity_type).unwrap().clone();
+
+            if inner_map.contains_key(&id) {
+                let msg = format!("Entity with id '{}' already exists.", &id);
+                fail_test(msg);
+            }
+        }
+
+        inner_map.insert(id, data);
+        map.insert(entity_type, inner_map);
+        Ok(())
     }
 
     fn mock_store_remove(
         &mut self,
-        _entity_ptr: AscPtr<AscString>,
-        _id_ptr: AscPtr<AscString>,
+        entity_type_ptr: AscPtr<AscString>,
+        id_ptr: AscPtr<AscString>,
     ) -> Result<(), HostExportError> {
-        panic!("{}", WRONG_STORE_MESSAGE)
+        let entity_type: String = asc_get(self, entity_type_ptr)?;
+        let id: String = asc_get(self, id_ptr)?;
+
+        let mut map = STORE.lock().unwrap();
+
+        if map.contains_key(&entity_type) && map.get(&entity_type).unwrap().contains_key(&id) {
+            let mut inner_map = map.get(&entity_type).unwrap().clone();
+            inner_map.remove(&id);
+
+            map.insert(entity_type, inner_map);
+        } else {
+            let msg = format!(
+                "Entity with type '{}' and id '{}' does not exist.",
+                &entity_type, &id
+            );
+            fail_test(msg);
+        }
+        Ok(())
     }
 }
 
@@ -305,14 +503,7 @@ impl<C: Blockchain> WasmInstance<C> {
 
         link!("abort", abort, message_ptr, file_name_ptr, line, column);
 
-        link!(
-            "testUtil.incrementSuccessfulTestsCount",
-            increment_successful_tests_count,
-        );
-        link!(
-            "testUtil.incrementFailedTestsCount",
-            increment_failed_tests_count,
-        );
+        link!("clearStore", clear_store,);
 
         link!(
             "store.get",
@@ -400,6 +591,17 @@ impl<C: Blockchain> WasmInstance<C> {
         link!("ens.nameByHash", ens_name_by_hash, ptr);
 
         link!("log.log", log, level, msg_ptr);
+
+        link!("registerTest", register_test, name_ptr);
+
+        link!(
+            "assert.fieldEquals",
+            assert_field_equals,
+            entity_type_ptr,
+            id_ptr,
+            field_name_ptr,
+            expected_val_ptr
+        );
 
         link!("arweave.transactionData", arweave_transaction_data, ptr);
 
