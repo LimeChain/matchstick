@@ -29,7 +29,7 @@ use web3::types::Address;
 
 use subgraph_store::MockSubgraphStore;
 use wasm_instance::{flush_logs, get_failed_tests, get_successful_tests, WasmInstance};
-use clap::{App, Arg, SubCommand};
+use clap::{App, Arg};
 
 mod subgraph_store;
 mod wasm_instance;
