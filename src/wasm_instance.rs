@@ -208,7 +208,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
 
         let map = STORE.lock().expect("Cannot access STORE.");
         if !map.contains_key(&entity_type) {
-            let msg = format!("No entities with type '{}' found.", &entity_type);
+            let msg = format!("(assertFieldEquals) No entities with type '{}' found.", &entity_type);
             fail_test(msg);
             return Ok(());
         }
@@ -216,7 +216,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let entities = map.get(&entity_type).unwrap();
         if !entities.contains_key(&id) {
             let msg = format!(
-                "No entity with type '{}' and id '{}' found.",
+                "(assertFieldEquals) No entity with type '{}' and id '{}' found.",
                 &entity_type, &id
             );
             fail_test(msg);
@@ -226,7 +226,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let entity = entities.get(&id).unwrap();
         if !entity.contains_key(&field_name) {
             let msg = format!(
-                "No field named '{}' on entity with type '{}' and id '{}' found.",
+                "(assertFieldEquals) No field named '{}' on entity with type '{}' and id '{}' found.",
                 &field_name, &entity_type, &id
             );
             fail_test(msg);
@@ -236,7 +236,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let val = entity.get(&field_name).unwrap();
         if val.to_string() != expected_val {
             let msg = format!(
-                "Expected field '{}' to equal '{}', but was '{}' instead.",
+                "(assertFieldEquals) Expected field '{}' to equal '{}', but was '{}' instead.",
                 &field_name, &expected_val, val
             );
             fail_test(msg);
@@ -256,7 +256,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
 
         let map = STORE.lock().expect("Cannot access STORE.");
         if !map.contains_key(&entity_type) {
-            let msg = format!("No entities with type '{}' found.", &entity_type);
+            let msg = format!("(store.get) No entities with type '{}' found.", &entity_type);
             fail_test(msg);
 
             let empty_entity = Entity::new();
@@ -305,7 +305,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             inner_map = map.get(&entity_type).unwrap().clone();
 
             if inner_map.contains_key(&id) {
-                let msg = format!("Entity with id '{}' already exists.", &id);
+                let msg = format!("(store.set) Entity with id '{}' already exists.", &id);
                 fail_test(msg);
                 return Ok(());
             }
@@ -332,7 +332,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             map.insert(entity_type, inner_map);
         } else {
             let msg = format!(
-                "Entity with type '{}' and id '{}' does not exist.",
+                "(store.remove) Entity with type '{}' and id '{}' does not exist. Problem originated from store.remove()",
                 &entity_type, &id
             );
             fail_test(msg);
