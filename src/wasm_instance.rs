@@ -27,6 +27,7 @@ use graph_runtime_wasm::asc_abi::class::AscEntity;
 use graph_runtime_wasm::asc_abi::class::AscString;
 use indexmap::IndexMap;
 use lazy_static::lazy_static;
+use unwrap::unwrap;
 
 pub enum Level {
     ERROR,
@@ -49,12 +50,12 @@ fn level_from_u32(n: u32) -> Level {
 }
 
 pub fn get_successful_tests() -> usize {
-    let map = TEST_RESULTS.lock().unwrap();
+    let map = TEST_RESULTS.lock().expect("Cannot access TEST_RESULTS.");
     map.iter().filter(|(_, &v)| v).count()
 }
 
 pub fn get_failed_tests() -> usize {
-    let map = TEST_RESULTS.lock().unwrap();
+    let map = TEST_RESULTS.lock().expect("Cannot access TEST_RESULTS.");
     map.iter().filter(|(_, &v)| !v).count()
 }
 
@@ -70,19 +71,19 @@ fn styled(s: &str, n: &Level) -> ColoredString {
 }
 
 fn fail_test(msg: String) {
-    let test_name = TEST_RESULTS.lock().unwrap().keys().last().unwrap().clone();
-    TEST_RESULTS.lock().unwrap().insert(test_name, false);
-    LOGS.lock().unwrap().insert(msg, Level::ERROR);
+    let test_name = TEST_RESULTS.lock().expect("Cannot access TEST_RESULTS.").keys().last().unwrap().clone();
+    TEST_RESULTS.lock().expect("Cannot access TEST_RESULTS.").insert(test_name, false);
+    LOGS.lock().expect("Cannot access LOGS.").insert(msg, Level::ERROR);
 }
 
 pub fn flush_logs() -> () {
-    let test_results = TEST_RESULTS.lock().unwrap();
-    let logs = LOGS.lock().unwrap();
+    let test_results = TEST_RESULTS.lock().expect("Cannot access TEST_RESULTS.");
+    let logs = LOGS.lock().expect("Cannot access LOGS.");
 
     for (k, v) in logs.iter() {
         // Test name
         if test_results.contains_key(k) {
-            let passed = *test_results.get(k).unwrap();
+            let passed = *unwrap!(test_results.get(k), "No entry corresponding to the given key '{}'", k);
             if passed {
                 println!("✅ {}", k.green());
             } else {
@@ -145,7 +146,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
                 fail_test(msg);
             }
             _ => {
-                LOGS.lock().unwrap().insert(msg, level_from_u32(level));
+                LOGS.lock().expect("Cannot access LOGS.").insert(msg, level_from_u32(level));
             }
         }
 
@@ -153,19 +154,19 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
     }
 
     fn clear_store(&mut self) -> Result<(), HostExportError> {
-        STORE.lock().unwrap().clear();
+        STORE.lock().expect("Cannot access STORE.").clear();
         Ok(())
     }
 
     fn register_test(&mut self, name_ptr: AscPtr<AscString>) -> Result<(), HostExportError> {
         let name: String = asc_get(self, name_ptr)?;
 
-        if TEST_RESULTS.lock().unwrap().contains_key(&name) {
+        if TEST_RESULTS.lock().expect("Cannot access TEST_RESULTS.").contains_key(&name) {
             panic!("Test with name '{}' already exists.", name)
         }
 
-        TEST_RESULTS.lock().unwrap().insert(name.clone(), true);
-        LOGS.lock().unwrap().insert(name, Level::INFO);
+        TEST_RESULTS.lock().expect("Cannot access TEST_RESULTS.").insert(name.clone(), true);
+        LOGS.lock().expect("Cannot access LOGS.").insert(name, Level::INFO);
 
         Ok(())
     }
@@ -182,17 +183,34 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let field_name: String = asc_get(self, field_name_ptr)?;
         let expected_val: String = asc_get(self, expected_val_ptr)?;
 
-        let map = STORE.lock().unwrap();
-        if map.contains_key(&entity_type) &&
-            map.get(&entity_type).unwrap().contains_key(&id) &&
-            map.get(&entity_type).unwrap().get(&id).unwrap().contains_key(&field_name) {
-            let val = map.get(&entity_type).unwrap().get(&id).unwrap().get(&field_name).unwrap().to_string();
-            if val != expected_val {
-                let msg = format!("Expected field '{}' to equal '{}', but was '{}' instead.", &field_name, &expected_val, val);
-                fail_test(msg);
-            };
+        let map = STORE.lock().expect("Cannot access STORE.");
+
+        if !map.contains_key(&entity_type) {
+            let msg = format!("No entities with type '{}' found.", &entity_type);
+            fail_test(msg);
             return Ok(());
         }
+
+        let entities = map.get(&entity_type).unwrap();
+        if !entities.contains_key(&id) {
+            let msg = format!("No entity of type '{}' and with id '{}' found.", &entity_type, &id);
+            fail_test(msg);
+            return Ok(());
+        }
+
+        let entity = entities.get(&id).unwrap();
+        if !entity.contains_key(&field_name) {
+            let msg = format!("No field named '{}' on entity of type '{}' and with id '{}' found.", &field_name, &entity_type, &id);
+            fail_test(msg);
+            return Ok(());
+        }
+
+        let val = entity.get(&field_name).unwrap();
+        if val.to_string() != expected_val {
+            let msg = format!("Expected field '{}' to equal '{}', but was '{}' instead.", &field_name, &expected_val, val);
+            fail_test(msg);
+            return Ok(());
+        };
 
         Ok(())
     }
