@@ -27,9 +27,9 @@ use graph_runtime_wasm::{
 };
 use web3::types::Address;
 
+use clap::{App, Arg};
 use subgraph_store::MockSubgraphStore;
 use wasm_instance::{flush_logs, get_failed_tests, get_successful_tests, WasmInstance};
-use clap::{App, Arg};
 
 mod subgraph_store;
 mod wasm_instance;
@@ -167,10 +167,12 @@ pub fn main() {
         .version("0.0.5")
         .author("Limechain <https://limechain.tech>")
         .about("Unit testing framework for Subgraph development on The Graph protocol.")
-        .arg(Arg::with_name("DATASOURCE")
-            .help("Sets the name of the datasource to use.")
-            .required(true)
-            .index(1))
+        .arg(
+            Arg::with_name("DATASOURCE")
+                .help("Sets the name of the datasource to use.")
+                .required(true)
+                .index(1),
+        )
         .get_matches();
 
     println!(
@@ -187,7 +189,9 @@ pub fn main() {
 
     let now = Instant::now();
 
-    let datasource = matches.value_of("DATASOURCE").expect("Couldn't get datasource name.");
+    let datasource = matches
+        .value_of("DATASOURCE")
+        .expect("Couldn't get datasource name.");
     let path_to_wasm = format!("build/{}/{}.wasm", datasource, datasource);
 
     println!("{}", path_to_wasm);
