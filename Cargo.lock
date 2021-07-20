@@ -3958,6 +3958,7 @@ version = "0.0.4"
 dependencies = [
  "anyhow",
  "async-trait",
+ "clap",
  "colored",
  "ethabi 12.0.0-graph",
  "graph",

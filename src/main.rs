@@ -29,6 +29,7 @@ use web3::types::Address;
 
 use subgraph_store::MockSubgraphStore;
 use wasm_instance::{flush_logs, get_failed_tests, get_successful_tests, WasmInstance};
+use clap::{App, Arg, SubCommand};
 
 mod subgraph_store;
 mod wasm_instance;
@@ -162,6 +163,16 @@ fn mock_data_source(path: &str) -> DataSource {
 }
 
 pub fn main() {
+    let matches = App::new("My Super Program")
+        .version("1.0")
+        .author("Kevin K. <kbknapp@gmail.com>")
+        .about("Does awesome things")
+        .arg(Arg::with_name("DATASOURCE")
+            .help("Sets the name of the datasource to use.")
+            .required(true)
+            .index(1))
+        .get_matches();
+
     println!(
         "{}",
         ("     _____       _     _            _
@@ -175,20 +186,18 @@ pub fn main() {
     );
 
     let now = Instant::now();
-    let args: Vec<String> = std::env::args().collect();
 
-    if args.len() == 1 {
-        panic!("Must provide path to wasm file.")
-    }
+    let datasource = matches.value_of("DATASOURCE").expect("Couldn't get datasource name.");
+    let path_to_wasm = format!("build/{}/{}.wasm", datasource, datasource);
 
-    let path_to_wasm = &args[1];
+    println!("{}", path_to_wasm);
 
     let subgraph_id = "ipfsMap";
     let deployment_id =
         &DeploymentHash::new(subgraph_id).expect("Could not create DeploymentHash.");
 
     let deployment = DeploymentLocator::new(DeploymentId::new(42), deployment_id.clone());
-    let data_source = mock_data_source(path_to_wasm);
+    let data_source = mock_data_source(&path_to_wasm);
     let metrics_registry = Arc::new(MockMetricsRegistry::new());
 
     let stopwatch_metrics = StopwatchMetrics::new(

@@ -267,14 +267,10 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let entities = map.get(&entity_type).unwrap();
         if !entities.contains_key(&id) {
             let msg = format!(
-                "No entity with type '{}' and id '{}' found.",
+                "FATAL ERROR: Cannot GET Entity. No entity with type '{}' and id '{}' found in the store.",
                 &entity_type, &id
             );
-            fail_test(msg);
-
-            let empty_entity = Entity::new();
-            let res = asc_new(self, &empty_entity.sorted())?;
-            return Ok(res);
+            panic!("{}", msg.red());
         }
 
         let entity = entities.get(&id).unwrap().clone();
