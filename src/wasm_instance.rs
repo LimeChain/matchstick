@@ -193,14 +193,14 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
 
         let entities = map.get(&entity_type).unwrap();
         if !entities.contains_key(&id) {
-            let msg = format!("No entity of type '{}' and with id '{}' found.", &entity_type, &id);
+            let msg = format!("No entity with type '{}' and id '{}' found.", &entity_type, &id);
             fail_test(msg);
             return Ok(());
         }
 
         let entity = entities.get(&id).unwrap();
         if !entity.contains_key(&field_name) {
-            let msg = format!("No field named '{}' on entity of type '{}' and with id '{}' found.", &field_name, &entity_type, &id);
+            let msg = format!("No field named '{}' on entity with type '{}' and id '{}' found.", &field_name, &entity_type, &id);
             fail_test(msg);
             return Ok(());
         }
