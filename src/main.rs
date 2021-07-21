@@ -213,7 +213,15 @@ pub fn main() {
     let mut path = "";
 
     for mapping in &sequence {
-        if mapping.get("name").unwrap() == datasource_name {
+        if mapping
+            .get("name")
+            .unwrap()
+            .as_str()
+            .expect("Could not convert yaml field 'name' to &str.")
+            .to_string()
+            .to_lowercase()
+            == datasource_name.to_string().to_lowercase()
+        {
             path = mapping
                 .get("mapping")
                 .expect("Could not parse field 'mapping' from subgraph.yaml")
