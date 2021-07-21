@@ -194,8 +194,6 @@ pub fn main() {
         .expect("Couldn't get datasource name.");
     let path_to_wasm = format!("build/{}/{}.wasm", datasource, datasource);
 
-    println!("{}", path_to_wasm);
-
     let subgraph_id = "ipfsMap";
     let deployment_id =
         &DeploymentHash::new(subgraph_id).expect("Could not create DeploymentHash.");
