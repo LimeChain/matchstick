@@ -6,22 +6,22 @@
 ## Quick Start 🚀
 The release binary is aimed at both **macOS** and **Linux** systems (Windows coming soon). To download **Subtest**, simply run the following command in you terminal:
 
-`curl -OL https://github.com/LimeChain/subtest/releases/download/0.0.5/subtest`
+`curl -OL https://github.com/LimeChain/subtest/releases/download/0.0.6/subtest`
 
 After that you just need to turn it to an executable binary with this:
 
 `chmod a+x subtest`
 
 ### Run
-To run the framework, you just have to provide a path to a valid WASM instance where you have written and compiled your mappings along with your tests. To learn how to do that, proceed to the next section with user stories and practical examples. 
+To run the framework, you simply need to provide a datasource name (after you've compiled your subgraph using `graph build`).
 
-In order to run the framework with your compiled WASM binary, simply run:
+Just run the following in the root folder of your project:
 
-`./subtest <PATH_TO_WASM>`
+`./subtest <DATASOURCE NAME>`
 
-**NOTE:** We've included an [example WASM binary](https://github.com/LimeChain/subtest/blob/main/Gravity.wasm "generated WASM file"), generated from our [demo subgraph](https://github.com/LimeChain/demo-subgraph "demo subgraph"), you can run that with:
+For instance, in our [demo subgraph example](https://github.com/LimeChain/demo-subgraph "demo subgraph"), the command look like this:
 
-`./subtest "Gravity.wasm"`
+`./subtest Gravity`
 
 Now you can jump straight to the [test examples](https://github.com/LimeChain/demo-subgraph/blob/main/src/tests.ts "examples of tests") we have in our [demo subgraph](https://github.com/LimeChain/demo-subgraph "demo subgraph") and start your journey in Subgraph unit testing!
 
@@ -38,18 +38,7 @@ Clone this repository and run `cargo build`. If that executes successfully congr
 
 **NOTE:** *You may encounter an error, related to missing `libpq` dependencies on your system. In that case - install the missing dependencies (listed in the error log) with your package manager.*
 
-### Run
-To run the framework, you just have to provide a path to a valid WASM instance where you have written and compiled your mappings along with your tests. To learn how to do that, proceed to the next section with user stories and practical examples. 
-
-`cargo run <PATH_TO_WASM>`
-
-**NOTE:** We've included an [example WASM binary](https://github.com/LimeChain/subtest/blob/main/Gravity.wasm "generated WASM file"), generated from our [demo subgraph](https://github.com/LimeChain/demo-subgraph "demo subgraph"), you can run that with:
-
-`cargo run "Gravity.wasm"`
-
 ## Example Usage 📖
-To use **Subtest** you also need to have a generated WASM binary, which includes your mappings and your unit tests. To get that file simply run `graph build` the same way you would normally build your subgraph. The generated WASM file will be located in the `/build` folder of your subgraph project. **Tip:** You can move the **subtest** binary straight to the `/build` folder too, so you can just run `./subtest "WasmFile.wasm"` from there.
-
 Let's explore a few common scenarios where we'd want to test our handler functions. We've created a [**demo subgraph repo**](https://github.com/LimeChain/demo-subgraph "demo subgraph") ❗to fully demonstrate how to use the framework and all its functionality using the [Example Subgraph](https://thegraph.com/docs/developer/create-subgraph-hosted "Example Subgraph"), provided by [The Graph Docs](https://thegraph.com/docs "The Graph Docs"), which you most likely will be familiar with. For the full examples, feel free to check it out in depth. Let's dive in straight to the code on there! We've got the following simple generated event:
 ```typescript
 export class NewGravatar extends ethereum.Event {
