@@ -164,7 +164,7 @@ fn mock_data_source(path: &str) -> DataSource {
 
 pub fn main() {
     let matches = App::new("Subtest")
-        .version("0.0.5")
+        .version("0.0.6")
         .author("Limechain <https://limechain.tech>")
         .about("Unit testing framework for Subgraph development on The Graph protocol.")
         .arg(
