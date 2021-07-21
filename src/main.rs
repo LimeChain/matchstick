@@ -2,6 +2,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Instant;
 
+use clap::{App, Arg};
 use colored::*;
 use ethabi::Contract;
 use graph::components::store::DeploymentId;
@@ -27,7 +28,6 @@ use graph_runtime_wasm::{
 };
 use web3::types::Address;
 
-use clap::{App, Arg};
 use subgraph_store::MockSubgraphStore;
 use wasm_instance::{flush_logs, get_failed_tests, get_successful_tests, WasmInstance};
 
@@ -168,6 +168,12 @@ pub fn main() {
         .author("Limechain <https://limechain.tech>")
         .about("Unit testing framework for Subgraph development on The Graph protocol.")
         .arg(
+            Arg::with_name("isTemplate")
+                .short("t")
+                .takes_value(false)
+                .help("Indicates that the datasource is a template datasource."),
+        )
+        .arg(
             Arg::with_name("DATASOURCE")
                 .help("Sets the name of the datasource to use.")
                 .required(true)
@@ -192,7 +198,14 @@ pub fn main() {
     let datasource = matches
         .value_of("DATASOURCE")
         .expect("Couldn't get datasource name.");
-    let path_to_wasm = format!("build/{}/{}.wasm", datasource, datasource);
+
+    let is_template = matches.is_present("isTemplate");
+
+    let path_to_wasm = if is_template {
+        format!("build/templates/{}/{}.wasm", datasource, datasource)
+    } else {
+        format!("build/{}/{}.wasm", datasource, datasource)
+    };
 
     let subgraph_id = "ipfsMap";
     let deployment_id =
