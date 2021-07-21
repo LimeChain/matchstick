@@ -130,7 +130,8 @@ fn mock_abi() -> MappingABI {
 
 fn mock_data_source(path: &str) -> DataSource {
     let runtime = std::fs::read(path).
-        expect("❌  Could not resolve path to wasm file. Please ensure that the datasource name you're providing is valid. It should be the same as the 'name' field in the subgraph.yaml file, corresponding to the datasource you want to test.  ❌");
+        expect(r#"❌  Could not resolve path to wasm file. Please ensure that the datasource name you're providing is valid.
+        It should be the same as the 'name' field in the subgraph.yaml file, corresponding to the datasource you want to test.  ❌"#);
 
     DataSource {
         kind: String::from("ethereum/contract"),
@@ -196,9 +197,13 @@ pub fn main() {
         .expect("Couldn't get datasource name.");
 
     let subgraph_yaml_contents = std::fs::read_to_string("build/subgraph.yaml")
-        .expect("❌ Something went wrong reading the 'build/subgraph.yaml' file. Please ensure that you have run 'graph build' and a 'build' directory exists in the root of your project.  ❌");
+        .expect(r#"❌ Something went wrong reading the 'build/subgraph.yaml' file.
+        Please ensure that you have run 'graph build' and a 'build' directory exists in the root of your project.  ❌"#);
 
-    let subgraph_yaml: Value = serde_yaml::from_str(&subgraph_yaml_contents).expect("❌  Something went wrong when parsing 'build/subgraph.yaml', please ensure that the file exists and that the yaml is valid.  ❌");
+    let subgraph_yaml: Value = serde_yaml::from_str(&subgraph_yaml_contents).expect(
+        r#"❌  Something went wrong when parsing 'build/subgraph.yaml'.
+        Please ensure that the file exists and that the yaml is valid.  ❌"#,
+    );
 
     let sequence: Sequence = subgraph_yaml["dataSources"]
         .as_sequence()
@@ -266,11 +271,13 @@ pub fn main() {
     let run_tests = module
         .instance
         .get_func("runTests")
-        .expect("❌  Couldn't get wasm function 'runTests'. Please ensure that you have imported your runTests() function, defined in the test file, into the main mappings file.  ❌");
+        .expect(r#"❌  Couldn't get wasm function 'runTests'.
+        Please ensure that you have imported your runTests() function, defined in the test file, into the main mappings file.  ❌"#);
     println!("{}", ("Starting tests 🧪🚀\n").to_string().purple());
-    run_tests
-        .call(&[])
-        .expect("❌  Couldn't call wasm function 'runTests'. Please double check the syntax in your test file.  ❌");
+    run_tests.call(&[]).expect(
+        r#"❌  Couldn't call wasm function 'runTests'.
+        Please double check the syntax in your test file.  ❌"#,
+    );
 
     flush_logs();
 
