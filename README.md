@@ -4,7 +4,7 @@
 ![miro2](https://user-images.githubusercontent.com/32264020/123761690-bcf37f80-d8ca-11eb-9950-6452d7e972cd.jpeg)
 
 ## Quick Start 🚀
-The release binary is aimed at both **macOS** and **Linux** systems (Windows coming soon). To download **Subtest** just open up a terminal, navigate to the root folder of your subgraph project simply run the following command:
+The release binary is aimed at both **macOS** and **Linux** systems (Windows coming soon). To download **Subtest** just open up a terminal, navigate to the root folder of your subgraph project and simply run the following command:
 
 `curl -OL https://github.com/LimeChain/subtest/releases/download/0.0.6/subtest`
 
