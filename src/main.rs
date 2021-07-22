@@ -30,7 +30,7 @@ use serde_yaml::{Sequence, Value};
 use web3::types::Address;
 
 use subgraph_store::MockSubgraphStore;
-use wasm_instance::{flush_logs, get_failed_tests, get_successful_tests, WasmInstance};
+use wasm_instance::{fail_test, flush_logs, get_failed_tests, get_successful_tests, WasmInstance};
 
 mod subgraph_store;
 mod wasm_instance;
@@ -131,7 +131,7 @@ fn mock_abi() -> MappingABI {
 fn mock_data_source(path: &str) -> DataSource {
     let runtime = std::fs::read(path).
         expect(r#"❌  Could not resolve path to wasm file. Please ensure that the datasource name you're providing is valid.
-        It should be the same as the 'name' field in the subgraph.yaml file, corresponding to the datasource you want to test.  ❌"#);
+        It should be the same as the 'name' field in the subgraph.yaml file, corresponding to the datasource you want to test."#);
 
     DataSource {
         kind: String::from("ethereum/contract"),
@@ -197,12 +197,15 @@ pub fn main() {
         .expect("Couldn't get datasource name.");
 
     let subgraph_yaml_contents = std::fs::read_to_string("build/subgraph.yaml")
-        .expect(r#"❌ Something went wrong reading the 'build/subgraph.yaml' file.
-        Please ensure that you have run 'graph build' and a 'build' directory exists in the root of your project.  ❌"#);
+        .expect(r#"
+        ❌ ❌ ❌  Something went wrong reading the 'build/subgraph.yaml' file.
+        Please ensure that you have run 'graph build' and a 'build' directory exists in the root of your project.
+        "#);
 
     let subgraph_yaml: Value = serde_yaml::from_str(&subgraph_yaml_contents).expect(
-        r#"❌  Something went wrong when parsing 'build/subgraph.yaml'.
-        Please ensure that the file exists and that the yaml is valid.  ❌"#,
+        r#"
+        ❌ ❌ ❌  Something went wrong when parsing 'build/subgraph.yaml'.
+        Please ensure that the file exists and that the yaml is valid."#,
     );
 
     let sequence: Sequence = subgraph_yaml["dataSources"]
@@ -279,13 +282,28 @@ pub fn main() {
     let run_tests = module
         .instance
         .get_func("runTests")
-        .expect(r#"❌  Couldn't get wasm function 'runTests'.
-        Please ensure that you have imported your runTests() function, defined in the test file, into the main mappings file.  ❌"#);
+        .expect(r#"
+        ❌ ❌ ❌  Couldn't get wasm function 'runTests'.
+        Please ensure that you have imported your runTests() function, defined in the test file, into the main mappings file.
+        "#);
+
     println!("{}", ("Starting tests 🧪🚀\n").to_string().purple());
-    run_tests.call(&[]).expect(
-        r#"❌  Couldn't call wasm function 'runTests'.
-        Please double check the syntax in your test file.  ❌"#,
-    );
+
+    #[allow(non_fmt_panic)]
+    run_tests.call(&[]).unwrap_or_else(|_| {
+        fail_test("".to_string());
+        flush_logs();
+
+        let msg = String::from(r#"
+        ❌ ❌ ❌  Unexpected error occured while running tests.
+        Please double check the syntax in your test file.
+        This usually happens if you pass a 'null' value to one of our functions - assert.fieldEquals(), store.get(), store.set().
+        Please ensure that you have proper null checks in your tests.
+        You can debug your test file using the 'log()' function, provided in subtest-as (import { log } from "subtest-as/assembly/log").
+        "#).red();
+
+        panic!("{}", msg);
+    });
 
     flush_logs();
 
