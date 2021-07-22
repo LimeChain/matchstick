@@ -4,9 +4,17 @@
 ![miro2](https://user-images.githubusercontent.com/32264020/123761690-bcf37f80-d8ca-11eb-9950-6452d7e972cd.jpeg)
 
 ## Quick Start 🚀
-The release binary is aimed at both **macOS** and **Linux** systems (Windows coming soon). To add **Subtest** to your subgraph project just open up a terminal, navigate to the root folder of your project and simply run the following command:
+The release binary comes in two flavours - for **macOS** and **Linux** (Windows coming soon). To add **Subtest** to your subgraph project just open up a terminal, navigate to the root folder of your project and simply run the follow these steps (depending on your OS):
 
-`curl -OL https://github.com/LimeChain/subtest/releases/download/0.0.7/subtest && chmod a+x subtest`
+### MacOS
+
+`curl -OL https://github.com/LimeChain/subtest/releases/download/0.0.7/macOS_subtest.zip && unzip -o macOS_subtest.zip && chmod a+x subtest`
+
+### Linux
+
+`curl -OL https://github.com/LimeChain/subtest/releases/download/0.0.7/linux_subtest.zip && sudo apt-get install -y unzip && unzip -o linux_subtest.zip && chmod a+x subtest`
+
+**Note:** This command is aimed at Ubuntu/Debian systems, but can be easily tweaked to fit any Linux distro.
 
 ### Run
 To run the framework, you simply need to provide a datasource name (after you've compiled your subgraph using `graph build`).
