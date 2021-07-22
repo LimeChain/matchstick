@@ -165,6 +165,30 @@ fn mock_data_source(path: &str) -> DataSource {
     }
 }
 
+fn get_build_path(sequence: Sequence, datasource_name: String) -> String {
+    for mapping in sequence {
+        if mapping
+            .get("name")
+            .unwrap()
+            .as_str()
+            .expect("Could not convert yaml field 'name' to &str.")
+            .to_string()
+            .to_lowercase()
+            == datasource_name.to_string().to_lowercase()
+        {
+            return mapping
+                .get("mapping")
+                .expect("Could not parse field 'mapping' from subgraph.yaml")
+                .get("file")
+                .expect("Could not parse field 'mapping/file' from subgraph.yaml")
+                .as_str()
+                .expect("Could not convert mapping/file to &str.")
+                .to_owned();
+        }
+    }
+    String::from("")
+}
+
 pub fn main() {
     let matches = App::new("Subtest")
         .version("0.0.7")
@@ -213,26 +237,16 @@ pub fn main() {
         .expect("Could not get data sources from yaml file.")
         .to_vec();
 
-    let mut path = "";
+    let mut path = get_build_path(sequence, datasource_name.to_owned());
 
-    for mapping in &sequence {
-        if mapping
-            .get("name")
-            .unwrap()
-            .as_str()
-            .expect("Could not convert yaml field 'name' to &str.")
-            .to_string()
-            .to_lowercase()
-            == datasource_name.to_string().to_lowercase()
-        {
-            path = mapping
-                .get("mapping")
-                .expect("Could not parse field 'mapping' from subgraph.yaml")
-                .get("file")
-                .expect("Could not parse field 'mapping/file' from subgraph.yaml")
-                .as_str()
-                .expect("Could not convert mapping/file to &str.");
-        }
+    // This means datasource is a template datasource
+    if path.is_empty() {
+        let sequence: Sequence = subgraph_yaml["templates"]
+            .as_sequence()
+            .expect("Could not get data sources from yaml file.")
+            .to_vec();
+
+        path = get_build_path(sequence, datasource_name.to_owned());
     }
 
     let path_to_wasm = format!("build/{}", path);
@@ -290,7 +304,7 @@ pub fn main() {
     println!("{}", ("Starting tests 🧪🚀\n").to_string().purple());
 
     #[allow(non_fmt_panic)]
-    run_tests.call(&[]).unwrap_or_else(|_| {
+        run_tests.call(&[]).unwrap_or_else(|_| {
         fail_test("".to_string());
         flush_logs();
 
