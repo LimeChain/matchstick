@@ -4,13 +4,9 @@
 ![miro2](https://user-images.githubusercontent.com/32264020/123761690-bcf37f80-d8ca-11eb-9950-6452d7e972cd.jpeg)
 
 ## Quick Start 🚀
-The release binary is aimed at both **macOS** and **Linux** systems (Windows coming soon). To download **Subtest** just open up a terminal, navigate to the root folder of your subgraph project and simply run the following command:
+The release binary is aimed at both **macOS** and **Linux** systems (Windows coming soon). To add **Subtest** to your subgraph project just open up a terminal, navigate to the root folder of your project and simply run the following command:
 
-`curl -OL https://github.com/LimeChain/subtest/releases/download/0.0.6/subtest`
-
-After that you just need to turn it to an executable binary with this:
-
-`chmod a+x subtest`
+`curl -OL https://github.com/LimeChain/subtest/releases/download/0.0.7/subtest && chmod a+x subtest`
 
 ### Run
 To run the framework, you simply need to provide a datasource name (after you've compiled your subgraph using `graph build`).
@@ -22,6 +18,9 @@ Just run the following in the root folder of your project:
 For instance, in our [demo subgraph example](https://github.com/LimeChain/demo-subgraph "demo subgraph"), the command look like this:
 
 `./subtest Gravity`
+
+**Tip:** You can build your subgraph (along with your tests) and run the framework in one step using:
+`graph build && ./subtest Gravity`
 
 Now you can jump straight to the [test examples](https://github.com/LimeChain/demo-subgraph/blob/main/src/tests.ts "examples of tests") we have in our [demo subgraph](https://github.com/LimeChain/demo-subgraph "demo subgraph") and start your journey in Subgraph unit testing!
 
