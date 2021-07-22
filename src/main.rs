@@ -5,32 +5,32 @@ use std::time::Instant;
 use clap::{App, Arg};
 use colored::*;
 use ethabi::Contract;
+use graph::components::store::DeploymentId;
+use graph::data::subgraph::*;
 use graph::{
     blockchain::BlockPtr,
     components::store::DeploymentLocator,
     data::subgraph::{Mapping, Source, TemplateSource},
     ipfs_client::IpfsClient,
     prelude::{
-        BlockState, DeploymentHash, HostMetrics, Link, Logger, o, slog, StopwatchMetrics,
+        o, slog, BlockState, DeploymentHash, HostMetrics, Link, Logger, StopwatchMetrics,
         SubgraphStore,
     },
     semver::Version,
 };
-use graph::components::store::DeploymentId;
-use graph::data::subgraph::*;
 use graph_chain_arweave::adapter::ArweaveAdapter;
 use graph_chain_ethereum::{Chain, DataSource, DataSourceTemplate};
 use graph_core::three_box::ThreeBoxAdapter;
 use graph_mock::MockMetricsRegistry;
+use graph_runtime_wasm::mapping::ValidModule;
 use graph_runtime_wasm::{
     host_exports::HostExports, mapping::MappingContext, module::ExperimentalFeatures,
 };
-use graph_runtime_wasm::mapping::ValidModule;
 use serde_yaml::{Sequence, Value};
 use web3::types::Address;
 
 use subgraph_store::MockSubgraphStore;
-use wasm_instance::{flush_logs, get_failed_tests, get_successful_tests, fail_test, WasmInstance};
+use wasm_instance::{fail_test, flush_logs, get_failed_tests, get_successful_tests, WasmInstance};
 
 mod subgraph_store;
 mod wasm_instance;
@@ -122,9 +122,9 @@ fn mock_abi() -> MappingABI {
                 "type": "constructor"
             }
         ]"#
-                .as_bytes(),
+            .as_bytes(),
         )
-            .expect("Could not load contract."),
+        .expect("Could not load contract."),
     }
 }
 
@@ -277,7 +277,7 @@ pub fn main() {
         None,
         experimental_features,
     )
-        .expect("Could not create WasmInstance from valid module with context.");
+    .expect("Could not create WasmInstance from valid module with context.");
 
     let run_tests = module
         .instance
