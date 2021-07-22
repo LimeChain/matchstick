@@ -69,7 +69,7 @@ fn styled(s: &str, n: &Level) -> ColoredString {
     }
 }
 
-fn fail_test(msg: String) {
+pub fn fail_test(msg: String) {
     let test_name = TEST_RESULTS
         .lock()
         .expect("Cannot access TEST_RESULTS.")
@@ -152,7 +152,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         match level {
             // CRITICAL (for expected logic errors)
             0 => {
-                panic!("❌ {}", msg.red());
+                panic!("❌ ❌ ❌ {}", msg.red());
             }
             1 => {
                 fail_test(msg);
@@ -180,7 +180,8 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             .expect("Cannot access TEST_RESULTS.")
             .contains_key(&name)
         {
-            panic!("❌ Test with name '{}' already exists.", name)
+            let msg = format!("❌ ❌ ❌  Test with name '{}' already exists.", name).red();
+            panic!("{}", msg);
         }
 
         TEST_RESULTS
@@ -209,7 +210,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let map = STORE.lock().expect("Cannot access STORE.");
         if !map.contains_key(&entity_type) {
             let msg = format!(
-                "(assertFieldEquals) No entities with type '{}' found.",
+                "(assert.fieldEquals) No entities with type '{}' found.",
                 &entity_type
             );
             fail_test(msg);
@@ -219,7 +220,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let entities = map.get(&entity_type).unwrap();
         if !entities.contains_key(&id) {
             let msg = format!(
-                "(assertFieldEquals) No entity with type '{}' and id '{}' found.",
+                "(assert.fieldEquals) No entity with type '{}' and id '{}' found.",
                 &entity_type, &id
             );
             fail_test(msg);
@@ -229,7 +230,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let entity = entities.get(&id).unwrap();
         if !entity.contains_key(&field_name) {
             let msg = format!(
-                "(assertFieldEquals) No field named '{}' on entity with type '{}' and id '{}' found.",
+                "(assert.fieldEquals) No field named '{}' on entity with type '{}' and id '{}' found.",
                 &field_name, &entity_type, &id
             );
             fail_test(msg);
@@ -239,7 +240,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let val = entity.get(&field_name).unwrap();
         if val.to_string() != expected_val {
             let msg = format!(
-                "(assertFieldEquals) Expected field '{}' to equal '{}', but was '{}' instead.",
+                "(assert.fieldEquals) Expected field '{}' to equal '{}', but was '{}' instead.",
                 &field_name, &expected_val, val
             );
             fail_test(msg);
