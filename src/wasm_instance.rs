@@ -258,40 +258,17 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let id: String = asc_get(self, id_ptr)?;
 
         let map = STORE.lock().expect("Cannot access STORE.");
-        if !map.contains_key(&entity_type) {
-            let msg = format!(
-                "(store.get) No entities with type '{}' found.",
-                &entity_type
-            );
-            fail_test(msg);
 
-            let empty_entity = Entity::new();
-            let res = asc_new(self, &empty_entity.sorted())?;
+        if map.contains_key(&entity_type) && map.get(&entity_type).unwrap().contains_key(&id) {
+            let entities = map.get(&entity_type).unwrap();
+            let entity = entities.get(&id).unwrap().clone();
+            let entity = Entity::from(entity);
+
+            let res = asc_new(self, &entity.sorted())?;
             return Ok(res);
         }
 
-        let entities = map.get(&entity_type).unwrap();
-        if !entities.contains_key(&id) {
-            let test_name = TEST_RESULTS
-                .lock()
-                .expect("Cannot access TEST_RESULTS.")
-                .keys()
-                .last()
-                .unwrap()
-                .clone();
-
-            let msg = format!(
-                "❌  '{}' FATAL ERROR: Cannot GET Entity. No entity with type '{}' and id '{}' found in the store.",
-                test_name, &entity_type, &id
-            );
-            panic!("{}", msg.red());
-        }
-
-        let entity = entities.get(&id).unwrap().clone();
-        let entity = Entity::from(entity);
-
-        let res = asc_new(self, &entity.sorted())?;
-        Ok(res)
+        Ok(AscPtr::null())
     }
 
     fn mock_store_set(
