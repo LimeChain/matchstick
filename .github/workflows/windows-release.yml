@@ -1,8 +1,9 @@
 name: Release (Windows)
 
 on:
-  pull_request:
-    branches: [ main ]
+  release:
+    types:
+      - edited
 
 env:
   CARGO_TERM_COLOR: always
