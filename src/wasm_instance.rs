@@ -1,13 +1,10 @@
-use std::collections::HashMap;
-use std::marker::PhantomData;
 use std::{cell::RefCell, sync::Arc, sync::Mutex, time::Instant};
 use std::{rc::Rc, time::Duration};
+use std::collections::HashMap;
+use std::marker::PhantomData;
 
 use anyhow::anyhow;
 use colored::*;
-use graph::data::store::Value;
-use graph::prelude::Entity;
-use graph::runtime::{asc_get, asc_new, try_asc_get, AscPtr};
 use graph::{
     blockchain::{Blockchain, HostFnCtx},
     cheap_clone::CheapClone,
@@ -16,15 +13,18 @@ use graph::{
         HostMetrics,
     },
 };
-use graph_runtime_wasm::asc_abi::class::AscEntity;
-use graph_runtime_wasm::asc_abi::class::AscString;
+use graph::data::store::Value;
+use graph::prelude::Entity;
+use graph::runtime::{asc_get, asc_new, AscPtr, try_asc_get};
 use graph_runtime_wasm::{
     error::DeterminismLevel,
     mapping::{MappingContext, ValidModule},
-    module::IntoWasmRet,
     module::{ExperimentalFeatures, IntoTrap, WasmInstanceContext},
+    module::IntoWasmRet,
 };
 use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::TimeoutStopwatch};
+use graph_runtime_wasm::asc_abi::class::AscEntity;
+use graph_runtime_wasm::asc_abi::class::AscString;
 use indexmap::IndexMap;
 use lazy_static::lazy_static;
 
@@ -283,17 +283,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let data: HashMap<String, Value> = try_asc_get(self, data_ptr)?;
 
         let mut map = STORE.lock().expect("Cannot get STORE.");
-        let mut inner_map = IndexMap::new();
-
-        if map.contains_key(&entity_type) {
-            inner_map = map.get(&entity_type).unwrap().clone();
-
-            if inner_map.contains_key(&id) {
-                let msg = format!("(store.set) Entity with id '{}' already exists.", &id);
-                fail_test(msg);
-                return Ok(());
-            }
-        }
+        let mut inner_map = if map.contains_key(&entity_type) { map.get(&entity_type).unwrap().clone() } else { IndexMap::new() };
 
         inner_map.insert(id, data);
         map.insert(entity_type, inner_map);
@@ -459,7 +449,7 @@ impl<C: Blockchain> WasmInstance<C> {
                                 "{} is not allowed in global variables",
                                 host_fn.name
                             )
-                            .into());
+                                .into());
                         }
                     };
 
