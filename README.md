@@ -8,11 +8,19 @@ The release binary comes in two flavours - for **macOS** and **Linux** (Windows 
 
 ### MacOS
 
-`curl -OL https://github.com/LimeChain/subtest/releases/download/0.0.7/macOS_subtest.zip && unzip -o macOS_subtest.zip && chmod a+x subtest`
+```
+curl -OL https://github.com/LimeChain/subtest/releases/download/0.0.8/binary-macos &&
+mv binary-macos subtest &&
+chmod a+x subtest
+```
 
 ### Linux
 
-`curl -OL https://github.com/LimeChain/subtest/releases/download/0.0.7/linux_subtest.zip && sudo apt-get install -y unzip && unzip -o linux_subtest.zip && chmod a+x subtest`
+```
+curl -OL https://github.com/LimeChain/subtest/releases/download/0.0.8/binary-linux &&
+mv binary-linux subtest &&
+chmod a+x subtest
+```
 
 **Note:** This command is aimed at Ubuntu/Debian systems, but can be easily tweaked to fit any Linux distro.
 
