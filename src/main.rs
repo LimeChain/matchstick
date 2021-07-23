@@ -18,9 +18,7 @@ use graph::{
     },
     semver::Version,
 };
-use graph_chain_arweave::adapter::ArweaveAdapter;
 use graph_chain_ethereum::{Chain, DataSource, DataSourceTemplate};
-use graph_core::three_box::ThreeBoxAdapter;
 use graph_mock::MockMetricsRegistry;
 use graph_runtime_wasm::mapping::ValidModule;
 use graph_runtime_wasm::{
@@ -41,9 +39,6 @@ fn mock_host_exports(
     data_source: DataSource,
     store: Arc<impl SubgraphStore>,
 ) -> HostExports<Chain> {
-    let arweave_adapter = Arc::new(ArweaveAdapter::new("https://arweave.net".to_string()));
-    let three_box_adapter = Arc::new(ThreeBoxAdapter::new("https://ipfs.3box.io/".to_string()));
-
     let templates = vec![DataSourceTemplate {
         kind: String::from("ethereum/contract"),
         name: String::from("example template"),
@@ -53,7 +48,7 @@ fn mock_host_exports(
         },
         mapping: Mapping {
             kind: String::from("ethereum/events"),
-            api_version: Version::parse("0.1.0").expect("Could not parse api version."),
+            api_version: Version::parse("0.0.3").expect("Could not parse api version."),
             language: String::from("wasm/assemblyscript"),
             entities: vec![],
             abis: vec![],
@@ -75,8 +70,6 @@ fn mock_host_exports(
         Arc::new(templates),
         Arc::new(graph_core::LinkResolver::from(IpfsClient::localhost())),
         store,
-        arweave_adapter,
-        three_box_adapter,
     )
 }
 
@@ -147,7 +140,7 @@ fn mock_data_source(path: &str) -> DataSource {
         },
         mapping: Mapping {
             kind: String::from("ethereum/events"),
-            api_version: Version::parse("0.1.0").expect("Could not parse api version."),
+            api_version: Version::parse("0.0.3").expect("Could not parse api version."),
             language: String::from("wasm/assemblyscript"),
             entities: vec![],
             abis: vec![],
@@ -273,8 +266,6 @@ pub fn main() {
 
     let experimental_features = ExperimentalFeatures {
         allow_non_deterministic_ipfs: true,
-        allow_non_deterministic_arweave: true,
-        allow_non_deterministic_3box: true,
     };
 
     let valid_module = Arc::new(

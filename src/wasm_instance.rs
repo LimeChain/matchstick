@@ -592,10 +592,6 @@ impl<C: Blockchain> WasmInstance<C> {
             expected_val_ptr
         );
 
-        link!("arweave.transactionData", arweave_transaction_data, ptr);
-
-        link!("box.profile", box_profile, ptr);
-
         let instance = linker.instantiate(&valid_module.module)?;
 
         if shared_ctx.borrow().is_none() {
