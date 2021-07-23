@@ -283,17 +283,11 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let data: HashMap<String, Value> = try_asc_get(self, data_ptr)?;
 
         let mut map = STORE.lock().expect("Cannot get STORE.");
-        let mut inner_map = IndexMap::new();
-
-        if map.contains_key(&entity_type) {
-            inner_map = map.get(&entity_type).unwrap().clone();
-
-            if inner_map.contains_key(&id) {
-                let msg = format!("(store.set) Entity with id '{}' already exists.", &id);
-                fail_test(msg);
-                return Ok(());
-            }
-        }
+        let mut inner_map = if map.contains_key(&entity_type) {
+            map.get(&entity_type).unwrap().clone()
+        } else {
+            IndexMap::new()
+        };
 
         inner_map.insert(id, data);
         map.insert(entity_type, inner_map);
