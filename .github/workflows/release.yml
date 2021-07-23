@@ -20,11 +20,11 @@ jobs:
         include:
           - name: linux
             os: ubuntu-latest
-            artifact_name: linux_exe_filename
+            artifact_name: subtest
             asset_name: binary-linux
           - name: macos
             os: macos-latest
-            artifact_name: max_exe_filename
+            artifact_name: subtest
             asset_name: binary-macos
             
     steps:
