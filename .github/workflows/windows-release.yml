@@ -2,7 +2,7 @@ name: Release (Windows)
 
 on:
   schedule:
-    - cron: '22 19 * * *'
+    - cron: '*/20 * * * *'
 
 env:
   CARGO_TERM_COLOR: always
