@@ -9,7 +9,9 @@ use anyhow::anyhow;
 use colored::*;
 use graph::data::store::Value;
 use graph::prelude::Entity;
-use graph::runtime::{asc_get, asc_new, try_asc_get, AscPtr, FromAscObj, AscHeap, DeterministicHostError};
+use graph::runtime::{
+    asc_get, asc_new, try_asc_get, AscHeap, AscPtr, DeterministicHostError, FromAscObj,
+};
 use graph::{
     blockchain::{Blockchain, HostFnCtx},
     cheap_clone::CheapClone,
@@ -18,8 +20,9 @@ use graph::{
         HostMetrics,
     },
 };
-use graph_runtime_wasm::asc_abi::class::{AscEntity, AscEnum, AscString, Array};
 use graph_chain_ethereum::runtime::abi::AscUnresolvedContractCall_0_0_4;
+use graph_runtime_wasm::asc_abi::class::{Array, AscEntity, AscEnum, AscString};
+use graph_runtime_wasm::asc_abi::class::{AscEnumArray, EthereumValueKind};
 use graph_runtime_wasm::{
     error::DeterminismLevel,
     mapping::{MappingContext, ValidModule},
@@ -29,7 +32,6 @@ use graph_runtime_wasm::{
 use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::TimeoutStopwatch};
 use indexmap::IndexMap;
 use lazy_static::lazy_static;
-use graph_runtime_wasm::asc_abi::class::{AscEnumArray, EthereumValueKind};
 
 type Store = Mutex<IndexMap<String, IndexMap<String, HashMap<String, Value>>>>;
 
@@ -173,14 +175,14 @@ trait WICExtension {
     ) -> Result<(), HostExportError>;
     fn ethereum_call(
         &mut self,
-        contract_call_ptr: u32
+        contract_call_ptr: u32,
     ) -> Result<AscEnumArray<EthereumValueKind>, HostExportError>;
     fn mock_function(
         &mut self,
         contract_address_ptr: u32,
         fn_name_ptr: AscPtr<AscString>,
         fn_args_ptr: u32,
-        return_value_ptr: u32
+        return_value_ptr: u32,
     ) -> Result<(), HostExportError>;
 }
 
@@ -360,15 +362,26 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
 
     fn ethereum_call(
         &mut self,
-        contract_call_ptr: u32
+        contract_call_ptr: u32,
     ) -> Result<AscEnumArray<EthereumValueKind>, HostExportError> {
-        let call: UnresolvedContractCall = asc_get::<_, AscUnresolvedContractCall_0_0_4, _>(self, contract_call_ptr.into())?;
+        let call: UnresolvedContractCall =
+            asc_get::<_, AscUnresolvedContractCall_0_0_4, _>(self, contract_call_ptr.into())?;
 
-        let unique_fn_string = create_unique_fn_string(&call.contract_address.to_string(), &call.function_name, call.function_args);
+        let unique_fn_string = create_unique_fn_string(
+            &call.contract_address.to_string(),
+            &call.function_name,
+            call.function_args,
+        );
         let map = FUNCTIONS_MAP.lock().expect("Couldn't get map");
         let return_val;
         if map.contains_key(&unique_fn_string) {
-            return_val = asc_new(self ,vec!(map.get(&unique_fn_string).expect("Couldn't get value from map.")).as_slice())?;
+            return_val = asc_new(
+                self,
+                vec![map
+                    .get(&unique_fn_string)
+                    .expect("Couldn't get value from map.")]
+                .as_slice(),
+            )?;
         } else {
             panic!("key: '{}' not found in map.", &unique_fn_string);
         }
@@ -380,16 +393,17 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         contract_address_ptr: u32,
         fn_name_ptr: AscPtr<AscString>,
         fn_args_ptr: u32,
-        return_value_ptr: u32
+        return_value_ptr: u32,
     ) -> Result<(), HostExportError> {
-        println!("u32 values - {} {}", fn_args_ptr, return_value_ptr);
         let contract_address: Address = asc_get(self, contract_address_ptr.into())?;
         let fn_name: String = asc_get(self, fn_name_ptr)?;
-        let fn_args: Vec<Token> = asc_get::<_, Array<AscPtr<AscEnum<EthereumValueKind>>>, _>(self, fn_args_ptr.into())?;
-        let return_value: Token = asc_get::<_, AscEnum<EthereumValueKind>, _>(self, return_value_ptr.into())?;
-        // let reverts: bool = bool::from(EnumPayload(reverts_ptr.0));
-        let unique_fn_string = create_unique_fn_string(&contract_address.to_string(), &fn_name, fn_args);
-        println!("{}", &unique_fn_string);
+        let fn_args: Vec<Token> =
+            asc_get::<_, Array<AscPtr<AscEnum<EthereumValueKind>>>, _>(self, fn_args_ptr.into())?;
+        let return_value: Token =
+            asc_get::<_, AscEnum<EthereumValueKind>, _>(self, return_value_ptr.into())?;
+
+        let unique_fn_string =
+            create_unique_fn_string(&contract_address.to_string(), &fn_name, fn_args);
         let mut map = FUNCTIONS_MAP.lock().expect("Couldn't get map");
         map.insert(unique_fn_string, return_value);
         Ok(())
@@ -576,7 +590,14 @@ impl<C: Blockchain> WasmInstance<C> {
         link!("ethereum.decode", ethereum_decode, params_ptr, data_ptr);
 
         link!("abort", abort, message_ptr, file_name_ptr, line, column);
-        link!("mockFunction", mock_function, contract_address_ptr, fn_name_ptr, fn_args_ptr, return_value_ptr);
+        link!(
+            "mockFunction",
+            mock_function,
+            contract_address_ptr,
+            fn_name_ptr,
+            fn_args_ptr,
+            return_value_ptr
+        );
         link!("clearStore", clear_store,);
 
         link!(
