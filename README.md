@@ -9,7 +9,7 @@ The release binary comes in two flavours - for **macOS** and **Linux** (Windows 
 ### MacOS
 
 ```
-curl -OL https://github.com/LimeChain/subtest/releases/download/0.0.9/binary-macos &&
+curl -OL https://github.com/LimeChain/subtest/releases/download/0.0.10/binary-macos &&
 mv binary-macos subtest &&
 chmod a+x subtest
 ```
@@ -17,7 +17,7 @@ chmod a+x subtest
 ### Linux
 
 ```
-curl -OL https://github.com/LimeChain/subtest/releases/download/0.0.9/binary-linux &&
+curl -OL https://github.com/LimeChain/subtest/releases/download/0.0.10/binary-linux &&
 mv binary-linux subtest &&
 chmod a+x subtest
 ```
