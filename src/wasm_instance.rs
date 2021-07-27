@@ -585,7 +585,7 @@ impl<C: Blockchain> WasmInstance<C> {
             }
         }
 
-        link!("ethereum.call", ethereum_call, fake_parameter_type);
+        link!("ethereum.call", ethereum_call, contract_call_ptr);
         link!("ethereum.encode", ethereum_encode, params_ptr);
         link!("ethereum.decode", ethereum_decode, params_ptr, data_ptr);
 
