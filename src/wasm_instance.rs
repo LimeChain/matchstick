@@ -3,11 +3,15 @@ use std::marker::PhantomData;
 use std::{cell::RefCell, sync::Arc, sync::Mutex, time::Instant};
 use std::{rc::Rc, time::Duration};
 
+use ethabi::{Address, Token};
+
 use anyhow::anyhow;
 use colored::*;
 use graph::data::store::Value;
 use graph::prelude::Entity;
-use graph::runtime::{asc_get, asc_new, try_asc_get, AscPtr};
+use graph::runtime::{
+    asc_get, asc_new, try_asc_get, AscHeap, AscPtr, DeterministicHostError, FromAscObj,
+};
 use graph::{
     blockchain::{Blockchain, HostFnCtx},
     cheap_clone::CheapClone,
@@ -16,8 +20,9 @@ use graph::{
         HostMetrics,
     },
 };
-use graph_runtime_wasm::asc_abi::class::AscEntity;
-use graph_runtime_wasm::asc_abi::class::AscString;
+use graph_chain_ethereum::runtime::abi::AscUnresolvedContractCall_0_0_4;
+use graph_runtime_wasm::asc_abi::class::{Array, AscEntity, AscEnum, AscString};
+use graph_runtime_wasm::asc_abi::class::{AscEnumArray, EthereumValueKind};
 use graph_runtime_wasm::{
     error::DeterminismLevel,
     mapping::{MappingContext, ValidModule},
@@ -28,6 +33,15 @@ use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::Timeo
 use indexmap::IndexMap;
 use lazy_static::lazy_static;
 
+type Store = Mutex<IndexMap<String, IndexMap<String, HashMap<String, Value>>>>;
+
+lazy_static! {
+    static ref FUNCTIONS_MAP: Mutex<IndexMap<String, Token>> = Mutex::new(IndexMap::new());
+    static ref STORE: Store = Mutex::from(IndexMap::new());
+    pub static ref LOGS: Mutex<IndexMap<String, Level>> = Mutex::new(IndexMap::new());
+    pub static ref TEST_RESULTS: Mutex<IndexMap<String, bool>> = Mutex::new(IndexMap::new());
+}
+
 pub enum Level {
     ERROR,
     WARNING,
@@ -35,6 +49,30 @@ pub enum Level {
     DEBUG,
     SUCCESS,
     UNKNOWN,
+}
+
+// struct and impl for FromAscObj copied because they aren't public
+struct UnresolvedContractCall {
+    pub contract_name: String,
+    pub contract_address: Address,
+    pub function_name: String,
+    pub function_signature: Option<String>,
+    pub function_args: Vec<Token>,
+}
+
+impl FromAscObj<AscUnresolvedContractCall_0_0_4> for UnresolvedContractCall {
+    fn from_asc_obj<H: AscHeap + ?Sized>(
+        asc_call: AscUnresolvedContractCall_0_0_4,
+        heap: &H,
+    ) -> Result<Self, DeterministicHostError> {
+        Ok(UnresolvedContractCall {
+            contract_name: asc_get(heap, asc_call.contract_name)?,
+            contract_address: asc_get(heap, asc_call.contract_address)?,
+            function_name: asc_get(heap, asc_call.function_name)?,
+            function_signature: Some(asc_get(heap, asc_call.function_signature)?),
+            function_args: asc_get(heap, asc_call.function_args)?,
+        })
+    }
 }
 
 fn level_from_u32(n: u32) -> Level {
@@ -108,14 +146,6 @@ pub fn flush_logs() {
     }
 }
 
-type Store = Mutex<IndexMap<String, IndexMap<String, HashMap<String, Value>>>>;
-
-lazy_static! {
-    static ref STORE: Store = Mutex::from(IndexMap::new());
-    pub static ref LOGS: Mutex<IndexMap<String, Level>> = Mutex::new(IndexMap::new());
-    pub static ref TEST_RESULTS: Mutex<IndexMap<String, bool>> = Mutex::new(IndexMap::new());
-}
-
 trait WICExtension {
     fn log(&mut self, level: u32, msg: AscPtr<AscString>) -> Result<(), HostExportError>;
     fn clear_store(&mut self) -> Result<(), HostExportError>;
@@ -142,6 +172,17 @@ trait WICExtension {
         &mut self,
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
+    ) -> Result<(), HostExportError>;
+    fn ethereum_call(
+        &mut self,
+        contract_call_ptr: u32,
+    ) -> Result<AscEnumArray<EthereumValueKind>, HostExportError>;
+    fn mock_function(
+        &mut self,
+        contract_address_ptr: u32,
+        fn_name_ptr: AscPtr<AscString>,
+        fn_args_ptr: u32,
+        return_value_ptr: u32,
     ) -> Result<(), HostExportError>;
 }
 
@@ -318,6 +359,63 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         }
         Ok(())
     }
+
+    fn ethereum_call(
+        &mut self,
+        contract_call_ptr: u32,
+    ) -> Result<AscEnumArray<EthereumValueKind>, HostExportError> {
+        let call: UnresolvedContractCall =
+            asc_get::<_, AscUnresolvedContractCall_0_0_4, _>(self, contract_call_ptr.into())?;
+
+        let unique_fn_string = create_unique_fn_string(
+            &call.contract_address.to_string(),
+            &call.function_name,
+            call.function_args,
+        );
+        let map = FUNCTIONS_MAP.lock().expect("Couldn't get map");
+        let return_val;
+        if map.contains_key(&unique_fn_string) {
+            return_val = asc_new(
+                self,
+                vec![map
+                    .get(&unique_fn_string)
+                    .expect("Couldn't get value from map.")]
+                .as_slice(),
+            )?;
+        } else {
+            panic!("key: '{}' not found in map.", &unique_fn_string);
+        }
+        Ok(return_val)
+    }
+
+    fn mock_function(
+        &mut self,
+        contract_address_ptr: u32,
+        fn_name_ptr: AscPtr<AscString>,
+        fn_args_ptr: u32,
+        return_value_ptr: u32,
+    ) -> Result<(), HostExportError> {
+        let contract_address: Address = asc_get(self, contract_address_ptr.into())?;
+        let fn_name: String = asc_get(self, fn_name_ptr)?;
+        let fn_args: Vec<Token> =
+            asc_get::<_, Array<AscPtr<AscEnum<EthereumValueKind>>>, _>(self, fn_args_ptr.into())?;
+        let return_value: Token =
+            asc_get::<_, AscEnum<EthereumValueKind>, _>(self, return_value_ptr.into())?;
+
+        let unique_fn_string =
+            create_unique_fn_string(&contract_address.to_string(), &fn_name, fn_args);
+        let mut map = FUNCTIONS_MAP.lock().expect("Couldn't get map");
+        map.insert(unique_fn_string, return_value);
+        Ok(())
+    }
+}
+
+fn create_unique_fn_string(contract_address: &str, fn_name: &str, fn_args: Vec<Token>) -> String {
+    let mut unique_fn_string = String::from(contract_address) + fn_name;
+    for element in fn_args.iter() {
+        unique_fn_string += &element.to_string();
+    }
+    return unique_fn_string;
 }
 
 #[allow(unused)]
@@ -487,11 +585,19 @@ impl<C: Blockchain> WasmInstance<C> {
             }
         }
 
+        link!("ethereum.call", ethereum_call, contract_call_ptr);
         link!("ethereum.encode", ethereum_encode, params_ptr);
         link!("ethereum.decode", ethereum_decode, params_ptr, data_ptr);
 
         link!("abort", abort, message_ptr, file_name_ptr, line, column);
-
+        link!(
+            "mockFunction",
+            mock_function,
+            contract_address_ptr,
+            fn_name_ptr,
+            fn_args_ptr,
+            return_value_ptr
+        );
         link!("clearStore", clear_store,);
 
         link!(
