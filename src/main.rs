@@ -2,6 +2,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Instant;
 
+use clap::{App, Arg};
 use colored::*;
 use ethabi::Contract;
 use graph::components::store::DeploymentId;
@@ -17,18 +18,17 @@ use graph::{
     },
     semver::Version,
 };
-use graph_chain_arweave::adapter::ArweaveAdapter;
 use graph_chain_ethereum::{Chain, DataSource, DataSourceTemplate};
-use graph_core::three_box::ThreeBoxAdapter;
 use graph_mock::MockMetricsRegistry;
 use graph_runtime_wasm::mapping::ValidModule;
 use graph_runtime_wasm::{
     host_exports::HostExports, mapping::MappingContext, module::ExperimentalFeatures,
 };
+use serde_yaml::{Sequence, Value};
 use web3::types::Address;
 
 use subgraph_store::MockSubgraphStore;
-use wasm_instance::{flush_logs, get_failed_tests, get_successful_tests, WasmInstance};
+use wasm_instance::{fail_test, flush_logs, get_failed_tests, get_successful_tests, WasmInstance};
 
 mod subgraph_store;
 mod wasm_instance;
@@ -39,9 +39,6 @@ fn mock_host_exports(
     data_source: DataSource,
     store: Arc<impl SubgraphStore>,
 ) -> HostExports<Chain> {
-    let arweave_adapter = Arc::new(ArweaveAdapter::new("https://arweave.net".to_string()));
-    let three_box_adapter = Arc::new(ThreeBoxAdapter::new("https://ipfs.3box.io/".to_string()));
-
     let templates = vec![DataSourceTemplate {
         kind: String::from("ethereum/contract"),
         name: String::from("example template"),
@@ -51,7 +48,7 @@ fn mock_host_exports(
         },
         mapping: Mapping {
             kind: String::from("ethereum/events"),
-            api_version: Version::parse("0.1.0").expect("Could not parse api version."),
+            api_version: Version::parse("0.0.3").expect("Could not parse api version."),
             language: String::from("wasm/assemblyscript"),
             entities: vec![],
             abis: vec![],
@@ -73,8 +70,6 @@ fn mock_host_exports(
         Arc::new(templates),
         Arc::new(graph_core::LinkResolver::from(IpfsClient::localhost())),
         store,
-        arweave_adapter,
-        three_box_adapter,
     )
 }
 
@@ -127,7 +122,9 @@ fn mock_abi() -> MappingABI {
 }
 
 fn mock_data_source(path: &str) -> DataSource {
-    let runtime = std::fs::read(path).expect("Could not resolve path to wasm file.");
+    let runtime = std::fs::read(path).
+        expect(r#"❌  Could not resolve path to wasm file. Please ensure that the datasource name you're providing is valid.
+        It should be the same as the 'name' field in the subgraph.yaml file, corresponding to the datasource you want to test."#);
 
     DataSource {
         kind: String::from("ethereum/contract"),
@@ -143,7 +140,7 @@ fn mock_data_source(path: &str) -> DataSource {
         },
         mapping: Mapping {
             kind: String::from("ethereum/events"),
-            api_version: Version::parse("0.1.0").expect("Could not parse api version."),
+            api_version: Version::parse("0.0.3").expect("Could not parse api version."),
             language: String::from("wasm/assemblyscript"),
             entities: vec![],
             abis: vec![],
@@ -161,7 +158,43 @@ fn mock_data_source(path: &str) -> DataSource {
     }
 }
 
+fn get_build_path(sequence: Sequence, datasource_name: String) -> String {
+    for mapping in sequence {
+        if mapping
+            .get("name")
+            .unwrap()
+            .as_str()
+            .expect("Could not convert yaml field 'name' to &str.")
+            .to_string()
+            .to_lowercase()
+            == datasource_name.to_string().to_lowercase()
+        {
+            return mapping
+                .get("mapping")
+                .expect("Could not parse field 'mapping' from subgraph.yaml")
+                .get("file")
+                .expect("Could not parse field 'mapping/file' from subgraph.yaml")
+                .as_str()
+                .expect("Could not convert mapping/file to &str.")
+                .to_owned();
+        }
+    }
+    String::from("")
+}
+
 pub fn main() {
+    let matches = App::new("Subtest")
+        .version("0.0.9")
+        .author("Limechain <https://limechain.tech>")
+        .about("Unit testing framework for Subgraph development on The Graph protocol.")
+        .arg(
+            Arg::with_name("DATASOURCE")
+                .help("Sets the name of the datasource to use.")
+                .required(true)
+                .index(1),
+        )
+        .get_matches();
+
     println!(
         "{}",
         ("     _____       _     _            _
@@ -175,20 +208,48 @@ pub fn main() {
     );
 
     let now = Instant::now();
-    let args: Vec<String> = std::env::args().collect();
 
-    if args.len() == 1 {
-        panic!("Must provide path to wasm file.")
+    let datasource_name = matches
+        .value_of("DATASOURCE")
+        .expect("Couldn't get datasource name.");
+
+    let subgraph_yaml_contents = std::fs::read_to_string("build/subgraph.yaml")
+        .expect(r#"
+        ❌ ❌ ❌  Something went wrong reading the 'build/subgraph.yaml' file.
+        Please ensure that you have run 'graph build' and a 'build' directory exists in the root of your project.
+        "#);
+
+    let subgraph_yaml: Value = serde_yaml::from_str(&subgraph_yaml_contents).expect(
+        r#"
+        ❌ ❌ ❌  Something went wrong when parsing 'build/subgraph.yaml'.
+        Please ensure that the file exists and that the yaml is valid."#,
+    );
+
+    let sequence: Sequence = subgraph_yaml["dataSources"]
+        .as_sequence()
+        .expect("Could not get data sources from yaml file.")
+        .to_vec();
+
+    let mut path = get_build_path(sequence, datasource_name.to_owned());
+
+    // This means datasource is a template datasource
+    if path.is_empty() {
+        let sequence: Sequence = subgraph_yaml["templates"]
+            .as_sequence()
+            .expect("Could not get data sources from yaml file.")
+            .to_vec();
+
+        path = get_build_path(sequence, datasource_name.to_owned());
     }
 
-    let path_to_wasm = &args[1];
+    let path_to_wasm = format!("build/{}", path);
 
     let subgraph_id = "ipfsMap";
     let deployment_id =
         &DeploymentHash::new(subgraph_id).expect("Could not create DeploymentHash.");
 
     let deployment = DeploymentLocator::new(DeploymentId::new(42), deployment_id.clone());
-    let data_source = mock_data_source(path_to_wasm);
+    let data_source = mock_data_source(&path_to_wasm);
     let metrics_registry = Arc::new(MockMetricsRegistry::new());
 
     let stopwatch_metrics = StopwatchMetrics::new(
@@ -205,8 +266,6 @@ pub fn main() {
 
     let experimental_features = ExperimentalFeatures {
         allow_non_deterministic_ipfs: true,
-        allow_non_deterministic_arweave: true,
-        allow_non_deterministic_3box: true,
     };
 
     let valid_module = Arc::new(
@@ -228,11 +287,28 @@ pub fn main() {
     let run_tests = module
         .instance
         .get_func("runTests")
-        .expect("Couldn't get wasm function 'runTests'.");
+        .expect(r#"
+        ❌ ❌ ❌  Couldn't get wasm function 'runTests'.
+        Please ensure that you have imported your runTests() function, defined in the test file, into the main mappings file.
+        "#);
+
     println!("{}", ("Starting tests 🧪🚀\n").to_string().purple());
-    run_tests
-        .call(&[])
-        .expect("Couldn't call wasm function 'runTests'.");
+
+    #[allow(non_fmt_panic)]
+        run_tests.call(&[]).unwrap_or_else(|_| {
+        fail_test("".to_string());
+        flush_logs();
+
+        let msg = String::from(r#"
+        ❌ ❌ ❌  Unexpected error occured while running tests.
+        Please double check the syntax in your test file.
+        This usually happens if you pass a 'null' value to one of our functions - assert.fieldEquals(), store.get(), store.set().
+        Please ensure that you have proper null checks in your tests.
+        You can debug your test file using the 'log()' function, provided in subtest-as (import { log } from "subtest-as/assembly/log").
+        "#).red();
+
+        panic!("{}", msg);
+    });
 
     flush_logs();
 

@@ -1,6 +1,6 @@
 [package]
 name = "subtest"
-version = "0.0.4"
+version = "0.0.9"
 authors = ["Petko <pavlovskipetko@abv.bg>"]
 edition = "2018"
 
@@ -13,7 +13,7 @@ test-store = { git = "https://github.com/graphprotocol/graph-node", branch = "ma
 web3 = { git = "https://github.com/graphprotocol/rust-web3", branch = "master" }
 graph-chain-ethereum = { git = "https://github.com/graphprotocol/graph-node", branch = "master" }
 graph-core = { git = "https://github.com/graphprotocol/graph-node", branch = "master" }
-graph-chain-arweave = { git = "https://github.com/graphprotocol/graph-node", branch = "master" }
+openssl = { version = "0.10", features = ["vendored"] }
 semver = "0.11.0"
 serde_json = "1.0.59"
 slog = "2.7.0"
@@ -25,7 +25,9 @@ indexmap = "1.6.2"
 lazy_static = "1.4.0"
 async-trait = "0.1.50"
 colored = "2"
-unwrap = "1.2.1"
+clap = "2.33.3"
+serde = "1.0"
+serde_yaml = "0.8.17"
 
 [patch.crates-io]
 # Include protection against stack overflow when parsing from this PR: https://github.com/graphql-rust/graphql-parser/commit/45167b53e9533c331298683577ba8df7e43480ac

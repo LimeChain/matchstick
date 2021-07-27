@@ -29,7 +29,6 @@ use graph_runtime_wasm::{
 use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::TimeoutStopwatch};
 use indexmap::IndexMap;
 use lazy_static::lazy_static;
-use unwrap::unwrap;
 use graph_runtime_wasm::asc_abi::class::{AscEnumArray, EthereumValueKind};
 
 type Store = Mutex<IndexMap<String, IndexMap<String, HashMap<String, Value>>>>;
@@ -106,7 +105,7 @@ fn styled(s: &str, n: &Level) -> ColoredString {
     }
 }
 
-fn fail_test(msg: String) {
+pub fn fail_test(msg: String) {
     let test_name = TEST_RESULTS
         .lock()
         .expect("Cannot access TEST_RESULTS.")
@@ -130,11 +129,8 @@ pub fn flush_logs() {
     for (k, v) in logs.iter() {
         // Test name
         if test_results.contains_key(k) {
-            let passed = *unwrap!(
-                test_results.get(k),
-                "No entry corresponding to the given key '{}'",
-                k
-            );
+            let passed = *test_results.get(k).unwrap();
+
             if passed {
                 println!("✅ {}", k.green());
             } else {
@@ -195,7 +191,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         match level {
             // CRITICAL (for expected logic errors)
             0 => {
-                panic!("{}", msg.red());
+                panic!("❌ ❌ ❌ {}", msg.red());
             }
             1 => {
                 fail_test(msg);
@@ -223,7 +219,8 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             .expect("Cannot access TEST_RESULTS.")
             .contains_key(&name)
         {
-            panic!("Test with name '{}' already exists.", name)
+            let msg = format!("❌ ❌ ❌  Test with name '{}' already exists.", name).red();
+            panic!("{}", msg);
         }
 
         TEST_RESULTS
@@ -250,9 +247,11 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let expected_val: String = asc_get(self, expected_val_ptr)?;
 
         let map = STORE.lock().expect("Cannot access STORE.");
-
         if !map.contains_key(&entity_type) {
-            let msg = format!("No entities with type '{}' found.", &entity_type);
+            let msg = format!(
+                "(assert.fieldEquals) No entities with type '{}' found.",
+                &entity_type
+            );
             fail_test(msg);
             return Ok(());
         }
@@ -260,7 +259,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let entities = map.get(&entity_type).unwrap();
         if !entities.contains_key(&id) {
             let msg = format!(
-                "No entity with type '{}' and id '{}' found.",
+                "(assert.fieldEquals) No entity with type '{}' and id '{}' found.",
                 &entity_type, &id
             );
             fail_test(msg);
@@ -270,7 +269,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let entity = entities.get(&id).unwrap();
         if !entity.contains_key(&field_name) {
             let msg = format!(
-                "No field named '{}' on entity with type '{}' and id '{}' found.",
+                "(assert.fieldEquals) No field named '{}' on entity with type '{}' and id '{}' found.",
                 &field_name, &entity_type, &id
             );
             fail_test(msg);
@@ -280,7 +279,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let val = entity.get(&field_name).unwrap();
         if val.to_string() != expected_val {
             let msg = format!(
-                "Expected field '{}' to equal '{}', but was '{}' instead.",
+                "(assert.fieldEquals) Expected field '{}' to equal '{}', but was '{}' instead.",
                 &field_name, &expected_val, val
             );
             fail_test(msg);
@@ -298,22 +297,18 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let entity_type: String = asc_get(self, entity_type_ptr)?;
         let id: String = asc_get(self, id_ptr)?;
 
-        let map = STORE.lock().unwrap();
+        let map = STORE.lock().expect("Cannot access STORE.");
 
-        if !map.contains_key(&entity_type) || !map.get(&entity_type).unwrap().contains_key(&id) {
-            let msg = format!(
-                "Entity with type '{}' and id '{}' does not exist.",
-                &entity_type, &id
-            );
-            fail_test(msg);
+        if map.contains_key(&entity_type) && map.get(&entity_type).unwrap().contains_key(&id) {
+            let entities = map.get(&entity_type).unwrap();
+            let entity = entities.get(&id).unwrap().clone();
+            let entity = Entity::from(entity);
+
+            let res = asc_new(self, &entity.sorted())?;
+            return Ok(res);
         }
 
-        let entity = map.get(&entity_type).unwrap().get(&id).unwrap().clone();
-        let entity = Entity::from(entity);
-
-        let res = asc_new(self, &entity.sorted())?;
-
-        Ok(res)
+        Ok(AscPtr::null())
     }
 
     fn mock_store_set(
@@ -326,18 +321,12 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let id: String = asc_get(self, id_ptr)?;
         let data: HashMap<String, Value> = try_asc_get(self, data_ptr)?;
 
-        let mut map = STORE.lock().unwrap();
-        let mut inner_map = IndexMap::new();
-
-        // Check if there's already a collection with entities of this type
-        if map.contains_key(&entity_type) {
-            inner_map = map.get(&entity_type).unwrap().clone();
-
-            if inner_map.contains_key(&id) {
-                let msg = format!("Entity with id '{}' already exists.", &id);
-                fail_test(msg);
-            }
-        }
+        let mut map = STORE.lock().expect("Cannot get STORE.");
+        let mut inner_map = if map.contains_key(&entity_type) {
+            map.get(&entity_type).unwrap().clone()
+        } else {
+            IndexMap::new()
+        };
 
         inner_map.insert(id, data);
         map.insert(entity_type, inner_map);
@@ -353,7 +342,6 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let id: String = asc_get(self, id_ptr)?;
 
         let mut map = STORE.lock().unwrap();
-
         if map.contains_key(&entity_type) && map.get(&entity_type).unwrap().contains_key(&id) {
             let mut inner_map = map.get(&entity_type).unwrap().clone();
             inner_map.remove(&id);
@@ -361,10 +349,11 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             map.insert(entity_type, inner_map);
         } else {
             let msg = format!(
-                "Entity with type '{}' and id '{}' does not exist.",
+                "(store.remove) Entity with type '{}' and id '{}' does not exist. Problem originated from store.remove()",
                 &entity_type, &id
             );
             fail_test(msg);
+            return Ok(());
         }
         Ok(())
     }
@@ -687,10 +676,6 @@ impl<C: Blockchain> WasmInstance<C> {
             field_name_ptr,
             expected_val_ptr
         );
-
-        link!("arweave.transactionData", arweave_transaction_data, ptr);
-
-        link!("box.profile", box_profile, ptr);
 
         let instance = linker.instantiate(&valid_module.module)?;
 
