@@ -1,35 +1,31 @@
-use std::cell::{RefCell, RefMut};
-use std::collections::HashMap;
-use std::rc::Rc;
 use colored::*;
-use std::time::Instant;
+use ethabi::{Address, Token};
 use graph::blockchain::{Blockchain, HostFnCtx};
-use graph::runtime::{HostExportError, FromAscObj};
+use graph::prelude::*;
+use graph::runtime::AscPtr;
+use graph::runtime::{asc_get, asc_new, try_asc_get, DeterministicHostError};
+use graph::runtime::{AscHeap, IndexForAscTypeId};
+use graph::runtime::{FromAscObj, HostExportError};
 use graph::semver::Version;
-use wasmtime::{Trap};
+use graph_chain_ethereum::runtime::abi::AscUnresolvedContractCall_0_0_4;
+use graph_runtime_wasm::asc_abi::class::AscString;
+use graph_runtime_wasm::asc_abi::class::*;
 use graph_runtime_wasm::error::DeterminismLevel;
 pub use graph_runtime_wasm::host_exports;
 use graph_runtime_wasm::mapping::MappingContext;
-use anyhow::Error;
-use graph::prelude::*;
-use graph::runtime::{AscHeap, IndexForAscTypeId};
-use graph::{components::subgraph::MappingError, runtime::AscPtr};
-use graph::{
-    data::subgraph::schema::SubgraphError,
-    runtime::{asc_get, asc_new, try_asc_get, DeterministicHostError},
-};
-use graph_runtime_wasm::ExperimentalFeatures;
-use graph_runtime_wasm::asc_abi::class::*;
 use graph_runtime_wasm::mapping::ValidModule;
-use graph_runtime_wasm::module::TimeoutStopwatch;
-use graph_runtime_wasm::asc_abi::class::AscString;
 use graph_runtime_wasm::module::IntoWasmRet;
+use graph_runtime_wasm::module::TimeoutStopwatch;
 use graph_runtime_wasm::module::WasmInstanceContext;
-use ethabi::{Token, Address};
+use graph_runtime_wasm::ExperimentalFeatures;
 use indexmap::IndexMap;
 use lazy_static::lazy_static;
+use std::cell::{RefCell, RefMut};
+use std::collections::HashMap;
+use std::rc::Rc;
 use std::sync::Mutex;
-use graph_chain_ethereum::runtime::abi::AscUnresolvedContractCall_0_0_4;
+use std::time::Instant;
+use wasmtime::Trap;
 
 #[allow(unused)]
 pub const TRAP_TIMEOUT: &str = "trap: interrupt";
@@ -385,7 +381,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
                 vec![map
                     .get(&unique_fn_string)
                     .expect("Couldn't get value from map.")]
-                    .as_slice(),
+                .as_slice(),
             )?;
         } else {
             panic!("key: '{}' not found in map.", &unique_fn_string);
@@ -420,7 +416,7 @@ fn create_unique_fn_string(contract_address: &str, fn_name: &str, fn_args: Vec<T
     for element in fn_args.iter() {
         unique_fn_string += &element.to_string();
     }
-    return unique_fn_string;
+    unique_fn_string
 }
 
 pub struct WasmInstance<C: Blockchain> {
@@ -468,89 +464,6 @@ impl<C: Blockchain> WasmInstance<C> {
 
     pub fn instance_ctx_mut(&self) -> std::cell::RefMut<'_, WasmInstanceContext<C>> {
         std::cell::RefMut::map(self.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap())
-    }
-
-    #[cfg(debug_assertions)]
-    // pub fn get_func(&self, func_name: &str) -> wasmtime::Func {
-    //     self.instance.get_func(func_name).unwrap()
-    // }
-
-    fn invoke_handler<T>(
-        &mut self,
-        handler: &str,
-        arg: AscPtr<T>,
-    ) -> Result<BlockState<C>, MappingError> {
-        let func = self
-            .instance
-            .get_func(handler)
-            .with_context(|| format!("function {} not found", handler))?;
-
-        // Caution: Make sure all exit paths from this function call `exit_handler`.
-        self.instance_ctx_mut().ctx.state.enter_handler();
-
-        // This `match` will return early if there was a non-deterministic trap.
-        let deterministic_error: Option<Error> = match func.typed()?.call(arg.wasm_ptr()) {
-            Ok(()) => None,
-            Err(trap) if self.instance_ctx().possible_reorg => {
-                self.instance_ctx_mut().ctx.state.exit_handler();
-                return Err(MappingError::PossibleReorg(trap.into()));
-            }
-            Err(trap) if trap.to_string().contains(TRAP_TIMEOUT) => {
-                self.instance_ctx_mut().ctx.state.exit_handler();
-                return Err(MappingError::Unknown(Error::from(trap).context(format!(
-                    "Handler '{}' hit the timeout of '{}' seconds",
-                    handler,
-                    self.instance_ctx().timeout.unwrap().as_secs()
-                ))));
-            }
-            Err(trap) => {
-                use wasmtime::TrapCode::*;
-                let trap_code = trap.trap_code();
-                let e = Error::from(trap);
-                match trap_code {
-                    Some(MemoryOutOfBounds)
-                    | Some(HeapMisaligned)
-                    | Some(TableOutOfBounds)
-                    | Some(IndirectCallToNull)
-                    | Some(BadSignature)
-                    | Some(IntegerOverflow)
-                    | Some(IntegerDivisionByZero)
-                    | Some(BadConversionToInteger)
-                    | Some(UnreachableCodeReached) => Some(e),
-                    _ if self.instance_ctx().deterministic_host_trap => Some(e),
-                    _ => {
-                        self.instance_ctx_mut().ctx.state.exit_handler();
-                        return Err(MappingError::Unknown(e));
-                    }
-                }
-            }
-        };
-
-        if let Some(deterministic_error) = deterministic_error {
-            let message = format!("{:#}", deterministic_error).replace("\n", "\t");
-
-            // Log the error and restore the updates snapshot, effectively reverting the handler.
-            error!(&self.instance_ctx().ctx.logger,
-                "Handler skipped due to execution failure";
-                "handler" => handler,
-                "error" => &message,
-            );
-            let subgraph_error = SubgraphError {
-                subgraph_id: self.instance_ctx().ctx.host_exports.subgraph_id.clone(),
-                message,
-                block_ptr: Some(self.instance_ctx().ctx.block_ptr.cheap_clone()),
-                handler: Some(handler.to_string()),
-                deterministic: true,
-            };
-            self.instance_ctx_mut()
-                .ctx
-                .state
-                .exit_handler_and_discard_changes_due_to_error(subgraph_error);
-        } else {
-            self.instance_ctx_mut().ctx.state.exit_handler();
-        }
-
-        Ok(self.take_ctx().ctx.state)
     }
 }
 
@@ -710,7 +623,7 @@ impl<C: Blockchain> WasmInstance<C> {
                                 "{} is not allowed in global variables",
                                 host_fn.name
                             )
-                                .into())
+                            .into());
                         }
                     };
 
@@ -760,7 +673,13 @@ impl<C: Blockchain> WasmInstance<C> {
         );
 
         link!("clearStore", clear_store,);
-        link!("store.get", mock_store_get, "host_export_store_get", entity, id);
+        link!(
+            "store.get",
+            mock_store_get,
+            "host_export_store_get",
+            entity,
+            id
+        );
         link!(
             "store.set",
             mock_store_set,

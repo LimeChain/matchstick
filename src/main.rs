@@ -143,7 +143,7 @@ fn mock_data_source(path_to_wasm: &str, api_version: Version) -> DataSource {
             link: Link {
                 link: "link".to_owned(),
             },
-            runtime: Arc::new(runtime.clone()),
+            runtime: Arc::new(runtime),
         },
         context: Default::default(),
         creation_block: None,
@@ -244,7 +244,7 @@ pub fn main() {
     let deployment = DeploymentLocator::new(DeploymentId::new(42), deployment_id.clone());
 
     // This is where it breaks
-    let data_source = mock_data_source(&path_to_wasm, Version::new(0, 0, 5));
+    let data_source = mock_data_source(&path_to_wasm, Version::new(0, 0, 4));
 
     let metrics_registry = Arc::new(MockMetricsRegistry::new());
 
@@ -273,12 +273,17 @@ pub fn main() {
 
     let module = WasmInstance::from_valid_module_with_ctx(
         valid_module,
-        mock_context(deployment, data_source, Arc::from(mock_subgraph_store), Version::new(0,0,5)),
+        mock_context(
+            deployment,
+            data_source,
+            Arc::from(mock_subgraph_store),
+            Version::new(0, 0, 4),
+        ),
         host_metrics,
         None,
         experimental_features,
     )
-        .expect("Could not create WasmInstance from valid module with context.");
+    .expect("Could not create WasmInstance from valid module with context.");
 
     let run_tests = module
         .instance
