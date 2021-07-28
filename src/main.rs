@@ -38,6 +38,7 @@ fn mock_host_exports(
     subgraph_id: DeploymentHash,
     data_source: DataSource,
     store: Arc<impl SubgraphStore>,
+    api_version: Version,
 ) -> HostExports<Chain> {
     let templates = vec![DataSourceTemplate {
         kind: String::from("ethereum/contract"),
@@ -48,7 +49,7 @@ fn mock_host_exports(
         },
         mapping: Mapping {
             kind: String::from("ethereum/events"),
-            api_version: Version::parse("0.0.3").expect("Could not parse api version."),
+            api_version,
             language: String::from("wasm/assemblyscript"),
             entities: vec![],
             abis: vec![],
@@ -62,7 +63,7 @@ fn mock_host_exports(
         },
     }];
 
-    let network = data_source.network.clone().expect("Could not get network.");
+    let network = data_source.network.clone().unwrap();
     HostExports::new(
         subgraph_id,
         &data_source,
@@ -77,6 +78,7 @@ fn mock_context(
     deployment: DeploymentLocator,
     data_source: DataSource,
     store: Arc<impl SubgraphStore>,
+    api_version: Version,
 ) -> MappingContext<Chain> {
     MappingContext {
         logger: test_store::LOGGER.clone(),
@@ -88,13 +90,9 @@ fn mock_context(
             deployment.hash.clone(),
             data_source,
             store.clone(),
+            api_version,
         )),
-        state: BlockState::new(
-            store
-                .writable(&deployment)
-                .expect("Could not create BlockState."),
-            Default::default(),
-        ),
+        state: BlockState::new(store.writable(&deployment).unwrap(), Default::default()),
         proof_of_indexing: None,
         host_fns: Arc::new(Vec::new()),
     }
@@ -121,26 +119,21 @@ fn mock_abi() -> MappingABI {
     }
 }
 
-fn mock_data_source(path: &str) -> DataSource {
-    let runtime = std::fs::read(path).
-        expect(r#"❌  Could not resolve path to wasm file. Please ensure that the datasource name you're providing is valid.
-        It should be the same as the 'name' field in the subgraph.yaml file, corresponding to the datasource you want to test."#);
+fn mock_data_source(path_to_wasm: &str, api_version: Version) -> DataSource {
+    let runtime = std::fs::read(path_to_wasm).unwrap();
 
     DataSource {
         kind: String::from("ethereum/contract"),
         name: String::from("example data source"),
         network: Some(String::from("mainnet")),
         source: Source {
-            address: Some(
-                Address::from_str("0123123123012312312301231231230123123123")
-                    .expect("Could not create address from string."),
-            ),
+            address: Some(Address::from_str("0123123123012312312301231231230123123123").unwrap()),
             abi: String::from("123123"),
             start_block: 0,
         },
         mapping: Mapping {
             kind: String::from("ethereum/events"),
-            api_version: Version::parse("0.0.3").expect("Could not parse api version."),
+            api_version,
             language: String::from("wasm/assemblyscript"),
             entities: vec![],
             abis: vec![],
@@ -150,7 +143,7 @@ fn mock_data_source(path: &str) -> DataSource {
             link: Link {
                 link: "link".to_owned(),
             },
-            runtime: Arc::new(runtime),
+            runtime: Arc::new(runtime.clone()),
         },
         context: Default::default(),
         creation_block: None,
@@ -198,10 +191,10 @@ pub fn main() {
     println!(
         "{}",
         ("     _____       _     _            _
-    / ____|     | |   | |          | |   
-   | (___  _   _| |__ | |_ ___  ___| |_ 
+    / ____|     | |   | |          | |
+   | (___  _   _| |__ | |_ ___  ___| |_
     \\___ \\| | | | '_ \\| __/ _ \\/ __| __|
-    ____) | |_| | |_) | ||  __/\\__ \\ |_ 
+    ____) | |_| | |_) | ||  __/\\__ \\ |_
    |_____/ \\__,_|_.__/ \\__\\___||___/\\__|\n")
             .to_string()
             .purple()
@@ -249,7 +242,10 @@ pub fn main() {
         &DeploymentHash::new(subgraph_id).expect("Could not create DeploymentHash.");
 
     let deployment = DeploymentLocator::new(DeploymentId::new(42), deployment_id.clone());
-    let data_source = mock_data_source(&path_to_wasm);
+
+    // This is where it breaks
+    let data_source = mock_data_source(&path_to_wasm, Version::new(0, 0, 5));
+
     let metrics_registry = Arc::new(MockMetricsRegistry::new());
 
     let stopwatch_metrics = StopwatchMetrics::new(
@@ -277,12 +273,12 @@ pub fn main() {
 
     let module = WasmInstance::from_valid_module_with_ctx(
         valid_module,
-        mock_context(deployment, data_source, Arc::from(mock_subgraph_store)),
+        mock_context(deployment, data_source, Arc::from(mock_subgraph_store), Version::new(0,0,5)),
         host_metrics,
         None,
         experimental_features,
     )
-    .expect("Could not create WasmInstance from valid module with context.");
+        .expect("Could not create WasmInstance from valid module with context.");
 
     let run_tests = module
         .instance
