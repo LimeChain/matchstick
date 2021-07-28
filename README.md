@@ -323,8 +323,7 @@ The **Subtest** framework is currently live for beta testing. There is a lot of 
 There's a GitHub project board where we keep track of day to day work which you can check out [here](https://github.com/LimeChain/subtest/projects/1 "here").
 
 Here are some of the areas we're set to focus on from here on out: 
-- Unit tests;
-- Style terminal output;
+- Unit & integration tests;
 - Integrate framework in graph-cli.
 
 ## Technologies used 💻
