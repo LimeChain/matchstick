@@ -1,39 +1,25 @@
-use colored::*;
-use ethabi::{Address, Token};
-use graph::blockchain::{Blockchain, HostFnCtx};
-use graph::prelude::*;
-use graph::runtime::AscPtr;
-use graph::runtime::{asc_get, asc_new, try_asc_get, DeterministicHostError};
-use graph::runtime::{AscHeap, IndexForAscTypeId};
-use graph::runtime::{FromAscObj, HostExportError};
-use graph::semver::Version;
-use graph_chain_ethereum::runtime::abi::AscUnresolvedContractCall_0_0_4;
-use graph_runtime_wasm::asc_abi::class::AscString;
-use graph_runtime_wasm::asc_abi::class::*;
-use graph_runtime_wasm::error::DeterminismLevel;
-pub use graph_runtime_wasm::host_exports;
-use graph_runtime_wasm::mapping::MappingContext;
-use graph_runtime_wasm::mapping::ValidModule;
-use graph_runtime_wasm::module::IntoWasmRet;
-use graph_runtime_wasm::module::TimeoutStopwatch;
-use graph_runtime_wasm::module::WasmInstanceContext;
-use graph_runtime_wasm::ExperimentalFeatures;
-use indexmap::IndexMap;
-use lazy_static::lazy_static;
 use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::Mutex;
 use std::time::Instant;
-use wasmtime::Trap;
 
-#[allow(unused)]
-pub const TRAP_TIMEOUT: &str = "trap: interrupt";
-
-pub trait IntoTrap {
-    fn determinism_level(&self) -> DeterminismLevel;
-    fn into_trap(self) -> Trap;
-}
+use colored::*;
+use ethabi::{Address, Token};
+use graph::blockchain::{Blockchain, HostFnCtx};
+use graph::prelude::*;
+use graph::runtime::{HostExportError, AscPtr, AscHeap, IndexForAscTypeId, asc_get, asc_new, try_asc_get};
+use graph::semver::Version;
+use graph_chain_ethereum::runtime::abi::AscUnresolvedContractCall_0_0_4;
+use graph_chain_ethereum::runtime::runtime_adapter::UnresolvedContractCall;
+use graph_runtime_wasm::asc_abi::class::*;
+use graph_runtime_wasm::error::{DeterminismLevel, DeterministicHostError};
+use graph_runtime_wasm::ExperimentalFeatures;
+use graph_runtime_wasm::mapping::{MappingContext, ValidModule};
+use graph_runtime_wasm::module::{IntoWasmRet, TimeoutStopwatch, WasmInstanceContext, IntoTrap};
+use indexmap::IndexMap;
+use lazy_static::lazy_static;
+pub use graph_runtime_wasm::WasmInstance;
 
 type Store = Mutex<IndexMap<String, IndexMap<String, HashMap<String, Value>>>>;
 
@@ -102,14 +88,6 @@ pub fn fail_test(msg: String) {
         .insert(msg, Level::ERROR);
 }
 
-struct UnresolvedContractCall {
-    pub contract_name: String,
-    pub contract_address: Address,
-    pub function_name: String,
-    pub function_signature: Option<String>,
-    pub function_args: Vec<Token>,
-}
-
 pub fn flush_logs() {
     let test_results = TEST_RESULTS.lock().expect("Cannot access TEST_RESULTS.");
     let logs = LOGS.lock().expect("Cannot access LOGS.");
@@ -130,6 +108,16 @@ pub fn flush_logs() {
             println!("{}", styled(k, v));
         }
     }
+}
+
+pub trait WasmInstanceExtension<C: graph::blockchain::Blockchain> {
+    fn from_valid_module_with_ctx(
+        valid_module: Arc<ValidModule>,
+        ctx: MappingContext<C>,
+        host_metrics: Arc<HostMetrics>,
+        timeout: Option<Duration>,
+        experimental_features: ExperimentalFeatures,
+    ) -> Result<WasmInstance<C>, anyhow::Error>;
 }
 
 trait WICExtension {
@@ -170,21 +158,6 @@ trait WICExtension {
         fn_args_ptr: u32,
         return_value_ptr: u32,
     ) -> Result<(), HostExportError>;
-}
-
-impl FromAscObj<AscUnresolvedContractCall_0_0_4> for UnresolvedContractCall {
-    fn from_asc_obj<H: AscHeap + ?Sized>(
-        asc_call: AscUnresolvedContractCall_0_0_4,
-        heap: &H,
-    ) -> Result<Self, DeterministicHostError> {
-        Ok(UnresolvedContractCall {
-            contract_name: asc_get(heap, asc_call.contract_name)?,
-            contract_address: asc_get(heap, asc_call.contract_address)?,
-            function_name: asc_get(heap, asc_call.function_name)?,
-            function_signature: Some(asc_get(heap, asc_call.function_signature)?),
-            function_args: asc_get(heap, asc_call.function_args)?,
-        })
-    }
 }
 
 impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
@@ -381,7 +354,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
                 vec![map
                     .get(&unique_fn_string)
                     .expect("Couldn't get value from map.")]
-                .as_slice(),
+                    .as_slice(),
             )?;
         } else {
             panic!("key: '{}' not found in map.", &unique_fn_string);
@@ -419,77 +392,51 @@ fn create_unique_fn_string(contract_address: &str, fn_name: &str, fn_args: Vec<T
     unique_fn_string
 }
 
-pub struct WasmInstance<C: Blockchain> {
-    pub instance: wasmtime::Instance,
-    instance_ctx: Rc<RefCell<Option<WasmInstanceContext<C>>>>,
-}
+// pub struct WasmInstance<C: Blockchain> {
+//     pub instance: wasmtime::Instance,
+//     instance_ctx: Rc<RefCell<Option<WasmInstanceContext<C>>>>,
+// }
 
-impl<C: Blockchain> Drop for WasmInstance<C> {
-    fn drop(&mut self) {
-        assert_eq!(Rc::strong_count(&self.instance_ctx), 1);
-    }
-}
+// impl<C: Blockchain> Drop for WasmInstance<C> {
+//     fn drop(&mut self) {
+//         assert_eq!(Rc::strong_count(&self.instance_ctx), 1);
+//     }
+// }
+//
+// impl<C: Blockchain> AscHeap for WasmInstance<C> {
+//     fn raw_new(&mut self, bytes: &[u8]) -> Result<u32, DeterministicHostError> {
+//         let mut ctx = RefMut::map(self.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap());
+//         ctx.raw_new(bytes)
+//     }
+//
+//     fn get(&self, offset: u32, size: u32) -> Result<Vec<u8>, DeterministicHostError> {
+//         self.instance_ctx().get(offset, size)
+//     }
+//
+//     fn api_version(&self) -> Version {
+//         self.instance_ctx().api_version()
+//     }
+//
+//     fn asc_type_id(
+//         &mut self,
+//         type_id_index: IndexForAscTypeId,
+//     ) -> Result<u32, DeterministicHostError> {
+//         self.instance_ctx_mut().asc_type_id(type_id_index)
+//     }
+// }
+//
+// impl<C: Blockchain> WasmInstance<C> {
+//     pub(crate) fn instance_ctx(&self) -> std::cell::Ref<'_, WasmInstanceContext<C>> {
+//         std::cell::Ref::map(self.instance_ctx.borrow(), |i| i.as_ref().unwrap())
+//     }
+//
+//     pub fn instance_ctx_mut(&self) -> std::cell::RefMut<'_, WasmInstanceContext<C>> {
+//         std::cell::RefMut::map(self.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap())
+//     }
+// }
 
-impl<C: Blockchain> AscHeap for WasmInstance<C> {
-    fn raw_new(&mut self, bytes: &[u8]) -> Result<u32, DeterministicHostError> {
-        let mut ctx = RefMut::map(self.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap());
-        ctx.raw_new(bytes)
-    }
-
-    fn get(&self, offset: u32, size: u32) -> Result<Vec<u8>, DeterministicHostError> {
-        self.instance_ctx().get(offset, size)
-    }
-
-    fn api_version(&self) -> Version {
-        self.instance_ctx().api_version()
-    }
-
-    fn asc_type_id(
-        &mut self,
-        type_id_index: IndexForAscTypeId,
-    ) -> Result<u32, DeterministicHostError> {
-        self.instance_ctx_mut().asc_type_id(type_id_index)
-    }
-}
-
-impl<C: Blockchain> WasmInstance<C> {
-    #[allow(unused)]
-    pub fn take_ctx(&mut self) -> WasmInstanceContext<C> {
-        self.instance_ctx.borrow_mut().take().unwrap()
-    }
-
-    pub(crate) fn instance_ctx(&self) -> std::cell::Ref<'_, WasmInstanceContext<C>> {
-        std::cell::Ref::map(self.instance_ctx.borrow(), |i| i.as_ref().unwrap())
-    }
-
-    pub fn instance_ctx_mut(&self) -> std::cell::RefMut<'_, WasmInstanceContext<C>> {
-        std::cell::RefMut::map(self.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap())
-    }
-}
-
-impl IntoTrap for DeterministicHostError {
-    fn determinism_level(&self) -> DeterminismLevel {
-        unreachable!();
-    }
-
-    fn into_trap(self) -> Trap {
-        unreachable!();
-    }
-}
-
-impl IntoTrap for HostExportError {
-    fn determinism_level(&self) -> DeterminismLevel {
-        unreachable!();
-    }
-
-    fn into_trap(self) -> Trap {
-        unreachable!();
-    }
-}
-
-impl<C: Blockchain> WasmInstance<C> {
-    /// Instantiates the module and sets it to be interrupted after `timeout`.
-    pub fn from_valid_module_with_ctx(
+impl<C: Blockchain> WasmInstanceExtension<C> for WasmInstance<C> {
+    fn from_valid_module_with_ctx(
         valid_module: Arc<ValidModule>,
         ctx: MappingContext<C>,
         host_metrics: Arc<HostMetrics>,
@@ -500,20 +447,11 @@ impl<C: Blockchain> WasmInstance<C> {
         let host_fns = ctx.host_fns.cheap_clone();
         let api_version = ctx.host_exports.api_version.clone();
 
-        // Used by exports to access the instance context. There are two ways this can be set:
-        // - After instantiation, if no host export is called in the start function.
-        // - During the start function, if it calls a host export.
-        // Either way, after instantiation this will have been set.
         let shared_ctx: Rc<RefCell<Option<WasmInstanceContext<C>>>> = Rc::new(RefCell::new(None));
-
-        // We will move the ctx only once, to init `shared_ctx`. But we don't statically know where
-        // it will be moved so we need this ugly thing.
         let ctx: Rc<RefCell<Option<MappingContext<C>>>> = Rc::new(RefCell::new(Some(ctx)));
 
-        // Start the timeout watchdog task.
         let timeout_stopwatch = Arc::new(std::sync::Mutex::new(TimeoutStopwatch::start_new()));
         if let Some(timeout) = timeout {
-            // This task is likely to outlive the instance, which is fine.
             let interrupt_handle = linker.store().interrupt_handle().unwrap();
             let timeout_stopwatch = timeout_stopwatch.clone();
             graph::spawn_allow_panic(async move {
@@ -543,7 +481,6 @@ impl<C: Blockchain> WasmInstance<C> {
                     .into_iter()
                     .flatten();
 
-                // link an import with all the modules that require it.
                 for module in modules {
                     let func_shared_ctx = Rc::downgrade(&shared_ctx);
                     let valid_module = valid_module.cheap_clone();
@@ -557,7 +494,6 @@ impl<C: Blockchain> WasmInstance<C> {
                             let instance = func_shared_ctx.upgrade().unwrap();
                             let mut instance = instance.borrow_mut();
 
-                            // Happens when calling a host fn in Wasm start.
                             if instance.is_none() {
                                 *instance = Some(WasmInstanceContext::from_caller(
                                     caller,
@@ -598,7 +534,6 @@ impl<C: Blockchain> WasmInstance<C> {
             };
         }
 
-        // Link chain-specifc host fns.
         for host_fn in host_fns.iter() {
             let modules = valid_module
                 .import_name_to_modules
@@ -617,13 +552,12 @@ impl<C: Blockchain> WasmInstance<C> {
                     let instance = match &mut *instance {
                         Some(instance) => instance,
 
-                        // Happens when calling a host fn in Wasm start.
                         None => {
                             return Err(anyhow!(
                                 "{} is not allowed in global variables",
                                 host_fn.name
                             )
-                            .into());
+                                .into());
                         }
                     };
 
@@ -766,7 +700,6 @@ impl<C: Blockchain> WasmInstance<C> {
             expected_val_ptr
         );
 
-        // `arweave and `box` functionality was removed, but apiVersion <= 0.0.4 must link it.
         if api_version <= Version::new(0, 0, 4) {
             link!("arweave.transactionData", arweave_transaction_data, ptr);
             link!("box.profile", box_profile, ptr);
@@ -774,7 +707,6 @@ impl<C: Blockchain> WasmInstance<C> {
 
         let instance = linker.instantiate(&valid_module.module)?;
 
-        // Usually `shared_ctx` is still `None` because no host fns were called during start.
         if shared_ctx.borrow().is_none() {
             *shared_ctx.borrow_mut() = Some(WasmInstanceContext::from_instance(
                 &instance,
