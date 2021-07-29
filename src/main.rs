@@ -184,7 +184,7 @@ fn get_build_path(sequence: Sequence, datasource_name: String) -> String {
 
 pub fn main() {
     let matches = App::new("Subtest")
-        .version("0.0.10")
+        .version("0.0.11")
         .author("Limechain <https://limechain.tech>")
         .about("Unit testing framework for Subgraph development on The Graph protocol.")
         .arg(
