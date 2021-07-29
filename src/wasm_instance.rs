@@ -1,4 +1,4 @@
-use std::cell::{RefCell, RefMut};
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::Mutex;
@@ -8,18 +8,18 @@ use colored::*;
 use ethabi::{Address, Token};
 use graph::blockchain::{Blockchain, HostFnCtx};
 use graph::prelude::*;
-use graph::runtime::{HostExportError, AscPtr, AscHeap, IndexForAscTypeId, asc_get, asc_new, try_asc_get};
+use graph::runtime::{asc_get, asc_new, try_asc_get, AscPtr, HostExportError};
 use graph::semver::Version;
 use graph_chain_ethereum::runtime::abi::AscUnresolvedContractCall_0_0_4;
 use graph_chain_ethereum::runtime::runtime_adapter::UnresolvedContractCall;
 use graph_runtime_wasm::asc_abi::class::*;
-use graph_runtime_wasm::error::{DeterminismLevel, DeterministicHostError};
-use graph_runtime_wasm::ExperimentalFeatures;
+use graph_runtime_wasm::error::DeterminismLevel;
 use graph_runtime_wasm::mapping::{MappingContext, ValidModule};
-use graph_runtime_wasm::module::{IntoWasmRet, TimeoutStopwatch, WasmInstanceContext, IntoTrap};
+use graph_runtime_wasm::module::{IntoTrap, IntoWasmRet, TimeoutStopwatch, WasmInstanceContext};
+use graph_runtime_wasm::ExperimentalFeatures;
+pub use graph_runtime_wasm::WasmInstance;
 use indexmap::IndexMap;
 use lazy_static::lazy_static;
-pub use graph_runtime_wasm::WasmInstance;
 
 type Store = Mutex<IndexMap<String, IndexMap<String, HashMap<String, Value>>>>;
 
@@ -354,7 +354,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
                 vec![map
                     .get(&unique_fn_string)
                     .expect("Couldn't get value from map.")]
-                    .as_slice(),
+                .as_slice(),
             )?;
         } else {
             panic!("key: '{}' not found in map.", &unique_fn_string);
@@ -557,7 +557,7 @@ impl<C: Blockchain> WasmInstanceExtension<C> for WasmInstance<C> {
                                 "{} is not allowed in global variables",
                                 host_fn.name
                             )
-                                .into());
+                            .into());
                         }
                     };
 

@@ -27,9 +27,11 @@ use graph_runtime_wasm::{
 use serde_yaml::{Sequence, Value};
 use web3::types::Address;
 
-use subgraph_store::MockSubgraphStore;
-use wasm_instance::{WasmInstanceExtension, fail_test, flush_logs, get_failed_tests, get_successful_tests};
 use crate::wasm_instance::WasmInstance;
+use subgraph_store::MockSubgraphStore;
+use wasm_instance::{
+    fail_test, flush_logs, get_failed_tests, get_successful_tests, WasmInstanceExtension,
+};
 
 mod subgraph_store;
 mod wasm_instance;
@@ -272,7 +274,7 @@ pub fn main() {
 
     let mock_subgraph_store = MockSubgraphStore {};
 
-    let module = <WasmInstance<C> as WasmInstanceExtension<C>>::from_valid_module_with_ctx(
+    let module = <WasmInstance<Chain> as WasmInstanceExtension<Chain>>::from_valid_module_with_ctx(
         valid_module,
         mock_context(
             deployment,
