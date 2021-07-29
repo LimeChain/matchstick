@@ -720,6 +720,7 @@ impl<C: Blockchain> WasmInstanceExtension<C> for WasmInstance<C> {
             link!("arweave.transactionData", arweave_transaction_data, ptr);
             link!("box.profile", box_profile, ptr);
         }
+        link!("assert.equals", assert_equals, expected_ptr, actual_ptr);
 
         let instance = linker.instantiate(&valid_module.module)?;
 
