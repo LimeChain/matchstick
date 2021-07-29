@@ -31,22 +31,22 @@ lazy_static! {
 }
 
 pub enum Level {
-    ERROR,
-    WARNING,
-    INFO,
-    DEBUG,
-    SUCCESS,
-    UNKNOWN,
+    Error,
+    Warning,
+    Info,
+    Debug,
+    Success,
+    Unknown,
 }
 
 fn level_from_u32(n: u32) -> Level {
     match n {
-        1 => Level::ERROR,
-        2 => Level::WARNING,
-        3 => Level::INFO,
-        4 => Level::DEBUG,
-        5 => Level::SUCCESS,
-        _ => Level::UNKNOWN,
+        1 => Level::Error,
+        2 => Level::Warning,
+        3 => Level::Info,
+        4 => Level::Debug,
+        5 => Level::Success,
+        _ => Level::Unknown,
     }
 }
 
@@ -62,11 +62,11 @@ pub fn get_failed_tests() -> usize {
 
 fn styled(s: &str, n: &Level) -> ColoredString {
     match n {
-        Level::ERROR => format!("ERROR {}", s).red(),
-        Level::WARNING => format!("WARNING {}", s).yellow(),
-        Level::INFO => format!("INFO {}", s).normal(),
-        Level::DEBUG => format!("DEBUG {}", s).cyan(),
-        Level::SUCCESS => format!("SUCCESS {}", s).green(),
+        Level::Error => format!("ERROR {}", s).red(),
+        Level::Warning => format!("WARNING {}", s).yellow(),
+        Level::Info => format!("INFO {}", s).normal(),
+        Level::Debug => format!("DEBUG {}", s).cyan(),
+        Level::Success => format!("SUCCESS {}", s).green(),
         _ => s.normal(),
     }
 }
@@ -85,7 +85,7 @@ pub fn fail_test(msg: String) {
         .insert(test_name, false);
     LOGS.lock()
         .expect("Cannot access LOGS.")
-        .insert(msg, Level::ERROR);
+        .insert(msg, Level::Error);
 }
 
 pub fn flush_logs() {
@@ -206,7 +206,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             .insert(name.clone(), true);
         LOGS.lock()
             .expect("Cannot access LOGS.")
-            .insert(name, Level::INFO);
+            .insert(name, Level::Info);
 
         Ok(())
     }
