@@ -157,11 +157,7 @@ trait WICExtension {
         field_name_ptr: AscPtr<AscString>,
         expected_val_ptr: AscPtr<AscString>,
     ) -> Result<(), HostExportError>;
-    fn assert_equals(
-        &mut self,
-        expected_ptr: u32,
-        actual_ptr: u32
-    ) -> Result<(), HostExportError>;
+    fn assert_equals(&mut self, expected_ptr: u32, actual_ptr: u32) -> Result<(), HostExportError>;
     fn mock_store_get(
         &mut self,
         entity_type_ptr: AscPtr<AscString>,
@@ -296,17 +292,15 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         Ok(())
     }
 
-    fn assert_equals(
-        &mut self,
-        expected_ptr: u32,
-        actual_ptr: u32
-    ) -> Result<(), HostExportError> {
+    fn assert_equals(&mut self, expected_ptr: u32, actual_ptr: u32) -> Result<(), HostExportError> {
         let expected: Token =
             asc_get::<_, AscEnum<EthereumValueKind>, _>(self, expected_ptr.into())?;
-        let actual: Token =
-            asc_get::<_, AscEnum<EthereumValueKind>, _>(self, actual_ptr.into())?;
+        let actual: Token = asc_get::<_, AscEnum<EthereumValueKind>, _>(self, actual_ptr.into())?;
         if expected != actual {
-            let msg = format!("Expected value was '{:?}' but actual value was '{:?}'", expected, actual);
+            let msg = format!(
+                "Expected value was '{:?}' but actual value was '{:?}'",
+                expected, actual
+            );
             fail_test(msg);
         }
         Ok(())
@@ -398,7 +392,9 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         if map.contains_key(&unique_fn_string) {
             return_val = asc_new(
                 self,
-                map.get(&unique_fn_string).expect("Couldn't get value from map.").as_slice()
+                map.get(&unique_fn_string)
+                    .expect("Couldn't get value from map.")
+                    .as_slice(),
             )?;
         } else {
             panic!("key: '{}' not found in map.", &unique_fn_string);
@@ -417,8 +413,10 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let fn_name: String = asc_get(self, fn_name_ptr)?;
         let fn_args: Vec<Token> =
             asc_get::<_, Array<AscPtr<AscEnum<EthereumValueKind>>>, _>(self, fn_args_ptr.into())?;
-        let return_value: Vec<Token> =
-            asc_get::<_, Array<AscPtr<AscEnum<EthereumValueKind>>>, _>(self, return_value_ptr.into())?;
+        let return_value: Vec<Token> = asc_get::<_, Array<AscPtr<AscEnum<EthereumValueKind>>>, _>(
+            self,
+            return_value_ptr.into(),
+        )?;
 
         let unique_fn_string =
             create_unique_fn_string(&contract_address.to_string(), &fn_name, fn_args);
@@ -716,12 +714,7 @@ impl<C: Blockchain> WasmInstance<C> {
             expected_val_ptr
         );
 
-        link!(
-            "assert.equals",
-            assert_equals,
-            expected_ptr,
-            actual_ptr
-        );
+        link!("assert.equals", assert_equals, expected_ptr, actual_ptr);
 
         let instance = linker.instantiate(&valid_module.module)?;
 
