@@ -52,6 +52,7 @@ pub enum Level {
 }
 
 // struct and impl for FromAscObj copied because they aren't public
+#[allow(dead_code)]
 struct UnresolvedContractCall {
     pub contract_name: String,
     pub contract_address: Address,
@@ -182,6 +183,7 @@ trait WICExtension {
         &mut self,
         contract_address_ptr: u32,
         fn_name_ptr: AscPtr<AscString>,
+        fn_signature_ptr: AscPtr<AscString>,
         fn_args_ptr: u32,
         return_value_ptr: u32,
     ) -> Result<(), HostExportError>;
@@ -385,6 +387,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let unique_fn_string = create_unique_fn_string(
             &call.contract_address.to_string(),
             &call.function_name,
+            &call.function_signature.expect("Couldn't get function signature."),
             call.function_args,
         );
         let map = FUNCTIONS_MAP.lock().expect("Couldn't get map.");
@@ -406,11 +409,13 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         &mut self,
         contract_address_ptr: u32,
         fn_name_ptr: AscPtr<AscString>,
+        fn_signature_ptr: AscPtr<AscString>,
         fn_args_ptr: u32,
         return_value_ptr: u32,
     ) -> Result<(), HostExportError> {
         let contract_address: Address = asc_get(self, contract_address_ptr.into())?;
         let fn_name: String = asc_get(self, fn_name_ptr)?;
+        let fn_signature: String = asc_get(self, fn_signature_ptr)?;
         let fn_args: Vec<Token> =
             asc_get::<_, Array<AscPtr<AscEnum<EthereumValueKind>>>, _>(self, fn_args_ptr.into())?;
         let return_value: Vec<Token> = asc_get::<_, Array<AscPtr<AscEnum<EthereumValueKind>>>, _>(
@@ -419,15 +424,15 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         )?;
 
         let unique_fn_string =
-            create_unique_fn_string(&contract_address.to_string(), &fn_name, fn_args);
+            create_unique_fn_string(&contract_address.to_string(), &fn_name, &fn_signature, fn_args);
         let mut map = FUNCTIONS_MAP.lock().expect("Couldn't get map.");
         map.insert(unique_fn_string, return_value);
         Ok(())
     }
 }
 
-fn create_unique_fn_string(contract_address: &str, fn_name: &str, fn_args: Vec<Token>) -> String {
-    let mut unique_fn_string = String::from(contract_address) + fn_name;
+fn create_unique_fn_string(contract_address: &str, fn_name: &str, fn_signature: &str, fn_args: Vec<Token>) -> String {
+    let mut unique_fn_string = String::from(contract_address) + fn_name + fn_signature;
     for element in fn_args.iter() {
         unique_fn_string += &element.to_string();
     }
@@ -611,6 +616,7 @@ impl<C: Blockchain> WasmInstance<C> {
             mock_function,
             contract_address_ptr,
             fn_name_ptr,
+            fn_signature_ptr,
             fn_args_ptr,
             return_value_ptr
         );
