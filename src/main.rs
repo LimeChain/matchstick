@@ -1,31 +1,20 @@
-use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Instant;
 
 use clap::{App, Arg};
 use colored::*;
-use ethabi::Contract;
 use graph::components::store::DeploymentId;
-use graph::data::subgraph::*;
 use graph::{
-    blockchain::BlockPtr,
     components::store::DeploymentLocator,
-    data::subgraph::{Mapping, Source, TemplateSource},
-    ipfs_client::IpfsClient,
-    prelude::{
-        o, slog, BlockState, DeploymentHash, HostMetrics, Link, Logger, StopwatchMetrics,
-        SubgraphStore,
-    },
+    prelude::{o, slog, DeploymentHash, HostMetrics, Logger, StopwatchMetrics},
     semver::Version,
 };
-use graph_chain_ethereum::{Chain, DataSource, DataSourceTemplate};
+use graph_chain_ethereum::Chain;
 use graph_mock::MockMetricsRegistry;
+use graph_runtime_test::test::{mock_context, mock_data_source};
 use graph_runtime_wasm::mapping::ValidModule;
-use graph_runtime_wasm::{
-    host_exports::HostExports, mapping::MappingContext, module::ExperimentalFeatures,
-};
+use graph_runtime_wasm::module::ExperimentalFeatures;
 use serde_yaml::{Sequence, Value};
-use web3::types::Address;
 
 use crate::wasm_instance::WasmInstance;
 use subgraph_store::MockSubgraphStore;
@@ -36,123 +25,6 @@ use wasm_instance::{
 mod subgraph_store;
 mod wasm_instance;
 mod writable_store;
-
-fn mock_host_exports(
-    subgraph_id: DeploymentHash,
-    data_source: DataSource,
-    store: Arc<impl SubgraphStore>,
-    api_version: Version,
-) -> HostExports<Chain> {
-    let templates = vec![DataSourceTemplate {
-        kind: String::from("ethereum/contract"),
-        name: String::from("example template"),
-        network: Some(String::from("mainnet")),
-        source: TemplateSource {
-            abi: String::from("foo"),
-        },
-        mapping: Mapping {
-            kind: String::from("ethereum/events"),
-            api_version,
-            language: String::from("wasm/assemblyscript"),
-            entities: vec![],
-            abis: vec![],
-            event_handlers: vec![],
-            call_handlers: vec![],
-            block_handlers: vec![],
-            link: Link {
-                link: "link".to_owned(),
-            },
-            runtime: Arc::new(vec![]),
-        },
-    }];
-
-    let network = data_source.network.clone().unwrap();
-    HostExports::new(
-        subgraph_id,
-        &data_source,
-        network,
-        Arc::new(templates),
-        Arc::new(graph_core::LinkResolver::from(IpfsClient::localhost())),
-        store,
-    )
-}
-
-fn mock_context(
-    deployment: DeploymentLocator,
-    data_source: DataSource,
-    store: Arc<impl SubgraphStore>,
-    api_version: Version,
-) -> MappingContext<Chain> {
-    MappingContext {
-        logger: test_store::LOGGER.clone(),
-        block_ptr: BlockPtr {
-            hash: Default::default(),
-            number: 0,
-        },
-        host_exports: Arc::new(mock_host_exports(
-            deployment.hash.clone(),
-            data_source,
-            store.clone(),
-            api_version,
-        )),
-        state: BlockState::new(store.writable(&deployment).unwrap(), Default::default()),
-        proof_of_indexing: None,
-        host_fns: Arc::new(Vec::new()),
-    }
-}
-
-fn mock_abi() -> MappingABI {
-    MappingABI {
-        name: "mock_abi".to_string(),
-        contract: Contract::load(
-            r#"[
-            {
-                "inputs": [
-                    {
-                        "name": "a",
-                        "type": "address"
-                    }
-                ],
-                "type": "constructor"
-            }
-        ]"#
-            .as_bytes(),
-        )
-        .expect("Could not load contract."),
-    }
-}
-
-fn mock_data_source(path_to_wasm: &str, api_version: Version) -> DataSource {
-    let runtime = std::fs::read(path_to_wasm).unwrap();
-
-    DataSource {
-        kind: String::from("ethereum/contract"),
-        name: String::from("example data source"),
-        network: Some(String::from("mainnet")),
-        source: Source {
-            address: Some(Address::from_str("0123123123012312312301231231230123123123").unwrap()),
-            abi: String::from("123123"),
-            start_block: 0,
-        },
-        mapping: Mapping {
-            kind: String::from("ethereum/events"),
-            api_version,
-            language: String::from("wasm/assemblyscript"),
-            entities: vec![],
-            abis: vec![],
-            event_handlers: vec![],
-            call_handlers: vec![],
-            block_handlers: vec![],
-            link: Link {
-                link: "link".to_owned(),
-            },
-            runtime: Arc::new(runtime),
-        },
-        context: Default::default(),
-        creation_block: None,
-        contract_abi: Arc::new(mock_abi()),
-    }
-}
 
 fn get_build_path(sequence: Sequence, datasource_name: String) -> String {
     for mapping in sequence {
