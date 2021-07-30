@@ -387,7 +387,9 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let unique_fn_string = create_unique_fn_string(
             &call.contract_address.to_string(),
             &call.function_name,
-            &call.function_signature.expect("Couldn't get function signature."),
+            &call
+                .function_signature
+                .expect("Couldn't get function signature."),
             call.function_args,
         );
         let map = FUNCTIONS_MAP.lock().expect("Couldn't get map.");
@@ -423,15 +425,24 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             return_value_ptr.into(),
         )?;
 
-        let unique_fn_string =
-            create_unique_fn_string(&contract_address.to_string(), &fn_name, &fn_signature, fn_args);
+        let unique_fn_string = create_unique_fn_string(
+            &contract_address.to_string(),
+            &fn_name,
+            &fn_signature,
+            fn_args,
+        );
         let mut map = FUNCTIONS_MAP.lock().expect("Couldn't get map.");
         map.insert(unique_fn_string, return_value);
         Ok(())
     }
 }
 
-fn create_unique_fn_string(contract_address: &str, fn_name: &str, fn_signature: &str, fn_args: Vec<Token>) -> String {
+fn create_unique_fn_string(
+    contract_address: &str,
+    fn_name: &str,
+    fn_signature: &str,
+    fn_args: Vec<Token>,
+) -> String {
     let mut unique_fn_string = String::from(contract_address) + fn_name + fn_signature;
     for element in fn_args.iter() {
         unique_fn_string += &element.to_string();
