@@ -3,24 +3,25 @@ use std::time::Instant;
 
 use clap::{App, Arg};
 use colored::*;
-use graph::components::store::DeploymentId;
 use graph::{
     components::store::DeploymentLocator,
-    prelude::{o, slog, DeploymentHash, HostMetrics, Logger, StopwatchMetrics},
+    prelude::{DeploymentHash, HostMetrics, Logger, o, slog, StopwatchMetrics},
     semver::Version,
 };
+use graph::components::store::DeploymentId;
 use graph_chain_ethereum::Chain;
 use graph_mock::MockMetricsRegistry;
-use graph_runtime_test::test::{mock_context, mock_data_source};
+use graph_runtime_test::common::{mock_context, mock_data_source};
 use graph_runtime_wasm::mapping::ValidModule;
 use graph_runtime_wasm::module::ExperimentalFeatures;
 use serde_yaml::{Sequence, Value};
 
-use crate::wasm_instance::WasmInstance;
 use subgraph_store::MockSubgraphStore;
 use wasm_instance::{
     fail_test, flush_logs, get_failed_tests, get_successful_tests, WasmInstanceExtension,
 };
+
+use crate::wasm_instance::WasmInstance;
 
 mod subgraph_store;
 mod wasm_instance;
@@ -118,7 +119,6 @@ pub fn main() {
 
     let deployment = DeploymentLocator::new(DeploymentId::new(42), deployment_id.clone());
 
-    // This is where it breaks
     let data_source = mock_data_source(&path_to_wasm, Version::new(0, 0, 4));
 
     let metrics_registry = Arc::new(MockMetricsRegistry::new());
@@ -140,7 +140,7 @@ pub fn main() {
     };
 
     let valid_module = Arc::new(
-        ValidModule::new(data_source.mapping.runtime.as_ref())
+        ValidModule::new(Arc::new(std::fs::read(path_to_wasm).unwrap()).as_ref())
             .expect("Could not create ValidModule."),
     );
 
@@ -152,13 +152,12 @@ pub fn main() {
             deployment,
             data_source,
             Arc::from(mock_subgraph_store),
-            Version::new(0, 0, 4),
-        ),
+            Version::new(0, 0, 4)),
         host_metrics,
         None,
         experimental_features,
     )
-    .expect("Could not create WasmInstance from valid module with context.");
+        .expect("Could not create WasmInstance from valid module with context.");
 
     let run_tests = module
         .instance
