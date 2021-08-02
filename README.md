@@ -1,25 +1,25 @@
-# Subtest 🧪⚙️
-👋 Welcome to **Subtest** - a unit testing framework for The Graph protocol. Try out your mapping logic in a sandboxed environment and ensure your handlers run correctly when deploying your awesome subgraph!
+# Matchstick 🔥
+👋 Welcome to **Matchstick** - a unit testing framework for The Graph protocol. Try out your mapping logic in a sandboxed environment and ensure your handlers run correctly when deploying your awesome subgraph!
 
 ![miro2](https://user-images.githubusercontent.com/32264020/123761690-bcf37f80-d8ca-11eb-9950-6452d7e972cd.jpeg)
 
 ## Quick Start 🚀
-The release binary comes in two flavours - for **macOS** and **Linux** (Windows coming soon). To add **Subtest** to your subgraph project just open up a terminal, navigate to the root folder of your project and simply run the follow these steps (depending on your OS):
+The release binary comes in two flavours - for **macOS** and **Linux** (Windows coming soon). To add **Matchstick** to your subgraph project just open up a terminal, navigate to the root folder of your project and simply run the follow these steps (depending on your OS):
 
 ### MacOS
 
 ```
-curl -OL https://github.com/LimeChain/subtest/releases/download/0.0.12/binary-macos &&
-mv binary-macos subtest &&
-chmod a+x subtest
+curl -OL https://github.com/LimeChain/matchstick/releases/download/0.0.12/binary-macos &&
+mv binary-macos matchstick &&
+chmod a+x matchstick
 ```
 
 ### Linux
 
 ```
-curl -OL https://github.com/LimeChain/subtest/releases/download/0.0.12/binary-linux &&
-mv binary-linux subtest &&
-chmod a+x subtest
+curl -OL https://github.com/LimeChain/matchstick/releases/download/0.0.12/binary-linux &&
+mv binary-linux matchstick &&
+chmod a+x matchstick
 ```
 
 **Note:** This command is aimed at Ubuntu/Debian systems, but can be easily tweaked to fit any Linux distro.
@@ -29,22 +29,22 @@ To run the framework, you simply need to provide a datasource name (after you've
 
 Just run the following in the root folder of your project:
 
-`./subtest <DATASOURCE NAME>`
+`./matchstick <DATASOURCE NAME>`
 
 For instance, in our [demo subgraph example](https://github.com/LimeChain/demo-subgraph "demo subgraph"), the command look like this:
 
-`./subtest Gravity`
+`./matchstick Gravity`
 
 **Tip:** You can build your subgraph (along with your tests) and run the framework in one step using:
-`graph build && ./subtest Gravity`
+`graph build && ./matchstick Gravity`
 
 Now you can jump straight to the [test examples](https://github.com/LimeChain/demo-subgraph/blob/main/src/tests.ts "examples of tests") we have in our [demo subgraph](https://github.com/LimeChain/demo-subgraph "demo subgraph") and start your journey in Subgraph unit testing!
 
 ## Setting up locally 📍
-If you want to get the **Subtest** project up and running on your system, follow these simple steps. This guide is aimed at both **macOS** and **Linux** systems.
+If you want to get the **Matchstick** project up and running on your system, follow these simple steps. This guide is aimed at both **macOS** and **Linux** systems.
 
 ### Prerequisites
-To build and run **Subtest**  you need to have the following installed on your system:
+To build and run **Matchstick**  you need to have the following installed on your system:
 
 - Rust - [How to install Rust](https://www.rust-lang.org/en-US/install.html "How to install Rust")
 
@@ -187,8 +187,8 @@ That's all well and good, but what if we had more complex logic in the handler f
 What we need to do is create a test file, we can name it however we want - let's say `tests.ts`, somewhere in our project. In our test file we need to define a function named `runTests()`, it's important that the function has that exact name (for now). This is an example of how our tests might look like:
 
 ```typescript
-import { store } from "subtest-as/assembly/store";
-import { test } from "subtest-as/assembly/index";
+import { store } from "matchstick-as/assembly/store";
+import { test } from "matchstick-as/assembly/index";
 import { Gravatar } from "../generated/schema";
 import { NewGravatar } from "../generated/Gravity/Gravity";
 import { handleNewGravatars, createNewGravatarEvent } from "./mapping";
@@ -221,7 +221,7 @@ export function runTests(): void {
 
 **DISCLAIMER:** *In order for that to work, we need to import the `runTests()` function in our mappings file. It won't be used there, but it has to be imported there so that it can get picked up by Rust later when running the tests.*
 
-That's a lot to unpack! First off, an important thing to notice is that we're importing things from `subtest-as`, that's our AssemblyScript helper library (distributed as an npm module), which you can check out [here](https://github.com/LimeChain/subtest-as "here"). It provides us with useful testing methods and also defines the `test()` function which we will use to build our test blocks. It also gives us a mock implementation of the `store` and all of its functions. The rest of it is pretty straightforward - here's what happens:
+That's a lot to unpack! First off, an important thing to notice is that we're importing things from `matchstick-as`, that's our AssemblyScript helper library (distributed as an npm module), which you can check out [here](https://github.com/LimeChain/matchstick-as "here"). It provides us with useful testing methods and also defines the `test()` function which we will use to build our test blocks. It also gives us a mock implementation of the `store` and all of its functions. The rest of it is pretty straightforward - here's what happens:
 - We're setting up our initial state and adding one custom Gravatar entity;
 - We define two `NewGravatar` event objects along with their data;
 - We're calling out handler methods for those events - `handleNewGravatars()` and passing in the list of our custom events;
@@ -230,7 +230,7 @@ That's a lot to unpack! First off, an important thing to notice is that we're im
 
 There we go - we've tested our first event handler! 👏
 
-Now let's recap and take a look at some **User Stories**, which include what we already covered plus more useful things we can use **Subtest** for.
+Now let's recap and take a look at some **User Stories**, which include what we already covered plus more useful things we can use **Matchstick** for.
 
 ## User Stories 📝
 ### As a user I want to hydrate the store with a certain state
@@ -243,7 +243,7 @@ gravatar.save();
 ### As a user I want to call a mapping function with an event
 A user can create a custom event Entity and pass it to a mapping function that is bound to the store:
 ```typescript
-import { store } from "subtest-as/assembly/store";
+import { store } from "matchstick-as/assembly/store";
 import { handleNewGravatars, createNewGravatarEvent } from "./mapping";
 
 let newGravatarEvent = createNewGravatarEvent(12345, "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7", "cap", "pac");
@@ -254,7 +254,7 @@ handleNewGravatar(newGravatarEvent);
 ### As a user I want to call all of the mappings with event fixtures
 Users can call the mappings with test fixtures.
 ```typescript
-import { store } from "subtest-as/assembly/store";
+import { store } from "matchstick-as/assembly/store";
 import { handleNewGravatars, createNewGravatarEvent } from "./mapping";
 
 let newGravatarEvent = createNewGravatarEvent(12345, "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7", "cap", "pac");
@@ -267,7 +267,7 @@ handleNewGravatars([newGravatarEvent, anotherGravatarEvent]);
 ### As a user I want to mock contract calls
 Users can mock contract calls:
 ```typescript
-import { test, mockFunction, callFunction } from "subtest-as/assembly/index";
+import { test, mockFunction, callFunction } from "matchstick-as/assembly/index";
 
 mockFunction("0x000001234123", "exampleFuncName", ["param1", "param2"], "returnVal");
 let returnValue = callFunction("0x000001234123", "exampleFuncName", ["param1", "param2"]);
@@ -279,7 +279,7 @@ After that, calling `callFunction()` with the same address, name and parameters 
 ### As a user I want to assert the state of the store
 Users are able to assert the final (or midway) state of the store through asserting entities. In order to do this, the user has to supply an Entity type, the specific ID of an Entity, a name of a field on that Entity, and the expected value of the field. Here's a quick example:
 ```typescript
-import { store } from "subtest-as/assembly/store";
+import { store } from "matchstick-as/assembly/store";
 import { Gravatar } from "../generated/schema";
 
 let GRAVATAR_ENTITY_TYPE = "Gravatar";
@@ -295,8 +295,8 @@ Running the assertFieldEq() function will check for equality of the given field 
 ### As a user I want be able to interact with Event metadata
 Users can *inject* default transaction data into any event object, as long as it inherits the base `ethereum.Event`. The following example shows how you can wrap any event with default metadata:
 ```typescript
-import { store } from "subtest-as/assembly/store";
-import { addMetadata } from "subtest-as/assembly/index";
+import { store } from "matchstick-as/assembly/store";
+import { addMetadata } from "matchstick-as/assembly/index";
 import { Address, BigInt, Bytes, ethereum } from "@graphprotocol/graph-ts";
 import { NewGravatar } from "../generated/Gravity/Gravity";
 
@@ -318,9 +318,9 @@ The log output includes the test run duration. Here's an example:
 `Jul 09 14:54:42.420 INFO Program execution time: 10.06022ms`
 
 ## Next steps 🎯
-The **Subtest** framework is currently live for beta testing. There is a lot of room for improvements to everything we've talked about above. We're trying to gather as much feedback from subgraph developers as we can, to understand how we can solve the problems they face when building subgraphs, as well as how we can make the overall testing process as smooth and streamlined as possible.
+The **Matchstick** framework is currently live for beta testing. There is a lot of room for improvements to everything we've talked about above. We're trying to gather as much feedback from subgraph developers as we can, to understand how we can solve the problems they face when building subgraphs, as well as how we can make the overall testing process as smooth and streamlined as possible.
 
-There's a GitHub project board where we keep track of day to day work which you can check out [here](https://github.com/LimeChain/subtest/projects/1 "here").
+There's a GitHub project board where we keep track of day to day work which you can check out [here](https://github.com/LimeChain/matchstick/projects/1 "here").
 
 Here are some of the areas we're set to focus on from here on out: 
 - Unit tests;
@@ -329,6 +329,6 @@ Here are some of the areas we're set to focus on from here on out:
 
 ## Technologies used 💻
 
-The **Subtest** framework is built in **Rust** and acts as a wrapper for the generated WebAssembly module that contains the mappings and the unit tests. It passes the host function implementations down to the module, to be used in the tests (and in the mappings if needed). The framework also acts as a proxy for structs defined in the [graph-node repo](https://github.com/graphprotocol/graph-node/tree/master/graph "graph-node repo"), because it needs to pass down all the usual imports, as well as a few bonus/mocked ones glued on top.
+The **Matchstick** framework is built in **Rust** and acts as a wrapper for the generated WebAssembly module that contains the mappings and the unit tests. It passes the host function implementations down to the module, to be used in the tests (and in the mappings if needed). The framework also acts as a proxy for structs defined in the [graph-node repo](https://github.com/graphprotocol/graph-node/tree/master/graph "graph-node repo"), because it needs to pass down all the usual imports, as well as a few bonus/mocked ones glued on top.
 
-**Subtest** also relies on a helper library - [subtest-as](https://github.com/LimeChain/subtest-as "subtest-as"), written in **AssemblyScript** and used as an import in the unit tests.
+**Matchstick** also relies on a helper library - [matchstick-as](https://github.com/LimeChain/matchstick-as "matchstick-as"), written in **AssemblyScript** and used as an import in the unit tests.
