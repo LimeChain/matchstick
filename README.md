@@ -32,7 +32,17 @@ chmod a+x matchstick
 sudo apt install postgresql
 ```
 
-**Note:** This command is aimed at Ubuntu/Debian systems, but can be easily tweaked to fit any Linux distro.
+### Windows
+
+```
+curl -OL https://github.com/LimeChain/matchstick/releases/download/0.0.12/binary-windows &&
+move binary-windows matchstick
+```
+
+❗ If you don't have Postgres installed, you will need to install it with (depending on your distro):
+```
+choco install postgresql12
+```
 
 ### Run
 To run the framework, you simply need to provide a datasource name (after you've compiled your subgraph using `graph build`).
@@ -64,7 +74,7 @@ Clone this repository and run `cargo build`. If that executes successfully congr
 **NOTE:** *You may encounter an error, related to missing `libpq` dependencies on your system. In that case - install the missing dependencies (listed in the error log) with your package manager.*
 
 ## Example Usage 📖
-Let's explore a few common scenarios where we'd want to test our handler functions. We've created a [**demo subgraph repo**](https://github.com/LimeChain/demo-subgraph "demo subgraph") ❗to fully demonstrate how to use the framework and all its functionality using the [Example Subgraph](https://thegraph.com/docs/developer/create-subgraph-hosted "Example Subgraph"), provided by [The Graph Docs](https://thegraph.com/docs "The Graph Docs"), which you most likely will be familiar with. For the full examples, feel free to check it out in depth. Let's dive in straight to the code on there! We've got the following simple generated event:
+Let's explore a few common scenarios where we'd want to test our handler functions. We've created a [**demo subgraph repo**](https://github.com/LimeChain/demo-subgraph "demo subgraph") ❗to fully demonstrate how to use the framework and all its functionality. It uses the [Example Subgraph](https://thegraph.com/docs/developer/create-subgraph-hosted "Example Subgraph"), provided by [The Graph Docs](https://thegraph.com/docs "The Graph Docs"), which you most likely will be familiar with. For the full examples, feel free to check it out in depth. Let's dive in straight to the code on there! We've got the following simple **generated** event:
 ```typescript
 export class NewGravatar extends ethereum.Event {
   get params(): NewGravatar__Params {
@@ -96,7 +106,7 @@ export class NewGravatar__Params {
   }
 }
 ```
-Along with the following simple generated entity:
+Along with the following simple **generated** entity:
 ```typescript
 export class Gravatar extends Entity {
   constructor(id: string) {
@@ -156,7 +166,7 @@ export class Gravatar extends Entity {
   }
 }
 ```
-And finally, we have a handler function (that we've written in our `mapping.ts` file) that deals with the events. As well as two little helper functions - one for multiple events of the same type and another for creating new events of that type (You could of course consturct event objects manually each time, but it's a lot more hassle):
+And finally, we have a handler function (**that we've written in our** `mapping.ts` **file**) that deals with the events. As well as two little helper functions - one for multiple events of the same type and another for creating new events of that type (You could of course consturct event objects manually each time, but it's a lot more hassle):
 ```typescript
 export function handleNewGravatar(event: NewGravatar): void {
     let gravatar = new Gravatar(event.params.id.toHex())
@@ -194,7 +204,7 @@ export function createNewGravatarEvent(id: i32, ownerAddress: string, displayNam
 ```
 That's all well and good, but what if we had more complex logic in the handler function? We would want to check that the event that gets saved in the store looks the way we want it to look like.
 
-What we need to do is create a test file, we can name it however we want - let's say `tests.ts`, somewhere in our project. In our test file we need to define a function named `runTests()`, it's important that the function has that exact name (for now). This is an example of how our tests might look like:
+What we need to do is create a test file, we can name it however we want - let's say `gravity.test.ts`, in our project. In our test file we need to define a function named `runTests()`, it's important that the function has that exact name (for now). This is an example of how our tests might look like:
 
 ```typescript
 import { store } from "matchstick-as/assembly/store";
@@ -230,6 +240,12 @@ export function runTests(): void {
 ```
 
 **DISCLAIMER:** *In order for that to work, we need to import the `runTests()` function in our mappings file. It won't be used there, but it has to be imported there so that it can get picked up by Rust later when running the tests.*
+
+You can import the tests wrapper function in your mappings file like this:
+
+```
+export { runTests } from "../tests/gravity.test";
+```
 
 That's a lot to unpack! First off, an important thing to notice is that we're importing things from `matchstick-as`, that's our AssemblyScript helper library (distributed as an npm module), which you can check out [here](https://github.com/LimeChain/matchstick-as "here"). It provides us with useful testing methods and also defines the `test()` function which we will use to build our test blocks. It also gives us a mock implementation of the `store` and all of its functions. The rest of it is pretty straightforward - here's what happens:
 - We're setting up our initial state and adding one custom Gravatar entity;
