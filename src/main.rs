@@ -52,8 +52,8 @@ fn get_build_path(sequence: Sequence, datasource_name: String) -> String {
 }
 
 pub fn main() {
-    let matches = App::new("Subtest")
-        .version("0.0.12")
+    let matches = App::new("Matchstick 🔥")
+        .version("0.0.13")
         .author("Limechain <https://limechain.tech>")
         .about("Unit testing framework for Subgraph development on The Graph protocol.")
         .arg(
@@ -179,7 +179,7 @@ pub fn main() {
         Please double check the syntax in your test file.
         This usually happens if you pass a 'null' value to one of our functions - assert.fieldEquals(), store.get(), store.set().
         Please ensure that you have proper null checks in your tests.
-        You can debug your test file using the 'log()' function, provided in subtest-as (import { log } from "subtest-as/assembly/log").
+        You can debug your test file using the 'log()' function, provided in matchstick-as (import { log } from "matchstick-as/assembly/log").
         "#).red();
 
         panic!("{}", msg);

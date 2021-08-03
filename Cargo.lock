@@ -2285,6 +2285,35 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ffc5c5338469d4d3ea17d269fa8ea3512ad247247c30bd2df69e68309ed0a08"
 
 [[package]]
+name = "matchstick"
+version = "0.0.13"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "clap",
+ "colored",
+ "ethabi 12.0.0-graph",
+ "graph",
+ "graph-chain-ethereum",
+ "graph-core",
+ "graph-mock",
+ "graph-runtime-test",
+ "graph-runtime-wasm",
+ "indexmap",
+ "lazy_static",
+ "openssl",
+ "semver 0.11.0",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "slog",
+ "slog-term",
+ "test-store",
+ "tokio 0.2.25",
+ "wasmtime",
+]
+
+[[package]]
 name = "maybe-owned"
 version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4040,35 +4069,6 @@ dependencies = [
  "proc-macro2 1.0.28",
  "quote 1.0.9",
  "syn 1.0.74",
-]
-
-[[package]]
-name = "subtest"
-version = "0.0.12"
-dependencies = [
- "anyhow",
- "async-trait",
- "clap",
- "colored",
- "ethabi 12.0.0-graph",
- "graph",
- "graph-chain-ethereum",
- "graph-core",
- "graph-mock",
- "graph-runtime-test",
- "graph-runtime-wasm",
- "indexmap",
- "lazy_static",
- "openssl",
- "semver 0.11.0",
- "serde",
- "serde_json",
- "serde_yaml",
- "slog",
- "slog-term",
- "test-store",
- "tokio 0.2.25",
- "wasmtime",
 ]
 
 [[package]]

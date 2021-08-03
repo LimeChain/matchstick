@@ -1,6 +1,6 @@
 [package]
-name = "subtest"
-version = "0.0.12"
+name = "matchstick"
+version = "0.0.13"
 authors = ["Petko <pavlovskipetko@abv.bg>"]
 edition = "2018"
 
