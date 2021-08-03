@@ -3,12 +3,12 @@ use std::time::Instant;
 
 use clap::{App, Arg};
 use colored::*;
+use graph::components::store::DeploymentId;
 use graph::{
     components::store::DeploymentLocator,
-    prelude::{DeploymentHash, HostMetrics, Logger, o, slog, StopwatchMetrics},
+    prelude::{o, slog, DeploymentHash, HostMetrics, Logger, StopwatchMetrics},
     semver::Version,
 };
-use graph::components::store::DeploymentId;
 use graph_chain_ethereum::Chain;
 use graph_mock::MockMetricsRegistry;
 use graph_runtime_test::common::{mock_context, mock_data_source};
@@ -152,12 +152,13 @@ pub fn main() {
             deployment,
             data_source,
             Arc::from(mock_subgraph_store),
-            Version::new(0, 0, 4)),
+            Version::new(0, 0, 4),
+        ),
         host_metrics,
         None,
         experimental_features,
     )
-        .expect("Could not create WasmInstance from valid module with context.");
+    .expect("Could not create WasmInstance from valid module with context.");
 
     let run_tests = module
         .instance
