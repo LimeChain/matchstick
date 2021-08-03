@@ -8,7 +8,7 @@ use ethabi::{Address, Token};
 use anyhow::anyhow;
 use colored::*;
 use graph::data::store::Value;
-use graph::prelude::Entity;
+use graph::prelude::{Entity, DeploymentHash, o, slog, StopwatchMetrics, Logger};
 use graph::runtime::{
     asc_get, asc_new, try_asc_get, AscHeap, AscPtr, DeterministicHostError, FromAscObj,
 };
@@ -20,9 +20,11 @@ use graph::{
         HostMetrics,
     },
 };
+use wasmtime::Memory;
 use graph_chain_ethereum::runtime::abi::AscUnresolvedContractCall_0_0_4;
 use graph_runtime_wasm::asc_abi::class::{Array, AscEntity, AscEnum, AscString};
 use graph_runtime_wasm::asc_abi::class::{AscEnumArray, EthereumValueKind};
+use graph_mock::MockMetricsRegistry;
 use graph_runtime_wasm::{
     error::DeterminismLevel,
     mapping::{MappingContext, ValidModule},
@@ -434,6 +436,48 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let mut map = FUNCTIONS_MAP.lock().expect("Couldn't get map.");
         map.insert(unique_fn_string, return_value);
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn clear_store_basic_test() {
+        let context = WasmInstanceContext {
+            arena_free_size: 0,
+            arena_start_ptr: 0,
+            ctx: _,
+            deterministic_host_trap: true,
+            experimental_features: ExperimentalFeatures{
+                allow_non_deterministic_ipfs: true
+            },
+            host_metrics: Arc::new(HostMetrics::new(
+                Arc::new(MockMetricsRegistry::new()),
+                &DeploymentHash::new("ipfsMap").expect("Could not create DeploymentHash.").as_str(),
+                StopwatchMetrics::new(
+                    Logger::root(slog::Discard, o!()),
+                    DeploymentHash::new("ipfsMap").expect("Could not create DeploymentHash.").clone(),
+                    Arc::new(MockMetricsRegistry::new()).clone(),
+                ),
+            )),
+            id_of_type,
+            memory: Memory,
+
+
+        };
+        let mut store = STORE.lock().expect("Couldn't get store.");
+        store.insert("type".to_string(), IndexMap::new());
+        assert_eq!(store.len(), 1);
+
+        WasmInstanceContext::clear_store(super::WasmInstanceContext);
+        assert_eq!(store.len(), 0);
+    }
+
+    #[test]
+    fn register_test_duplication_test() {
+
     }
 }
 
