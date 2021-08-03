@@ -345,6 +345,11 @@ let UPDATED_ADDRESS = "0xB16081F360e3847006dB660bae1c6d1b2e17eC2A";
 newGravatarEvent.address = Address.fromString(UPDATED_ADDRESS);
 ```
 
+### As a user I want be able to assert if variables are equal
+```
+assert.equals(ethereum.Value.fromString("hello"), ethereum.Value.fromString("hello"));
+```
+
 ### As a user I want to see test run time durations
 The log output includes the test run duration. Here's an example:
 
@@ -358,6 +363,9 @@ There's a GitHub project board where we keep track of day to day work which you 
 Here are some of the areas we're set to focus on from here on out:
 - Integration to in graph-cli.
 - Improvements and feature requests.
+
+Known issues:
+- When runTests() is imported in the mappings file the deployment to the hosted service will break. For now, it's required to remove/comment out the import.
 
 You can check out the full list of tasks [here](https://github.com/LimeChain/subtest/projects/2).
 
