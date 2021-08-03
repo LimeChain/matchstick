@@ -20,7 +20,7 @@ use graph::{
         HostMetrics,
     },
 };
-use wasmtime::Memory;
+use wasmtime::{Memory, Engine, MemoryType};
 use graph_chain_ethereum::runtime::abi::AscUnresolvedContractCall_0_0_4;
 use graph_runtime_wasm::asc_abi::class::{Array, AscEntity, AscEnum, AscString};
 use graph_runtime_wasm::asc_abi::class::{AscEnumArray, EthereumValueKind};
@@ -463,7 +463,7 @@ mod tests {
                 ),
             )),
             id_of_type,
-            memory: Memory,
+            memory: Memory::new(&wasmtime::Store::new(&wasmtime::Engine::default()), ty: MemoryType).expect("Couldn't get memory."),
 
 
         };
