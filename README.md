@@ -6,7 +6,7 @@
 ## Quick Start 🚀
 The release binary comes in three flavours - for **MacOS**, **Linux** and **Windows**. To add **Matchstick** to your subgraph project just open up a terminal, navigate to the root folder of your project and simply run the follow these steps (depending on your OS):
 
-### MacOS
+### MacOS 
 
 ```
 curl -OL https://github.com/LimeChain/matchstick/releases/download/0.0.12/binary-macos &&
@@ -19,7 +19,7 @@ chmod a+x matchstick
 brew install postgres
 ```
 
-### Linux
+### Linux 🐧
 
 ```
 curl -OL https://github.com/LimeChain/matchstick/releases/download/0.0.12/binary-linux &&
@@ -61,12 +61,13 @@ For instance, in our [demo subgraph example](https://github.com/LimeChain/demo-s
 Now you can jump straight to the [test examples](https://github.com/LimeChain/demo-subgraph/blob/main/src/tests.ts "examples of tests") we have in our [demo subgraph](https://github.com/LimeChain/demo-subgraph "demo subgraph") and start your journey in Subgraph unit testing!
 
 ## Setting up locally 📍
-If you want to get the **Matchstick** project up and running on your system, follow these simple steps. This guide is aimed at both **macOS** and **Linux** systems.
+If you want to get the **Matchstick** project up and running on your system, follow these simple steps. This guide is aimed at both **MacOS** and **Linux** systems.
 
 ### Prerequisites
 To build and run **Matchstick**  you need to have the following installed on your system:
 
 - Rust - [How to install Rust](https://www.rust-lang.org/en-US/install.html "How to install Rust")
+- PostgreSQL – [PostgreSQL Downloads](https://www.postgresql.org/download/)
 
 ### Setup
 Clone this repository and run `cargo build`. If that executes successfully congratulations 🎉 you're all set.
@@ -207,11 +208,9 @@ That's all well and good, but what if we had more complex logic in the handler f
 What we need to do is create a test file, we can name it however we want - let's say `gravity.test.ts`, in our project. In our test file we need to define a function named `runTests()`, it's important that the function has that exact name (for now). This is an example of how our tests might look like:
 
 ```typescript
-import { store } from "matchstick-as/assembly/store";
-import { test } from "matchstick-as/assembly/index";
-import { Gravatar } from "../generated/schema";
-import { NewGravatar } from "../generated/Gravity/Gravity";
-import { handleNewGravatars, createNewGravatarEvent } from "./mapping";
+import { clearStore, test } from "subtest-as/assembly/index";
+import { Gravatar } from "../../generated/schema";
+import { createNewGravatarEvent, handleNewGravatars } from "../mappings/gravity";
 
 export function runTests(): void {
   test("Can call mappings with custom events", () => {
@@ -230,7 +229,7 @@ export function runTests(): void {
         store.assertFieldEq(GRAVATAR_ENTITY_TYPE, "12345", "id", "12345");
         store.assertFieldEq(GRAVATAR_ENTITY_TYPE, "3546", "id", "3546");
 
-        store.clear();
+        clearStore();
     });
   
   test("Next test", () => {
@@ -247,12 +246,12 @@ You can import the tests wrapper function in your mappings file like this:
 export { runTests } from "../tests/gravity.test";
 ```
 
-That's a lot to unpack! First off, an important thing to notice is that we're importing things from `matchstick-as`, that's our AssemblyScript helper library (distributed as an npm module), which you can check out [here](https://github.com/LimeChain/matchstick-as "here"). It provides us with useful testing methods and also defines the `test()` function which we will use to build our test blocks. It also gives us a mock implementation of the `store` and all of its functions. The rest of it is pretty straightforward - here's what happens:
+That's a lot to unpack! First off, an important thing to notice is that we're importing things from `matchstick-as`, that's our AssemblyScript helper library (distributed as an npm module), which you can check out [here](https://github.com/LimeChain/matchstick-as "here"). It provides us with useful testing methods and also defines the `test()` function which we will use to build our test blocks. The rest of it is pretty straightforward - here's what happens:
 - We're setting up our initial state and adding one custom Gravatar entity;
 - We define two `NewGravatar` event objects along with their data;
 - We're calling out handler methods for those events - `handleNewGravatars()` and passing in the list of our custom events;
 - We assert the state of the store. How does that work? - We're passing a unique combination of Entity type and id. Then we check a specific field on that Entity and assert that it has the value we expect it to have. We're doing this both for the initial burger Entity we added and for the one that gets added when the handler function is called;
-- And lastly - we're cleaning the store using `store.clean()` so that our next test can start with a fresh and empty store object. We can define as many test blocks as we want.
+- And lastly - we're cleaning the store using `clearStore()` so that our next test can start with a fresh and empty store object. We can define as many test blocks as we want.
 
 There we go - we've tested our first event handler! 👏
 
@@ -293,19 +292,28 @@ handleNewGravatars([newGravatarEvent, anotherGravatarEvent]);
 ### As a user I want to mock contract calls
 Users can mock contract calls:
 ```typescript
-import { test, mockFunction, callFunction } from "matchstick-as/assembly/index";
+import { addMetadata, assert, createMockedFunction, clearStore, test } from "subtest-as/assembly/index";
+import { Gravity } from "../../generated/Gravity/Gravity";
+import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
 
-mockFunction("0x000001234123", "exampleFuncName", ["param1", "param2"], "returnVal");
-let returnValue = callFunction("0x000001234123", "exampleFuncName", ["param1", "param2"]);
+let contractAddress = Address.fromString("0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7");
+let expectedResult = Address.fromString("0x90cBa2Bbb19ecc291A12066Fd8329D65FA1f1947");
+let bigIntParam = BigInt.fromString("1234");
+createMockedFunction(contractAddress, "gravatarToOwner", "gravatarToOwner(uint256):(address)")
+    .withArgs([ethereum.Value.fromSignedBigInt(bigIntParam)])
+    .returns([ethereum.Value.fromAddress(Address.fromString("0x90cBa2Bbb19ecc291A12066Fd8329D65FA1f1947"))]);
+
+let gravity = Gravity.bind(contractAddress);
+let result = gravity.gravatarToOwner(bigIntParam);
+
+assert.equals(ethereum.Value.fromAddress(expectedResult), ethereum.Value.fromAddress(result));
 ```
-In order to mock a contract call and hardcore a return value (string), the user must provide a contract address, function name, an array of parameters, and finally - a return value.
-
-After that, calling `callFunction()` with the same address, name and parameters will return the specified value in `mockFunction()`.
+As demonstrated, in order to mock a contract call and hardcore a return value, the user must provide a contract address, function name, function signature, an array of arguments, and of course - the return value.
 
 ### As a user I want to assert the state of the store
 Users are able to assert the final (or midway) state of the store through asserting entities. In order to do this, the user has to supply an Entity type, the specific ID of an Entity, a name of a field on that Entity, and the expected value of the field. Here's a quick example:
 ```typescript
-import { store } from "matchstick-as/assembly/store";
+import { assert } from "subtest-as/assembly/index";
 import { Gravatar } from "../generated/schema";
 
 let GRAVATAR_ENTITY_TYPE = "Gravatar";
@@ -313,21 +321,20 @@ let GRAVATAR_ENTITY_TYPE = "Gravatar";
 let gravatar = new Gravatar("gravatarId0");
 gravatar.save();
 
-store.assertFieldEq(GRAVATAR_ENTITY_TYPE, "gravatarId0", "id", "gravatarId0");
+assert.fieldEquals(GRAVATAR_ENTITY_TYPE, "gravatarId0", "id", "gravatarId0");
 
 ```
-Running the assertFieldEq() function will check for equality of the given field against the given expected value. The test will fail and an error message will be outputted if the values are **NOT** equal. Otherwise the test will pass successfully.
+Running the assert.fieldEquals() function will check for equality of the given field against the given expected value. The test will fail and an error message will be outputted if the values are **NOT** equal. Otherwise the test will pass successfully.
 
 ### As a user I want be able to interact with Event metadata
 Users can *inject* default transaction data into any event object, as long as it inherits the base `ethereum.Event`. The following example shows how you can wrap any event with default metadata:
 ```typescript
-import { store } from "matchstick-as/assembly/store";
 import { addMetadata } from "matchstick-as/assembly/index";
 import { Address, BigInt, Bytes, ethereum } from "@graphprotocol/graph-ts";
 import { NewGravatar } from "../generated/Gravity/Gravity";
 
 let base: ethereum.Event = new NewGravatar();
-let newGravatarEvent = addMetadata(base);
+let newGravatarEvent: NewGravatar = addMetadata(base);
 ```
 
 Then you can read/write to those fiels like this:
@@ -348,10 +355,11 @@ The **Matchstick** framework is currently live for beta testing. There is a lot 
 
 There's a GitHub project board where we keep track of day to day work which you can check out [here](https://github.com/LimeChain/matchstick/projects/1 "here").
 
-Here are some of the areas we're set to focus on from here on out: 
-- Unit tests;
-- Style terminal output;
-- Integrate framework in graph-cli.
+Here are some of the areas we're set to focus on from here on out:
+- Integration to in graph-cli.
+- Improvements and feature requests.
+
+You can check out the full list of tasks [here](https://github.com/LimeChain/subtest/projects/2).
 
 ## Technologies used 💻
 
