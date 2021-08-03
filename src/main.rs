@@ -23,10 +23,10 @@ use wasm_instance::{
 
 use crate::wasm_instance::WasmInstance;
 
+mod integration_tests;
 mod subgraph_store;
 mod wasm_instance;
 mod writable_store;
-mod integration_tests;
 
 fn get_build_path(sequence: Sequence, datasource_name: String) -> String {
     for mapping in sequence {
@@ -95,7 +95,7 @@ pub fn module_from_path(path_to_wasm: &str) -> WasmInstance<Chain> {
         None,
         experimental_features,
     )
-        .expect("Could not create WasmInstance from valid module with context.")
+    .expect("Could not create WasmInstance from valid module with context.")
 }
 
 pub fn main() {

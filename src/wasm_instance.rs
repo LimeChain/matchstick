@@ -60,6 +60,11 @@ pub fn get_failed_tests() -> usize {
     map.iter().filter(|(_, &v)| !v).count()
 }
 
+#[cfg(test)]
+pub fn clear_test_results() {
+    TEST_RESULTS.lock().unwrap().clear();
+}
+
 fn styled(s: &str, n: &Level) -> ColoredString {
     match n {
         Level::Error => format!("ERROR {}", s).red(),
