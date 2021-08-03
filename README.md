@@ -208,7 +208,7 @@ That's all well and good, but what if we had more complex logic in the handler f
 What we need to do is create a test file, we can name it however we want - let's say `gravity.test.ts`, in our project. In our test file we need to define a function named `runTests()`, it's important that the function has that exact name (for now). This is an example of how our tests might look like:
 
 ```typescript
-import { clearStore, test } from "subtest-as/assembly/index";
+import { clearStore, test } from "matchstick-as/assembly/index";
 import { Gravatar } from "../../generated/schema";
 import { createNewGravatarEvent, handleNewGravatars } from "../mappings/gravity";
 
@@ -292,7 +292,7 @@ handleNewGravatars([newGravatarEvent, anotherGravatarEvent]);
 ### As a user I want to mock contract calls
 Users can mock contract calls:
 ```typescript
-import { addMetadata, assert, createMockedFunction, clearStore, test } from "subtest-as/assembly/index";
+import { addMetadata, assert, createMockedFunction, clearStore, test } from "matchstick-as/assembly/index";
 import { Gravity } from "../../generated/Gravity/Gravity";
 import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
 
@@ -313,7 +313,7 @@ As demonstrated, in order to mock a contract call and hardcore a return value, t
 ### As a user I want to assert the state of the store
 Users are able to assert the final (or midway) state of the store through asserting entities. In order to do this, the user has to supply an Entity type, the specific ID of an Entity, a name of a field on that Entity, and the expected value of the field. Here's a quick example:
 ```typescript
-import { assert } from "subtest-as/assembly/index";
+import { assert } from "matchstick-as/assembly/index";
 import { Gravatar } from "../generated/schema";
 
 let GRAVATAR_ENTITY_TYPE = "Gravatar";
@@ -367,7 +367,7 @@ Here are some of the areas we're set to focus on from here on out:
 Known issues:
 - When runTests() is imported in the mappings file the deployment to the hosted service will break. For now, it's required to remove/comment out the import.
 
-You can check out the full list of tasks [here](https://github.com/LimeChain/subtest/projects/2).
+You can check out the full list of tasks [here](https://github.com/LimeChain/matchstick/projects/2).
 
 ## Technologies used 💻
 
