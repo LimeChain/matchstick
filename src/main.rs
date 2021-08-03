@@ -113,14 +113,16 @@ pub fn main() {
 
     println!(
         "{}",
-        ("     _____       _     _            _
-    / ____|     | |   | |          | |
-   | (___  _   _| |__ | |_ ___  ___| |_
-    \\___ \\| | | | '_ \\| __/ _ \\/ __| __|
-    ____) | |_| | |_) | ||  __/\\__ \\ |_
-   |_____/ \\__,_|_.__/ \\__\\___||___/\\__|\n")
-            .to_string()
-            .purple()
+        (r#"
+___  ___      _       _         _   _      _
+|  \/  |     | |     | |       | | (_)    | |
+| .  . | __ _| |_ ___| |__  ___| |_ _  ___| | __
+| |\/| |/ _` | __/ __| '_ \/ __| __| |/ __| |/ /
+| |  | | (_| | || (__| | | \__ \ |_| | (__|   <
+\_|  |_/\__,_|\__\___|_| |_|___/\__|_|\___|_|\_\
+                                                "#)
+        .to_string()
+        .bright_red()
     );
 
     let now = Instant::now();
@@ -169,7 +171,7 @@ pub fn main() {
         Please ensure that you have imported your runTests() function, defined in the test file, into the main mappings file.
         "#);
 
-    println!("{}", ("Starting tests 🧪🚀\n").to_string().purple());
+    println!("{}", ("Igniting tests 🔥\n").to_string().bright_red());
 
     #[allow(non_fmt_panic)]
         run_tests.call(&[]).unwrap_or_else(|_| {
