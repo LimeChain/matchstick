@@ -423,49 +423,6 @@ fn create_unique_fn_string(
     unique_fn_string
 }
 
-// pub struct WasmInstance<C: Blockchain> {
-//     pub instance: wasmtime::Instance,
-//     instance_ctx: Rc<RefCell<Option<WasmInstanceContext<C>>>>,
-// }
-
-// impl<C: Blockchain> Drop for WasmInstance<C> {
-//     fn drop(&mut self) {
-//         assert_eq!(Rc::strong_count(&self.instance_ctx), 1);
-//     }
-// }
-//
-// impl<C: Blockchain> AscHeap for WasmInstance<C> {
-//     fn raw_new(&mut self, bytes: &[u8]) -> Result<u32, DeterministicHostError> {
-//         let mut ctx = RefMut::map(self.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap());
-//         ctx.raw_new(bytes)
-//     }
-//
-//     fn get(&self, offset: u32, size: u32) -> Result<Vec<u8>, DeterministicHostError> {
-//         self.instance_ctx().get(offset, size)
-//     }
-//
-//     fn api_version(&self) -> Version {
-//         self.instance_ctx().api_version()
-//     }
-//
-//     fn asc_type_id(
-//         &mut self,
-//         type_id_index: IndexForAscTypeId,
-//     ) -> Result<u32, DeterministicHostError> {
-//         self.instance_ctx_mut().asc_type_id(type_id_index)
-//     }
-// }
-//
-// impl<C: Blockchain> WasmInstance<C> {
-//     pub(crate) fn instance_ctx(&self) -> std::cell::Ref<'_, WasmInstanceContext<C>> {
-//         std::cell::Ref::map(self.instance_ctx.borrow(), |i| i.as_ref().unwrap())
-//     }
-//
-//     pub fn instance_ctx_mut(&self) -> std::cell::RefMut<'_, WasmInstanceContext<C>> {
-//         std::cell::RefMut::map(self.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap())
-//     }
-// }
-
 impl<C: Blockchain> WasmInstanceExtension<C> for WasmInstance<C> {
     fn from_valid_module_with_ctx(
         valid_module: Arc<ValidModule>,
