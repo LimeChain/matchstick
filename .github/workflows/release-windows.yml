@@ -21,7 +21,7 @@ jobs:
         include:
           - name: windows
             os: windows-latest
-            artifact_name: subtest.exe
+            artifact_name: matchstick.exe
             asset_name: binary-windows
             
     steps:

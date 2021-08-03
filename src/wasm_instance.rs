@@ -1,16 +1,14 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
-use std::marker::PhantomData;
-use std::{cell::RefCell, sync::Arc, sync::Mutex, time::Instant};
-use std::{rc::Rc, time::Duration};
+use std::rc::Rc;
+use std::sync::Mutex;
+use std::time::Instant;
 
-use ethabi::{Address, Token};
-
-use anyhow::anyhow;
 use colored::*;
 use graph::data::store::Value;
-use graph::prelude::{Entity, DeploymentHash, o, slog, StopwatchMetrics, Logger};
+use graph::prelude::Entity;
 use graph::runtime::{
-    asc_get, asc_new, try_asc_get, AscHeap, AscPtr, DeterministicHostError, FromAscObj,
+    asc_get, asc_new, try_asc_get, AscPtr,
 };
 use graph::{
     blockchain::{Blockchain, HostFnCtx},
@@ -20,11 +18,9 @@ use graph::{
         HostMetrics,
     },
 };
-use wasmtime::{Memory, Engine, MemoryType};
 use graph_chain_ethereum::runtime::abi::AscUnresolvedContractCall_0_0_4;
 use graph_runtime_wasm::asc_abi::class::{Array, AscEntity, AscEnum, AscString};
 use graph_runtime_wasm::asc_abi::class::{AscEnumArray, EthereumValueKind};
-use graph_mock::MockMetricsRegistry;
 use graph_runtime_wasm::{
     error::DeterminismLevel,
     mapping::{MappingContext, ValidModule},
@@ -32,6 +28,11 @@ use graph_runtime_wasm::{
     module::{ExperimentalFeatures, IntoTrap, WasmInstanceContext},
 };
 use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::TimeoutStopwatch};
+use ethabi::{Address, Token};
+use graph::prelude::*;
+use graph::semver::Version;
+use graph_chain_ethereum::runtime::runtime_adapter::UnresolvedContractCall;
+pub use graph_runtime_wasm::WasmInstance;
 use indexmap::IndexMap;
 use lazy_static::lazy_static;
 
@@ -39,53 +40,28 @@ type Store = Mutex<IndexMap<String, IndexMap<String, HashMap<String, Value>>>>;
 
 lazy_static! {
     static ref FUNCTIONS_MAP: Mutex<IndexMap<String, Vec<Token>>> = Mutex::new(IndexMap::new());
-    static ref STORE: Store = Mutex::from(IndexMap::new());
-    pub static ref LOGS: Mutex<IndexMap<String, Level>> = Mutex::new(IndexMap::new());
-    pub static ref TEST_RESULTS: Mutex<IndexMap<String, bool>> = Mutex::new(IndexMap::new());
+    pub(crate) static ref STORE: Store = Mutex::from(IndexMap::new());
+    static ref LOGS: Mutex<IndexMap<String, Level>> = Mutex::new(IndexMap::new());
+    static ref TEST_RESULTS: Mutex<IndexMap<String, bool>> = Mutex::new(IndexMap::new());
 }
 
 pub enum Level {
-    ERROR,
-    WARNING,
-    INFO,
-    DEBUG,
-    SUCCESS,
-    UNKNOWN,
-}
-
-// struct and impl for FromAscObj copied because they aren't public
-#[allow(dead_code)]
-struct UnresolvedContractCall {
-    pub contract_name: String,
-    pub contract_address: Address,
-    pub function_name: String,
-    pub function_signature: Option<String>,
-    pub function_args: Vec<Token>,
-}
-
-impl FromAscObj<AscUnresolvedContractCall_0_0_4> for UnresolvedContractCall {
-    fn from_asc_obj<H: AscHeap + ?Sized>(
-        asc_call: AscUnresolvedContractCall_0_0_4,
-        heap: &H,
-    ) -> Result<Self, DeterministicHostError> {
-        Ok(UnresolvedContractCall {
-            contract_name: asc_get(heap, asc_call.contract_name)?,
-            contract_address: asc_get(heap, asc_call.contract_address)?,
-            function_name: asc_get(heap, asc_call.function_name)?,
-            function_signature: Some(asc_get(heap, asc_call.function_signature)?),
-            function_args: asc_get(heap, asc_call.function_args)?,
-        })
-    }
+    Error,
+    Warning,
+    Info,
+    Debug,
+    Success,
+    Unknown,
 }
 
 fn level_from_u32(n: u32) -> Level {
     match n {
-        1 => Level::ERROR,
-        2 => Level::WARNING,
-        3 => Level::INFO,
-        4 => Level::DEBUG,
-        5 => Level::SUCCESS,
-        _ => Level::UNKNOWN,
+        1 => Level::Error,
+        2 => Level::Warning,
+        3 => Level::Info,
+        4 => Level::Debug,
+        5 => Level::Success,
+        _ => Level::Unknown,
     }
 }
 
@@ -101,11 +77,11 @@ pub fn get_failed_tests() -> usize {
 
 fn styled(s: &str, n: &Level) -> ColoredString {
     match n {
-        Level::ERROR => format!("ERROR {}", s).red(),
-        Level::WARNING => format!("WARNING {}", s).yellow(),
-        Level::INFO => format!("INFO {}", s).normal(),
-        Level::DEBUG => format!("DEBUG {}", s).cyan(),
-        Level::SUCCESS => format!("SUCCESS {}", s).green(),
+        Level::Error => format!("ERROR {}", s).red(),
+        Level::Warning => format!("WARNING {}", s).yellow(),
+        Level::Info => format!("INFO {}", s).normal(),
+        Level::Debug => format!("DEBUG {}", s).cyan(),
+        Level::Success => format!("SUCCESS {}", s).green(),
         _ => s.normal(),
     }
 }
@@ -124,7 +100,7 @@ pub fn fail_test(msg: String) {
         .insert(test_name, false);
     LOGS.lock()
         .expect("Cannot access LOGS.")
-        .insert(msg, Level::ERROR);
+        .insert(msg, Level::Error);
 }
 
 pub fn flush_logs() {
@@ -149,7 +125,17 @@ pub fn flush_logs() {
     }
 }
 
-trait WICExtension {
+pub trait WasmInstanceExtension<C: graph::blockchain::Blockchain> {
+    fn from_valid_module_with_ctx(
+        valid_module: Arc<ValidModule>,
+        ctx: MappingContext<C>,
+        host_metrics: Arc<HostMetrics>,
+        timeout: Option<Duration>,
+        experimental_features: ExperimentalFeatures,
+    ) -> Result<WasmInstance<C>, anyhow::Error>;
+}
+
+pub trait WICExtension {
     fn log(&mut self, level: u32, msg: AscPtr<AscString>) -> Result<(), HostExportError>;
     fn clear_store(&mut self) -> Result<(), HostExportError>;
     fn register_test(&mut self, name: AscPtr<AscString>) -> Result<(), HostExportError>;
@@ -236,7 +222,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             .insert(name.clone(), true);
         LOGS.lock()
             .expect("Cannot access LOGS.")
-            .insert(name, Level::INFO);
+            .insert(name, Level::Info);
 
         Ok(())
     }
@@ -439,47 +425,55 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+// #[cfg(test)]
+// mod tests {
+//     use crate::module_from_path;
+//     use crate::wasm_instance::WICExtension;
 
-    #[test]
-    fn clear_store_basic_test() {
-        let context = WasmInstanceContext {
-            arena_free_size: 0,
-            arena_start_ptr: 0,
-            ctx: _,
-            deterministic_host_trap: true,
-            experimental_features: ExperimentalFeatures{
-                allow_non_deterministic_ipfs: true
-            },
-            host_metrics: Arc::new(HostMetrics::new(
-                Arc::new(MockMetricsRegistry::new()),
-                &DeploymentHash::new("ipfsMap").expect("Could not create DeploymentHash.").as_str(),
-                StopwatchMetrics::new(
-                    Logger::root(slog::Discard, o!()),
-                    DeploymentHash::new("ipfsMap").expect("Could not create DeploymentHash.").clone(),
-                    Arc::new(MockMetricsRegistry::new()).clone(),
-                ),
-            )),
-            id_of_type,
-            memory: Memory::new(&wasmtime::Store::new(&wasmtime::Engine::default()), ty: MemoryType).expect("Couldn't get memory."),
+//     #[test]
+//     fn tests() {
+//         let module = module_from_path("mocks/Gravity.wasm");
+//         let context = module.instance_ctx.take().take().expect("woops");
+//         context.clear_store();
+//     }
+
+//     #[test]
+//     fn clear_store_basic_test() {
+//         let context = WasmInstanceContext {
+//             arena_free_size: 0,
+//             arena_start_ptr: 0,
+//             ctx: _,
+//             deterministic_host_trap: true,
+//             experimental_features: ExperimentalFeatures{
+//                 allow_non_deterministic_ipfs: true
+//             },
+//             host_metrics: Arc::new(HostMetrics::new(
+//                 Arc::new(MockMetricsRegistry::new()),
+//                 &DeploymentHash::new("ipfsMap").expect("Could not create DeploymentHash.").as_str(),
+//                 StopwatchMetrics::new(
+//                     Logger::root(slog::Discard, o!()),
+//                     DeploymentHash::new("ipfsMap").expect("Could not create DeploymentHash.").clone(),
+//                     Arc::new(MockMetricsRegistry::new()).clone(),
+//                 ),
+//             )),
+//             id_of_type,
+//             memory: Memory::new(&wasmtime::Store::new(&wasmtime::Engine::default()), ty: MemoryType).expect("Couldn't get memory."),
 
 
-        };
-        let mut store = STORE.lock().expect("Couldn't get store.");
-        store.insert("type".to_string(), IndexMap::new());
-        assert_eq!(store.len(), 1);
+//         };
+//         let mut store = STORE.lock().expect("Couldn't get store.");
+//         store.insert("type".to_string(), IndexMap::new());
+//         assert_eq!(store.len(), 1);
 
-        WasmInstanceContext::clear_store(super::WasmInstanceContext);
-        assert_eq!(store.len(), 0);
-    }
+//         WasmInstanceContext::clear_store(super::WasmInstanceContext);
+//         assert_eq!(store.len(), 0);
+//     }
 
-    #[test]
-    fn register_test_duplication_test() {
+//     #[test]
+//     fn register_test_duplication_test() {
 
-    }
-}
+//     }
+// }
 
 fn create_unique_fn_string(
     contract_address: &str,
@@ -491,18 +485,54 @@ fn create_unique_fn_string(
     for element in fn_args.iter() {
         unique_fn_string += &element.to_string();
     }
-    return unique_fn_string;
+    unique_fn_string
 }
 
-#[allow(unused)]
-pub struct WasmInstance<C: Blockchain> {
-    pub instance: wasmtime::Instance,
-    instance_ctx: Rc<RefCell<Option<WasmInstanceContext<C>>>>,
-    __phantom: PhantomData<C>,
-}
+// pub struct WasmInstance<C: Blockchain> {
+//     pub instance: wasmtime::Instance,
+//     instance_ctx: Rc<RefCell<Option<WasmInstanceContext<C>>>>,
+// }
 
-impl<C: Blockchain> WasmInstance<C> {
-    pub fn from_valid_module_with_ctx(
+// impl<C: Blockchain> Drop for WasmInstance<C> {
+//     fn drop(&mut self) {
+//         assert_eq!(Rc::strong_count(&self.instance_ctx), 1);
+//     }
+// }
+//
+// impl<C: Blockchain> AscHeap for WasmInstance<C> {
+//     fn raw_new(&mut self, bytes: &[u8]) -> Result<u32, DeterministicHostError> {
+//         let mut ctx = RefMut::map(self.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap());
+//         ctx.raw_new(bytes)
+//     }
+//
+//     fn get(&self, offset: u32, size: u32) -> Result<Vec<u8>, DeterministicHostError> {
+//         self.instance_ctx().get(offset, size)
+//     }
+//
+//     fn api_version(&self) -> Version {
+//         self.instance_ctx().api_version()
+//     }
+//
+//     fn asc_type_id(
+//         &mut self,
+//         type_id_index: IndexForAscTypeId,
+//     ) -> Result<u32, DeterministicHostError> {
+//         self.instance_ctx_mut().asc_type_id(type_id_index)
+//     }
+// }
+//
+// impl<C: Blockchain> WasmInstance<C> {
+//     pub(crate) fn instance_ctx(&self) -> std::cell::Ref<'_, WasmInstanceContext<C>> {
+//         std::cell::Ref::map(self.instance_ctx.borrow(), |i| i.as_ref().unwrap())
+//     }
+//
+//     pub fn instance_ctx_mut(&self) -> std::cell::RefMut<'_, WasmInstanceContext<C>> {
+//         std::cell::RefMut::map(self.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap())
+//     }
+// }
+
+impl<C: Blockchain> WasmInstanceExtension<C> for WasmInstance<C> {
+    fn from_valid_module_with_ctx(
         valid_module: Arc<ValidModule>,
         ctx: MappingContext<C>,
         host_metrics: Arc<HostMetrics>,
@@ -510,26 +540,21 @@ impl<C: Blockchain> WasmInstance<C> {
         experimental_features: ExperimentalFeatures,
     ) -> Result<WasmInstance<C>, anyhow::Error> {
         let mut linker = wasmtime::Linker::new(&wasmtime::Store::new(valid_module.module.engine()));
+        let host_fns = ctx.host_fns.cheap_clone();
+        let api_version = ctx.host_exports.api_version.clone();
 
         let shared_ctx: Rc<RefCell<Option<WasmInstanceContext<C>>>> = Rc::new(RefCell::new(None));
-        let host_fns = ctx.host_fns.cheap_clone();
-
         let ctx: Rc<RefCell<Option<MappingContext<C>>>> = Rc::new(RefCell::new(Some(ctx)));
 
         let timeout_stopwatch = Arc::new(std::sync::Mutex::new(TimeoutStopwatch::start_new()));
         if let Some(timeout) = timeout {
-            let interrupt_handle = linker
-                .store()
-                .interrupt_handle()
-                .expect("Could not interrupt handle.");
+            let interrupt_handle = linker.store().interrupt_handle().unwrap();
             let timeout_stopwatch = timeout_stopwatch.clone();
             graph::spawn_allow_panic(async move {
                 let minimum_wait = Duration::from_secs(1);
                 loop {
-                    let duration = *timeout_stopwatch
-                        .lock()
-                        .expect("Could not unlock timeout stopwatch.");
-                    let time_left = timeout.checked_sub(duration.elapsed());
+                    let time_left =
+                        timeout.checked_sub(timeout_stopwatch.lock().unwrap().elapsed());
                     match time_left {
                         None => break interrupt_handle.interrupt(), // Timed out.
 
@@ -554,30 +579,30 @@ impl<C: Blockchain> WasmInstance<C> {
 
                 for module in modules {
                     let func_shared_ctx = Rc::downgrade(&shared_ctx);
-                    let valid_module = valid_module.clone();
-                    let host_metrics = host_metrics.clone();
-                    let timeout_stopwatch = timeout_stopwatch.clone();
+                    let valid_module = valid_module.cheap_clone();
+                    let host_metrics = host_metrics.cheap_clone();
+                    let timeout_stopwatch = timeout_stopwatch.cheap_clone();
                     let ctx = ctx.cheap_clone();
                     linker.func(
                         module,
                         $wasm_name,
                         move |caller: wasmtime::Caller, $($param: u32),*| {
-                            let instance = func_shared_ctx.upgrade().expect("Could not get instance.");
+                            let instance = func_shared_ctx.upgrade().unwrap();
                             let mut instance = instance.borrow_mut();
 
                             if instance.is_none() {
                                 *instance = Some(WasmInstanceContext::from_caller(
                                     caller,
-                                    ctx.borrow_mut().take().expect("Could not borrow ctx as mutable."),
-                                    valid_module.clone(),
-                                    host_metrics.clone(),
+                                    ctx.borrow_mut().take().unwrap(),
+                                    valid_module.cheap_clone(),
+                                    host_metrics.cheap_clone(),
                                     timeout,
-                                    timeout_stopwatch.clone(),
+                                    timeout_stopwatch.cheap_clone(),
                                     experimental_features.clone()
-                                ).expect("Could not generate instance."))
+                                ).unwrap())
                             }
 
-                            let instance = instance.as_mut().expect("Could not borrow instance as mutable.");
+                            let instance = instance.as_mut().unwrap();
                             let _section = instance.host_metrics.stopwatch.start_section($section);
 
                             let result = instance.$rust_name(
@@ -590,8 +615,12 @@ impl<C: Blockchain> WasmInstance<C> {
                                         DeterminismLevel::Deterministic => {
                                             instance.deterministic_host_trap = true;
                                         },
-                                        _ => {},
+                                        DeterminismLevel::PossibleReorg => {
+                                            instance.possible_reorg = true;
+                                        },
+                                        DeterminismLevel::Unimplemented | DeterminismLevel::NonDeterministic => {},
                                     }
+
                                     Err(IntoTrap::into_trap(e))
                                 }
                             }
@@ -613,15 +642,12 @@ impl<C: Blockchain> WasmInstance<C> {
                 let host_fn = host_fn.cheap_clone();
                 linker.func(module, host_fn.name, move |call_ptr: u32| {
                     let start = Instant::now();
-                    let instance = func_shared_ctx
-                        .upgrade()
-                        .expect("Could not upgrade shared context.");
+                    let instance = func_shared_ctx.upgrade().unwrap();
                     let mut instance = instance.borrow_mut();
 
                     let instance = match &mut *instance {
                         Some(instance) => instance,
 
-                        // Happens when calling a host fn in Wasm start.
                         None => {
                             return Err(anyhow!(
                                 "{} is not allowed in global variables",
@@ -666,6 +692,7 @@ impl<C: Blockchain> WasmInstance<C> {
         link!("ethereum.decode", ethereum_decode, params_ptr, data_ptr);
 
         link!("abort", abort, message_ptr, file_name_ptr, line, column);
+
         link!(
             "mockFunction",
             mock_function,
@@ -675,8 +702,8 @@ impl<C: Blockchain> WasmInstance<C> {
             fn_args_ptr,
             return_value_ptr
         );
-        link!("clearStore", clear_store,);
 
+        link!("clearStore", clear_store,);
         link!(
             "store.get",
             mock_store_get,
@@ -692,13 +719,6 @@ impl<C: Blockchain> WasmInstance<C> {
             id,
             data
         );
-        link!(
-            "store.remove",
-            mock_store_remove,
-            "host_export_store_remove",
-            entity,
-            id
-        );
 
         link!("ipfs.cat", ipfs_cat, "host_export_ipfs_cat", hash_ptr);
         link!(
@@ -710,6 +730,8 @@ impl<C: Blockchain> WasmInstance<C> {
             user_data,
             flags
         );
+
+        link!("store.remove", mock_store_remove, entity_ptr, id_ptr);
 
         link!("typeConversion.bytesToString", bytes_to_string, ptr);
         link!("typeConversion.bytesToHex", bytes_to_hex, ptr);
@@ -762,7 +784,7 @@ impl<C: Blockchain> WasmInstance<C> {
 
         link!("ens.nameByHash", ens_name_by_hash, ptr);
 
-        link!("log.log", log, level, msg_ptr);
+        link!("log.log", log_log, level, msg_ptr);
 
         link!("registerTest", register_test, name_ptr);
 
@@ -775,6 +797,10 @@ impl<C: Blockchain> WasmInstance<C> {
             expected_val_ptr
         );
 
+        if api_version <= Version::new(0, 0, 4) {
+            link!("arweave.transactionData", arweave_transaction_data, ptr);
+            link!("box.profile", box_profile, ptr);
+        }
         link!("assert.equals", assert_equals, expected_ptr, actual_ptr);
 
         let instance = linker.instantiate(&valid_module.module)?;
@@ -782,9 +808,7 @@ impl<C: Blockchain> WasmInstance<C> {
         if shared_ctx.borrow().is_none() {
             *shared_ctx.borrow_mut() = Some(WasmInstanceContext::from_instance(
                 &instance,
-                ctx.borrow_mut()
-                    .take()
-                    .expect("Could not borrow context as mutable."),
+                ctx.borrow_mut().take().unwrap(),
                 valid_module,
                 host_metrics,
                 timeout,
@@ -793,10 +817,21 @@ impl<C: Blockchain> WasmInstance<C> {
             )?);
         }
 
+        match api_version {
+            version if version <= Version::new(0, 0, 4) => {}
+            _ => {
+                instance
+                    .get_func("_start")
+                    .context("`_start` function not found")?
+                    .typed::<(), ()>()?
+                    .call(())
+                    .unwrap();
+            }
+        }
+
         Ok(WasmInstance {
             instance,
             instance_ctx: shared_ctx,
-            __phantom: PhantomData::default(),
         })
     }
 }

@@ -20,11 +20,11 @@ jobs:
         include:
           - name: linux
             os: ubuntu-latest
-            artifact_name: subtest
+            artifact_name: matchstick
             asset_name: binary-linux
           - name: macos
             os: macos-latest
-            artifact_name: subtest
+            artifact_name: matchstick
             asset_name: binary-macos
             
     steps:
