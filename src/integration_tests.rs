@@ -172,4 +172,12 @@ mod integration_tests {
         assert_eq!(failed_tests, 0);
         clear_test_results();
     }
+
+    #[test]
+    #[should_panic]
+    fn duplicate_test_name() {
+        let module = module_from_path("mocks/wasm/16_duplicate_test_name.wasm");
+        let run_tests = module.instance.get_func("runTests").unwrap();
+        run_tests.call(&[]).unwrap();
+    }
 }
