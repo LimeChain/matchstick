@@ -6,7 +6,7 @@ use colored::*;
 use graph::components::store::DeploymentId;
 use graph::{
     components::store::DeploymentLocator,
-    prelude::{o, slog, DeploymentHash, HostMetrics, Logger, StopwatchMetrics},
+    prelude::{slog, DeploymentHash, HostMetrics, Logger, StopwatchMetrics},
     semver::Version,
 };
 use graph_chain_ethereum::Chain;
@@ -26,6 +26,7 @@ use crate::wasm_instance::WasmInstance;
 mod subgraph_store;
 mod wasm_instance;
 mod writable_store;
+mod integration_tests;
 
 fn get_build_path(sequence: Sequence, datasource_name: String) -> String {
     for mapping in sequence {
@@ -49,6 +50,52 @@ fn get_build_path(sequence: Sequence, datasource_name: String) -> String {
         }
     }
     String::from("")
+}
+
+pub fn module_from_path(path_to_wasm: &str) -> WasmInstance<Chain> {
+    let subgraph_id = "ipfsMap";
+    let deployment_id =
+        &DeploymentHash::new(subgraph_id).expect("Could not create DeploymentHash.");
+    let deployment = DeploymentLocator::new(DeploymentId::new(42), deployment_id.clone());
+    let data_source = mock_data_source(&path_to_wasm, Version::new(0, 0, 4));
+
+    let metrics_registry = Arc::new(MockMetricsRegistry::new());
+
+    let stopwatch_metrics = StopwatchMetrics::new(
+        Logger::root(slog::Discard, graph::prelude::o!()),
+        deployment_id.clone(),
+        metrics_registry.clone(),
+    );
+
+    let host_metrics = Arc::new(HostMetrics::new(
+        metrics_registry,
+        deployment_id.as_str(),
+        stopwatch_metrics,
+    ));
+
+    let experimental_features = ExperimentalFeatures {
+        allow_non_deterministic_ipfs: true,
+    };
+
+    let mock_subgraph_store = MockSubgraphStore {};
+    let valid_module = Arc::new(
+        ValidModule::new(Arc::new(std::fs::read(path_to_wasm).unwrap()).as_ref())
+            .expect("Could not create ValidModule."),
+    );
+
+    <WasmInstance<Chain> as WasmInstanceExtension<Chain>>::from_valid_module_with_ctx(
+        valid_module,
+        mock_context(
+            deployment,
+            data_source,
+            Arc::from(mock_subgraph_store),
+            Version::new(0, 0, 4),
+        ),
+        host_metrics,
+        None,
+        experimental_features,
+    )
+        .expect("Could not create WasmInstance from valid module with context.")
 }
 
 pub fn main() {
@@ -112,53 +159,7 @@ pub fn main() {
     }
 
     let path_to_wasm = format!("build/{}", path);
-
-    let subgraph_id = "ipfsMap";
-    let deployment_id =
-        &DeploymentHash::new(subgraph_id).expect("Could not create DeploymentHash.");
-
-    let deployment = DeploymentLocator::new(DeploymentId::new(42), deployment_id.clone());
-
-    let data_source = mock_data_source(&path_to_wasm, Version::new(0, 0, 4));
-
-    let metrics_registry = Arc::new(MockMetricsRegistry::new());
-
-    let stopwatch_metrics = StopwatchMetrics::new(
-        Logger::root(slog::Discard, o!()),
-        deployment_id.clone(),
-        metrics_registry.clone(),
-    );
-
-    let host_metrics = Arc::new(HostMetrics::new(
-        metrics_registry,
-        deployment_id.as_str(),
-        stopwatch_metrics,
-    ));
-
-    let experimental_features = ExperimentalFeatures {
-        allow_non_deterministic_ipfs: true,
-    };
-
-    let valid_module = Arc::new(
-        ValidModule::new(Arc::new(std::fs::read(path_to_wasm).unwrap()).as_ref())
-            .expect("Could not create ValidModule."),
-    );
-
-    let mock_subgraph_store = MockSubgraphStore {};
-
-    let module = <WasmInstance<Chain> as WasmInstanceExtension<Chain>>::from_valid_module_with_ctx(
-        valid_module,
-        mock_context(
-            deployment,
-            data_source,
-            Arc::from(mock_subgraph_store),
-            Version::new(0, 0, 4),
-        ),
-        host_metrics,
-        None,
-        experimental_features,
-    )
-    .expect("Could not create WasmInstance from valid module with context.");
+    let module = module_from_path(&path_to_wasm);
 
     let run_tests = module
         .instance
