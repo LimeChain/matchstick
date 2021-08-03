@@ -365,7 +365,7 @@ Here are some of the areas we're set to focus on from here on out:
 - Improvements and feature requests.
 
 Known issues:
-- When runTests() is imported in the mappings file the deployment to the hosted service will break. For now, it's required to remove/comment out the import.
+- When `runTests()` is imported in the mappings file the deployment to the hosted service will break. For now, it's required to remove/comment out the import.
 
 You can check out the full list of tasks [here](https://github.com/LimeChain/matchstick/projects/2).
 
