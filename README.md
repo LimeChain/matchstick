@@ -4,7 +4,7 @@
 ![miro2](https://user-images.githubusercontent.com/32264020/123761690-bcf37f80-d8ca-11eb-9950-6452d7e972cd.jpeg)
 
 ## Quick Start 🚀
-The release binary comes in two flavours - for **macOS** and **Linux** (Windows coming soon). To add **Matchstick** to your subgraph project just open up a terminal, navigate to the root folder of your project and simply run the follow these steps (depending on your OS):
+The release binary comes in three flavours - for **MacOS**, **Linux** and **Windows**. To add **Matchstick** to your subgraph project just open up a terminal, navigate to the root folder of your project and simply run the follow these steps (depending on your OS):
 
 ### MacOS
 
@@ -14,12 +14,22 @@ mv binary-macos matchstick &&
 chmod a+x matchstick
 ```
 
+❗ If you don't have Postgres installed, you will need to install it with:
+```
+brew install postgres
+```
+
 ### Linux
 
 ```
 curl -OL https://github.com/LimeChain/matchstick/releases/download/0.0.12/binary-linux &&
 mv binary-linux matchstick &&
 chmod a+x matchstick
+```
+
+❗ If you don't have Postgres installed, you will need to install it with (depending on your distro):
+```
+sudo apt install postgresql
 ```
 
 **Note:** This command is aimed at Ubuntu/Debian systems, but can be easily tweaked to fit any Linux distro.
