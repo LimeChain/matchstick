@@ -16,7 +16,7 @@ chmod a+x matchstick
 
 ❗ If you don't have Postgres installed, you will need to install it with:
 ```
-brew install postgres
+brew install postgresql
 ```
 
 ### Linux 🐧
