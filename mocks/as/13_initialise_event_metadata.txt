@@ -1,0 +1,20 @@
+    test("Can initialise event with default metadata", () => {
+        let base: ethereum.Event = new NewGravatar();
+        let newGravatarEvent = addMetadata(base);
+        let DEFAULT_LOG_TYPE = "default_log_type";
+        let DEFAULT_ADDRESS = "0xA16081F360e3847006dB660bae1c6d1b2e17eC2A";
+        let DEFAULT_BLOCK_HASH = "0xA16081F360e3847006dB660bae1c6d1b2e17eC2A";
+        let DEFAULT_LOG_INDEX = 1;
+        let DEFAULT_PARAMS_FIRST_ELEMENT_NAME = "name";
+
+        // String
+        assert.equals(ethereum.Value.fromString(DEFAULT_LOG_TYPE), ethereum.Value.fromString(newGravatarEvent.logType));
+        // Address
+        assert.equals(ethereum.Value.fromAddress(Address.fromString(DEFAULT_ADDRESS)), ethereum.Value.fromAddress(newGravatarEvent.address));
+        // BigInt
+        assert.equals(ethereum.Value.fromSignedBigInt(BigInt.fromI32(DEFAULT_LOG_INDEX)), ethereum.Value.fromSignedBigInt(newGravatarEvent.logIndex));
+        // Bytes & nested objects
+        assert.equals(ethereum.Value.fromBytes(Bytes.fromHexString(DEFAULT_BLOCK_HASH) as Bytes), ethereum.Value.fromBytes(newGravatarEvent.block.hash));
+        // Array & nested objects
+        assert.equals(ethereum.Value.fromString(DEFAULT_PARAMS_FIRST_ELEMENT_NAME), ethereum.Value.fromString(newGravatarEvent.parameters[0].name));
+    });

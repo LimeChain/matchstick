@@ -1,0 +1,11 @@
+test("assert_field_equals_fails_field_not_equal_to_expected", () => {
+        let gravatar = new Gravatar("23");
+        gravatar.save();
+
+        assert.fieldEquals(
+            GRAVATAR_ENTITY_TYPE,
+            "23",
+            "id",
+            "23444444",
+        );
+    });

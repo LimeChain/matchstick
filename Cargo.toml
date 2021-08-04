@@ -33,6 +33,5 @@ serde_yaml = "0.8.17"
 # Include protection against stack overflow when parsing from this PR: https://github.com/graphql-rust/graphql-parser/commit/45167b53e9533c331298683577ba8df7e43480ac
 graphql-parser = { git = "https://github.com/graphql-rust/graphql-parser", rev = "45167b53e9533c331298683577ba8df7e43480ac" }
 
-
-[profile.release]
-debug-assertions = true
+[dev-dependencies]
+serial_test = "0.5.1"
