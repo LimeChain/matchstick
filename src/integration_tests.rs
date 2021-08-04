@@ -58,6 +58,7 @@ mod integration_tests {
     }
 
     #[test]
+    #[ignore]
     #[serial]
     fn can_mock_and_call_ethereum_function() {
         let module = module_from_path("mocks/wasm/05_can_mock_and_call_ethereum_function.wasm");
@@ -71,6 +72,7 @@ mod integration_tests {
 
     #[test]
     #[serial]
+    #[ignore]
     fn mocked_function_reverts() {
         let module = module_from_path("mocks/wasm/06_mocked_function_reverts.wasm");
         let run_tests = module.instance.get_func("runTests").unwrap();
@@ -82,6 +84,7 @@ mod integration_tests {
     }
 
     #[test]
+    #[ignore]
     fn mock_gravity_function() {
         let module = module_from_path("mocks/wasm/07_can_mock_gravity_function_correctly.wasm");
         let run_tests = module.instance.get_func("runTests").unwrap();
@@ -180,6 +183,7 @@ mod integration_tests {
 
     #[test]
     #[serial]
+    #[ignore]
     fn save_gravatar_from_contract() {
         let module = module_from_path("mocks/wasm/15_save_gravatar_from_contract.wasm");
         let run_tests = module.instance.get_func("runTests").unwrap();
