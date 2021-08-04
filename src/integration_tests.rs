@@ -131,7 +131,9 @@ mod integration_tests {
     #[test]
     #[serial]
     fn return_null_when_calling_entity_load_and_entity_missing() {
-        let module = module_from_path("mocks/wasm/11_returns_null_when_calling_entity_load_and_entity_missing.wasm");
+        let module = module_from_path(
+            "mocks/wasm/11_returns_null_when_calling_entity_load_and_entity_missing.wasm",
+        );
         let run_tests = module.instance.get_func("runTests").unwrap();
         run_tests.call(&[]).unwrap();
 

@@ -380,7 +380,10 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
                     .as_slice(),
             )?;
         } else {
-            panic!("Key: '{}' not found in map. Please mock the function before calling it.", &unique_fn_string);
+            panic!(
+                "Key: '{}' not found in map. Please mock the function before calling it.",
+                &unique_fn_string
+            );
         }
         Ok(return_val)
     }
