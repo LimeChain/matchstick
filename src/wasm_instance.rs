@@ -28,6 +28,7 @@ lazy_static! {
     static ref STORE: Store = Mutex::from(IndexMap::new());
     pub static ref LOGS: Mutex<IndexMap<String, Level>> = Mutex::new(IndexMap::new());
     pub static ref TEST_RESULTS: Mutex<IndexMap<String, bool>> = Mutex::new(IndexMap::new());
+    static ref REVERTS_IDENTIFIER: Vec<Token> = vec!(Token::Bytes(vec!(255,255,255,255,255,255,255)));
 }
 
 pub enum Level {
@@ -164,6 +165,7 @@ trait WICExtension {
         fn_signature_ptr: AscPtr<AscString>,
         fn_args_ptr: u32,
         return_value_ptr: u32,
+        reverts: u32,
     ) -> Result<(), HostExportError>;
 }
 
@@ -373,19 +375,26 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let map = FUNCTIONS_MAP.lock().expect("Couldn't get map.");
         let return_val;
         if map.contains_key(&unique_fn_string) {
+
+            if *map.get(&unique_fn_string).unwrap() == REVERTS_IDENTIFIER.clone() {
+                return Ok(AscPtr::null());
+            }
+
             return_val = asc_new(
                 self,
                 map.get(&unique_fn_string)
                     .expect("Couldn't get value from map.")
                     .as_slice(),
             )?;
+
+            return Ok(return_val);
+
         } else {
             panic!(
                 "Key: '{}' not found in map. Please mock the function before calling it.",
                 &unique_fn_string
             );
         }
-        Ok(return_val)
     }
 
     fn mock_function(
@@ -395,6 +404,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         fn_signature_ptr: AscPtr<AscString>,
         fn_args_ptr: u32,
         return_value_ptr: u32,
+        reverts: u32
     ) -> Result<(), HostExportError> {
         let contract_address: Address = asc_get(self, contract_address_ptr.into())?;
         let fn_name: String = asc_get(self, fn_name_ptr)?;
@@ -413,7 +423,13 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             fn_args,
         );
         let mut map = FUNCTIONS_MAP.lock().expect("Couldn't get map.");
-        map.insert(unique_fn_string, return_value);
+
+        if reverts == 1 {
+            map.insert(unique_fn_string, REVERTS_IDENTIFIER.clone());
+        } else {
+            map.insert(unique_fn_string, return_value);
+        }
+
         Ok(())
     }
 }
@@ -600,7 +616,8 @@ impl<C: Blockchain> WasmInstanceExtension<C> for WasmInstance<C> {
             fn_name_ptr,
             fn_signature_ptr,
             fn_args_ptr,
-            return_value_ptr
+            return_value_ptr,
+            reverts
         );
 
         link!("clearStore", clear_store,);
@@ -684,7 +701,7 @@ impl<C: Blockchain> WasmInstanceExtension<C> for WasmInstance<C> {
 
         link!("ens.nameByHash", ens_name_by_hash, ptr);
 
-        link!("log.log", log_log, level, msg_ptr);
+        link!("log.log", log, level, msg_ptr);
 
         link!("registerTest", register_test, name_ptr);
 
