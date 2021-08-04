@@ -28,7 +28,8 @@ lazy_static! {
     static ref STORE: Store = Mutex::from(IndexMap::new());
     pub static ref LOGS: Mutex<IndexMap<String, Level>> = Mutex::new(IndexMap::new());
     pub static ref TEST_RESULTS: Mutex<IndexMap<String, bool>> = Mutex::new(IndexMap::new());
-    static ref REVERTS_IDENTIFIER: Vec<Token> = vec!(Token::Bytes(vec!(255,255,255,255,255,255,255)));
+    static ref REVERTS_IDENTIFIER: Vec<Token> =
+        vec!(Token::Bytes(vec!(255, 255, 255, 255, 255, 255, 255)));
 }
 
 pub enum Level {
@@ -375,7 +376,6 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let map = FUNCTIONS_MAP.lock().expect("Couldn't get map.");
         let return_val;
         if map.contains_key(&unique_fn_string) {
-
             if *map.get(&unique_fn_string).unwrap() == REVERTS_IDENTIFIER.clone() {
                 return Ok(AscPtr::null());
             }
@@ -388,7 +388,6 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             )?;
 
             return Ok(return_val);
-
         } else {
             panic!(
                 "Key: '{}' not found in map. Please mock the function before calling it.",
@@ -404,7 +403,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         fn_signature_ptr: AscPtr<AscString>,
         fn_args_ptr: u32,
         return_value_ptr: u32,
-        reverts: u32
+        reverts: u32,
     ) -> Result<(), HostExportError> {
         let contract_address: Address = asc_get(self, contract_address_ptr.into())?;
         let fn_name: String = asc_get(self, fn_name_ptr)?;
@@ -464,13 +463,20 @@ impl<C: Blockchain> WasmInstanceExtension<C> for WasmInstance<C> {
 
         let timeout_stopwatch = Arc::new(std::sync::Mutex::new(TimeoutStopwatch::start_new()));
         if let Some(timeout) = timeout {
-            let interrupt_handle = linker.store().interrupt_handle().expect("Could not get interrupt_handle.");
+            let interrupt_handle = linker
+                .store()
+                .interrupt_handle()
+                .expect("Could not get interrupt_handle.");
             let timeout_stopwatch = timeout_stopwatch.clone();
             graph::spawn_allow_panic(async move {
                 let minimum_wait = Duration::from_secs(1);
                 loop {
-                    let time_left =
-                        timeout.checked_sub(timeout_stopwatch.lock().expect("Could not get timeout.checked_sub").elapsed());
+                    let time_left = timeout.checked_sub(
+                        timeout_stopwatch
+                            .lock()
+                            .expect("Could not get timeout.checked_sub")
+                            .elapsed(),
+                    );
                     match time_left {
                         None => break interrupt_handle.interrupt(), // Timed out.
 
@@ -725,7 +731,9 @@ impl<C: Blockchain> WasmInstanceExtension<C> for WasmInstance<C> {
         if shared_ctx.borrow().is_none() {
             *shared_ctx.borrow_mut() = Some(WasmInstanceContext::from_instance(
                 &instance,
-                ctx.borrow_mut().take().expect("Could not take ctx as a mutable borrow."),
+                ctx.borrow_mut()
+                    .take()
+                    .expect("Could not take ctx as a mutable borrow."),
                 valid_module,
                 host_metrics,
                 timeout,
