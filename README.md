@@ -294,7 +294,7 @@ Users can mock contract calls:
 ```typescript
 import { addMetadata, assert, createMockedFunction, clearStore, test } from "matchstick-as/assembly/index";
 import { Gravity } from "../../generated/Gravity/Gravity";
-import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
+import { Address, BigInt, ethereum } from "@graphprotocol/graph-as";
 
 let contractAddress = Address.fromString("0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7");
 let expectedResult = Address.fromString("0x90cBa2Bbb19ecc291A12066Fd8329D65FA1f1947");
@@ -330,7 +330,7 @@ Running the assert.fieldEquals() function will check for equality of the given f
 Users can *inject* default transaction data into any event object, as long as it inherits the base `ethereum.Event`. The following example shows how you can wrap any event with default metadata:
 ```typescript
 import { addMetadata } from "matchstick-as/assembly/index";
-import { Address, BigInt, Bytes, ethereum } from "@graphprotocol/graph-ts";
+import { Address, BigInt, Bytes, ethereum } from "@graphprotocol/graph-as";
 import { NewGravatar } from "../generated/Gravity/Gravity";
 
 let base: ethereum.Event = new NewGravatar();

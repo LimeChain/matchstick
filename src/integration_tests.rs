@@ -178,6 +178,19 @@ mod integration_tests {
     fn duplicate_test_name() {
         let module = module_from_path("mocks/wasm/16_duplicate_test_name.wasm");
         let run_tests = module.instance.get_func("runTests").unwrap();
+
         run_tests.call(&[]).unwrap();
+        clear_test_results();
+    }
+
+    #[test]
+    fn store_remove_fails_when_no_entity_found() {
+        let module = module_from_path("mocks/wasm/17_store_remove_fails_when_no_entity_found.wasm");
+        let run_tests = module.instance.get_func("runTests").unwrap();
+        run_tests.call(&[]).unwrap();
+
+        let failed_tests = get_failed_tests();
+        assert_eq!(failed_tests, 1);
+        clear_test_results();
     }
 }
