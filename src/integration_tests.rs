@@ -192,7 +192,7 @@ mod integration_tests {
 
     #[test]
     #[serial]
-    #[should_panic]
+    #[should_panic(expected = "❌ ❌ ❌  Test with name 'duplicate key' already exists.")]
     fn duplicate_test_name() {
         let module = module_from_path("mocks/wasm/16_duplicate_test_name.wasm");
         let run_tests = module.instance.get_func("runTests").unwrap();
