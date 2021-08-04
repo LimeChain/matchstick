@@ -3,12 +3,12 @@ use std::time::Instant;
 
 use clap::{App, Arg};
 use colored::*;
-use graph::components::store::DeploymentId;
 use graph::{
     components::store::DeploymentLocator,
-    prelude::{slog, DeploymentHash, HostMetrics, Logger, StopwatchMetrics},
+    prelude::{DeploymentHash, HostMetrics, Logger, slog, StopwatchMetrics},
     semver::Version,
 };
+use graph::components::store::DeploymentId;
 use graph_chain_ethereum::Chain;
 use graph_mock::MockMetricsRegistry;
 use graph_runtime_test::common::{mock_context, mock_data_source};
@@ -79,7 +79,8 @@ pub fn module_from_path(path_to_wasm: &str) -> WasmInstance<Chain> {
 
     let mock_subgraph_store = MockSubgraphStore {};
     let valid_module = Arc::new(
-        ValidModule::new(Arc::new(std::fs::read(path_to_wasm).unwrap()).as_ref())
+        ValidModule::new(Arc::new(std::fs::read(path_to_wasm).expect(r#"❌  Could not resolve path to wasm file. Please ensure that the datasource name you're providing is valid.
+        It should be the same as the 'name' field in the subgraph.yaml file, corresponding to the datasource you want to test."#)).as_ref())
             .expect("Could not create ValidModule."),
     );
 
@@ -95,7 +96,7 @@ pub fn module_from_path(path_to_wasm: &str) -> WasmInstance<Chain> {
         None,
         experimental_features,
     )
-    .expect("Could not create WasmInstance from valid module with context.")
+        .expect("Could not create WasmInstance from valid module with context.")
 }
 
 pub fn main() {
@@ -121,8 +122,8 @@ ___  ___      _       _         _   _      _
 | |  | | (_| | || (__| | | \__ \ |_| | (__|   <
 \_|  |_/\__,_|\__\___|_| |_|___/\__|_|\___|_|\_\
                                                 "#)
-        .to_string()
-        .bright_red()
+            .to_string()
+            .bright_red()
     );
 
     let now = Instant::now();
