@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod integration_tests {
     use crate::module_from_path;
-    use crate::wasm_instance::{clear_test_results, get_failed_tests, clear_function_mocks};
+    use crate::wasm_instance::{clear_function_mocks, clear_test_results, get_failed_tests};
     use serial_test::serial;
 
     fn cleanup() {
@@ -233,7 +233,9 @@ mod integration_tests {
 
     #[test]
     #[serial]
-    #[should_panic(expected = "❌ ❌ ❌  Test with name 'duplicate key' already exists.")]
+    #[should_panic(
+        expected = "Call reverted, probably because an `assert` or `require` in the contract failed, consider using `try_getGravatar` to handle this in the mapping."
+    )]
     fn mocked_function_revert_crash_fail() {
         let module = module_from_path("mocks/wasm/19_mocked_function_revert_crash_fail.wasm");
         let run_tests = module.instance.get_func("runTests").unwrap();

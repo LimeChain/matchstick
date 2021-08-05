@@ -1,0 +1,7 @@
+    test("Crashes when getting gravatar from contract with getGravatar", () => {
+        let contractAddress = Address.fromString("0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7");
+        createMockedFunction(contractAddress, "getGravatar", "getGravatar(address):(string,string)")
+            .withArgs([ethereum.Value.fromAddress(contractAddress)])
+            .reverts();
+        saveGravatarFromContract("48");
+    });
