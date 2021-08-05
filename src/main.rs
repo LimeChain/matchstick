@@ -175,13 +175,14 @@ ___  ___      _       _         _   _      _
     println!("{}", ("Igniting tests 🔥\n").to_string().bright_red());
 
     #[allow(non_fmt_panic)]
-        run_tests.call(&[]).unwrap_or_else(|_| {
+        run_tests.call(&[]).unwrap_or_else(|err| {
+
         fail_test("".to_string());
         flush_logs();
 
         let msg = String::from(r#"
-        ❌ ❌ ❌  Unexpected error occured while running tests.
-        Please double check the syntax in your test file.
+        ❌ ❌ ❌  Unexpected error occurred while running tests.
+        See error stack trace above and double check the syntax in your test file.
 
         This usually happens for two reasons:
         1. You passed a 'null' value to one of our functions - assert.fieldEquals(), store.get(), store.set().
@@ -189,8 +190,9 @@ ___  ___      _       _         _   _      _
 
         Please ensure that you have proper null checks in your tests.
         You can debug your test file using the 'log()' function, provided by matchstick-as (import { log } from "matchstick-as/assembly/log").
-        "#).red();
+        "#);
 
+        let msg = format!("{}\n {}", err, msg).red();
         panic!("{}", msg);
     });
 

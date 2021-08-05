@@ -1,8 +1,13 @@
 #[cfg(test)]
 mod integration_tests {
     use crate::module_from_path;
-    use crate::wasm_instance::{clear_test_results, get_failed_tests};
+    use crate::wasm_instance::{clear_test_results, get_failed_tests, clear_function_mocks};
     use serial_test::serial;
+
+    fn cleanup() {
+        clear_test_results();
+        clear_function_mocks();
+    }
 
     #[test]
     #[serial]
@@ -14,7 +19,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 1);
-        clear_test_results();
+        cleanup();
     }
 
     #[test]
@@ -27,7 +32,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 1);
-        clear_test_results();
+        cleanup();
     }
 
     #[test]
@@ -41,7 +46,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 1);
-        clear_test_results();
+        cleanup();
     }
 
     #[test]
@@ -54,11 +59,10 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 0);
-        clear_test_results();
+        cleanup();
     }
 
     #[test]
-    #[ignore]
     #[serial]
     fn can_mock_and_call_ethereum_function() {
         let module = module_from_path("mocks/wasm/05_can_mock_and_call_ethereum_function.wasm");
@@ -67,24 +71,23 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 0);
-        clear_test_results();
+        cleanup();
     }
 
     #[test]
     #[serial]
-    #[ignore]
     fn mocked_function_reverts() {
-        let module = module_from_path("mocks/wasm/06_mocked_function_reverts.wasm");
+        let module = module_from_path("mocks/wasm/06_mock_function_reverts.wasm");
         let run_tests = module.instance.get_func("runTests").unwrap();
         run_tests.call(&[]).unwrap();
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 0);
-        clear_test_results();
+        cleanup();
     }
 
     #[test]
-    #[ignore]
+    #[serial]
     fn mock_gravity_function() {
         let module = module_from_path("mocks/wasm/07_can_mock_gravity_function_correctly.wasm");
         let run_tests = module.instance.get_func("runTests").unwrap();
@@ -92,7 +95,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 0);
-        clear_test_results();
+        cleanup();
     }
 
     #[test]
@@ -104,7 +107,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 0);
-        clear_test_results();
+        cleanup();
     }
 
     #[test]
@@ -116,7 +119,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 0);
-        clear_test_results();
+        cleanup();
     }
 
     #[test]
@@ -128,7 +131,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 0);
-        clear_test_results();
+        cleanup();
     }
 
     #[test]
@@ -142,7 +145,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 0);
-        clear_test_results();
+        cleanup();
     }
 
     #[test]
@@ -154,7 +157,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 0);
-        clear_test_results();
+        cleanup();
     }
 
     #[test]
@@ -166,7 +169,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 0);
-        clear_test_results();
+        cleanup();
     }
 
     #[test]
@@ -178,12 +181,11 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 0);
-        clear_test_results();
+        cleanup();
     }
 
     #[test]
     #[serial]
-    #[ignore]
     fn save_gravatar_from_contract() {
         let module = module_from_path("mocks/wasm/15_save_gravatar_from_contract.wasm");
         let run_tests = module.instance.get_func("runTests").unwrap();
@@ -191,7 +193,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 0);
-        clear_test_results();
+        cleanup();
     }
 
     #[test]
@@ -202,7 +204,7 @@ mod integration_tests {
         let run_tests = module.instance.get_func("runTests").unwrap();
 
         run_tests.call(&[]).unwrap();
-        clear_test_results();
+        cleanup();
     }
 
     #[test]
@@ -214,6 +216,29 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 1);
-        clear_test_results();
+        cleanup();
+    }
+
+    #[test]
+    #[serial]
+    fn mocked_function_revert_graceful_fail() {
+        let module = module_from_path("mocks/wasm/18_mocked_function_revert_graceful_fail.wasm");
+        let run_tests = module.instance.get_func("runTests").unwrap();
+        run_tests.call(&[]).unwrap();
+
+        let failed_tests = get_failed_tests();
+        assert_eq!(failed_tests, 0);
+        cleanup();
+    }
+
+    #[test]
+    #[serial]
+    #[should_panic(expected = "❌ ❌ ❌  Test with name 'duplicate key' already exists.")]
+    fn mocked_function_revert_crash_fail() {
+        let module = module_from_path("mocks/wasm/19_mocked_function_revert_crash_fail.wasm");
+        let run_tests = module.instance.get_func("runTests").unwrap();
+        run_tests.call(&[]).unwrap();
+
+        cleanup();
     }
 }

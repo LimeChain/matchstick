@@ -67,6 +67,11 @@ pub fn clear_test_results() {
     TEST_RESULTS.lock().unwrap().clear();
 }
 
+#[cfg(test)]
+pub fn clear_function_mocks() {
+    FUNCTIONS_MAP.lock().unwrap().clear();
+}
+
 fn styled(s: &str, n: &Level) -> ColoredString {
     match n {
         Level::Error => format!("ERROR {}", s).red(),

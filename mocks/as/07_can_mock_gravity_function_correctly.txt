@@ -1,13 +1,10 @@
-    test("Can mock gravity function correctly", () => {
+    test("Can save gravatar from contract", () => {
         let contractAddress = Address.fromString("0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7");
-        let expectedResult = Address.fromString("0x90cBa2Bbb19ecc291A12066Fd8329D65FA1f1947");
-        let bigIntParam = BigInt.fromString("1234");
-        createMockedFunction(contractAddress, "gravatarToOwner", "gravatarToOwner(uint256):(address)")
-            .withArgs([ethereum.Value.fromSignedBigInt(bigIntParam)])
-            .returns([ethereum.Value.fromAddress(Address.fromString("0x90cBa2Bbb19ecc291A12066Fd8329D65FA1f1947"))]);
+        createMockedFunction(contractAddress, "getGravatar", "getGravatar(address):(string,string)")
+            .withArgs([ethereum.Value.fromAddress(contractAddress)])
+            .returns([ethereum.Value.fromString("1st val"), ethereum.Value.fromString("2nd val")]);
+        saveGravatarFromContract("48");
 
-        let gravity = Gravity.bind(contractAddress);
-        let result = gravity.gravatarToOwner(bigIntParam);
-
-        assert.equals(ethereum.Value.fromAddress(expectedResult), ethereum.Value.fromAddress(result));
+        assert.fieldEquals(GRAVATAR_ENTITY_TYPE, "48", "value0", "1st val");
+        assert.fieldEquals(GRAVATAR_ENTITY_TYPE, "48", "value1", "2nd val");
     });
