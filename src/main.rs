@@ -182,9 +182,13 @@ ___  ___      _       _         _   _      _
         let msg = String::from(r#"
         ❌ ❌ ❌  Unexpected error occured while running tests.
         Please double check the syntax in your test file.
-        This usually happens if you pass a 'null' value to one of our functions - assert.fieldEquals(), store.get(), store.set().
+
+        This usually happens for two reasons:
+        1. You passed a 'null' value to one of our functions - assert.fieldEquals(), store.get(), store.set().
+        2. A mocked function call reverted. Consider using 'try_functionName' to handle this in the mapping.
+
         Please ensure that you have proper null checks in your tests.
-        You can debug your test file using the 'log()' function, provided in matchstick-as (import { log } from "matchstick-as/assembly/log").
+        You can debug your test file using the 'log()' function, provided by matchstick-as (import { log } from "matchstick-as/assembly/log").
         "#).red();
 
         panic!("{}", msg);
