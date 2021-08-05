@@ -57,7 +57,7 @@ pub fn module_from_path(path_to_wasm: &str) -> WasmInstance<Chain> {
     let deployment_id =
         &DeploymentHash::new(subgraph_id).expect("Could not create DeploymentHash.");
     let deployment = DeploymentLocator::new(DeploymentId::new(42), deployment_id.clone());
-    let data_source = mock_data_source(&path_to_wasm, Version::new(0, 0, 4));
+    let data_source = mock_data_source(path_to_wasm, Version::new(0, 0, 4));
 
     let metrics_registry = Arc::new(MockMetricsRegistry::new());
 
@@ -101,7 +101,7 @@ pub fn module_from_path(path_to_wasm: &str) -> WasmInstance<Chain> {
 
 pub fn main() {
     let matches = App::new("Matchstick 🔥")
-        .version("0.0.13")
+        .version("0.1.0")
         .author("Limechain <https://limechain.tech>")
         .about("Unit testing framework for Subgraph development on The Graph protocol.")
         .arg(
