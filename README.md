@@ -231,10 +231,10 @@ export function runTests(): void {
         
         handleNewGravatars([newGravatarEvent, anotherGravatarEvent]);
 
-		// Assert the state of the store
-        store.assertFieldEq(GRAVATAR_ENTITY_TYPE, "gravatarId0", "id", "gravatarId0");
-        store.assertFieldEq(GRAVATAR_ENTITY_TYPE, "12345", "id", "12345");
-        store.assertFieldEq(GRAVATAR_ENTITY_TYPE, "3546", "id", "3546");
+		    // Assert the state of the store
+        store.assertFieldEq("Gravatar", "gravatarId0", "id", "gravatarId0");
+        store.assertFieldEq("Gravatar", "12345", "id", "12345");
+        store.assertFieldEq("Gravatar", "3546", "id", "3546");
 
         clearStore();
     });
@@ -323,12 +323,10 @@ Users are able to assert the final (or midway) state of the store through assert
 import { assert } from "matchstick-as/assembly/index";
 import { Gravatar } from "../generated/schema";
 
-let GRAVATAR_ENTITY_TYPE = "Gravatar";
-
 let gravatar = new Gravatar("gravatarId0");
 gravatar.save();
 
-assert.fieldEquals(GRAVATAR_ENTITY_TYPE, "gravatarId0", "id", "gravatarId0");
+assert.fieldEquals("Gravatar", "gravatarId0", "id", "gravatarId0");
 
 ```
 Running the assert.fieldEquals() function will check for equality of the given field against the given expected value. The test will fail and an error message will be outputted if the values are **NOT** equal. Otherwise the test will pass successfully.
