@@ -1,4 +1,4 @@
-    test("Can mock and call function with different argument types", () => {
+    test("Can mock and call ethereum function", () => {
         let numValue = ethereum.Value.fromI32(152);
         let stringValue = ethereum.Value.fromString("example string value");
         let arrayValue = ethereum.Value.fromI32Array([156666, 123412]);

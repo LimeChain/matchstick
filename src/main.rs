@@ -57,7 +57,7 @@ pub fn module_from_path(path_to_wasm: &str) -> WasmInstance<Chain> {
     let deployment_id =
         &DeploymentHash::new(subgraph_id).expect("Could not create DeploymentHash.");
     let deployment = DeploymentLocator::new(DeploymentId::new(42), deployment_id.clone());
-    let data_source = mock_data_source(&path_to_wasm, Version::new(0, 0, 4));
+    let data_source = mock_data_source(path_to_wasm, Version::new(0, 0, 4));
 
     let metrics_registry = Arc::new(MockMetricsRegistry::new());
 
@@ -101,7 +101,7 @@ pub fn module_from_path(path_to_wasm: &str) -> WasmInstance<Chain> {
 
 pub fn main() {
     let matches = App::new("Matchstick 🔥")
-        .version("0.0.13")
+        .version("0.1.0")
         .author("Limechain <https://limechain.tech>")
         .about("Unit testing framework for Subgraph development on The Graph protocol.")
         .arg(
@@ -175,18 +175,24 @@ ___  ___      _       _         _   _      _
     println!("{}", ("Igniting tests 🔥\n").to_string().bright_red());
 
     #[allow(non_fmt_panic)]
-        run_tests.call(&[]).unwrap_or_else(|_| {
+        run_tests.call(&[]).unwrap_or_else(|err| {
+
         fail_test("".to_string());
         flush_logs();
 
         let msg = String::from(r#"
-        ❌ ❌ ❌  Unexpected error occured while running tests.
-        Please double check the syntax in your test file.
-        This usually happens if you pass a 'null' value to one of our functions - assert.fieldEquals(), store.get(), store.set().
-        Please ensure that you have proper null checks in your tests.
-        You can debug your test file using the 'log()' function, provided in matchstick-as (import { log } from "matchstick-as/assembly/log").
-        "#).red();
+        ❌ ❌ ❌  Unexpected error occurred while running tests.
+        See error stack trace above and double check the syntax in your test file.
 
+        This usually happens for two reasons:
+        1. You passed a 'null' value to one of our functions - assert.fieldEquals(), store.get(), store.set().
+        2. A mocked function call reverted. Consider using 'try_functionName' to handle this in the mapping.
+
+        Please ensure that you have proper null checks in your tests.
+        You can debug your test file using the 'log()' function, provided by matchstick-as (import { log } from "matchstick-as/assembly/log").
+        "#);
+
+        let msg = format!("{}\n {}", err, msg).red();
         panic!("{}", msg);
     });
 

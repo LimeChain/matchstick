@@ -67,6 +67,11 @@ pub fn clear_test_results() {
     TEST_RESULTS.lock().unwrap().clear();
 }
 
+#[cfg(test)]
+pub fn clear_function_mocks() {
+    FUNCTIONS_MAP.lock().unwrap().clear();
+}
+
 fn styled(s: &str, n: &Level) -> ColoredString {
     match n {
         Level::Error => format!("ERROR {}", s).red(),
@@ -387,7 +392,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
                     .as_slice(),
             )?;
 
-            return Ok(return_val);
+            Ok(return_val)
         } else {
             panic!(
                 "Key: '{}' not found in map. Please mock the function before calling it.",
