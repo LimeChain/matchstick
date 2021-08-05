@@ -42,7 +42,7 @@ lazy_static! {
     static ref FUNCTIONS_MAP: Mutex<IndexMap<String, Vec<Token>>> = Mutex::new(IndexMap::new());
     pub(crate) static ref STORE: Store = Mutex::from(IndexMap::new());
     static ref LOGS: Mutex<IndexMap<String, Level>> = Mutex::new(IndexMap::new());
-    static ref TEST_RESULTS: Mutex<IndexMap<String, bool>> = Mutex::new(IndexMap::new());
+    pub(crate) static ref TEST_RESULTS: Mutex<IndexMap<String, bool>> = Mutex::new(IndexMap::new());
 }
 
 pub enum Level {
