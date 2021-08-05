@@ -23,10 +23,10 @@ use wasm_instance::{
 
 use crate::wasm_instance::WasmInstance;
 
+mod integration_tests;
 mod subgraph_store;
 mod wasm_instance;
 mod writable_store;
-mod integration_tests;
 
 fn get_build_path(sequence: Sequence, datasource_name: String) -> String {
     for mapping in sequence {
@@ -79,7 +79,8 @@ pub fn module_from_path(path_to_wasm: &str) -> WasmInstance<Chain> {
 
     let mock_subgraph_store = MockSubgraphStore {};
     let valid_module = Arc::new(
-        ValidModule::new(Arc::new(std::fs::read(path_to_wasm).unwrap()).as_ref())
+        ValidModule::new(Arc::new(std::fs::read(path_to_wasm).expect(r#"❌  Could not resolve path to wasm file. Please ensure that the datasource name you're providing is valid.
+        It should be the same as the 'name' field in the subgraph.yaml file, corresponding to the datasource you want to test."#)).as_ref())
             .expect("Could not create ValidModule."),
     );
 
@@ -95,7 +96,7 @@ pub fn module_from_path(path_to_wasm: &str) -> WasmInstance<Chain> {
         None,
         experimental_features,
     )
-        .expect("Could not create WasmInstance from valid module with context.")
+    .expect("Could not create WasmInstance from valid module with context.")
 }
 
 pub fn main() {
@@ -113,14 +114,16 @@ pub fn main() {
 
     println!(
         "{}",
-        ("     _____       _     _            _
-    / ____|     | |   | |          | |
-   | (___  _   _| |__ | |_ ___  ___| |_
-    \\___ \\| | | | '_ \\| __/ _ \\/ __| __|
-    ____) | |_| | |_) | ||  __/\\__ \\ |_
-   |_____/ \\__,_|_.__/ \\__\\___||___/\\__|\n")
-            .to_string()
-            .purple()
+        (r#"
+___  ___      _       _         _   _      _
+|  \/  |     | |     | |       | | (_)    | |
+| .  . | __ _| |_ ___| |__  ___| |_ _  ___| | __
+| |\/| |/ _` | __/ __| '_ \/ __| __| |/ __| |/ /
+| |  | | (_| | || (__| | | \__ \ |_| | (__|   <
+\_|  |_/\__,_|\__\___|_| |_|___/\__|_|\___|_|\_\
+                                                "#)
+        .to_string()
+        .bright_red()
     );
 
     let now = Instant::now();
@@ -169,7 +172,7 @@ pub fn main() {
         Please ensure that you have imported your runTests() function, defined in the test file, into the main mappings file.
         "#);
 
-    println!("{}", ("Starting tests 🧪🚀\n").to_string().purple());
+    println!("{}", ("Igniting tests 🔥\n").to_string().bright_red());
 
     #[allow(non_fmt_panic)]
         run_tests.call(&[]).unwrap_or_else(|_| {
