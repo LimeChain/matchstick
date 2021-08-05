@@ -44,6 +44,13 @@ move binary-windows matchstick
 choco install postgresql12
 ```
 
+### Install dependencies
+In order to run the tests, you will need to install the following dependencies:
+
+```
+yarn add matchstick-as
+```
+
 ### Run
 To run the framework, you simply need to provide a datasource name (after you've compiled your subgraph using `graph build`).
 
