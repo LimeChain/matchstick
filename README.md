@@ -65,6 +65,18 @@ For instance, in our [demo subgraph example](https://github.com/LimeChain/demo-s
 **Tip:** You can build your subgraph (along with your tests) and run the framework in one step using:
 `graph build && ./matchstick Gravity`
 
+**Tip:** Add this commant to your `package.json` file to run the tests with `yarn test` and possibly on CI:
+```js
+// package.json
+{
+  // ...
+  "scripts:" {
+    // ...
+    "test": "graph build && ./matchstick Gravity"
+  }
+}
+```
+
 Now you can jump straight to the [test examples](https://github.com/LimeChain/demo-subgraph/blob/main/src/tests.ts "examples of tests") we have in our [demo subgraph](https://github.com/LimeChain/demo-subgraph "demo subgraph") and start your journey in Subgraph unit testing!
 
 ## Setting up locally 📍
