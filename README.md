@@ -45,7 +45,7 @@ choco install postgresql12
 ```
 
 ### Install dependencies
-In order to run the tests, you will need to install the following dependencies:
+In order to use the test helper methods and run the tests, you will need to install the following dependencies:
 
 ```
 yarn add matchstick-as
