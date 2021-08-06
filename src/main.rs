@@ -23,10 +23,11 @@ use wasm_instance::{
 
 use crate::wasm_instance::WasmInstance;
 
-mod integration_tests;
 mod subgraph_store;
 mod wasm_instance;
 mod writable_store;
+mod integration_tests;
+mod unit_tests;
 
 fn get_build_path(sequence: Sequence, datasource_name: String) -> String {
     for mapping in sequence {

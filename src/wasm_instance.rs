@@ -41,10 +41,11 @@ type Store = Mutex<IndexMap<String, IndexMap<String, HashMap<String, Value>>>>;
 lazy_static! {
     static ref FUNCTIONS_MAP: Mutex<IndexMap<String, Vec<Token>>> = Mutex::new(IndexMap::new());
     pub(crate) static ref STORE: Store = Mutex::from(IndexMap::new());
-    static ref LOGS: Mutex<IndexMap<String, Level>> = Mutex::new(IndexMap::new());
+    pub(crate) static ref LOGS: Mutex<IndexMap<String, Level>> = Mutex::new(IndexMap::new());
     pub(crate) static ref TEST_RESULTS: Mutex<IndexMap<String, bool>> = Mutex::new(IndexMap::new());
     static ref REVERTS_IDENTIFIER: Vec<Token> =
         vec!(Token::Bytes(vec!(255, 255, 255, 255, 255, 255, 255)));
+    pub(crate) static ref POINTERS_MAP: Mutex<IndexMap<String, AscPtr<Token>>> = Mutex::new(IndexMap::new());
 }
 
 pub enum Level {
@@ -80,6 +81,13 @@ pub fn get_failed_tests() -> usize {
 #[cfg(test)]
 pub fn clear_test_results() {
     TEST_RESULTS.lock().unwrap().clear();
+}
+
+#[cfg(test)]
+pub fn clear_pub_static_refs() {
+    STORE.lock().expect("Couldn't get STORE.").clear();
+    LOGS.lock().expect("Couldn't get LOGS.").clear();
+    TEST_RESULTS.lock().expect("Couldn't get TEST_RESULTS.").clear();
 }
 
 fn styled(s: &str, n: &Level) -> ColoredString {
@@ -182,6 +190,13 @@ pub trait WICExtension {
         fn_args_ptr: u32,
         return_value_ptr: u32,
         reverts: u32,
+    ) -> Result<(), HostExportError>;
+    fn export_pointers(
+        &mut self,
+        address_ptr: u32,
+        first_string_ptr: u32,
+        second_string_ptr: u32,
+        call_ptr: u32,
     ) -> Result<(), HostExportError>;
 }
 
@@ -446,6 +461,25 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
 
         Ok(())
     }
+
+    fn export_pointers(
+        &mut self,
+        address_ptr: u32,
+        first_string_ptr: u32,
+        second_string_ptr: u32,
+        call_ptr: u32,
+    ) -> Result<(), HostExportError> {
+        let mut map = POINTERS_MAP.lock().expect("Couldn't get POINTERS_MAP.");
+        // map.insert("address".to_string(), address_ptr);
+        // map.insert("firstString".to_string(), first_string_ptr);
+        let expected: Token = asc_get::<_, AscEnum<EthereumValueKind>, _>(self, first_string_ptr.into()).unwrap();
+        
+        map.insert("firstString".to_string(), AscPtr::new(first_string_ptr));
+        // panic!("not a problem here for some reason {:?}", expected);
+        // map.insert("secondString".to_string(), second_string_ptr);
+        // map.insert("call".to_string(), call_ptr);
+        Ok(())
+    }
 }
 
 // #[cfg(test)]
@@ -677,6 +711,7 @@ impl<C: Blockchain> WasmInstanceExtension<C> for WasmInstance<C> {
         link!("ethereum.call", ethereum_call, contract_call_ptr);
         link!("ethereum.encode", ethereum_encode, params_ptr);
         link!("ethereum.decode", ethereum_decode, params_ptr, data_ptr);
+        link!("exportPointers", export_pointers, address_ptr, first_string_ptr, second_string_ptr, call_ptr);
 
         link!("abort", abort, message_ptr, file_name_ptr, line, column);
 
