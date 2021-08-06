@@ -44,6 +44,13 @@ move binary-windows matchstick
 choco install postgresql12
 ```
 
+### Install dependencies
+In order to run the tests, you will need to install the following dependencies:
+
+```
+yarn add matchstick-as
+```
+
 ### Run
 To run the framework, you simply need to provide a datasource name (after you've compiled your subgraph using `graph build`).
 
@@ -57,6 +64,18 @@ For instance, in our [demo subgraph example](https://github.com/LimeChain/demo-s
 
 **Tip:** You can build your subgraph (along with your tests) and run the framework in one step using:
 `graph build && ./matchstick Gravity`
+
+**Tip:** Add this commant to your `package.json` file to run the tests with `yarn test` and possibly on CI:
+```js
+// package.json
+{
+  // ...
+  "scripts:" {
+    // ...
+    "test": "graph build && ./matchstick Gravity"
+  }
+}
+```
 
 Now you can jump straight to the [test examples](https://github.com/LimeChain/demo-subgraph/blob/main/src/tests.ts "examples of tests") we have in our [demo subgraph](https://github.com/LimeChain/demo-subgraph "demo subgraph") and start your journey in Subgraph unit testing!
 
@@ -224,10 +243,10 @@ export function runTests(): void {
         
         handleNewGravatars([newGravatarEvent, anotherGravatarEvent]);
 
-		// Assert the state of the store
-        store.assertFieldEq(GRAVATAR_ENTITY_TYPE, "gravatarId0", "id", "gravatarId0");
-        store.assertFieldEq(GRAVATAR_ENTITY_TYPE, "12345", "id", "12345");
-        store.assertFieldEq(GRAVATAR_ENTITY_TYPE, "3546", "id", "3546");
+		    // Assert the state of the store
+        store.assertFieldEq("Gravatar", "gravatarId0", "id", "gravatarId0");
+        store.assertFieldEq("Gravatar", "12345", "id", "12345");
+        store.assertFieldEq("Gravatar", "3546", "id", "3546");
 
         clearStore();
     });
@@ -316,12 +335,10 @@ Users are able to assert the final (or midway) state of the store through assert
 import { assert } from "matchstick-as/assembly/index";
 import { Gravatar } from "../generated/schema";
 
-let GRAVATAR_ENTITY_TYPE = "Gravatar";
-
 let gravatar = new Gravatar("gravatarId0");
 gravatar.save();
 
-assert.fieldEquals(GRAVATAR_ENTITY_TYPE, "gravatarId0", "id", "gravatarId0");
+assert.fieldEquals("Gravatar", "gravatarId0", "id", "gravatarId0");
 
 ```
 Running the assert.fieldEquals() function will check for equality of the given field against the given expected value. The test will fail and an error message will be outputted if the values are **NOT** equal. Otherwise the test will pass successfully.
