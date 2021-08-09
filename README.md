@@ -395,7 +395,7 @@ You can check out the full list of tasks [here](https://github.com/LimeChain/mat
 
 ## Technologies used 💻
 
-![image](https://user-images.githubusercontent.com/32264020/128689157-0cabd8d2-df3e-4367-a2e9-5f2b4a209557.png)
+![diagram-med](https://user-images.githubusercontent.com/32264020/128723776-99375bbc-29e5-45c0-adce-bc4c4f8b745c.jpg)
 
 The **Matchstick** framework is built in **Rust** and acts as a wrapper for the generated WebAssembly module that contains the mappings and the unit tests. It passes the host function implementations down to the module, to be used in the tests (and in the mappings if needed). The framework also acts as a proxy for structs defined in the [graph-node repo](https://github.com/graphprotocol/graph-node/tree/master/graph "graph-node repo"), because it needs to pass down all the usual imports, as well as a few bonus/mocked ones glued on top.
 
