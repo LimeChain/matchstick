@@ -362,7 +362,7 @@ let newGravatarEvent: NewGravatar = addMetadata(base);
 ```
 
 Then you can read/write to those fiels like this:
-```tyepscript
+```typescript
 let logType = newGravatarEvent.logType;
 
 let UPDATED_ADDRESS = "0xB16081F360e3847006dB660bae1c6d1b2e17eC2A";
@@ -370,7 +370,7 @@ newGravatarEvent.address = Address.fromString(UPDATED_ADDRESS);
 ```
 
 ### As a user I want be able to assert if variables are equal
-```
+```typescript
 assert.equals(ethereum.Value.fromString("hello"), ethereum.Value.fromString("hello"));
 ```
 
