@@ -328,6 +328,14 @@ assert.equals(ethereum.Value.fromAddress(expectedResult), ethereum.Value.fromAdd
 ```
 As demonstrated, in order to mock a contract call and hardcore a return value, the user must provide a contract address, function name, function signature, an array of arguments, and of course - the return value.
 
+Users can also mock function reverts:
+```typescript
+let contractAddress = Address.fromString("0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7");
+createMockedFunction(contractAddress, "getGravatar", "getGravatar(address):(string,string)")
+    .withArgs([ethereum.Value.fromAddress(contractAddress)])
+    .reverts();
+```
+
 ### As a user I want to assert the state of the store
 Users are able to assert the final (or midway) state of the store through asserting entities. In order to do this, the user has to supply an Entity type, the specific ID of an Entity, a name of a field on that Entity, and the expected value of the field. Here's a quick example:
 ```typescript
