@@ -6,28 +6,42 @@ use std::time::Instant;
 
 use colored::*;
 use ethabi::{Address, Token};
-use graph::blockchain::{Blockchain, HostFnCtx};
+use graph::data::store::Value;
+use graph::prelude::Entity;
 use graph::prelude::*;
-use graph::runtime::{asc_get, asc_new, try_asc_get, AscPtr, HostExportError};
+use graph::runtime::{asc_get, asc_new, try_asc_get, AscPtr};
 use graph::semver::Version;
+use graph::{
+    blockchain::{Blockchain, HostFnCtx},
+    cheap_clone::CheapClone,
+    prelude::{
+        anyhow::{self},
+        HostMetrics,
+    },
+};
 use graph_chain_ethereum::runtime::abi::AscUnresolvedContractCall_0_0_4;
 use graph_chain_ethereum::runtime::runtime_adapter::UnresolvedContractCall;
-use graph_runtime_wasm::asc_abi::class::*;
-use graph_runtime_wasm::error::DeterminismLevel;
-use graph_runtime_wasm::mapping::{MappingContext, ValidModule};
-use graph_runtime_wasm::module::{IntoTrap, IntoWasmRet, TimeoutStopwatch, WasmInstanceContext};
-use graph_runtime_wasm::ExperimentalFeatures;
+use graph_runtime_wasm::asc_abi::class::{Array, AscEntity, AscEnum, AscString};
+use graph_runtime_wasm::asc_abi::class::{AscEnumArray, EthereumValueKind};
 pub use graph_runtime_wasm::WasmInstance;
+use graph_runtime_wasm::{
+    error::DeterminismLevel,
+    mapping::{MappingContext, ValidModule},
+    module::IntoWasmRet,
+    module::{ExperimentalFeatures, IntoTrap, WasmInstanceContext},
+};
+use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::TimeoutStopwatch};
 use indexmap::IndexMap;
 use lazy_static::lazy_static;
 
 type Store = Mutex<IndexMap<String, IndexMap<String, HashMap<String, Value>>>>;
 
 lazy_static! {
-    static ref FUNCTIONS_MAP: Mutex<IndexMap<String, Vec<Token>>> = Mutex::new(IndexMap::new());
-    static ref STORE: Store = Mutex::from(IndexMap::new());
-    pub static ref LOGS: Mutex<IndexMap<String, Level>> = Mutex::new(IndexMap::new());
-    pub static ref TEST_RESULTS: Mutex<IndexMap<String, bool>> = Mutex::new(IndexMap::new());
+    pub(crate) static ref FUNCTIONS_MAP: Mutex<IndexMap<String, Vec<Token>>> =
+        Mutex::new(IndexMap::new());
+    pub(crate) static ref STORE: Store = Mutex::from(IndexMap::new());
+    pub(crate) static ref LOGS: Mutex<IndexMap<String, Level>> = Mutex::new(IndexMap::new());
+    pub(crate) static ref TEST_RESULTS: Mutex<IndexMap<String, bool>> = Mutex::new(IndexMap::new());
     static ref REVERTS_IDENTIFIER: Vec<Token> =
         vec!(Token::Bytes(vec!(255, 255, 255, 255, 255, 255, 255)));
 }
@@ -63,13 +77,17 @@ pub fn get_failed_tests() -> usize {
 }
 
 #[cfg(test)]
-pub fn clear_test_results() {
-    TEST_RESULTS.lock().unwrap().clear();
-}
-
-#[cfg(test)]
-pub fn clear_function_mocks() {
-    FUNCTIONS_MAP.lock().unwrap().clear();
+pub fn clear_pub_static_refs() {
+    STORE.lock().expect("Couldn't get STORE.").clear();
+    LOGS.lock().expect("Couldn't get LOGS.").clear();
+    TEST_RESULTS
+        .lock()
+        .expect("Couldn't get TEST_RESULTS.")
+        .clear();
+    FUNCTIONS_MAP
+        .lock()
+        .expect("Couldn't get FUNCTIONS_MAP.")
+        .clear();
 }
 
 fn styled(s: &str, n: &Level) -> ColoredString {
@@ -132,7 +150,7 @@ pub trait WasmInstanceExtension<C: graph::blockchain::Blockchain> {
     ) -> Result<WasmInstance<C>, anyhow::Error>;
 }
 
-trait WICExtension {
+pub trait WICExtension {
     fn log(&mut self, level: u32, msg: AscPtr<AscString>) -> Result<(), HostExportError>;
     fn clear_store(&mut self) -> Result<(), HostExportError>;
     fn register_test(&mut self, name: AscPtr<AscString>) -> Result<(), HostExportError>;
