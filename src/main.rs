@@ -57,7 +57,7 @@ pub fn module_from_path(path_to_wasm: &str) -> WasmInstance<Chain> {
     let deployment_id =
         &DeploymentHash::new(subgraph_id).expect("Could not create DeploymentHash.");
     let deployment = DeploymentLocator::new(DeploymentId::new(42), deployment_id.clone());
-    let data_source = mock_data_source(path_to_wasm, Version::new(0, 0, 4));
+    let data_source = mock_data_source(path_to_wasm, Version::new(0, 0, 5));
 
     let metrics_registry = Arc::new(MockMetricsRegistry::new());
 
@@ -90,7 +90,7 @@ pub fn module_from_path(path_to_wasm: &str) -> WasmInstance<Chain> {
             deployment,
             data_source,
             Arc::from(mock_subgraph_store),
-            Version::new(0, 0, 4),
+            Version::new(0, 0, 5),
         ),
         host_metrics,
         None,
