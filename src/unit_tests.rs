@@ -1,4 +1,4 @@
-//graph_runtime_wasm::asc_abi::class::AscTypedMap.entries NEEDS TO BE MADE PUBLIC FOR MEANINGFUL/POSSIBLE UNIT TESTS#[cfg(test)]
+//graph_runtime_wasm::asc_abi::class::AscTypedMap.entries NEEDS TO BE MADE PUBLIC FOR MEANINGFUL/POSSIBLE UNIT TESTS
 //graph_runtime_wasm::asc_abi::class::TypedArray::new() NEEDS TO BE MADE PUBLIC FOR ADDRESS CREATION
 #[cfg(test)]
 mod unit_tests {
