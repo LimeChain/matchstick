@@ -3,29 +3,33 @@
 #[cfg(test)]
 mod unit_tests {
     use crate::module_from_path;
-    use indexmap::IndexMap;
-    use crate::wasm_instance::{STORE, WICExtension, TEST_RESULTS, LOGS, clear_pub_static_refs};
-    use graph_runtime_wasm::module::WasmInstanceContext;
-    use graph_runtime_wasm::asc_abi::class::AscString;
-    use graph_chain_ethereum::Chain;
-    use graph::runtime::AscPtr;
-    use graph::semver::{Version, BuildMetadata, Prerelease};
-    use std::collections::HashMap;
+    use crate::wasm_instance::{clear_pub_static_refs, WICExtension, LOGS, STORE, TEST_RESULTS};
     use graph::data::store::Value;
-    use serial_test::serial;
+    use graph::runtime::AscPtr;
     use graph::runtime::AscType;
+    use graph::semver::{BuildMetadata, Prerelease, Version};
+    use graph_chain_ethereum::Chain;
     use graph_runtime_wasm::asc_abi::class::AscEnum;
-    use graph_runtime_wasm::asc_abi::class::{EthereumValueKind, EnumPayload};
-    
+    use graph_runtime_wasm::asc_abi::class::AscString;
+    use graph_runtime_wasm::asc_abi::class::{EnumPayload, EthereumValueKind};
+    use graph_runtime_wasm::module::WasmInstanceContext;
+    use indexmap::IndexMap;
+    use serial_test::serial;
+    use std::collections::HashMap;
+
     fn get_context() -> WasmInstanceContext<Chain> {
         let module = module_from_path("mocks/wasm/Gravity.wasm");
-        let context = module.instance_ctx.take().take().expect("Couldn't get context from module.");
+        let context = module
+            .instance_ctx
+            .take()
+            .take()
+            .expect("Couldn't get context from module.");
         return context;
     }
 
     fn asc_string_from_str(initial_string: &str) -> AscString {
         let utf_16_iterator = initial_string.encode_utf16();
-        let mut u16_vector = vec!();
+        let mut u16_vector = vec![];
         utf_16_iterator.for_each(|element| u16_vector.push(element));
         let version = get_version();
         return AscString::new(&u16_vector, version.clone()).expect("Couldn't create AscString.");
@@ -37,7 +41,7 @@ mod unit_tests {
             minor: 0,
             patch: 4,
             build: BuildMetadata::EMPTY,
-            pre: Prerelease::new("").expect("Couldn't create new Prerelease.")
+            pre: Prerelease::new("").expect("Couldn't create new Prerelease."),
         }
     }
 
@@ -109,11 +113,13 @@ mod unit_tests {
     fn register_test_basic_test() {
         let mut context = get_context();
         clear_pub_static_refs();
-        
+
         let initial_asc_string = asc_string_from_str("test");
         let pointer = AscPtr::alloc_obj(initial_asc_string, &mut context);
 
-        context.register_test(pointer.expect("Couldn't unwrap pointer.")).expect("Couldn't call register_test.");
+        context
+            .register_test(pointer.expect("Couldn't unwrap pointer."))
+            .expect("Couldn't call register_test.");
 
         let test_results = TEST_RESULTS.lock().expect("Cannot get TEST_RESULTS.");
         assert_eq!(test_results.len(), 1);
@@ -132,7 +138,9 @@ mod unit_tests {
         let initial_asc_string = asc_string_from_str("duplicate test");
         let pointer = AscPtr::alloc_obj(initial_asc_string, &mut context);
 
-        context.register_test(pointer.expect("Couldn't unwrap pointer.")).expect("Couldn't call register_test.");
+        context
+            .register_test(pointer.expect("Couldn't unwrap pointer."))
+            .expect("Couldn't call register_test.");
     }
 
     #[test]
@@ -144,16 +152,22 @@ mod unit_tests {
         let id_string = asc_string_from_str("id");
         let field_name_string = asc_string_from_str("field_name");
         let expected_val_string = asc_string_from_str("val");
-        let entity_ptr = AscPtr::alloc_obj(entity_string, &mut context).expect("Couldn't create pointer.");
+        let entity_ptr =
+            AscPtr::alloc_obj(entity_string, &mut context).expect("Couldn't create pointer.");
         let id_ptr = AscPtr::alloc_obj(id_string, &mut context).expect("Couldn't create pointer.");
-        let field_name_ptr = AscPtr::alloc_obj(field_name_string, &mut context).expect("Couldn't create pointer.");
-        let expected_val_ptr = AscPtr::alloc_obj(expected_val_string, &mut context).expect("Couldn't create pointer.");
+        let field_name_ptr =
+            AscPtr::alloc_obj(field_name_string, &mut context).expect("Couldn't create pointer.");
+        let expected_val_ptr =
+            AscPtr::alloc_obj(expected_val_string, &mut context).expect("Couldn't create pointer.");
 
         let mut map = STORE.lock().expect("Cannot access STORE.");
         map.insert("entity".to_string(), IndexMap::new());
         let mut inner_map = map.get("entity").expect("Couldn't get inner map.").clone();
         inner_map.insert("id".to_string(), HashMap::new());
-        let mut entity = inner_map.get("id").expect("Couldn't get value from inner map.").clone();
+        let mut entity = inner_map
+            .get("id")
+            .expect("Couldn't get value from inner map.")
+            .clone();
         entity.insert("field_name".to_string(), Value::String("val".to_string()));
         inner_map.insert("id".to_string(), entity);
         map.insert("entity".to_string(), inner_map);
@@ -162,11 +176,18 @@ mod unit_tests {
         drop(map);
         drop(test_results);
 
-        context.assert_field_equals(entity_ptr, id_ptr, field_name_ptr, expected_val_ptr).expect("Couldn't call assert_field_equals.");
+        context
+            .assert_field_equals(entity_ptr, id_ptr, field_name_ptr, expected_val_ptr)
+            .expect("Couldn't call assert_field_equals.");
 
         let test_results = TEST_RESULTS.lock().expect("Cannot get TEST_RESULTS.");
         assert_eq!(test_results.len(), 1);
-        assert_eq!(*test_results.get(test_results.keys().last().unwrap()).unwrap(), true);
+        assert_eq!(
+            *test_results
+                .get(test_results.keys().last().unwrap())
+                .unwrap(),
+            true
+        );
     }
 
     #[test]
@@ -178,24 +199,31 @@ mod unit_tests {
         let id_string = asc_string_from_str("id");
         let field_name_string = asc_string_from_str("field_name");
         let expected_val_string = asc_string_from_str("val");
-        let entity_ptr = AscPtr::alloc_obj(entity_string, &mut context).expect("Couldn't create pointer.");
+        let entity_ptr =
+            AscPtr::alloc_obj(entity_string, &mut context).expect("Couldn't create pointer.");
         let id_ptr = AscPtr::alloc_obj(id_string, &mut context).expect("Couldn't create pointer.");
-        let field_name_ptr = AscPtr::alloc_obj(field_name_string, &mut context).expect("Couldn't create pointer.");
-        let expected_val_ptr = AscPtr::alloc_obj(expected_val_string, &mut context).expect("Couldn't create pointer.");
+        let field_name_ptr =
+            AscPtr::alloc_obj(field_name_string, &mut context).expect("Couldn't create pointer.");
+        let expected_val_ptr =
+            AscPtr::alloc_obj(expected_val_string, &mut context).expect("Couldn't create pointer.");
 
         let mut test_results = TEST_RESULTS.lock().expect("Cannot get TEST_RESULTS.");
         test_results.insert("testName".to_string(), true);
         drop(test_results);
 
-        context.assert_field_equals(entity_ptr, id_ptr, field_name_ptr, expected_val_ptr).expect("Couldn't call assert_field_equals.");
+        context
+            .assert_field_equals(entity_ptr, id_ptr, field_name_ptr, expected_val_ptr)
+            .expect("Couldn't call assert_field_equals.");
 
         assert_failed_test_and_clear();
-        
+
         let mut map = STORE.lock().expect("Cannot access STORE.");
         map.insert("entity".to_string(), IndexMap::new());
         drop(map);
 
-        context.assert_field_equals(entity_ptr, id_ptr, field_name_ptr, expected_val_ptr).expect("Couldn't call assert_field_equals.");
+        context
+            .assert_field_equals(entity_ptr, id_ptr, field_name_ptr, expected_val_ptr)
+            .expect("Couldn't call assert_field_equals.");
 
         assert_failed_test_and_clear();
 
@@ -205,29 +233,46 @@ mod unit_tests {
         map.insert("entity".to_string(), inner_map);
         drop(map);
 
-        context.assert_field_equals(entity_ptr, id_ptr, field_name_ptr, expected_val_ptr).expect("Couldn't call assert_field_equals.");
+        context
+            .assert_field_equals(entity_ptr, id_ptr, field_name_ptr, expected_val_ptr)
+            .expect("Couldn't call assert_field_equals.");
 
         assert_failed_test_and_clear();
 
         let mut map = STORE.lock().expect("Cannot access STORE.");
         let mut inner_map = map.get("entity").expect("Couldn't get inner map.").clone();
-        let mut entity = inner_map.get("id").expect("Couldn't get value from inner map.").clone();
+        let mut entity = inner_map
+            .get("id")
+            .expect("Couldn't get value from inner map.")
+            .clone();
         entity.insert("field_name".to_string(), Value::Null);
         inner_map.insert("id".to_string(), entity);
         map.insert("entity".to_string(), inner_map);
         drop(map);
 
-        context.assert_field_equals(entity_ptr, id_ptr, field_name_ptr, expected_val_ptr).expect("Couldn't call assert_field_equals.");
+        context
+            .assert_field_equals(entity_ptr, id_ptr, field_name_ptr, expected_val_ptr)
+            .expect("Couldn't call assert_field_equals.");
 
         let test_results = TEST_RESULTS.lock().expect("Cannot get TEST_RESULTS.");
         assert_eq!(test_results.len(), 1);
-        assert_eq!(*test_results.get(test_results.keys().last().unwrap()).unwrap(), false);
+        assert_eq!(
+            *test_results
+                .get(test_results.keys().last().unwrap())
+                .unwrap(),
+            false
+        );
     }
 
     fn assert_failed_test_and_clear() {
         let mut test_results = TEST_RESULTS.lock().expect("Cannot get TEST_RESULTS.");
         assert_eq!(test_results.len(), 1);
-        assert_eq!(*test_results.get(test_results.keys().last().unwrap()).unwrap(), false);
+        assert_eq!(
+            *test_results
+                .get(test_results.keys().last().unwrap())
+                .unwrap(),
+            false
+        );
         test_results.clear();
         test_results.insert("testName".to_string(), true);
         drop(test_results);
@@ -244,11 +289,13 @@ mod unit_tests {
         let asc_enum = AscEnum::<EthereumValueKind> {
             kind: EthereumValueKind::String,
             _padding: 0,
-            payload: EnumPayload::from(val_ptr)
+            payload: EnumPayload::from(val_ptr),
         };
         let pointer = AscPtr::alloc_obj(asc_enum, &mut context).expect("Couldn't create pointer.");
 
-        context.assert_equals(pointer.wasm_ptr(), pointer.wasm_ptr()).expect("Couldn't call assert_equals.");
+        context
+            .assert_equals(pointer.wasm_ptr(), pointer.wasm_ptr())
+            .expect("Couldn't call assert_equals.");
     }
 
     #[test]
@@ -268,18 +315,21 @@ mod unit_tests {
         let asc_enum = AscEnum::<EthereumValueKind> {
             kind: EthereumValueKind::String,
             _padding: 0,
-            payload: EnumPayload::from(val_ptr)
+            payload: EnumPayload::from(val_ptr),
         };
         let asc_enum1 = AscEnum::<EthereumValueKind> {
             kind: EthereumValueKind::String,
             _padding: 0,
-            payload: EnumPayload::from(val1_ptr)
+            payload: EnumPayload::from(val1_ptr),
         };
 
         let pointer = AscPtr::alloc_obj(asc_enum, &mut context).expect("Couldn't create pointer.");
-        let pointer1 = AscPtr::alloc_obj(asc_enum1, &mut context).expect("Couldn't create pointer.");
+        let pointer1 =
+            AscPtr::alloc_obj(asc_enum1, &mut context).expect("Couldn't create pointer.");
 
-        context.assert_equals(pointer.wasm_ptr(), pointer1.wasm_ptr()).expect("Couldn't call assert_equals.");
+        context
+            .assert_equals(pointer.wasm_ptr(), pointer1.wasm_ptr())
+            .expect("Couldn't call assert_equals.");
 
         let test_results = TEST_RESULTS.lock().expect("Couldn't get TEST_RESULTS.");
         assert_eq!(test_results.len(), 1);
@@ -296,20 +346,35 @@ mod unit_tests {
         map.insert("entity".to_string(), IndexMap::new());
         let mut inner_map = map.get("entity").expect("Couldn't get inner map.").clone();
         inner_map.insert("id".to_string(), HashMap::new());
-        let mut entity = inner_map.get("id").expect("Couldn't get value from inner map.").clone();
+        let mut entity = inner_map
+            .get("id")
+            .expect("Couldn't get value from inner map.")
+            .clone();
         entity.insert("field_name".to_string(), Value::String("val".to_string()));
         inner_map.insert("id".to_string(), entity);
         map.insert("entity".to_string(), inner_map);
         drop(map);
-        
+
         let entity = asc_string_from_str("entity");
         let id = asc_string_from_str("id");
-        let entity_pointer = AscPtr::alloc_obj(entity, &mut context).expect("Couldn't create pointer.");
+        let entity_pointer =
+            AscPtr::alloc_obj(entity, &mut context).expect("Couldn't create pointer.");
         let id_pointer = AscPtr::alloc_obj(id, &mut context).expect("Couldn't create pointer.");
 
-        let value = context.mock_store_get(entity_pointer, id_pointer).expect("Couldn't call mock_store_get.");
+        let value = context
+            .mock_store_get(entity_pointer, id_pointer)
+            .expect("Couldn't call mock_store_get.");
 
-        assert_eq!(value.read_ptr(&context).unwrap().content_len(&value.read_ptr(&context).unwrap().to_asc_bytes().expect("Couldn't get entity bytes.")), 4);
+        assert_eq!(
+            value.read_ptr(&context).unwrap().content_len(
+                &value
+                    .read_ptr(&context)
+                    .unwrap()
+                    .to_asc_bytes()
+                    .expect("Couldn't get entity bytes.")
+            ),
+            4
+        );
     }
 
     #[test]
@@ -317,13 +382,16 @@ mod unit_tests {
     fn mock_store_get_no_such_entity() {
         let mut context = get_context();
         clear_pub_static_refs();
-        
+
         let entity = asc_string_from_str("entity");
         let id = asc_string_from_str("id");
-        let entity_pointer = AscPtr::alloc_obj(entity, &mut context).expect("Couldn't create pointer.");
+        let entity_pointer =
+            AscPtr::alloc_obj(entity, &mut context).expect("Couldn't create pointer.");
         let id_pointer = AscPtr::alloc_obj(id, &mut context).expect("Couldn't create pointer.");
 
-        let value = context.mock_store_get(entity_pointer, id_pointer).expect("Couldn't call mock_store_get.");
+        let value = context
+            .mock_store_get(entity_pointer, id_pointer)
+            .expect("Couldn't call mock_store_get.");
 
         assert!(value.is_null());
     }
@@ -349,7 +417,7 @@ mod unit_tests {
     //     };
     //     let payload_pointer = AscPtr::alloc_obj(payload, &mut context).expect("Couldn't create pointer.");
     //     let map_entry = AscTypedMapEntry {
-    //         key: key_pointer, 
+    //         key: key_pointer,
     //         value: payload_pointer
     //     };
     //     let map_entry_pointer = AscPtr::alloc_obj(map_entry, &mut context).expect("Couldn't create pointer.");
@@ -366,20 +434,26 @@ mod unit_tests {
     fn mock_store_remove_basic_test() {
         let mut context = get_context();
         clear_pub_static_refs();
-        
+
         let mut store = STORE.lock().expect("Couldn't get STORE.");
         store.insert("entity".to_string(), IndexMap::new());
-        let mut inner_map = store.get("entity").expect("Couldn't get inner map.").clone();
+        let mut inner_map = store
+            .get("entity")
+            .expect("Couldn't get inner map.")
+            .clone();
         inner_map.insert("id".to_string(), HashMap::new());
         store.insert("entity".to_string(), inner_map);
         drop(store);
 
         let entity = asc_string_from_str("entity");
         let id = asc_string_from_str("id");
-        let entity_pointer = AscPtr::alloc_obj(entity, &mut context).expect("Couldn't create pointer.");
+        let entity_pointer =
+            AscPtr::alloc_obj(entity, &mut context).expect("Couldn't create pointer.");
         let id_pointer = AscPtr::alloc_obj(id, &mut context).expect("Couldn't create pointer.");
 
-        context.mock_store_remove(entity_pointer, id_pointer).expect("Couldn't call mock_store_remove.");
+        context
+            .mock_store_remove(entity_pointer, id_pointer)
+            .expect("Couldn't call mock_store_remove.");
 
         let store = STORE.lock().expect("Couldn't get STORE.");
         assert!(!store.get("entity").unwrap().contains_key("id"));
@@ -397,10 +471,13 @@ mod unit_tests {
 
         let entity = asc_string_from_str("entity");
         let id = asc_string_from_str("id");
-        let entity_pointer = AscPtr::alloc_obj(entity, &mut context).expect("Couldn't create pointer.");
+        let entity_pointer =
+            AscPtr::alloc_obj(entity, &mut context).expect("Couldn't create pointer.");
         let id_pointer = AscPtr::alloc_obj(id, &mut context).expect("Couldn't create pointer.");
 
-        context.mock_store_remove(entity_pointer, id_pointer).expect("Couldn't call mock_store_remove.");
+        context
+            .mock_store_remove(entity_pointer, id_pointer)
+            .expect("Couldn't call mock_store_remove.");
 
         let test_results = TEST_RESULTS.lock().expect("Couldn't get TEST_RESULTS.");
         assert_eq!(test_results.len(), 1);
@@ -514,7 +591,7 @@ mod unit_tests {
     // fn mock_function_basic_test() {
     //     let mut context = get_context();
     //     clear_pub_static_refs();
-        
+
     //     let address_test = address_generator("0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7".as_bytes(), &mut context).expect("Couldn't generate address.");
     //     // let address_test_ptr = AscPtr::alloc_obj(address_test, &mut context).expect("Couldn't create pointer.");
     //     // let address = TypedArray::<u8>::from_asc_bytes(&address_test.to_asc_bytes().unwrap(), get_version()).expect("Coudln't create address.");
@@ -522,7 +599,7 @@ mod unit_tests {
     //     let func_name = asc_string_from_str("funcName");
     //     let func_signature = asc_string_from_str("funcName(address):(string,string)");
     //     let val = asc_string_from_str("val");
-        
+
     //     let address_pointer = AscPtr::alloc_obj(TypedArrayWrapper { typed_array: address_test }, &mut context).expect("Couldn't create pointer.");
     //     let func_name_pointer = AscPtr::alloc_obj(func_name, &mut context).expect("Couldn't create pointer.");
     //     let func_signature_pointer = AscPtr::alloc_obj(func_signature, &mut context).expect("Couldn't create pointer.");

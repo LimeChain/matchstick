@@ -5,11 +5,12 @@ use std::sync::Mutex;
 use std::time::Instant;
 
 use colored::*;
+use ethabi::{Address, Token};
 use graph::data::store::Value;
 use graph::prelude::Entity;
-use graph::runtime::{
-    asc_get, asc_new, try_asc_get, AscPtr,
-};
+use graph::prelude::*;
+use graph::runtime::{asc_get, asc_new, try_asc_get, AscPtr};
+use graph::semver::Version;
 use graph::{
     blockchain::{Blockchain, HostFnCtx},
     cheap_clone::CheapClone,
@@ -19,8 +20,10 @@ use graph::{
     },
 };
 use graph_chain_ethereum::runtime::abi::AscUnresolvedContractCall_0_0_4;
+use graph_chain_ethereum::runtime::runtime_adapter::UnresolvedContractCall;
 use graph_runtime_wasm::asc_abi::class::{Array, AscEntity, AscEnum, AscString};
 use graph_runtime_wasm::asc_abi::class::{AscEnumArray, EthereumValueKind, TypedArray};
+pub use graph_runtime_wasm::WasmInstance;
 use graph_runtime_wasm::{
     error::DeterminismLevel,
     mapping::{MappingContext, ValidModule},
@@ -28,18 +31,14 @@ use graph_runtime_wasm::{
     module::{ExperimentalFeatures, IntoTrap, WasmInstanceContext},
 };
 use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::TimeoutStopwatch};
-use ethabi::{Address, Token};
-use graph::prelude::*;
-use graph::semver::Version;
-use graph_chain_ethereum::runtime::runtime_adapter::UnresolvedContractCall;
-pub use graph_runtime_wasm::WasmInstance;
 use indexmap::IndexMap;
 use lazy_static::lazy_static;
 
 type Store = Mutex<IndexMap<String, IndexMap<String, HashMap<String, Value>>>>;
 
 lazy_static! {
-    pub(crate) static ref FUNCTIONS_MAP: Mutex<IndexMap<String, Vec<Token>>> = Mutex::new(IndexMap::new());
+    pub(crate) static ref FUNCTIONS_MAP: Mutex<IndexMap<String, Vec<Token>>> =
+        Mutex::new(IndexMap::new());
     pub(crate) static ref STORE: Store = Mutex::from(IndexMap::new());
     pub(crate) static ref LOGS: Mutex<IndexMap<String, Level>> = Mutex::new(IndexMap::new());
     pub(crate) static ref TEST_RESULTS: Mutex<IndexMap<String, bool>> = Mutex::new(IndexMap::new());
@@ -86,8 +85,14 @@ pub fn clear_test_results() {
 pub fn clear_pub_static_refs() {
     STORE.lock().expect("Couldn't get STORE.").clear();
     LOGS.lock().expect("Couldn't get LOGS.").clear();
-    TEST_RESULTS.lock().expect("Couldn't get TEST_RESULTS.").clear();
-    FUNCTIONS_MAP.lock().expect("Couldn't get FUNCTIONS_MAP.").clear();
+    TEST_RESULTS
+        .lock()
+        .expect("Couldn't get TEST_RESULTS.")
+        .clear();
+    FUNCTIONS_MAP
+        .lock()
+        .expect("Couldn't get FUNCTIONS_MAP.")
+        .clear();
 }
 
 #[cfg(test)]
@@ -433,7 +438,8 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         return_value_ptr: u32,
         reverts: u32,
     ) -> Result<(), HostExportError> {
-        let contract_address: Address = asc_get::<_, TypedArray<u8>, _>(self, contract_address_ptr.into())?;
+        let contract_address: Address =
+            asc_get::<_, TypedArray<u8>, _>(self, contract_address_ptr.into())?;
         let fn_name: String = asc_get(self, fn_name_ptr)?;
         let fn_signature: String = asc_get(self, fn_signature_ptr)?;
         let fn_args: Vec<Token> =
