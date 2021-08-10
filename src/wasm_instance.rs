@@ -22,7 +22,7 @@ use graph::{
 use graph_chain_ethereum::runtime::abi::AscUnresolvedContractCall_0_0_4;
 use graph_chain_ethereum::runtime::runtime_adapter::UnresolvedContractCall;
 use graph_runtime_wasm::asc_abi::class::{Array, AscEntity, AscEnum, AscString};
-use graph_runtime_wasm::asc_abi::class::{AscEnumArray, EthereumValueKind, TypedArray};
+use graph_runtime_wasm::asc_abi::class::{AscEnumArray, EthereumValueKind};
 pub use graph_runtime_wasm::WasmInstance;
 use graph_runtime_wasm::{
     error::DeterminismLevel,
@@ -438,8 +438,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         return_value_ptr: u32,
         reverts: u32,
     ) -> Result<(), HostExportError> {
-        let contract_address: Address =
-            asc_get::<_, TypedArray<u8>, _>(self, contract_address_ptr.into())?;
+        let contract_address: Address = asc_get(self, contract_address_ptr.into())?;
         let fn_name: String = asc_get(self, fn_name_ptr)?;
         let fn_signature: String = asc_get(self, fn_signature_ptr)?;
         let fn_args: Vec<Token> =
