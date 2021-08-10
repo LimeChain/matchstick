@@ -77,11 +77,6 @@ pub fn get_failed_tests() -> usize {
 }
 
 #[cfg(test)]
-pub fn clear_test_results() {
-    TEST_RESULTS.lock().unwrap().clear();
-}
-
-#[cfg(test)]
 pub fn clear_pub_static_refs() {
     STORE.lock().expect("Couldn't get STORE.").clear();
     LOGS.lock().expect("Couldn't get LOGS.").clear();
@@ -93,11 +88,6 @@ pub fn clear_pub_static_refs() {
         .lock()
         .expect("Couldn't get FUNCTIONS_MAP.")
         .clear();
-}
-
-#[cfg(test)]
-pub fn clear_function_mocks() {
-    FUNCTIONS_MAP.lock().unwrap().clear();
 }
 
 fn styled(s: &str, n: &Level) -> ColoredString {
