@@ -87,6 +87,12 @@ pub fn clear_pub_static_refs() {
     STORE.lock().expect("Couldn't get STORE.").clear();
     LOGS.lock().expect("Couldn't get LOGS.").clear();
     TEST_RESULTS.lock().expect("Couldn't get TEST_RESULTS.").clear();
+    FUNCTIONS_MAP.lock().expect("Couldn't get FUNCTIONS_MAP.").clear();
+}
+
+#[cfg(test)]
+pub fn clear_function_mocks() {
+    FUNCTIONS_MAP.lock().unwrap().clear();
 }
 
 fn styled(s: &str, n: &Level) -> ColoredString {
@@ -409,7 +415,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
                     .as_slice(),
             )?;
 
-            return Ok(return_val);
+            Ok(return_val)
         } else {
             panic!(
                 "Key: '{}' not found in map. Please mock the function before calling it.",
@@ -454,56 +460,6 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         Ok(())
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use crate::module_from_path;
-//     use crate::wasm_instance::WICExtension;
-
-//     #[test]
-//     fn tests() {
-//         let module = module_from_path("mocks/Gravity.wasm");
-//         let context = module.instance_ctx.take().take().expect("woops");
-//         context.clear_store();
-//     }
-
-//     #[test]
-//     fn clear_store_basic_test() {
-//         let context = WasmInstanceContext {
-//             arena_free_size: 0,
-//             arena_start_ptr: 0,
-//             ctx: _,
-//             deterministic_host_trap: true,
-//             experimental_features: ExperimentalFeatures{
-//                 allow_non_deterministic_ipfs: true
-//             },
-//             host_metrics: Arc::new(HostMetrics::new(
-//                 Arc::new(MockMetricsRegistry::new()),
-//                 &DeploymentHash::new("ipfsMap").expect("Could not create DeploymentHash.").as_str(),
-//                 StopwatchMetrics::new(
-//                     Logger::root(slog::Discard, o!()),
-//                     DeploymentHash::new("ipfsMap").expect("Could not create DeploymentHash.").clone(),
-//                     Arc::new(MockMetricsRegistry::new()).clone(),
-//                 ),
-//             )),
-//             id_of_type,
-//             memory: Memory::new(&wasmtime::Store::new(&wasmtime::Engine::default()), ty: MemoryType).expect("Couldn't get memory."),
-
-
-//         };
-//         let mut store = STORE.lock().expect("Couldn't get store.");
-//         store.insert("type".to_string(), IndexMap::new());
-//         assert_eq!(store.len(), 1);
-
-//         WasmInstanceContext::clear_store(super::WasmInstanceContext);
-//         assert_eq!(store.len(), 0);
-//     }
-
-//     #[test]
-//     fn register_test_duplication_test() {
-
-//     }
-// }
 
 fn create_unique_fn_string(
     contract_address: &str,

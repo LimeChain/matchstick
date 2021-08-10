@@ -1,30 +1,21 @@
 //graph_runtime_wasm::asc_abi::class::AscTypedMap.entries NEEDS TO BE MADE PUBLIC FOR MEANINGFUL/POSSIBLE UNIT TESTS#[cfg(test)]
 //graph_runtime_wasm::asc_abi::class::TypedArray::new() NEEDS TO BE MADE PUBLIC FOR ADDRESS CREATION
+#[cfg(test)]
 mod unit_tests {
     use crate::module_from_path;
     use indexmap::IndexMap;
-    use crate::wasm_instance::{STORE, WICExtension, TEST_RESULTS, LOGS, clear_pub_static_refs, FUNCTIONS_MAP};
+    use crate::wasm_instance::{STORE, WICExtension, TEST_RESULTS, LOGS, clear_pub_static_refs};
     use graph_runtime_wasm::module::WasmInstanceContext;
     use graph_runtime_wasm::asc_abi::class::AscString;
     use graph_chain_ethereum::Chain;
-    use graph::runtime::{AscPtr, AscIndexId, IndexForAscTypeId};
+    use graph::runtime::AscPtr;
     use graph::semver::{Version, BuildMetadata, Prerelease};
     use std::collections::HashMap;
     use graph::data::store::Value;
     use serial_test::serial;
     use graph::runtime::AscType;
-    use graph_runtime_wasm::asc_abi::class::{Array, AscEntity, AscEnum};
-    use graph_runtime_wasm::asc_abi::class::{AscEnumArray, EthereumValueKind, EnumPayload, AscAddress};
-    use graph_runtime_wasm::asc_abi::v0_0_4::{TypedArray, ArrayBuffer};
-    use graph_chain_ethereum::runtime::runtime_adapter::UnresolvedContractCall;
-    use ethabi::{Address, Token};
-    use graph::prelude::web3::types::H160;
-    use graph::runtime::{asc_get, asc_new, ToAscObj, AscHeap, DeterministicHostError, FromAscObj};
-    use graph_chain_ethereum::runtime::abi::AscUnresolvedContractCall_0_0_4;
-    use std::convert::TryInto;
-    use std::mem::{size_of, size_of_val};
-    use anyhow::anyhow;
-    use std::marker::PhantomData;
+    use graph_runtime_wasm::asc_abi::class::AscEnum;
+    use graph_runtime_wasm::asc_abi::class::{EthereumValueKind, EnumPayload};
     
     fn get_context() -> WasmInstanceContext<Chain> {
         let module = module_from_path("mocks/wasm/Gravity.wasm");

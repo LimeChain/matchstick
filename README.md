@@ -1,7 +1,6 @@
-# Matchstick 🔥
-👋 Welcome to **Matchstick** - a unit testing framework for The Graph protocol. Try out your mapping logic in a sandboxed environment and ensure your handlers run correctly when deploying your awesome subgraph!
+![GitHub Bannet-1](https://user-images.githubusercontent.com/32264020/128688825-29841c79-976a-428d-b5f0-0743739fc075.png)
 
-![image](https://user-images.githubusercontent.com/32264020/127983050-ba8eabd2-c0e0-46e6-a2c5-f680016c58c4.png)
+👋 Welcome to **Matchstick** - a unit testing framework for The Graph protocol. Try out your mapping logic in a sandboxed environment and ensure your handlers run correctly when deploying your awesome subgraph!
 
 ## Quick Start 🚀
 The release binary comes in three flavours - for **MacOS**, **Linux** and **Windows**. To add **Matchstick** to your subgraph project just open up a terminal, navigate to the root folder of your project and simply run the follow these steps (depending on your OS):
@@ -9,7 +8,7 @@ The release binary comes in three flavours - for **MacOS**, **Linux** and **Wind
 ### MacOS 
 
 ```
-curl -OL https://github.com/LimeChain/matchstick/releases/download/0.0.13/binary-macos &&
+curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.0/binary-macos &&
 mv binary-macos matchstick &&
 chmod a+x matchstick
 ```
@@ -22,7 +21,7 @@ brew install postgresql
 ### Linux 🐧
 
 ```
-curl -OL https://github.com/LimeChain/matchstick/releases/download/0.0.13/binary-linux &&
+curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.0/binary-linux &&
 mv binary-linux matchstick &&
 chmod a+x matchstick
 ```
@@ -35,13 +34,20 @@ sudo apt install postgresql
 ### Windows
 
 ```
-curl -OL https://github.com/LimeChain/matchstick/releases/download/0.0.13/binary-windows &&
+curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.0/binary-windows &&
 move binary-windows matchstick
 ```
 
 ❗ If you don't have Postgres installed, you will need to install it with (depending on your distro):
 ```
 choco install postgresql12
+```
+
+### Install dependencies
+In order to use the test helper methods and run the tests, you will need to install the following dependencies:
+
+```
+yarn add matchstick-as
 ```
 
 ### Run
@@ -57,6 +63,18 @@ For instance, in our [demo subgraph example](https://github.com/LimeChain/demo-s
 
 **Tip:** You can build your subgraph (along with your tests) and run the framework in one step using:
 `graph build && ./matchstick Gravity`
+
+**Tip:** Add this commant to your `package.json` file to run the tests with `yarn test` and possibly on CI:
+```js
+// package.json
+{
+  // ...
+  "scripts:" {
+    // ...
+    "test": "graph build && ./matchstick Gravity"
+  }
+}
+```
 
 Now you can jump straight to the [test examples](https://github.com/LimeChain/demo-subgraph/blob/main/src/tests.ts "examples of tests") we have in our [demo subgraph](https://github.com/LimeChain/demo-subgraph "demo subgraph") and start your journey in Subgraph unit testing!
 
@@ -224,10 +242,10 @@ export function runTests(): void {
         
         handleNewGravatars([newGravatarEvent, anotherGravatarEvent]);
 
-		// Assert the state of the store
-        store.assertFieldEq(GRAVATAR_ENTITY_TYPE, "gravatarId0", "id", "gravatarId0");
-        store.assertFieldEq(GRAVATAR_ENTITY_TYPE, "12345", "id", "12345");
-        store.assertFieldEq(GRAVATAR_ENTITY_TYPE, "3546", "id", "3546");
+		    // Assert the state of the store
+        store.assertFieldEq("Gravatar", "gravatarId0", "id", "gravatarId0");
+        store.assertFieldEq("Gravatar", "12345", "id", "12345");
+        store.assertFieldEq("Gravatar", "3546", "id", "3546");
 
         clearStore();
     });
@@ -310,18 +328,24 @@ assert.equals(ethereum.Value.fromAddress(expectedResult), ethereum.Value.fromAdd
 ```
 As demonstrated, in order to mock a contract call and hardcore a return value, the user must provide a contract address, function name, function signature, an array of arguments, and of course - the return value.
 
+Users can also mock function reverts:
+```typescript
+let contractAddress = Address.fromString("0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7");
+createMockedFunction(contractAddress, "getGravatar", "getGravatar(address):(string,string)")
+    .withArgs([ethereum.Value.fromAddress(contractAddress)])
+    .reverts();
+```
+
 ### As a user I want to assert the state of the store
 Users are able to assert the final (or midway) state of the store through asserting entities. In order to do this, the user has to supply an Entity type, the specific ID of an Entity, a name of a field on that Entity, and the expected value of the field. Here's a quick example:
 ```typescript
 import { assert } from "matchstick-as/assembly/index";
 import { Gravatar } from "../generated/schema";
 
-let GRAVATAR_ENTITY_TYPE = "Gravatar";
-
 let gravatar = new Gravatar("gravatarId0");
 gravatar.save();
 
-assert.fieldEquals(GRAVATAR_ENTITY_TYPE, "gravatarId0", "id", "gravatarId0");
+assert.fieldEquals("Gravatar", "gravatarId0", "id", "gravatarId0");
 
 ```
 Running the assert.fieldEquals() function will check for equality of the given field against the given expected value. The test will fail and an error message will be outputted if the values are **NOT** equal. Otherwise the test will pass successfully.
@@ -338,7 +362,7 @@ let newGravatarEvent: NewGravatar = addMetadata(base);
 ```
 
 Then you can read/write to those fiels like this:
-```tyepscript
+```typescript
 let logType = newGravatarEvent.logType;
 
 let UPDATED_ADDRESS = "0xB16081F360e3847006dB660bae1c6d1b2e17eC2A";
@@ -346,7 +370,7 @@ newGravatarEvent.address = Address.fromString(UPDATED_ADDRESS);
 ```
 
 ### As a user I want be able to assert if variables are equal
-```
+```typescript
 assert.equals(ethereum.Value.fromString("hello"), ethereum.Value.fromString("hello"));
 ```
 
@@ -370,6 +394,8 @@ Known issues:
 You can check out the full list of tasks [here](https://github.com/LimeChain/matchstick/projects/2).
 
 ## Technologies used 💻
+
+![diagram-resized](https://user-images.githubusercontent.com/32264020/128724602-81699397-1bb9-4e54-94f5-bb0f40c2a38b.jpg)
 
 The **Matchstick** framework is built in **Rust** and acts as a wrapper for the generated WebAssembly module that contains the mappings and the unit tests. It passes the host function implementations down to the module, to be used in the tests (and in the mappings if needed). The framework also acts as a proxy for structs defined in the [graph-node repo](https://github.com/graphprotocol/graph-node/tree/master/graph "graph-node repo"), because it needs to pass down all the usual imports, as well as a few bonus/mocked ones glued on top.
 
