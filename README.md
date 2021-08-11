@@ -284,7 +284,7 @@ gravatar.save();
 ```
 
 ### As a user I want to call a mapping function with an event
-A user can create a custom event Entity and pass it to a mapping function that is bound to the store:
+A user can create a custom event and pass it to a mapping function that is bound to the store:
 ```typescript
 import { store } from "matchstick-as/assembly/store";
 import { handleNewGravatars, createNewGravatarEvent } from "./mapping";
