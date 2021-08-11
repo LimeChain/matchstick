@@ -1,13 +1,8 @@
 #[cfg(test)]
 mod integration_tests {
     use crate::module_from_path;
-    use crate::wasm_instance::{clear_function_mocks, clear_test_results, get_failed_tests};
+    use crate::wasm_instance::{clear_pub_static_refs, get_failed_tests};
     use serial_test::serial;
-
-    fn cleanup() {
-        clear_test_results();
-        clear_function_mocks();
-    }
 
     #[test]
     #[serial]
@@ -19,7 +14,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 1);
-        cleanup();
+        clear_pub_static_refs();
     }
 
     #[test]
@@ -32,7 +27,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 1);
-        cleanup();
+        clear_pub_static_refs();
     }
 
     #[test]
@@ -46,7 +41,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 1);
-        cleanup();
+        clear_pub_static_refs();
     }
 
     #[test]
@@ -59,7 +54,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 0);
-        cleanup();
+        clear_pub_static_refs();
     }
 
     #[test]
@@ -71,7 +66,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 0);
-        cleanup();
+        clear_pub_static_refs();
     }
 
     #[test]
@@ -83,7 +78,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 0);
-        cleanup();
+        clear_pub_static_refs();
     }
 
     #[test]
@@ -95,7 +90,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 0);
-        cleanup();
+        clear_pub_static_refs();
     }
 
     #[test]
@@ -107,7 +102,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 0);
-        cleanup();
+        clear_pub_static_refs();
     }
 
     #[test]
@@ -119,7 +114,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 0);
-        cleanup();
+        clear_pub_static_refs();
     }
 
     #[test]
@@ -131,7 +126,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 0);
-        cleanup();
+        clear_pub_static_refs();
     }
 
     #[test]
@@ -145,7 +140,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 0);
-        cleanup();
+        clear_pub_static_refs();
     }
 
     #[test]
@@ -157,7 +152,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 0);
-        cleanup();
+        clear_pub_static_refs();
     }
 
     #[test]
@@ -169,7 +164,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 0);
-        cleanup();
+        clear_pub_static_refs();
     }
 
     #[test]
@@ -181,7 +176,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 0);
-        cleanup();
+        clear_pub_static_refs();
     }
 
     #[test]
@@ -193,7 +188,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 0);
-        cleanup();
+        clear_pub_static_refs();
     }
 
     #[test]
@@ -204,7 +199,7 @@ mod integration_tests {
         let run_tests = module.instance.get_func("runTests").unwrap();
 
         run_tests.call(&[]).unwrap();
-        cleanup();
+        clear_pub_static_refs();
     }
 
     #[test]
@@ -216,7 +211,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 1);
-        cleanup();
+        clear_pub_static_refs();
     }
 
     #[test]
@@ -228,7 +223,7 @@ mod integration_tests {
 
         let failed_tests = get_failed_tests();
         assert_eq!(failed_tests, 0);
-        cleanup();
+        clear_pub_static_refs();
     }
 
     #[test]
@@ -241,6 +236,6 @@ mod integration_tests {
         let run_tests = module.instance.get_func("runTests").unwrap();
         run_tests.call(&[]).unwrap();
 
-        cleanup();
+        clear_pub_static_refs();
     }
 }

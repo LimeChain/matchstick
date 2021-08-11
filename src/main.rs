@@ -25,6 +25,7 @@ use crate::wasm_instance::WasmInstance;
 
 mod integration_tests;
 mod subgraph_store;
+mod unit_tests;
 mod wasm_instance;
 mod writable_store;
 
