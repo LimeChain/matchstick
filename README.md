@@ -226,7 +226,7 @@ That's all well and good, but what if we had more complex logic in the handler f
 What we need to do is create a test file, we can name it however we want - let's say `gravity.test.ts`, in our project. In our test file we need to define a function named `runTests()`, it's important that the function has that exact name (for now). This is an example of how our tests might look like:
 
 ```typescript
-import { clearStore, test } from "matchstick-as/assembly/index";
+import { clearStore, test, assert } from "matchstick-as/assembly/index";
 import { Gravatar } from "../../generated/schema";
 import { createNewGravatarEvent, handleNewGravatars } from "../mappings/gravity";
 
