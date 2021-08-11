@@ -361,7 +361,7 @@ let base: ethereum.Event = new NewGravatar();
 let newGravatarEvent: NewGravatar = addMetadata(base);
 ```
 
-Then you can read/write to those fiels like this:
+Then you can read/write to those fields like this:
 ```typescript
 let logType = newGravatarEvent.logType;
 
