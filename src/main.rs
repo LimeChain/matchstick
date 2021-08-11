@@ -190,7 +190,7 @@ ___  ___      _       _         _   _      _
         2. A mocked function call reverted. Consider using 'try_functionName' to handle this in the mapping.
 
         Please ensure that you have proper null checks in your tests.
-        You can debug your test file using the 'log()' function, provided by matchstick-as (import { log } from "matchstick-as/assembly/log").
+        You can debug your test file using the 'debug()' function, provided by matchstick-as (import { debug } from "matchstick-as/assembly/log").
         "#);
 
         let msg = format!("{}\n {}", err, msg).red();
