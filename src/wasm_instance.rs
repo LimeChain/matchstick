@@ -7,17 +7,12 @@ use std::time::Instant;
 use colored::*;
 use ethabi::{Address, Token};
 use graph::data::store::Value;
-use graph::prelude::Entity;
-use graph::prelude::*;
+use graph::prelude::{anyhow, anyhow::Context, Arc, Duration, Entity, HostMetrics};
 use graph::runtime::{asc_get, asc_new, try_asc_get, AscPtr};
 use graph::semver::Version;
 use graph::{
     blockchain::{Blockchain, HostFnCtx},
     cheap_clone::CheapClone,
-    prelude::{
-        anyhow::{self},
-        HostMetrics,
-    },
 };
 use graph_chain_ethereum::runtime::abi::AscUnresolvedContractCall_0_0_4;
 use graph_chain_ethereum::runtime::runtime_adapter::UnresolvedContractCall;
@@ -27,8 +22,7 @@ pub use graph_runtime_wasm::WasmInstance;
 use graph_runtime_wasm::{
     error::DeterminismLevel,
     mapping::{MappingContext, ValidModule},
-    module::IntoWasmRet,
-    module::{ExperimentalFeatures, IntoTrap, WasmInstanceContext},
+    module::{ExperimentalFeatures, IntoTrap, IntoWasmRet, WasmInstanceContext},
 };
 use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::TimeoutStopwatch};
 use indexmap::IndexMap;
