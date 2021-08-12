@@ -162,6 +162,11 @@ pub trait WICExtension {
         expected_val_ptr: AscPtr<AscString>,
     ) -> Result<(), HostExportError>;
     fn assert_equals(&mut self, expected_ptr: u32, actual_ptr: u32) -> Result<(), HostExportError>;
+    fn assert_not_in_store(
+        &mut self,
+        entity_type_ptr: AscPtr<AscString>,
+        id_ptr: AscPtr<AscString>,
+    ) -> Result<(), HostExportError>;
     fn mock_store_get(
         &mut self,
         entity_type_ptr: AscPtr<AscString>,
@@ -309,6 +314,27 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             );
             fail_test(msg);
         }
+        Ok(())
+    }
+
+    fn assert_not_in_store(
+        &mut self,
+        entity_type_ptr: AscPtr<AscString>,
+        id_ptr: AscPtr<AscString>,
+    ) -> Result<(), HostExportError> {
+        let entity_type: String = asc_get(self, entity_type_ptr)?;
+        let id: String = asc_get(self, id_ptr)?;
+
+        let map = STORE.lock().expect("Cannot access STORE.");
+
+        if map.contains_key(&entity_type) && map.get(&entity_type).unwrap().contains_key(&id) {
+            let msg = format!(
+                "Value for entity type: '{}' and id: '{}' was found in store.",
+                entity_type, id
+            );
+            fail_test(msg);
+        }
+
         Ok(())
     }
 
@@ -748,6 +774,7 @@ impl<C: Blockchain> WasmInstanceExtension<C> for WasmInstance<C> {
             link!("box.profile", box_profile, ptr);
         }
         link!("assert.equals", assert_equals, expected_ptr, actual_ptr);
+        link!("assert.notInStore", assert_not_in_store, entity_type_ptr, id_ptr);
 
         let instance = linker.instantiate(&valid_module.module)?;
 
