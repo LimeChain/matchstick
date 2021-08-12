@@ -349,7 +349,8 @@ mod unit_tests {
         let entity_type = asc_string_from_str("entity_type");
         let id = asc_string_from_str("id");
 
-        let entity_type_ptr = AscPtr::alloc_obj(entity_type, &mut context).expect("Couldn't create pointer.");
+        let entity_type_ptr =
+            AscPtr::alloc_obj(entity_type, &mut context).expect("Couldn't create pointer.");
         let id_ptr = AscPtr::alloc_obj(id, &mut context).expect("Couldn't create pointer.");
 
         context
@@ -372,15 +373,19 @@ mod unit_tests {
         drop(test_results);
         let mut map = STORE.lock().expect("Cannot access STORE.");
         map.insert("entity_type".to_string(), IndexMap::new());
-        let mut inner_map = map.get("entity_type").expect("Couldn't get inner map.").clone();
+        let mut inner_map = map
+            .get("entity_type")
+            .expect("Couldn't get inner map.")
+            .clone();
         inner_map.insert("id".to_string(), HashMap::new());
         map.insert("entity_type".to_string(), inner_map);
         drop(map);
-        
+
         let entity_type = asc_string_from_str("entity_type");
         let id = asc_string_from_str("id");
 
-        let entity_type_ptr = AscPtr::alloc_obj(entity_type, &mut context).expect("Couldn't create pointer.");
+        let entity_type_ptr =
+            AscPtr::alloc_obj(entity_type, &mut context).expect("Couldn't create pointer.");
         let id_ptr = AscPtr::alloc_obj(id, &mut context).expect("Couldn't create pointer.");
 
         context
