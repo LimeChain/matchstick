@@ -338,6 +338,62 @@ mod unit_tests {
 
     #[test]
     #[serial]
+    fn assert_not_in_store_basic_test() {
+        let mut context = get_context();
+        clear_pub_static_refs();
+
+        let mut test_results = TEST_RESULTS.lock().expect("Cannot get TEST_RESULTS.");
+        test_results.insert("test name".to_string(), true);
+        drop(test_results);
+
+        let entity_type = asc_string_from_str("entity_type");
+        let id = asc_string_from_str("id");
+
+        let entity_type_ptr = AscPtr::alloc_obj(entity_type, &mut context).expect("Couldn't create pointer.");
+        let id_ptr = AscPtr::alloc_obj(id, &mut context).expect("Couldn't create pointer.");
+
+        context
+            .assert_not_in_store(entity_type_ptr, id_ptr)
+            .expect("Couldn't call assert_not_in_store.");
+
+        let test_results = TEST_RESULTS.lock().expect("Couldn't get TEST_RESULTS.");
+        assert_eq!(test_results.len(), 1);
+        assert_eq!(*test_results.get("test name").unwrap(), true);
+    }
+
+    #[test]
+    #[serial]
+    fn assert_not_in_store_when_in_store() {
+        let mut context = get_context();
+        clear_pub_static_refs();
+
+        let mut test_results = TEST_RESULTS.lock().expect("Cannot get TEST_RESULTS.");
+        test_results.insert("test name".to_string(), true);
+        drop(test_results);
+        let mut map = STORE.lock().expect("Cannot access STORE.");
+        map.insert("entity_type".to_string(), IndexMap::new());
+        let mut inner_map = map.get("entity_type").expect("Couldn't get inner map.").clone();
+        inner_map.insert("id".to_string(), HashMap::new());
+        map.insert("entity_type".to_string(), inner_map);
+        drop(map);
+        
+        let entity_type = asc_string_from_str("entity_type");
+        let id = asc_string_from_str("id");
+
+        let entity_type_ptr = AscPtr::alloc_obj(entity_type, &mut context).expect("Couldn't create pointer.");
+        let id_ptr = AscPtr::alloc_obj(id, &mut context).expect("Couldn't create pointer.");
+
+        context
+            .assert_not_in_store(entity_type_ptr, id_ptr)
+            .expect("Couldn't call assert_not_in_store.");
+
+        let test_results = TEST_RESULTS.lock().expect("Couldn't get TEST_RESULTS.");
+        assert_eq!(test_results.len(), 1);
+        assert_eq!(*test_results.get("test name").unwrap(), false);
+    }
+
+    #[test]
+    #[serial]
     fn mock_store_get_basic_test() {
         let mut context = get_context();
         clear_pub_static_refs();

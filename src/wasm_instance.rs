@@ -33,6 +33,7 @@ use graph_runtime_wasm::{
 use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::TimeoutStopwatch};
 use indexmap::IndexMap;
 use lazy_static::lazy_static;
+use tokio::time;
 
 type Store = Mutex<IndexMap<String, IndexMap<String, HashMap<String, Value>>>>;
 
@@ -530,7 +531,7 @@ impl<C: Blockchain> WasmInstanceExtension<C> for WasmInstance<C> {
                         None => break interrupt_handle.interrupt(), // Timed out.
 
                         Some(time) if time < minimum_wait => break interrupt_handle.interrupt(),
-                        Some(time) => tokio::time::delay_for(time).await,
+                        Some(time) => time::delay_for(time).await,
                     }
                 }
             });
