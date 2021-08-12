@@ -774,7 +774,12 @@ impl<C: Blockchain> WasmInstanceExtension<C> for WasmInstance<C> {
             link!("box.profile", box_profile, ptr);
         }
         link!("assert.equals", assert_equals, expected_ptr, actual_ptr);
-        link!("assert.notInStore", assert_not_in_store, entity_type_ptr, id_ptr);
+        link!(
+            "assert.notInStore",
+            assert_not_in_store,
+            entity_type_ptr,
+            id_ptr
+        );
 
         let instance = linker.instantiate(&valid_module.module)?;
 
