@@ -7,17 +7,12 @@ use std::time::Instant;
 use colored::*;
 use ethabi::{Address, Token};
 use graph::data::store::Value;
-use graph::prelude::Entity;
-use graph::prelude::*;
+use graph::prelude::{Entity, Arc, Duration, anyhow, HostMetrics, anyhow::Context};
 use graph::runtime::{asc_get, asc_new, try_asc_get, AscPtr};
 use graph::semver::Version;
 use graph::{
     blockchain::{Blockchain, HostFnCtx},
-    cheap_clone::CheapClone,
-    prelude::{
-        anyhow::{self},
-        HostMetrics,
-    },
+    cheap_clone::CheapClone
 };
 use graph_chain_ethereum::runtime::abi::AscUnresolvedContractCall_0_0_4;
 use graph_chain_ethereum::runtime::runtime_adapter::UnresolvedContractCall;
@@ -27,13 +22,11 @@ pub use graph_runtime_wasm::WasmInstance;
 use graph_runtime_wasm::{
     error::DeterminismLevel,
     mapping::{MappingContext, ValidModule},
-    module::IntoWasmRet,
-    module::{ExperimentalFeatures, IntoTrap, WasmInstanceContext},
+    module::{ExperimentalFeatures, IntoTrap, WasmInstanceContext, IntoWasmRet},
 };
 use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::TimeoutStopwatch};
 use indexmap::IndexMap;
 use lazy_static::lazy_static;
-use tokio::time;
 
 type Store = Mutex<IndexMap<String, IndexMap<String, HashMap<String, Value>>>>;
 
@@ -531,7 +524,7 @@ impl<C: Blockchain> WasmInstanceExtension<C> for WasmInstance<C> {
                         None => break interrupt_handle.interrupt(), // Timed out.
 
                         Some(time) if time < minimum_wait => break interrupt_handle.interrupt(),
-                        Some(time) => time::delay_for(time).await,
+                        Some(time) => tokio::time::delay_for(time).await,
                     }
                 }
             });
