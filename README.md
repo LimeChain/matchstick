@@ -1,5 +1,7 @@
 ![GitHub Bannet-1](https://user-images.githubusercontent.com/32264020/128688825-29841c79-976a-428d-b5f0-0743739fc075.png)
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 👋 Welcome to **Matchstick** - a unit testing framework for The Graph protocol. Try out your mapping logic in a sandboxed environment and ensure your handlers run correctly when deploying your awesome subgraph!
 
 ## Quick Start 🚀
