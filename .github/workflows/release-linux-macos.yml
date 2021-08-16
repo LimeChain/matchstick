@@ -37,11 +37,12 @@ jobs:
 
       - name: Build
         run: cargo build --release
+        run: tar -czvf ../target/release/${{ matrix.asset_name }}.tar.gz ../target/release/matchstick
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/release/${{ matrix.artifact_name }}
+          file: target/release/${{ matrix.artifact_name }}.tar.gz
           asset_name: ${{ matrix.asset_name }}
           tag: ${{ github.ref }}
