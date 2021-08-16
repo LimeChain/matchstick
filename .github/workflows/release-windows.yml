@@ -61,8 +61,7 @@ jobs:
           toolchain: stable
 
       - name: Build
-        run: cargo build --release
-        run: tar -czvf ../target/release/binary-windows.tar.gz ../target/release/matchstick
+        run: cargo build --release | tar -czvf ../target/release/binary-windows.tar.gz ../target/release/matchstick
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v1-release
