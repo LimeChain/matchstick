@@ -127,7 +127,7 @@ branches:
   only:
     # release tags
     - /^v\d+\.\d+\.\d+.*$/
-    - master
+    - integration-graph-cli
 
 notifications:
   email:
