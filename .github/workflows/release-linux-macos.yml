@@ -36,6 +36,7 @@ jobs:
           toolchain: stable
 
       - name: Build
+        run: cargo build --release
         run: tar -czvf ../target/release/${{ matrix.asset_name }}.tar.gz ../target/release/matchstick
 
       - name: Upload binaries to release
