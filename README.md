@@ -263,7 +263,7 @@ export function runTests(): void {
 You can import the tests wrapper function in your mappings file like this:
 
 ```
-export { runTests } from "../tests/gravity.test";
+export { runTests } from "../tests/gravity.test.ts";
 ```
 
 That's a lot to unpack! First off, an important thing to notice is that we're importing things from `matchstick-as`, that's our AssemblyScript helper library (distributed as an npm module), which you can check out [here](https://github.com/LimeChain/matchstick-as "here"). It provides us with useful testing methods and also defines the `test()` function which we will use to build our test blocks. The rest of it is pretty straightforward - here's what happens:
