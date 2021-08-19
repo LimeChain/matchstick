@@ -421,7 +421,7 @@ Here are some of the areas we're set to focus on from here on out:
 
 Known issues:
 - When `runTests()` is imported in the mappings file the deployment to the hosted service will break. For now, it's required to remove/comment out the import.
-- Sometimes the tests do not run independently and the tests fail with `Ethereum value is not an int or uint`. Please check the bottom of the [example usage section](https://github.com/LimeChain/matchstick#example-usage-) to see how to fix that issue.
+- Sometimes the tests do not run independently and fail with `Ethereum value is not an int or uint`. Please check the bottom of the [example usage section](https://github.com/LimeChain/matchstick#example-usage-) to see how to temporarily fix that issue.
 
 You can check out the full list of tasks [here](https://github.com/LimeChain/matchstick/projects/2).
 
