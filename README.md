@@ -278,7 +278,7 @@ Mapping terminated before handling trigger: oneshot canceled
 .../
 ```
 
-❗ **IMPORTANT:** *We are experiencing a weird issue with some subgraphs where users report seeing this error: `Ethereum value is not an int or uint`, if that happens, please clear your event parameters at the end of each test. To do that just add this at the bottom of your test block (after `clearStore()`)*: 
+❗ **IMPORTANT:** *We are experiencing a weird issue with some subgraphs where users report seeing this error: `Ethereum value is not an int or uint`. If that happens, please clear your event parameters at the end of each test. To do that just add this at the bottom of your test block (after `clearStore()`)*: 
 
 ```
 event.parameters.splice(0,100);
