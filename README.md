@@ -266,6 +266,15 @@ You can import the tests wrapper function in your mappings file like this:
 export { runTests } from "../tests/gravity.test.ts";
 ```
 
+**IMPORTANT:** *Currently there's an issue with using matchstick when deploying your subgraph. Please only use Matchstick for local testing, and remove/comment out this line (`export { runTests } from "../tests/gravity.test.ts"`) once you're done. We expect to resolve this issue shortly, sorry for the inconvenience!*
+
+*If you don't remove that line, you will get the following error message when attempting to deploy your subgraph:*
+```
+/...
+Mapping terminated before handling trigger: oneshot canceled
+.../
+```
+
 That's a lot to unpack! First off, an important thing to notice is that we're importing things from `matchstick-as`, that's our AssemblyScript helper library (distributed as an npm module), which you can check out [here](https://github.com/LimeChain/matchstick-as "here"). It provides us with useful testing methods and also defines the `test()` function which we will use to build our test blocks. The rest of it is pretty straightforward - here's what happens:
 - We're setting up our initial state and adding one custom Gravatar entity;
 - We define two `NewGravatar` event objects along with their data;
