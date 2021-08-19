@@ -278,6 +278,23 @@ Mapping terminated before handling trigger: oneshot canceled
 .../
 ```
 
+❗ **IMPORTANT:** *We are experiencing a weird issue with some subgraphs where users report seeing this error: `Ethereum value is not an int or uint`, if that happens, please clear your event parameters at the end of each test. To do that just add this at the bottom of your test block (after `clearStore()`)*: 
+
+```
+event.parameters.splice(0,100);
+```
+
+Using the above example it would look like this:
+
+```
+clearStore();
+
+newGravatarEvent.parameters.splice(0,100);
+anotherGravatarEvent.parameters.splice(0,100);
+```
+
+*We are working on an official bug fix and soon this won't be needed at all.*
+
 That's a lot to unpack! First off, an important thing to notice is that we're importing things from `matchstick-as`, that's our AssemblyScript helper library (distributed as an npm module), which you can check out [here](https://github.com/LimeChain/matchstick-as "here"). It provides us with useful testing methods and also defines the `test()` function which we will use to build our test blocks. The rest of it is pretty straightforward - here's what happens:
 - We're setting up our initial state and adding one custom Gravatar entity;
 - We define two `NewGravatar` event objects along with their data;
