@@ -266,7 +266,7 @@ You can import the tests wrapper function in your mappings file like this:
 export { runTests } from "../tests/gravity.test.ts";
 ```
 
-❗ **IMPORTANT:** *Currently there's an issue with using matchstick when deploying your subgraph. Please only use Matchstick for local testing, and remove/comment out this line (`export { runTests } from "../tests/gravity.test.ts"`) once you're done. We expect to resolve this issue shortly, sorry for the inconvenience!*
+❗ **IMPORTANT:** *Currently there's an issue with using Matchstick when deploying your subgraph. Please only use Matchstick for local testing, and remove/comment out this line (`export { runTests } from "../tests/gravity.test.ts"`) once you're done. We expect to resolve this issue shortly, sorry for the inconvenience!*
 
 *If you don't remove that line, you will get the following error message when attempting to deploy your subgraph:*
 ```
