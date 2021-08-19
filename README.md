@@ -95,6 +95,9 @@ Clone this repository and run `cargo build`. If that executes successfully congr
 **NOTE:** *You may encounter an error, related to missing `libpq` dependencies on your system. In that case - install the missing dependencies (listed in the error log) with your package manager.*
 
 ## Example Usage 📖
+
+If you prefer learning through watching, here's a [full tutorial of Matchstick](https://www.youtube.com/watch?v=T-orbT4gRiA)!
+
 Let's explore a few common scenarios where we'd want to test our handler functions. We've created a [**demo subgraph repo**](https://github.com/LimeChain/demo-subgraph "demo subgraph") ❗to fully demonstrate how to use the framework and all its functionality. It uses the [Example Subgraph](https://thegraph.com/docs/developer/create-subgraph-hosted "Example Subgraph"), provided by [The Graph Docs](https://thegraph.com/docs "The Graph Docs"), which you most likely will be familiar with. For the full examples, feel free to check it out in depth. Let's dive in straight to the code on there! We've got the following simple **generated** event:
 ```typescript
 export class NewGravatar extends ethereum.Event {
