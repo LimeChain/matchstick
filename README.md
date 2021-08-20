@@ -231,8 +231,9 @@ That's all well and good, but what if we had more complex logic in the handler f
 What we need to do is create a test file, we can name it however we want - let's say `gravity.test.ts`, in our project. In our test file we need to define a function named `runTests()`, it's important that the function has that exact name (for now). This is an example of how our tests might look like:
 
 ```typescript
-import { clearStore, test, assert } from "matchstick-as/assembly/index";
+import { clearStore, test, assert, newMockEvent } from "matchstick-as/assembly/index";
 import { Gravatar } from "../../generated/schema";
+import { NewGravatar } from "../../generated/Gravity/Gravity";
 import { createNewGravatarEvent, handleNewGravatars } from "../mappings/gravity";
 
 export function runTests(): void {
@@ -242,14 +243,15 @@ export function runTests(): void {
         gravatar.save();
 
         // Call mappings
-        let newGravatarEvent = createNewGravatarEvent(12345, "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7", "cap", "pac");
-        let anotherGravatarEvent = createNewGravatarEvent(3546, "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7", "cap", "pac");
+        let newGravatarEvent = newMockEvent(createNewGravatarEvent(12345, "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7", "cap", "pac")) as NewGravatar;
+
+        let anotherGravatarEvent = newMockEvent(createNewGravatarEvent(3546, "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7", "cap", "pac")) as NewGravatar;
         
         handleNewGravatars([newGravatarEvent, anotherGravatarEvent]);
 
-	// Assert the state of the store
-	assert.fieldEquals("Gravatar", "gravatarId0", "id", "gravatarId0");
-      	assert.fieldEquals("Gravatar", "12345", "id", "12345");
+	    // Assert the state of the store
+	    assert.fieldEquals("Gravatar", "gravatarId0", "id", "gravatarId0");
+        assert.fieldEquals("Gravatar", "12345", "id", "12345");
         assert.fieldEquals("Gravatar", "3546", "id", "3546");
 
         clearStore();
@@ -278,26 +280,9 @@ Mapping terminated before handling trigger: oneshot canceled
 .../
 ```
 
-❗ **IMPORTANT:** *We are experiencing a weird issue with some subgraphs where users report seeing this error: `Ethereum value is not an int or uint`. If that happens, please clear your event parameters at the end of each test. To do that just add this at the bottom of your test block (after `clearStore()`)*: 
-
-```
-event.parameters.splice(0,100);
-```
-
-Using the above example it would look like this:
-
-```
-clearStore();
-
-newGravatarEvent.parameters.splice(0,100);
-anotherGravatarEvent.parameters.splice(0,100);
-```
-
-*We are working on an official bug fix and soon this won't be needed at all.*
-
 That's a lot to unpack! First off, an important thing to notice is that we're importing things from `matchstick-as`, that's our AssemblyScript helper library (distributed as an npm module), which you can check out [here](https://github.com/LimeChain/matchstick-as "here"). It provides us with useful testing methods and also defines the `test()` function which we will use to build our test blocks. The rest of it is pretty straightforward - here's what happens:
 - We're setting up our initial state and adding one custom Gravatar entity;
-- We define two `NewGravatar` event objects along with their data;
+- We define two `NewGravatar` event objects along with their data, using the `newMockEvent()` function;
 - We're calling out handler methods for those events - `handleNewGravatars()` and passing in the list of our custom events;
 - We assert the state of the store. How does that work? - We're passing a unique combination of Entity type and id. Then we check a specific field on that Entity and assert that it has the value we expect it to have. We're doing this both for the initial burger Entity we added and for the one that gets added when the handler function is called;
 - And lastly - we're cleaning the store using `clearStore()` so that our next test can start with a fresh and empty store object. We can define as many test blocks as we want.
@@ -317,10 +302,12 @@ gravatar.save();
 ### As a user I want to call a mapping function with an event
 A user can create a custom event and pass it to a mapping function that is bound to the store:
 ```typescript
+import { newMockEvent } from "matchstick-as/assembly/index";
 import { store } from "matchstick-as/assembly/store";
+import { NewGravatar } from "../../generated/Gravity/Gravity";
 import { handleNewGravatars, createNewGravatarEvent } from "./mapping";
 
-let newGravatarEvent = createNewGravatarEvent(12345, "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7", "cap", "pac");
+let newGravatarEvent = newMockEvent(createNewGravatarEvent(12345, "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7", "cap", "pac")) as NewGravatar;
 
 handleNewGravatar(newGravatarEvent);
 ```
@@ -328,12 +315,14 @@ handleNewGravatar(newGravatarEvent);
 ### As a user I want to call all of the mappings with event fixtures
 Users can call the mappings with test fixtures.
 ```typescript
+import { newMockEvent } from "matchstick-as/assembly/index";
+import { NewGravatar } from "../../generated/Gravity/Gravity";
 import { store } from "matchstick-as/assembly/store";
 import { handleNewGravatars, createNewGravatarEvent } from "./mapping";
 
-let newGravatarEvent = createNewGravatarEvent(12345, "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7", "cap", "pac");
+let newGravatarEvent = newMockEvent(createNewGravatarEvent(12345, "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7", "cap", "pac")) as NewGravatar;
 
-let anotherGravatarEvent = createNewGravatarEvent(3546, "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7", "cap", "pac");
+let anotherGravatarEvent = newMockEvent(createNewGravatarEvent(3546, "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7", "cap", "pac")) as NewGravatar;
 
 handleNewGravatars([newGravatarEvent, anotherGravatarEvent]);
 ```
@@ -382,17 +371,8 @@ assert.fieldEquals("Gravatar", "gravatarId0", "id", "gravatarId0");
 Running the assert.fieldEquals() function will check for equality of the given field against the given expected value. The test will fail and an error message will be outputted if the values are **NOT** equal. Otherwise the test will pass successfully.
 
 ### As a user I want be able to interact with Event metadata
-Users can *inject* default transaction data into any event object, as long as it inherits the base `ethereum.Event`. The following example shows how you can wrap any event with default metadata:
-```typescript
-import { addMetadata } from "matchstick-as/assembly/index";
-import { Address, BigInt, Bytes, ethereum } from "@graphprotocol/graph-ts";
-import { NewGravatar } from "../generated/Gravity/Gravity";
+Users can use default transaction metadata, which will exist on any mock event object, as long as it is created using the `newMockEvent()` function. The following example shows how you can read/write to those fields on the Event object:
 
-let base: ethereum.Event = new NewGravatar();
-let newGravatarEvent: NewGravatar = addMetadata(base);
-```
-
-Then you can read/write to those fields like this:
 ```typescript
 let logType = newGravatarEvent.logType;
 
@@ -402,7 +382,7 @@ newGravatarEvent.address = Address.fromString(UPDATED_ADDRESS);
 
 ### As a user I want be able to assert if variables are equal
 ```typescript
-assert.equals(ethereum.Value.fromString("hello"), ethereum.Value.fromString("hello"));
+assert.equals(ethereum.Value.fromString("hello"); ethereum.Value.fromString("hello"));
 ```
 
 ### As a user I want to see test run time durations
