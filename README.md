@@ -249,8 +249,8 @@ export function runTests(): void {
         
         handleNewGravatars([newGravatarEvent, anotherGravatarEvent]);
 
-	    // Assert the state of the store
-	    assert.fieldEquals("Gravatar", "gravatarId0", "id", "gravatarId0");
+        // Assert the state of the store
+        assert.fieldEquals("Gravatar", "gravatarId0", "id", "gravatarId0");
         assert.fieldEquals("Gravatar", "12345", "id", "12345");
         assert.fieldEquals("Gravatar", "3546", "id", "3546");
 
