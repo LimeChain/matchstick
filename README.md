@@ -289,17 +289,17 @@ That's a lot to unpack! First off, an important thing to notice is that we're im
 
 There we go - we've tested our first event handler! 👏
 
-Now let's recap and take a look at some **User Stories**, which include what we already covered plus more useful things we can use **Matchstick** for.
+Now let's recap and take a look at some concise, common **use cases**, which include what we already covered plus more useful things we can use **Matchstick** for.
 
-## User Stories 📝
-### As a user I want to hydrate the store with a certain state
+## Use Cases 🧰
+### Hydrating the store with a certain state
 Users are able to hydrate the store with a known set of entities. Here's an example to initialise the store with a Gravatar entity:
 ```typescript
 let gravatar = new Gravatar("entryId");
 gravatar.save();
 ```
 
-### As a user I want to call a mapping function with an event
+### Calling a mapping function with an event
 A user can create a custom event and pass it to a mapping function that is bound to the store:
 ```typescript
 import { newMockEvent } from "matchstick-as/assembly/index";
@@ -312,7 +312,7 @@ let newGravatarEvent = newMockEvent(createNewGravatarEvent(12345, "0x89205A3A3b2
 handleNewGravatar(newGravatarEvent);
 ```
 
-### As a user I want to call all of the mappings with event fixtures
+### Calling all of the mappings with event fixtures
 Users can call the mappings with test fixtures.
 ```typescript
 import { newMockEvent } from "matchstick-as/assembly/index";
@@ -327,7 +327,7 @@ let anotherGravatarEvent = newMockEvent(createNewGravatarEvent(3546, "0x89205A3A
 handleNewGravatars([newGravatarEvent, anotherGravatarEvent]);
 ```
 
-### As a user I want to mock contract calls
+### Mocking contract calls
 Users can mock contract calls:
 ```typescript
 import { addMetadata, assert, createMockedFunction, clearStore, test } from "matchstick-as/assembly/index";
@@ -356,7 +356,7 @@ createMockedFunction(contractAddress, "getGravatar", "getGravatar(address):(stri
     .reverts();
 ```
 
-### As a user I want to assert the state of the store
+### Asserting the state of the store
 Users are able to assert the final (or midway) state of the store through asserting entities. In order to do this, the user has to supply an Entity type, the specific ID of an Entity, a name of a field on that Entity, and the expected value of the field. Here's a quick example:
 ```typescript
 import { assert } from "matchstick-as/assembly/index";
@@ -370,7 +370,7 @@ assert.fieldEquals("Gravatar", "gravatarId0", "id", "gravatarId0");
 ```
 Running the assert.fieldEquals() function will check for equality of the given field against the given expected value. The test will fail and an error message will be outputted if the values are **NOT** equal. Otherwise the test will pass successfully.
 
-### As a user I want be able to interact with Event metadata
+### Interacting with Event metadata
 Users can use default transaction metadata, which will exist on any mock event object, as long as it is created using the `newMockEvent()` function. The following example shows how you can read/write to those fields on the Event object:
 
 ```typescript
@@ -380,12 +380,12 @@ let UPDATED_ADDRESS = "0xB16081F360e3847006dB660bae1c6d1b2e17eC2A";
 newGravatarEvent.address = Address.fromString(UPDATED_ADDRESS);
 ```
 
-### As a user I want be able to assert if variables are equal
+### Asserting variable equality
 ```typescript
 assert.equals(ethereum.Value.fromString("hello"); ethereum.Value.fromString("hello"));
 ```
 
-### As a user I want to see test run time durations
+### Test run time duration in the log output
 The log output includes the test run duration. Here's an example:
 
 `Jul 09 14:54:42.420 INFO Program execution time: 10.06022ms`
