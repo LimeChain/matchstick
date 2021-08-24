@@ -10,7 +10,7 @@ The release binary comes in three flavours - for **MacOS**, **Linux** and **Wind
 ### MacOS 
 
 ```
-curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.0/binary-macos &&
+curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.1/binary-macos &&
 mv binary-macos matchstick &&
 chmod a+x matchstick
 ```
@@ -23,7 +23,7 @@ brew install postgresql
 ### Linux 🐧
 
 ```
-curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.0/binary-linux &&
+curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.1/binary-linux &&
 mv binary-linux matchstick &&
 chmod a+x matchstick
 ```
@@ -36,7 +36,7 @@ sudo apt install postgresql
 ### Windows
 
 ```
-curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.0/binary-windows &&
+curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.1/binary-windows &&
 move binary-windows matchstick
 ```
 
