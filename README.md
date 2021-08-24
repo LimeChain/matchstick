@@ -385,6 +385,13 @@ newGravatarEvent.address = Address.fromString(UPDATED_ADDRESS);
 assert.equals(ethereum.Value.fromString("hello"); ethereum.Value.fromString("hello"));
 ```
 
+### Asserting that an Entity is **not** in the store
+Users can assert that an entity does not exist in the store. If the entity is in fact in the store, the test will fail with a relevant error message. Here's a quick example of how to use this functionality:
+
+```typescript
+assert.notInStore("Gravatar", "23");
+```
+
 ### Test run time duration in the log output
 The log output includes the test run duration. Here's an example:
 
