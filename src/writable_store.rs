@@ -94,4 +94,8 @@ impl WritableStore for MockWritableStore {
     {
         unreachable!()
     }
+
+    fn shard(&self) -> &str {
+        unreachable!()
+    }
 }
