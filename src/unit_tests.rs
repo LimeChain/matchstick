@@ -55,9 +55,9 @@ mod unit_tests {
 
         context.log(3, pointer).expect("Couldn't call log.");
 
-        let logs = LOGS.lock().expect("Cannot access LOGS.");
+        let mut logs = LOGS.lock().expect("Cannot access LOGS.");
         assert_eq!(logs.len(), 1);
-        assert!(logs.contains_key("log message"));
+        assert_eq!(logs.pop().unwrap().0, "log message");
     }
 
     #[test]
@@ -73,10 +73,10 @@ mod unit_tests {
 
         context.log(1, pointer).expect("Couldn't call log.");
 
-        let logs = LOGS.lock().expect("Cannot get LOGS.");
+        let mut logs = LOGS.lock().expect("Cannot get LOGS.");
         let test_results = TEST_RESULTS.lock().expect("Couldn't get TEST_RESULTS.");
         assert_eq!(logs.len(), 1);
-        assert!(logs.contains_key("log message"));
+        assert_eq!(logs.pop().unwrap().0, "log message");
         assert_eq!(test_results.len(), 1);
         assert_eq!(*test_results.get("test name").unwrap(), false);
     }
