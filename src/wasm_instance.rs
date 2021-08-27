@@ -34,7 +34,7 @@ lazy_static! {
     pub(crate) static ref FUNCTIONS_MAP: Mutex<IndexMap<String, Vec<Token>>> =
         Mutex::new(IndexMap::new());
     pub(crate) static ref STORE: Store = Mutex::from(IndexMap::new());
-    pub(crate) static ref LOGS: Mutex<IndexMap<String, Level>> = Mutex::new(IndexMap::new());
+    pub(crate) static ref LOGS: Mutex<Vec<(String, Level)>> = Mutex::new(vec!());
     pub(crate) static ref TEST_RESULTS: Mutex<IndexMap<String, bool>> = Mutex::new(IndexMap::new());
     static ref REVERTS_IDENTIFIER: Vec<Token> =
         vec!(Token::Bytes(vec!(255, 255, 255, 255, 255, 255, 255)));
@@ -109,7 +109,7 @@ pub fn fail_test(msg: String) {
         .insert(test_name, false);
     LOGS.lock()
         .expect("Cannot access LOGS.")
-        .insert(msg, Level::Error);
+        .push((msg, Level::Error));
 }
 
 pub fn flush_logs() {
@@ -207,7 +207,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             _ => {
                 LOGS.lock()
                     .expect("Cannot access LOGS.")
-                    .insert(msg, level_from_u32(level));
+                    .push((msg, level_from_u32(level)));
             }
         }
 
@@ -237,7 +237,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             .insert(name.clone(), true);
         LOGS.lock()
             .expect("Cannot access LOGS.")
-            .insert(name, Level::Info);
+            .push((name, Level::Info));
 
         Ok(())
     }
