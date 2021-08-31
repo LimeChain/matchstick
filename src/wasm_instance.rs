@@ -190,6 +190,17 @@ pub trait WICExtension {
         return_value_ptr: u32,
         reverts: u32,
     ) -> Result<(), HostExportError>;
+    fn mock_data_source_create(
+        &mut self,
+        name_ptr: AscPtr<AscString>,
+        params_ptr: AscPtr<Array<AscPtr<AscString>>>,
+    ) -> Result<(), HostExportError>;
+    fn mock_data_source_create_with_context(
+        &mut self,
+        name_ptr: AscPtr<AscString>,
+        params_ptr: AscPtr<Array<AscPtr<AscString>>>,
+        context_ptr: AscPtr<AscEntity>,
+    ) -> Result<(), HostExportError>;
 }
 
 impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
@@ -474,6 +485,23 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
 
         Ok(())
     }
+
+    fn mock_data_source_create(
+        &mut self,
+        _name_ptr: AscPtr<AscString>,
+        _params_ptr: AscPtr<Array<AscPtr<AscString>>>,
+    ) -> Result<(), HostExportError> {
+        Ok(())
+    }
+
+    fn mock_data_source_create_with_context(
+        &mut self,
+        _name_ptr: AscPtr<AscString>,
+        _params_ptr: AscPtr<Array<AscPtr<AscString>>>,
+        _context_ptr: AscPtr<AscEntity>,
+    ) -> Result<(), HostExportError> {
+        Ok(())
+    }
 }
 
 fn create_unique_fn_string(
@@ -736,10 +764,10 @@ impl<C: Blockchain> WasmInstanceExtension<C> for WasmInstance<C> {
         link!("bigDecimal.dividedBy", big_decimal_divided_by, x, y);
         link!("bigDecimal.equals", big_decimal_equals, x_ptr, y_ptr);
 
-        link!("dataSource.create", data_source_create, name, params);
+        link!("dataSource.create", mock_data_source_create, name, params);
         link!(
             "dataSource.createWithContext",
-            data_source_create_with_context,
+            mock_data_source_create_with_context,
             name,
             params,
             context
