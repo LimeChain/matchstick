@@ -9,7 +9,6 @@ graph-runtime-wasm = { git = "https://github.com/graphprotocol/graph-node", bran
 ethabi = { git = "https://github.com/graphprotocol/ethabi.git", branch = "master" }
 graph = { git = "https://github.com/graphprotocol/graph-node", package = "graph", branch = "master" }
 graph-mock = { git = "https://github.com/graphprotocol/graph-node", package = "graph-mock", branch = "master" }
-test-store = { git = "https://github.com/graphprotocol/graph-node", branch = "master" }
 graph-chain-ethereum = { git = "https://github.com/graphprotocol/graph-node", branch = "master" }
 graph-core = { git = "https://github.com/graphprotocol/graph-node", branch = "master" }
 graph-runtime-test = { git = "https://github.com/graphprotocol/graph-node" , package = "graph-runtime-test", branch = "master" }
