@@ -27,6 +27,7 @@ use graph_runtime_wasm::{
 use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::TimeoutStopwatch};
 use indexmap::IndexMap;
 use lazy_static::lazy_static;
+use serde_json::to_string_pretty;
 
 type Store = Mutex<IndexMap<String, IndexMap<String, HashMap<String, Value>>>>;
 
@@ -147,6 +148,7 @@ pub trait WasmInstanceExtension<C: graph::blockchain::Blockchain> {
 pub trait WICExtension {
     fn log(&mut self, level: u32, msg: AscPtr<AscString>) -> Result<(), HostExportError>;
     fn clear_store(&mut self) -> Result<(), HostExportError>;
+    fn log_store(&mut self) -> Result<(), HostExportError>;
     fn register_test(&mut self, name: AscPtr<AscString>) -> Result<(), HostExportError>;
     fn assert_field_equals(
         &mut self,
@@ -227,6 +229,15 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
 
     fn clear_store(&mut self) -> Result<(), HostExportError> {
         STORE.lock().expect("Cannot access STORE.").clear();
+        Ok(())
+    }
+
+    fn log_store(&mut self) -> Result<(), HostExportError> {
+        let store = STORE.lock().expect("Cannot access STORE.");
+        LOGS.lock().expect("Cannot access LOGS.").push((
+            to_string_pretty(&store.clone()).expect("Couldn't get json representation of store."),
+            Level::Debug,
+        ));
         Ok(())
     }
 
@@ -698,6 +709,7 @@ impl<C: Blockchain> WasmInstanceExtension<C> for WasmInstance<C> {
         );
 
         link!("clearStore", clear_store,);
+        link!("logStore", log_store,);
         link!(
             "store.get",
             mock_store_get,
