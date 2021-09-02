@@ -15,7 +15,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        name: [linux-16, linux-18, linux-20, macos-18, macos-19, macos-20, macos-21]
+        name: [linux-16, linux-18, linux-20, macos-10.14, macos-10.15, macos-11, macos-12]
 
         include:
           - name: linux-16
@@ -30,22 +30,22 @@ jobs:
             os: ubuntu-20.04
             artifact_name: matchstick
             asset_name: binary-linux-20
-          - name: macos-18
-            os: macos-18.7
+          - name: macos-10.14
+            os: macos-10.14
             artifact_name: matchstick
-            asset_name: binary-macos-18
-          - name: macos-19
-            os: macos-19.6
+            asset_name: binary-macos-10.14
+          - name: macos-10.15
+            os: macos-10.15
             artifact_name: matchstick
-            asset_name: binary-macos-19
-          - name: macos-20
-            os: macos-20.6
+            asset_name: binary-macos-10.15
+          - name: macos-11
+            os: macos-11
             artifact_name: matchstick
-            asset_name: binary-macos-20
-          - name: macos-21
-            os: macos-21.0
+            asset_name: binary-macos-11
+          - name: macos-12
+            os: macos-12
             artifact_name: matchstick
-            asset_name: binary-macos-21
+            asset_name: binary-macos-12
             
     steps:
       - uses: actions/checkout@v2
