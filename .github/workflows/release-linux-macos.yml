@@ -17,6 +17,7 @@ jobs:
       matrix:
         name: [linux-18, linux-20, macos-10.14, macos-10.15, macos-11]
 
+        include:
           - name: linux-18
             os: ubuntu-18.04
             artifact_name: binary-linux-18
