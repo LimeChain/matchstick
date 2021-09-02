@@ -19,31 +19,31 @@ jobs:
 
         include:
           - name: linux-16
-            os: ubuntu-16.04.7
+            os: ubuntu-16.04
             artifact_name: matchstick
             asset_name: binary-linux-16
           - name: linux-18
-            os: ubuntu-18.04.5
+            os: ubuntu-18.04
             artifact_name: matchstick
             asset_name: binary-linux-18
           - name: linux-20
-            os: ubuntu-20.04.2
+            os: ubuntu-20.04
             artifact_name: matchstick
             asset_name: binary-linux-20
           - name: macos-18
-            os: macos-18.7.0
+            os: macos-18.7
             artifact_name: matchstick
             asset_name: binary-macos-18
           - name: macos-19
-            os: macos-19.6.0
+            os: macos-19.6
             artifact_name: matchstick
             asset_name: binary-macos-19
           - name: macos-20
-            os: macos-20.6.0
+            os: macos-20.6
             artifact_name: matchstick
             asset_name: binary-macos-20
           - name: macos-21
-            os: macos-21.0.0
+            os: macos-21.0
             artifact_name: matchstick
             asset_name: binary-macos-21
             
