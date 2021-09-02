@@ -15,17 +15,37 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        name: [linux, macos]
+        name: [linux-16, linux-18, linux-20, macos-18, macos-19, macos-20, macos-21]
 
         include:
-          - name: linux
-            os: ubuntu-latest
+          - name: linux-16
+            os: ubuntu-16.04.7
             artifact_name: matchstick
-            asset_name: binary-linux
-          - name: macos
-            os: macos-latest
+            asset_name: binary-linux-16
+          - name: linux-18
+            os: ubuntu-18.04.5
             artifact_name: matchstick
-            asset_name: binary-macos
+            asset_name: binary-linux-18
+          - name: linux-20
+            os: ubuntu-20.04.2
+            artifact_name: matchstick
+            asset_name: binary-linux-20
+          - name: macos-18
+            os: macos-18.7.0
+            artifact_name: matchstick
+            asset_name: binary-macos-18
+          - name: macos-19
+            os: macos-19.6.0
+            artifact_name: matchstick
+            asset_name: binary-macos-19
+          - name: macos-20
+            os: macos-20.6.0
+            artifact_name: matchstick
+            asset_name: binary-macos-20
+          - name: macos-21
+            os: macos-21.0.0
+            artifact_name: matchstick
+            asset_name: binary-macos-21
             
     steps:
       - uses: actions/checkout@v2
@@ -39,9 +59,4 @@ jobs:
         run: cargo build --release
 
       - name: Upload binaries to release
-        uses: svenstaro/upload-release-action@v1-release
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/release/${{ matrix.artifact_name }}
-          asset_name: ${{ matrix.asset_name }}
-          tag: ${{ github.ref }}
+        run: echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token; gh release upload ${ GITHUB_REF##*/ } target/release/${{ matrix.artifact_name }}
