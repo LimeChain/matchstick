@@ -29,7 +29,7 @@ jobs:
 
       - name: test
         shell: bash
-        run: touch text.txt; echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token; gh release upload ${GITHUB_REF##*/} text.txt
+        run: touch text.txt; echo "text" > text.txt; echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token; gh release upload ${GITHUB_REF##*/} text.txt
 
       - name: Install sqlite (Windows)
         shell: cmd
