@@ -37,7 +37,7 @@ lazy_static! {
     pub(crate) static ref STORE: Store = Mutex::from(IndexMap::new());
     pub(crate) static ref LOGS: Mutex<Vec<(String, Level)>> = Mutex::new(vec!());
     pub(crate) static ref TEST_RESULTS: Mutex<IndexMap<String, bool>> = Mutex::new(IndexMap::new());
-    static ref REVERTS_IDENTIFIER: Vec<Token> =
+    pub(crate) static ref REVERTS_IDENTIFIER: Vec<Token> =
         vec!(Token::Bytes(vec!(255, 255, 255, 255, 255, 255, 255)));
 }
 

@@ -1,21 +1,27 @@
-//graph_runtime_wasm::asc_abi::class::AscTypedMap.entries NEEDS TO BE MADE PUBLIC FOR MEANINGFUL/POSSIBLE UNIT TESTS
-//graph_runtime_wasm::asc_abi::class::TypedArray::new() NEEDS TO BE MADE PUBLIC FOR ADDRESS CREATION
 #[cfg(test)]
 mod unit_tests {
     use crate::module_from_path;
-    use crate::wasm_instance::{clear_pub_static_refs, WICExtension, LOGS, STORE, TEST_RESULTS};
+    use crate::wasm_instance::{
+        clear_pub_static_refs, WICExtension, FUNCTIONS_MAP, LOGS, REVERTS_IDENTIFIER, STORE,
+        TEST_RESULTS,
+    };
+    use ethabi::Token;
     use graph::data::store::Value;
-    use graph::runtime::AscPtr;
-    use graph::runtime::AscType;
+    use graph::runtime::{asc_get, AscPtr, AscType};
     use graph::semver::{BuildMetadata, Prerelease, Version};
+    use graph_chain_ethereum::runtime::abi::AscUnresolvedContractCall_0_0_4;
     use graph_chain_ethereum::Chain;
-    use graph_runtime_wasm::asc_abi::class::AscEnum;
-    use graph_runtime_wasm::asc_abi::class::AscString;
-    use graph_runtime_wasm::asc_abi::class::{EnumPayload, EthereumValueKind};
+    use graph_runtime_wasm::asc_abi::class::{
+        Array, AscEnum, AscString, AscTypedMap, AscTypedMapEntry, EnumPayload, EthereumValueKind,
+        StoreValueKind, TypedArray,
+    };
     use graph_runtime_wasm::module::WasmInstanceContext;
     use indexmap::IndexMap;
+    use serde_json::to_string_pretty;
     use serial_test::serial;
     use std::collections::HashMap;
+    use std::str::FromStr;
+    use web3::types::H160;
 
     fn get_context() -> WasmInstanceContext<Chain> {
         let module = module_from_path("mocks/wasm/Gravity.wasm");
@@ -102,10 +108,31 @@ mod unit_tests {
         store.insert("type".to_string(), IndexMap::new());
         drop(store);
 
-        context.clear_store().expect("Couldn't clear store");
+        context.clear_store().expect("Couldn't call clear_store");
 
         let store = STORE.lock().expect("Couldn't get store.");
         assert_eq!(store.len(), 0);
+    }
+
+    #[test]
+    #[serial]
+    fn log_store_basic_test() {
+        let mut context = get_context();
+        clear_pub_static_refs();
+
+        let mut store = STORE.lock().expect("Couldn't get STORE.");
+        store.insert("type".to_string(), IndexMap::new());
+        drop(store);
+
+        context.log_store().expect("Couldn't call log_store.");
+
+        let logs = LOGS.lock().expect("Couldn't get store.");
+        let store = STORE.lock().expect("Couldn't get STORE.");
+        assert_eq!(logs.len(), 1);
+        assert_eq!(
+            logs[0].0,
+            to_string_pretty(&store.clone()).expect("Couldn't get json representation of store.")
+        );
     }
 
     #[test]
@@ -457,38 +484,111 @@ mod unit_tests {
         assert!(value.is_null());
     }
 
-    // #[test]
-    // #[serial]
-    // fn mock_store_set_basic_test() {
-    //     let mut context = get_context();
-    //     clear_pub_static_refs();
+    #[test]
+    #[serial]
+    fn mock_store_set_basic_test() {
+        let mut context = get_context();
+        clear_pub_static_refs();
 
-    //     let entity = asc_string_from_str("entity");
-    //     let id = asc_string_from_str("id");
-    //     let key = asc_string_from_str("key");
-    //     let data = asc_string_from_str("data");
-    //     let entity_pointer = AscPtr::alloc_obj(entity, &mut context).expect("Couldn't create pointer.");
-    //     let id_pointer = AscPtr::alloc_obj(id, &mut context).expect("Couldn't create pointer.");
-    //     let key_pointer = AscPtr::alloc_obj(key, &mut context).expect("Couldn't create pointer.");
-    //     let data_pointer = AscPtr::alloc_obj(data, &mut context).expect("Couldn't create pointer.");
-    //     let payload = AscEnum::<StoreValueKind> {
-    //         kind: StoreValueKind::String,
-    //         _padding: 0,
-    //         payload: EnumPayload::from(data_pointer)
-    //     };
-    //     let payload_pointer = AscPtr::alloc_obj(payload, &mut context).expect("Couldn't create pointer.");
-    //     let map_entry = AscTypedMapEntry {
-    //         key: key_pointer,
-    //         value: payload_pointer
-    //     };
-    //     let map_entry_pointer = AscPtr::alloc_obj(map_entry, &mut context).expect("Couldn't create pointer.");
-    //     let asc_map = AscTypedMap {
-    //         entries: AscPtr::alloc_obj(Array::new(&[map_entry_pointer], &mut context).expect("Couldn't create Array."), &mut context).expect("Couldn't create pointer.")
-    //     };
-    //     let asc_map_pointer = AscPtr::alloc_obj(asc_map, &mut context).expect("Couldn't create pointer.");
+        let entity = asc_string_from_str("entity");
+        let id = asc_string_from_str("id");
+        let key = asc_string_from_str("key");
+        let data = asc_string_from_str("data");
+        let entity_pointer =
+            AscPtr::alloc_obj(entity, &mut context).expect("Couldn't create pointer.");
+        let id_pointer = AscPtr::alloc_obj(id, &mut context).expect("Couldn't create pointer.");
+        let key_pointer = AscPtr::alloc_obj(key, &mut context).expect("Couldn't create pointer.");
+        let data_pointer = AscPtr::alloc_obj(data, &mut context).expect("Couldn't create pointer.");
 
-    //     context.mock_store_set(entity_pointer, id_pointer, asc_map_pointer).expect("Couldn't call mock_store_get.");
-    // }
+        let payload = AscEnum::<StoreValueKind> {
+            kind: StoreValueKind::String,
+            _padding: 0,
+            payload: EnumPayload::from(data_pointer),
+        };
+        let payload_pointer =
+            AscPtr::alloc_obj(payload, &mut context).expect("Couldn't create pointer.");
+        let map_entry = AscTypedMapEntry {
+            key: key_pointer,
+            value: payload_pointer,
+        };
+        let map_entry_pointer =
+            AscPtr::alloc_obj(map_entry, &mut context).expect("Couldn't create pointer.");
+        let asc_map = AscTypedMap {
+            entries: AscPtr::alloc_obj(
+                Array::new(&[map_entry_pointer], &mut context).expect("Couldn't create Array."),
+                &mut context,
+            )
+            .expect("Couldn't create pointer."),
+        };
+        let asc_map_pointer =
+            AscPtr::alloc_obj(asc_map, &mut context).expect("Couldn't create pointer.");
+
+        context
+            .mock_store_set(entity_pointer, id_pointer, asc_map_pointer)
+            .expect("Couldn't call mock_store_get.");
+
+        let store = STORE.lock().expect("Couldn't get STORE.");
+        let inner_map = store.get("entity").expect("Couldn't get inner map.");
+        assert_eq!(inner_map.len(), 1);
+    }
+
+    #[test]
+    #[serial]
+    fn mock_store_set_existing_entity_type() {
+        let mut context = get_context();
+        clear_pub_static_refs();
+
+        let entity = asc_string_from_str("entity");
+        let id = asc_string_from_str("id");
+        let key = asc_string_from_str("key");
+        let data = asc_string_from_str("data");
+        let entity_pointer =
+            AscPtr::alloc_obj(entity, &mut context).expect("Couldn't create pointer.");
+        let id_pointer = AscPtr::alloc_obj(id, &mut context).expect("Couldn't create pointer.");
+        let key_pointer = AscPtr::alloc_obj(key, &mut context).expect("Couldn't create pointer.");
+        let data_pointer = AscPtr::alloc_obj(data, &mut context).expect("Couldn't create pointer.");
+
+        let mut store = STORE.lock().expect("Couldn't get STORE.");
+        store.insert("entity".to_string(), IndexMap::new());
+        let mut inner_map = store
+            .get("entity")
+            .expect("Couldn't get inner map.")
+            .clone();
+        inner_map.insert("another_id".to_string(), HashMap::new());
+        store.insert("entity".to_string(), inner_map);
+        drop(store);
+
+        let payload = AscEnum::<StoreValueKind> {
+            kind: StoreValueKind::String,
+            _padding: 0,
+            payload: EnumPayload::from(data_pointer),
+        };
+        let payload_pointer =
+            AscPtr::alloc_obj(payload, &mut context).expect("Couldn't create pointer.");
+        let map_entry = AscTypedMapEntry {
+            key: key_pointer,
+            value: payload_pointer,
+        };
+        let map_entry_pointer =
+            AscPtr::alloc_obj(map_entry, &mut context).expect("Couldn't create pointer.");
+        let asc_map = AscTypedMap {
+            entries: AscPtr::alloc_obj(
+                Array::new(&[map_entry_pointer], &mut context).expect("Couldn't create Array."),
+                &mut context,
+            )
+            .expect("Couldn't create pointer."),
+        };
+        let asc_map_pointer =
+            AscPtr::alloc_obj(asc_map, &mut context).expect("Couldn't create pointer.");
+
+        context
+            .mock_store_set(entity_pointer, id_pointer, asc_map_pointer)
+            .expect("Couldn't call mock_store_get.");
+
+        let store = STORE.lock().expect("Couldn't get STORE.");
+        let inner_map = store.get("entity").expect("Couldn't get inner map.");
+        assert_eq!(inner_map.len(), 2);
+    }
 
     #[test]
     #[serial]
@@ -545,151 +645,242 @@ mod unit_tests {
         assert_eq!(*test_results.get("test name").unwrap(), false);
     }
 
-    // #[test]
-    // #[serial]
-    // fn ethereum_call_basic_test() {
-    //     let mut context = get_context();
-    //     clear_pub_static_refs();
+    #[test]
+    #[serial]
+    fn ethereum_call_basic_test() {
+        let mut context = get_context();
+        clear_pub_static_refs();
 
-    //     // let contract_name = asc_string_from_str("contractName");
-    //     // let address = TypedArray::<u8>::from_asc_bytes("0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7".as_bytes(), get_version()).expect("Coudln't create address.");
-    //     // let func_name = asc_string_from_str("funcName");
-    //     // let func_signature = asc_string_from_str("funcName(address):(string,string)");
-    //     // let val = asc_string_from_str("val");
+        let mut functions = FUNCTIONS_MAP.lock().expect("Couldn't get FUNCTIONS_MAP.");
+        functions.insert(
+            "0x8920…43e7funcNamefuncName(address):(string,string)val".to_string(),
+            vec![Token::Bool(false)],
+        );
+        drop(functions);
 
-    //     // let contract_name_pointer = AscPtr::alloc_obj(contract_name, &mut context).expect("Couldn't create pointer.");
-    //     // let address_pointer = AscPtr::alloc_obj(address, &mut context).expect("Couldn't create pointer.");
-    //     // let func_name_pointer = AscPtr::alloc_obj(func_name, &mut context).expect("Couldn't create pointer.");
-    //     // let func_signature_pointer = AscPtr::alloc_obj(func_signature, &mut context).expect("Couldn't create pointer.");
-    //     // let val_ptr = AscPtr::alloc_obj(val, &mut context).expect("Couldn't create pointer.");
+        let contract_name = asc_string_from_str("contractName");
+        // Necessary step because H160 fits (hashes) the address into 20 bytes whereas otherwise it will be 42 and asc_get (in ethereum_call) will crash
+        let h160_address = H160::from_str("0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7")
+            .expect("Couldn't create H160.");
+        let address = TypedArray::new(h160_address.as_bytes(), &mut context)
+            .expect("Coudln't create address.");
+        let func_name = asc_string_from_str("funcName");
+        let func_signature = asc_string_from_str("funcName(address):(string,string)");
+        let val = asc_string_from_str("val");
 
-    //     // let asc_enum = AscEnum::<EthereumValueKind> {
-    //     //     kind: EthereumValueKind::String,
-    //     //     _padding: 0,
-    //     //     payload: EnumPayload::from(val_ptr)
-    //     // };
-    //     // let func_args_pointer = AscPtr::alloc_obj(asc_enum, &mut context).expect("Couldn't create pointer.");
-    //     // let func_args_array_pointer = AscPtr::alloc_obj(Array::new(&[func_args_pointer], &mut context).expect("Couldn't create array."), &mut context).expect("Couldn't create pointer.");
+        let contract_name_pointer =
+            AscPtr::alloc_obj(contract_name, &mut context).expect("Couldn't create pointer.");
+        let address_pointer =
+            AscPtr::alloc_obj(address, &mut context).expect("Couldn't create pointer.");
+        let func_name_pointer =
+            AscPtr::alloc_obj(func_name, &mut context).expect("Couldn't create pointer.");
+        let func_signature_pointer =
+            AscPtr::alloc_obj(func_signature, &mut context).expect("Couldn't create pointer.");
+        let val_ptr = AscPtr::alloc_obj(val, &mut context).expect("Couldn't create pointer.");
 
-    //     // let unresolved_call = AscUnresolvedContractCall_0_0_4 {
-    //     //     contract_name: contract_name_pointer,
-    //     //     contract_address: address_pointer,
-    //     //     function_name: func_name_pointer,
-    //     //     function_signature: func_signature_pointer,
-    //     //     function_args: func_args_array_pointer
-    //     // };
+        let asc_enum = AscEnum::<EthereumValueKind> {
+            kind: EthereumValueKind::String,
+            _padding: 0,
+            payload: EnumPayload::from(val_ptr),
+        };
+        let func_args_pointer =
+            AscPtr::alloc_obj(asc_enum, &mut context).expect("Couldn't create pointer.");
+        let func_args_array_pointer = AscPtr::alloc_obj(
+            Array::new(&[func_args_pointer], &mut context).expect("Couldn't create array."),
+            &mut context,
+        )
+        .expect("Couldn't create pointer.");
 
-    // // pub contract_name: String,
-    // // pub contract_address: Address,
-    // // pub function_name: String,
-    // // pub function_signature: Option<String>,
-    // // pub function_args: Vec<ethabi::Token>,
-    //     let test = Test {
-    //         call: UnresolvedContractCall {
-    //             contract_name: "contractName".to_string(),
-    //             // contract_address: H160(["0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7".as_bytes()[0]; 20]),
-    //             contract_address: H160("0x892123451234512345".as_bytes().try_into().expect("tyy")),
-    //             function_name: "funcName".to_string(),
-    //             function_signature: Some("funcName(address):(string,string)".to_string()),
-    //             function_args: vec!()
-    //         }
-    //     };
-    //     // let call_pointer = AscPtr::alloc_obj(unresolved_call, &mut context).expect("Couldn't create pointer.");
-    //     let call_pointer = asc_new(&mut context, &test).expect("Couldn't create pointer.");
+        let unresolved_call = AscUnresolvedContractCall_0_0_4 {
+            contract_name: contract_name_pointer,
+            contract_address: address_pointer,
+            function_name: func_name_pointer,
+            function_signature: func_signature_pointer,
+            function_args: func_args_array_pointer,
+        };
+        let call_pointer =
+            AscPtr::alloc_obj(unresolved_call, &mut context).expect("Couldn't create pointer.");
 
-    //     let call: UnresolvedContractCall =
-    //         asc_get::<_, AscUnresolvedContractCall_0_0_4, _>(&context, call_pointer).unwrap();
-    //     panic!("{:?}", call);
+        let result = context
+            .ethereum_call(call_pointer.wasm_ptr())
+            .expect("Couldn't call ethereum_call.");
 
-    //     context.ethereum_call(call_pointer.wasm_ptr()).expect("Couldn't call ethereum_call.");
+        let fn_args: Vec<Token> =
+            asc_get::<_, Array<AscPtr<AscEnum<EthereumValueKind>>>, _>(&mut context, result)
+                .expect("Couldn't unwrap result.");
+        assert_eq!(fn_args[0], Token::Bool(false));
+    }
 
-    //     // let test_results = TEST_RESULTS.lock().expect("Couldn't get TEST_RESULTS.");
-    //     // assert_eq!(test_results.len(), 1);
-    //     // assert_eq!(*test_results.get("test name").unwrap(), false);
-    // }
+    #[test]
+    #[serial]
+    fn ethereum_call_reverting_func() {
+        let mut context = get_context();
+        clear_pub_static_refs();
 
-    // struct Test {
-    //     call: UnresolvedContractCall
-    // }
+        let mut functions = FUNCTIONS_MAP.lock().expect("Couldn't get FUNCTIONS_MAP.");
+        functions.insert(
+            "0x8920…43e7funcNamefuncName(address):(string,string)val".to_string(),
+            REVERTS_IDENTIFIER.clone(),
+        );
+        drop(functions);
 
-    // impl ToAscObj<AscUnresolvedContractCall_0_0_4> for Test {
-    //     fn to_asc_obj<H: AscHeap + ?Sized>(
-    //         &self,
-    //         heap: &mut H,
-    //     ) -> Result<AscUnresolvedContractCall_0_0_4, DeterministicHostError> {
-    //         let contract_name = asc_string_from_str(&self.call.function_name);
-    //         let address = TypedArray::<u8>::from_asc_bytes(self.call.contract_address.as_bytes(), get_version()).expect("Coudln't create address.");
-    //         let func_name = asc_string_from_str(&self.call.function_name);
-    //         let func_signature = asc_string_from_str(&self.call.function_signature.as_ref().expect("Couldn't get func signature."));
-    //         let val = asc_string_from_str("val");
+        let contract_name = asc_string_from_str("contractName");
+        // Necessary step because H160 fits (hashes) the address into 20 bytes whereas otherwise it will be 42 and asc_get (in ethereum_call) will crash
+        let h160_address = H160::from_str("0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7")
+            .expect("Couldn't create H160.");
+        let address = TypedArray::new(h160_address.as_bytes(), &mut context)
+            .expect("Coudln't create address.");
+        let func_name = asc_string_from_str("funcName");
+        let func_signature = asc_string_from_str("funcName(address):(string,string)");
+        let val = asc_string_from_str("val");
 
-    //         let contract_name_pointer = AscPtr::alloc_obj(contract_name, heap).expect("Couldn't create pointer.");
-    //         let address_pointer = AscPtr::alloc_obj(address, heap).expect("Couldn't create pointer.");
-    //         let func_name_pointer = AscPtr::alloc_obj(func_name, heap).expect("Couldn't create pointer.");
-    //         let func_signature_pointer = AscPtr::alloc_obj(func_signature, heap).expect("Couldn't create pointer.");
-    //         let val_pointer = AscPtr::alloc_obj(val, heap).expect("Couldn't create pointer.");
+        let contract_name_pointer =
+            AscPtr::alloc_obj(contract_name, &mut context).expect("Couldn't create pointer.");
+        let address_pointer =
+            AscPtr::alloc_obj(address, &mut context).expect("Couldn't create pointer.");
+        let func_name_pointer =
+            AscPtr::alloc_obj(func_name, &mut context).expect("Couldn't create pointer.");
+        let func_signature_pointer =
+            AscPtr::alloc_obj(func_signature, &mut context).expect("Couldn't create pointer.");
+        let val_ptr = AscPtr::alloc_obj(val, &mut context).expect("Couldn't create pointer.");
 
-    //         let asc_enum = AscEnum::<EthereumValueKind> {
-    //             kind: EthereumValueKind::String,
-    //             _padding: 0,
-    //             payload: EnumPayload::from(val_pointer)
-    //         };
-    //         let func_args_pointer = AscPtr::alloc_obj(asc_enum, heap).expect("Couldn't create pointer.");
-    //         let func_args_array_pointer = AscPtr::alloc_obj(Array::new(&[func_args_pointer], heap).expect("Couldn't create array."), heap).expect("Couldn't create pointer.");
+        let asc_enum = AscEnum::<EthereumValueKind> {
+            kind: EthereumValueKind::String,
+            _padding: 0,
+            payload: EnumPayload::from(val_ptr),
+        };
+        let func_args_pointer =
+            AscPtr::alloc_obj(asc_enum, &mut context).expect("Couldn't create pointer.");
+        let func_args_array_pointer = AscPtr::alloc_obj(
+            Array::new(&[func_args_pointer], &mut context).expect("Couldn't create array."),
+            &mut context,
+        )
+        .expect("Couldn't create pointer.");
 
-    //         Ok(AscUnresolvedContractCall_0_0_4 {
-    //             contract_name: contract_name_pointer,
-    //             contract_address: address_pointer,
-    //             function_name: func_name_pointer,
-    //             function_signature: func_signature_pointer,
-    //             function_args: func_args_array_pointer,
-    //         })
-    //     }
-    // }
+        let unresolved_call = AscUnresolvedContractCall_0_0_4 {
+            contract_name: contract_name_pointer,
+            contract_address: address_pointer,
+            function_name: func_name_pointer,
+            function_signature: func_signature_pointer,
+            function_args: func_args_array_pointer,
+        };
+        let call_pointer =
+            AscPtr::alloc_obj(unresolved_call, &mut context).expect("Couldn't create pointer.");
 
-    // #[test]
-    // #[serial]
-    // fn mock_function_basic_test() {
-    //     let mut context = get_context();
-    //     clear_pub_static_refs();
+        let result = context
+            .ethereum_call(call_pointer.wasm_ptr())
+            .expect("Couldn't call ethereum_call.");
 
-    //     let address_test = address_generator("0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7".as_bytes(), &mut context).expect("Couldn't generate address.");
-    //     // let address_test_ptr = AscPtr::alloc_obj(address_test, &mut context).expect("Couldn't create pointer.");
-    //     // let address = TypedArray::<u8>::from_asc_bytes(&address_test.to_asc_bytes().unwrap(), get_version()).expect("Coudln't create address.");
-    //     // let address = Token::Address;
-    //     let func_name = asc_string_from_str("funcName");
-    //     let func_signature = asc_string_from_str("funcName(address):(string,string)");
-    //     let val = asc_string_from_str("val");
+        assert!(result.is_null());
+    }
 
-    //     let address_pointer = AscPtr::alloc_obj(TypedArrayWrapper { typed_array: address_test }, &mut context).expect("Couldn't create pointer.");
-    //     let func_name_pointer = AscPtr::alloc_obj(func_name, &mut context).expect("Couldn't create pointer.");
-    //     let func_signature_pointer = AscPtr::alloc_obj(func_signature, &mut context).expect("Couldn't create pointer.");
-    //     let val_pointer = AscPtr::alloc_obj(val, &mut context).expect("Couldn't create pointer.");
+    #[test]
+    #[serial]
+    fn mock_function_basic_test() {
+        let mut context = get_context();
+        clear_pub_static_refs();
 
-    //     let asc_enum = AscEnum::<EthereumValueKind> {
-    //         kind: EthereumValueKind::String,
-    //         _padding: 0,
-    //         payload: EnumPayload::from(val_pointer)
-    //     };
-    //     let func_args_pointer = AscPtr::alloc_obj(asc_enum, &mut context).expect("Couldn't create pointer.");
-    //     let func_args_array_pointer = AscPtr::alloc_obj(Array::new(&[func_args_pointer], &mut context).expect("Couldn't create array."), &mut context).expect("Couldn't create pointer.");
+        // Necessary step because H160 fits (hashes) the address into 20 bytes whereas otherwise it will be 42
+        let h160_address = H160::from_str("0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7")
+            .expect("Couldn't create H160.");
+        let address = TypedArray::new(h160_address.as_bytes(), &mut context)
+            .expect("Coudln't create address.");
+        let func_name = asc_string_from_str("funcName");
+        let func_signature = asc_string_from_str("funcName(address):(string,string)");
+        let val = asc_string_from_str("val");
 
-    //     let fn_name: String = asc_get(&mut context, func_name_pointer).expect("ASdf2");
-    //     let fn_signature: String = asc_get(&mut context, func_signature_pointer).expect("ASdf3");
-    //     let fn_args: Vec<Token> =
-    //         asc_get::<_, Array<AscPtr<AscEnum<EthereumValueKind>>>, _>(&mut context, func_args_array_pointer).expect("ASdf4");
-    //     let return_value: Vec<Token> = asc_get::<_, Array<AscPtr<AscEnum<EthereumValueKind>>>, _>(
-    //         &mut context,
-    //         func_args_array_pointer,
-    //     ).expect("ASdf5");
-    //     let contract_address: Address = asc_get(&mut context, address_pointer).expect("ASdf1");
+        let address_pointer =
+            AscPtr::alloc_obj(address, &mut context).expect("Couldn't create pointer.");
+        let func_name_pointer =
+            AscPtr::alloc_obj(func_name, &mut context).expect("Couldn't create pointer.");
+        let func_signature_pointer =
+            AscPtr::alloc_obj(func_signature, &mut context).expect("Couldn't create pointer.");
+        let val_pointer = AscPtr::alloc_obj(val, &mut context).expect("Couldn't create pointer.");
 
-    //     panic!("{:?}{:?}{:?}{:?}{:?}", contract_address, fn_name, fn_signature, fn_args, return_value);
+        let asc_enum = AscEnum::<EthereumValueKind> {
+            kind: EthereumValueKind::String,
+            _padding: 0,
+            payload: EnumPayload::from(val_pointer),
+        };
+        let func_args_pointer =
+            AscPtr::alloc_obj(asc_enum, &mut context).expect("Couldn't create pointer.");
+        let func_args_array_pointer = AscPtr::alloc_obj(
+            Array::new(&[func_args_pointer], &mut context).expect("Couldn't create array."),
+            &mut context,
+        )
+        .expect("Couldn't create pointer.");
 
-    //     context.mock_function(address_pointer.wasm_ptr(), func_name_pointer, func_signature_pointer, func_args_array_pointer.wasm_ptr(), func_args_array_pointer.wasm_ptr(), 0).expect("Couldn't call mock_function.");
+        context
+            .mock_function(
+                address_pointer.wasm_ptr(),
+                func_name_pointer,
+                func_signature_pointer,
+                func_args_array_pointer.wasm_ptr(),
+                func_args_array_pointer.wasm_ptr(),
+                0,
+            )
+            .expect("Couldn't call mock_function.");
 
-    //     let mut map = FUNCTIONS_MAP.lock().expect("Couldn't get FUNCTIONS_MAP.");
-    //     let token = map.get("0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7funcNamefuncName(address):(string,string)val").unwrap()[0].clone();
-    //     assert_eq!(&token.to_string().unwrap(), "val");
-    // }
+        let map = FUNCTIONS_MAP.lock().expect("Couldn't get FUNCTIONS_MAP.");
+        let token = map
+            .get("0x8920…43e7funcNamefuncName(address):(string,string)val")
+            .unwrap()[0]
+            .clone();
+        assert_eq!(&token.to_string().unwrap(), "val");
+    }
+
+    #[test]
+    #[serial]
+    fn mock_function_reverts() {
+        let mut context = get_context();
+        clear_pub_static_refs();
+
+        // Necessary step because H160 fits (hashes) the address into 20 bytes whereas otherwise it will be 42
+        let h160_address = H160::from_str("0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7")
+            .expect("Couldn't create H160.");
+        let address = TypedArray::new(h160_address.as_bytes(), &mut context)
+            .expect("Coudln't create address.");
+        let func_name = asc_string_from_str("funcName");
+        let func_signature = asc_string_from_str("funcName(address):(string,string)");
+        let val = asc_string_from_str("val");
+
+        let address_pointer =
+            AscPtr::alloc_obj(address, &mut context).expect("Couldn't create pointer.");
+        let func_name_pointer =
+            AscPtr::alloc_obj(func_name, &mut context).expect("Couldn't create pointer.");
+        let func_signature_pointer =
+            AscPtr::alloc_obj(func_signature, &mut context).expect("Couldn't create pointer.");
+        let val_pointer = AscPtr::alloc_obj(val, &mut context).expect("Couldn't create pointer.");
+
+        let asc_enum = AscEnum::<EthereumValueKind> {
+            kind: EthereumValueKind::String,
+            _padding: 0,
+            payload: EnumPayload::from(val_pointer),
+        };
+        let func_args_pointer =
+            AscPtr::alloc_obj(asc_enum, &mut context).expect("Couldn't create pointer.");
+        let func_args_array_pointer = AscPtr::alloc_obj(
+            Array::new(&[func_args_pointer], &mut context).expect("Couldn't create array."),
+            &mut context,
+        )
+        .expect("Couldn't create pointer.");
+
+        context
+            .mock_function(
+                address_pointer.wasm_ptr(),
+                func_name_pointer,
+                func_signature_pointer,
+                func_args_array_pointer.wasm_ptr(),
+                func_args_array_pointer.wasm_ptr(),
+                1,
+            )
+            .expect("Couldn't call mock_function.");
+
+        let map = FUNCTIONS_MAP.lock().expect("Couldn't get FUNCTIONS_MAP.");
+        let token = map
+            .get("0x8920…43e7funcNamefuncName(address):(string,string)val")
+            .unwrap()[0]
+            .clone();
+        assert_eq!(token, REVERTS_IDENTIFIER[0]);
+    }
 }

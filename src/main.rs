@@ -175,7 +175,7 @@ ___  ___      _       _         _   _      _
 
     println!("{}", ("Igniting tests 🔥\n").to_string().bright_red());
 
-    #[allow(non_fmt_panic)]
+    #[allow(non_fmt_panics)]
         run_tests.call(&[]).unwrap_or_else(|err| {
 
         fail_test("".to_string());
