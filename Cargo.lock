@@ -56,9 +56,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.43"
+version = "1.0.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "28ae2b3dec75a406790005a200b1bd89785afc02517a00ca99ecfe093ee9e6cf"
+checksum = "61604a8f862e1d5c3229fdd78f8b02c68dcf73a4c4b05fd636d12240aaa242c1"
 
 [[package]]
 name = "arc-swap"
@@ -1311,8 +1311,8 @@ checksum = "f0a01e0497841a3b2db4f8afa483cce65f7e96a3498bd6c541734792aeac8fe7"
 
 [[package]]
 name = "graph"
-version = "0.24.0"
-source = "git+https://github.com/georg-getz/graph-node?branch=master#13903e7b122d7fd02b9ee04341ffaf6828899cf9"
+version = "0.24.1"
+source = "git+https://github.com/georg-getz/graph-node?branch=master#a80802a221d22a4d5e75c5d7f900ed9a1d1c0df1"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -1368,8 +1368,8 @@ dependencies = [
 
 [[package]]
 name = "graph-chain-ethereum"
-version = "0.24.0"
-source = "git+https://github.com/georg-getz/graph-node?branch=master#13903e7b122d7fd02b9ee04341ffaf6828899cf9"
+version = "0.24.1"
+source = "git+https://github.com/georg-getz/graph-node?branch=master#a80802a221d22a4d5e75c5d7f900ed9a1d1c0df1"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1394,8 +1394,8 @@ dependencies = [
 
 [[package]]
 name = "graph-core"
-version = "0.24.0"
-source = "git+https://github.com/georg-getz/graph-node?branch=master#13903e7b122d7fd02b9ee04341ffaf6828899cf9"
+version = "0.24.1"
+source = "git+https://github.com/georg-getz/graph-node?branch=master#a80802a221d22a4d5e75c5d7f900ed9a1d1c0df1"
 dependencies = [
  "async-trait",
  "atomic_refcell",
@@ -1416,8 +1416,8 @@ dependencies = [
 
 [[package]]
 name = "graph-graphql"
-version = "0.24.0"
-source = "git+https://github.com/georg-getz/graph-node?branch=master#13903e7b122d7fd02b9ee04341ffaf6828899cf9"
+version = "0.24.1"
+source = "git+https://github.com/georg-getz/graph-node?branch=master#a80802a221d22a4d5e75c5d7f900ed9a1d1c0df1"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -1435,8 +1435,8 @@ dependencies = [
 
 [[package]]
 name = "graph-mock"
-version = "0.24.0"
-source = "git+https://github.com/georg-getz/graph-node?branch=master#13903e7b122d7fd02b9ee04341ffaf6828899cf9"
+version = "0.24.1"
+source = "git+https://github.com/georg-getz/graph-node?branch=master#a80802a221d22a4d5e75c5d7f900ed9a1d1c0df1"
 dependencies = [
  "futures 0.1.31",
  "graph",
@@ -1448,8 +1448,8 @@ dependencies = [
 
 [[package]]
 name = "graph-runtime-derive"
-version = "0.24.0"
-source = "git+https://github.com/georg-getz/graph-node?branch=master#13903e7b122d7fd02b9ee04341ffaf6828899cf9"
+version = "0.24.1"
+source = "git+https://github.com/georg-getz/graph-node?branch=master#a80802a221d22a4d5e75c5d7f900ed9a1d1c0df1"
 dependencies = [
  "anyhow",
  "quote 1.0.9",
@@ -1458,8 +1458,8 @@ dependencies = [
 
 [[package]]
 name = "graph-runtime-test"
-version = "0.24.0"
-source = "git+https://github.com/georg-getz/graph-node?branch=master#13903e7b122d7fd02b9ee04341ffaf6828899cf9"
+version = "0.24.1"
+source = "git+https://github.com/georg-getz/graph-node?branch=master#a80802a221d22a4d5e75c5d7f900ed9a1d1c0df1"
 dependencies = [
  "graph",
  "graph-chain-ethereum",
@@ -1472,8 +1472,8 @@ dependencies = [
 
 [[package]]
 name = "graph-runtime-wasm"
-version = "0.24.0"
-source = "git+https://github.com/georg-getz/graph-node?branch=master#13903e7b122d7fd02b9ee04341ffaf6828899cf9"
+version = "0.24.1"
+source = "git+https://github.com/georg-getz/graph-node?branch=master#a80802a221d22a4d5e75c5d7f900ed9a1d1c0df1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1829,7 +1829,7 @@ version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "161ebdfec3c8e3b52bf61c4f3550a1eea4f9579d10dc1b936f3171ebdcd6c443"
 dependencies = [
- "parity-scale-codec 2.2.0",
+ "parity-scale-codec 2.3.0",
 ]
 
 [[package]]
@@ -2512,9 +2512,9 @@ dependencies = [
 
 [[package]]
 name = "parity-scale-codec"
-version = "2.2.0"
+version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8975095a2a03bbbdc70a74ab11a4f76a6d0b84680d87c68d722531b0ac28e8a9"
+checksum = "e11263a97373b43da4b426edbb52ef99a7b51e2d9752ef56a7f8b356f48495a5"
 dependencies = [
  "arrayvec 0.7.1",
  "bitvec 0.20.4",
@@ -2526,9 +2526,9 @@ dependencies = [
 
 [[package]]
 name = "parity-scale-codec-derive"
-version = "2.2.0"
+version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "40dbbfef7f0a1143c5b06e0d76a6278e25dac0bc1af4be51a0fbb73f07e7ad09"
+checksum = "b157dc92b3db2bae522afb31b3843e91ae097eb01d66c72dda66a2e86bc3ca14"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2 1.0.29",
@@ -3397,7 +3397,7 @@ dependencies = [
 [[package]]
 name = "secp256k1"
 version = "0.20.3"
-source = "git+https://github.com/rust-bitcoin/rust-secp256k1#c72e7cc7433705324ef87d163bcf70e6f499bf93"
+source = "git+https://github.com/rust-bitcoin/rust-secp256k1#cd62343407cc6870fb55136a438f31fef1300f66"
 dependencies = [
  "secp256k1-sys 0.4.1",
 ]
@@ -3414,7 +3414,7 @@ dependencies = [
 [[package]]
 name = "secp256k1-sys"
 version = "0.4.1"
-source = "git+https://github.com/rust-bitcoin/rust-secp256k1#c72e7cc7433705324ef87d163bcf70e6f499bf93"
+source = "git+https://github.com/rust-bitcoin/rust-secp256k1#cd62343407cc6870fb55136a438f31fef1300f66"
 dependencies = [
  "cc",
 ]
@@ -3538,9 +3538,9 @@ dependencies = [
 
 [[package]]
 name = "serde_yaml"
-version = "0.8.20"
+version = "0.8.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad104641f3c958dab30eb3010e834c2622d1f3f4c530fef1dee20ad9485f3c09"
+checksum = "d8c608a35705a5d3cdc9fbe403147647ff34b921f8e833e49306df898f9b20af"
 dependencies = [
  "dtoa",
  "indexmap",
@@ -3591,9 +3591,9 @@ checksum = "2579985fda508104f7587689507983eadd6a6e84dd35d6d115361f530916fa0d"
 
 [[package]]
 name = "sha2"
-version = "0.9.6"
+version = "0.9.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9204c41a1597a8c5af23c82d1c921cb01ec0a4c59e07a9c7306062829a3903f3"
+checksum = "b69f9a4c9740d74c5baa3fd2e547f9525fa8088a8a958e0ca2409a514e33f5fa"
 dependencies = [
  "block-buffer",
  "cfg-if 1.0.0",
@@ -3972,9 +3972,9 @@ dependencies = [
 
 [[package]]
 name = "tinyvec"
-version = "1.3.1"
+version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "848a1e1181b9f6753b5e96a092749e29b11d19ede67dfbbd6c7dc7e0f49b5338"
+checksum = "5241dd6f21443a3606b432718b166d3cedc962fd4b8bea54a8bc7f514ebda986"
 dependencies = [
  "tinyvec_macros",
 ]
@@ -4362,9 +4362,9 @@ checksum = "360dfd1d6d30e05fda32ace2c8c70e9c0a9da713275777f5a4dbb8a1893930c6"
 
 [[package]]
 name = "tracing"
-version = "0.1.26"
+version = "0.1.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09adeb8c97449311ccd28a427f96fb563e7fd31aabf994189879d9da2394b89d"
+checksum = "c2ba9ab62b7d6497a8638dfda5e5c4fb3b2d5a7fca4118f2b96151c8ef1a437e"
 dependencies = [
  "cfg-if 1.0.0",
  "pin-project-lite 0.2.7",
@@ -4373,9 +4373,9 @@ dependencies = [
 
 [[package]]
 name = "tracing-core"
-version = "0.1.19"
+version = "0.1.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2ca517f43f0fb96e0c3072ed5c275fe5eece87e8cb52f4a77b69226d3b1c9df8"
+checksum = "46125608c26121c81b0c6d693eab5a420e416da7e43c426d2e8f7df8da8a3acf"
 dependencies = [
  "lazy_static",
 ]
