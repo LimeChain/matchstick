@@ -47,7 +47,7 @@ impl WritableStore for MockWritableStore {
 
     fn get(
         &self,
-        _key: graph::prelude::EntityKey,
+        _key: &graph::prelude::EntityKey,
     ) -> Result<Option<graph::prelude::Entity>, graph::prelude::QueryExecutionError> {
         unreachable!()
     }
@@ -92,6 +92,10 @@ impl WritableStore for MockWritableStore {
         &self,
     ) -> Result<Vec<graph::components::store::StoredDynamicDataSource>, graph::prelude::StoreError>
     {
+        unreachable!()
+    }
+
+    fn shard(&self) -> &str {
         unreachable!()
     }
 }

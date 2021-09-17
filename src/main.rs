@@ -102,7 +102,7 @@ pub fn module_from_path(path_to_wasm: &str) -> WasmInstance<Chain> {
 
 pub fn main() {
     let matches = App::new("Matchstick 🔥")
-        .version("0.1.0")
+        .version("0.1.2")
         .author("Limechain <https://limechain.tech>")
         .about("Unit testing framework for Subgraph development on The Graph protocol.")
         .arg(
@@ -170,7 +170,7 @@ ___  ___      _       _         _   _      _
         .get_func("runTests")
         .expect(r#"
         ❌ ❌ ❌  Couldn't get wasm function 'runTests'.
-        Please ensure that you have imported your runTests() function, defined in the test file, into the main mappings file.
+        Please ensure that you have named the function (that is defined in the test file) exactly 'runTests' and have imported it into the main mappings file.
         "#);
 
     println!("{}", ("Igniting tests 🔥\n").to_string().bright_red());

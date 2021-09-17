@@ -7,17 +7,12 @@ use std::time::Instant;
 use colored::*;
 use ethabi::{Address, Token};
 use graph::data::store::Value;
-use graph::prelude::Entity;
-use graph::prelude::*;
+use graph::prelude::{anyhow, anyhow::Context, Arc, Duration, Entity, HostMetrics};
 use graph::runtime::{asc_get, asc_new, try_asc_get, AscPtr};
 use graph::semver::Version;
 use graph::{
     blockchain::{Blockchain, HostFnCtx},
     cheap_clone::CheapClone,
-    prelude::{
-        anyhow::{self},
-        HostMetrics,
-    },
 };
 use graph_chain_ethereum::runtime::abi::AscUnresolvedContractCall_0_0_4;
 use graph_chain_ethereum::runtime::runtime_adapter::UnresolvedContractCall;
@@ -27,12 +22,12 @@ pub use graph_runtime_wasm::WasmInstance;
 use graph_runtime_wasm::{
     error::DeterminismLevel,
     mapping::{MappingContext, ValidModule},
-    module::IntoWasmRet,
-    module::{ExperimentalFeatures, IntoTrap, WasmInstanceContext},
+    module::{ExperimentalFeatures, IntoTrap, IntoWasmRet, WasmInstanceContext},
 };
 use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::TimeoutStopwatch};
 use indexmap::IndexMap;
 use lazy_static::lazy_static;
+use serde_json::to_string_pretty;
 
 type Store = Mutex<IndexMap<String, IndexMap<String, HashMap<String, Value>>>>;
 
@@ -40,7 +35,7 @@ lazy_static! {
     pub(crate) static ref FUNCTIONS_MAP: Mutex<IndexMap<String, Vec<Token>>> =
         Mutex::new(IndexMap::new());
     pub(crate) static ref STORE: Store = Mutex::from(IndexMap::new());
-    pub(crate) static ref LOGS: Mutex<IndexMap<String, Level>> = Mutex::new(IndexMap::new());
+    pub(crate) static ref LOGS: Mutex<Vec<(String, Level)>> = Mutex::new(vec!());
     pub(crate) static ref TEST_RESULTS: Mutex<IndexMap<String, bool>> = Mutex::new(IndexMap::new());
     static ref REVERTS_IDENTIFIER: Vec<Token> =
         vec!(Token::Bytes(vec!(255, 255, 255, 255, 255, 255, 255)));
@@ -115,7 +110,7 @@ pub fn fail_test(msg: String) {
         .insert(test_name, false);
     LOGS.lock()
         .expect("Cannot access LOGS.")
-        .insert(msg, Level::Error);
+        .push((msg, Level::Error));
 }
 
 pub fn flush_logs() {
@@ -153,6 +148,7 @@ pub trait WasmInstanceExtension<C: graph::blockchain::Blockchain> {
 pub trait WICExtension {
     fn log(&mut self, level: u32, msg: AscPtr<AscString>) -> Result<(), HostExportError>;
     fn clear_store(&mut self) -> Result<(), HostExportError>;
+    fn log_store(&mut self) -> Result<(), HostExportError>;
     fn register_test(&mut self, name: AscPtr<AscString>) -> Result<(), HostExportError>;
     fn assert_field_equals(
         &mut self,
@@ -162,6 +158,11 @@ pub trait WICExtension {
         expected_val_ptr: AscPtr<AscString>,
     ) -> Result<(), HostExportError>;
     fn assert_equals(&mut self, expected_ptr: u32, actual_ptr: u32) -> Result<(), HostExportError>;
+    fn assert_not_in_store(
+        &mut self,
+        entity_type_ptr: AscPtr<AscString>,
+        id_ptr: AscPtr<AscString>,
+    ) -> Result<(), HostExportError>;
     fn mock_store_get(
         &mut self,
         entity_type_ptr: AscPtr<AscString>,
@@ -191,6 +192,17 @@ pub trait WICExtension {
         return_value_ptr: u32,
         reverts: u32,
     ) -> Result<(), HostExportError>;
+    fn mock_data_source_create(
+        &mut self,
+        name_ptr: AscPtr<AscString>,
+        params_ptr: AscPtr<Array<AscPtr<AscString>>>,
+    ) -> Result<(), HostExportError>;
+    fn mock_data_source_create_with_context(
+        &mut self,
+        name_ptr: AscPtr<AscString>,
+        params_ptr: AscPtr<Array<AscPtr<AscString>>>,
+        context_ptr: AscPtr<AscEntity>,
+    ) -> Result<(), HostExportError>;
 }
 
 impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
@@ -208,7 +220,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             _ => {
                 LOGS.lock()
                     .expect("Cannot access LOGS.")
-                    .insert(msg, level_from_u32(level));
+                    .push((msg, level_from_u32(level)));
             }
         }
 
@@ -217,6 +229,15 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
 
     fn clear_store(&mut self) -> Result<(), HostExportError> {
         STORE.lock().expect("Cannot access STORE.").clear();
+        Ok(())
+    }
+
+    fn log_store(&mut self) -> Result<(), HostExportError> {
+        let store = STORE.lock().expect("Cannot access STORE.");
+        LOGS.lock().expect("Cannot access LOGS.").push((
+            to_string_pretty(&store.clone()).expect("Couldn't get json representation of store."),
+            Level::Debug,
+        ));
         Ok(())
     }
 
@@ -238,7 +259,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             .insert(name.clone(), true);
         LOGS.lock()
             .expect("Cannot access LOGS.")
-            .insert(name, Level::Info);
+            .push((name, Level::Info));
 
         Ok(())
     }
@@ -309,6 +330,27 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             );
             fail_test(msg);
         }
+        Ok(())
+    }
+
+    fn assert_not_in_store(
+        &mut self,
+        entity_type_ptr: AscPtr<AscString>,
+        id_ptr: AscPtr<AscString>,
+    ) -> Result<(), HostExportError> {
+        let entity_type: String = asc_get(self, entity_type_ptr)?;
+        let id: String = asc_get(self, id_ptr)?;
+
+        let map = STORE.lock().expect("Cannot access STORE.");
+
+        if map.contains_key(&entity_type) && map.get(&entity_type).unwrap().contains_key(&id) {
+            let msg = format!(
+                "Value for entity type: '{}' and id: '{}' was found in store.",
+                entity_type, id
+            );
+            fail_test(msg);
+        }
+
         Ok(())
     }
 
@@ -452,6 +494,23 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             map.insert(unique_fn_string, return_value);
         }
 
+        Ok(())
+    }
+
+    fn mock_data_source_create(
+        &mut self,
+        _name_ptr: AscPtr<AscString>,
+        _params_ptr: AscPtr<Array<AscPtr<AscString>>>,
+    ) -> Result<(), HostExportError> {
+        Ok(())
+    }
+
+    fn mock_data_source_create_with_context(
+        &mut self,
+        _name_ptr: AscPtr<AscString>,
+        _params_ptr: AscPtr<Array<AscPtr<AscString>>>,
+        _context_ptr: AscPtr<AscEntity>,
+    ) -> Result<(), HostExportError> {
         Ok(())
     }
 }
@@ -650,6 +709,7 @@ impl<C: Blockchain> WasmInstanceExtension<C> for WasmInstance<C> {
         );
 
         link!("clearStore", clear_store,);
+        link!("logStore", log_store,);
         link!(
             "store.get",
             mock_store_get,
@@ -716,10 +776,10 @@ impl<C: Blockchain> WasmInstanceExtension<C> for WasmInstance<C> {
         link!("bigDecimal.dividedBy", big_decimal_divided_by, x, y);
         link!("bigDecimal.equals", big_decimal_equals, x_ptr, y_ptr);
 
-        link!("dataSource.create", data_source_create, name, params);
+        link!("dataSource.create", mock_data_source_create, name, params);
         link!(
             "dataSource.createWithContext",
-            data_source_create_with_context,
+            mock_data_source_create_with_context,
             name,
             params,
             context
@@ -748,6 +808,12 @@ impl<C: Blockchain> WasmInstanceExtension<C> for WasmInstance<C> {
             link!("box.profile", box_profile, ptr);
         }
         link!("assert.equals", assert_equals, expected_ptr, actual_ptr);
+        link!(
+            "assert.notInStore",
+            assert_not_in_store,
+            entity_type_ptr,
+            id_ptr
+        );
 
         let instance = linker.instantiate(&valid_module.module)?;
 

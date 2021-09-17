@@ -61,13 +61,9 @@ jobs:
           toolchain: stable
 
       - name: Build
-        run: cargo build --release
+        run: cargo build --release; mv target/release/${{ matrix.artifact_name }} target/release/${{ matrix.asset_name }}
 
       - name: Upload binaries to release
-        uses: svenstaro/upload-release-action@v1-release
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/release/${{ matrix.artifact_name }}
-          asset_name: ${{ matrix.asset_name }}
-          tag: ${{ github.ref }}
+        shell: bash
+        run: echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token; gh release upload ${GITHUB_REF##*/} target/release/${{ matrix.asset_name }}
           
