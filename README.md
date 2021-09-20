@@ -7,7 +7,18 @@
 ## Quick Start 🚀
 The release binary comes in three flavours - for **MacOS**, **Linux** and **Windows**. To add **Matchstick** to your subgraph project just open up a terminal, navigate to the root folder of your project and simply follow these steps (depending on your OS):
 
+❗ If you don't have Postgres installed, you will need to install it.
+As of version 0.22.0 of graph-cli the `graph test` command has been changed - now it downloads the latest Matchstick binary and runs the tests of the given datasource and is now the only thing you need to run to use Matchstick! - example usage: `graph test Gravity`
+As of version 0.1.3 Matchstick is updating API version from 0.0.4 to 0.0.5
+❗ Subgraphs with API version 0.0.4 mappings won't work with Matchstick version 0.1.3+
+
+❗ The next section (up to Install dependencies) is completely unnecessary (expect installing postgres) if you are using version 0.22.0+ of graph-cli.
 ### MacOS 
+
+❗ Postgres installation command:
+```
+brew install postgresql
+```
 
 If you are using macOS 11/Big Sur
 ```
@@ -30,12 +41,12 @@ mv binary-macos-10.14 matchstick &&
 chmod a+x matchstick
 ```
 
-❗ If you don't have Postgres installed, you will need to install it with:
-```
-brew install postgresql
-```
-
 ### Linux 🐧
+
+❗ Postgres installation command (depending on your distro):
+```
+sudo apt install postgresql
+```
 
 If you are using Ubuntu 20.04/Focal Fossa
 ```
@@ -51,21 +62,16 @@ mv binary-linux-18 matchstick &&
 chmod a+x matchstick
 ```
 
-❗ If you don't have Postgres installed, you will need to install it with (depending on your distro):
-```
-sudo apt install postgresql
-```
-
 ### Windows
+
+❗ Postgres installation command:
+```
+choco install postgresql12
+```
 
 ```
 curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.2/binary-windows &&
 move binary-windows matchstick
-```
-
-❗ If you don't have Postgres installed, you will need to install it with (depending on your distro):
-```
-choco install postgresql12
 ```
 
 ### Install dependencies
@@ -76,13 +82,15 @@ yarn add matchstick-as
 ```
 
 ### Run
-To run the framework, you simply need to provide a datasource name (after you've compiled your subgraph using `graph build`).
+I you are using version 0.22.0+ of graph-cli and API version 0.0.5 you can simply run Matchstick by using the `graph test` command followed by your datasource name (after you've compiled your subgraph using `graph build`).
+
+To run the framework with API version 0.0.4 mappings and an older version of graph-cli, you need to provide a datasource name (after you've compiled your subgraph using `graph build`).
 
 Just run the following in the root folder of your project:
 
 `./matchstick <DATASOURCE NAME>`
 
-For instance, in our [demo subgraph example](https://github.com/LimeChain/demo-subgraph "demo subgraph"), the command look like this:
+For instance, in our [demo subgraph example](https://github.com/LimeChain/demo-subgraph "demo subgraph"), the command looks like this:
 
 `./matchstick Gravity`
 
@@ -230,16 +238,14 @@ export function handleNewGravatars(events: NewGravatar[]): void {
 }
 
 export function createNewGravatarEvent(id: i32, ownerAddress: string, displayName: string, imageUrl: string): NewGravatar {
-    let newGravatarEvent = new NewGravatar();
+    let mockEvent = newMockEvent();
+    let newGravatarEvent = new NewGravatar(mockEvent.address, mockEvent.logIndex, mockEvent.transactionLogIndex,
+        mockEvent.logType, mockEvent.block, mockEvent.transaction, mockEvent.parameters);
     newGravatarEvent.parameters = new Array();
-    let idParam = new ethereum.EventParam();
-    idParam.value = ethereum.Value.fromI32(id);
-    let addressParam = new ethereum.EventParam();
-    addressParam.value = ethereum.Value.fromAddress(Address.fromString(ownerAddress));
-    let displayNameParam = new ethereum.EventParam();
-    displayNameParam.value = ethereum.Value.fromString(displayName);
-    let imageUrlParam = new ethereum.EventParam();
-    imageUrlParam.value = ethereum.Value.fromString(imageUrl);
+    let idParam = new ethereum.EventParam("id", ethereum.Value.fromI32(id));
+    let addressParam = new ethereum.EventParam("ownderAddress", ethereum.Value.fromAddress(Address.fromString(ownerAddress)));
+    let displayNameParam = new ethereum.EventParam("displayName", ethereum.Value.fromString(displayName));
+    let imageUrlParam = new ethereum.EventParam("imageUrl", ethereum.Value.fromString(imageUrl));
 
     newGravatarEvent.parameters.push(idParam);
     newGravatarEvent.parameters.push(addressParam);
@@ -254,7 +260,7 @@ That's all well and good, but what if we had more complex logic in the handler f
 What we need to do is create a test file, we can name it however we want - let's say `gravity.test.ts`, in our project. In our test file we need to define a function named `runTests()`, it's important that the function has that exact name (for now). This is an example of how our tests might look like:
 
 ```typescript
-import { clearStore, test, assert, newMockEvent } from "matchstick-as/assembly/index";
+import { clearStore, test, assert } from "matchstick-as/assembly/index";
 import { Gravatar } from "../../generated/schema";
 import { NewGravatar } from "../../generated/Gravity/Gravity";
 import { createNewGravatarEvent, handleNewGravatars } from "../mappings/gravity";
@@ -266,17 +272,30 @@ export function runTests(): void {
         gravatar.save();
 
         // Call mappings
-        let newGravatarEvent = newMockEvent(createNewGravatarEvent(12345, "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7", "cap", "pac")) as NewGravatar;
+        let newGravatarEvent = createNewGravatarEvent(
+            12345,
+            "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7",
+            "cap",
+            "pac",
+        );
 
-        let anotherGravatarEvent = newMockEvent(createNewGravatarEvent(3546, "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7", "cap", "pac")) as NewGravatar;
-        
+        let anotherGravatarEvent = createNewGravatarEvent(
+            3546,
+            "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7",
+            "cap",
+            "pac",
+        );
+
         handleNewGravatars([newGravatarEvent, anotherGravatarEvent]);
 
-        // Assert the state of the store
-        assert.fieldEquals("Gravatar", "gravatarId0", "id", "gravatarId0");
-        assert.fieldEquals("Gravatar", "12345", "id", "12345");
-        assert.fieldEquals("Gravatar", "3546", "id", "3546");
-
+        assert.fieldEquals(
+            GRAVATAR_ENTITY_TYPE,
+            "gravatarId0",
+            "id",
+            "gravatarId0",
+        );
+        assert.fieldEquals(GRAVATAR_ENTITY_TYPE, "12345", "id", "12345");
+        assert.fieldEquals(GRAVATAR_ENTITY_TYPE, "3546", "id", "3546");
         clearStore();
     });
   
