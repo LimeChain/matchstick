@@ -324,7 +324,7 @@ Mapping terminated before handling trigger: oneshot canceled
 
 That's a lot to unpack! First off, an important thing to notice is that we're importing things from `matchstick-as`, that's our AssemblyScript helper library (distributed as an npm module), which you can check out [here](https://github.com/LimeChain/matchstick-as "here"). It provides us with useful testing methods and also defines the `test()` function which we will use to build our test blocks. The rest of it is pretty straightforward - here's what happens:
 - We're setting up our initial state and adding one custom Gravatar entity;
-- We define two `NewGravatar` event objects along with their data, using the `newMockEvent()` function;
+- We define two `NewGravatar` event objects along with their data, using the `createNewGravatarEvent()` function;
 - We're calling out handler methods for those events - `handleNewGravatars()` and passing in the list of our custom events;
 - We assert the state of the store. How does that work? - We're passing a unique combination of Entity type and id. Then we check a specific field on that Entity and assert that it has the value we expect it to have. We're doing this both for the initial burger Entity we added and for the one that gets added when the handler function is called;
 - And lastly - we're cleaning the store using `clearStore()` so that our next test can start with a fresh and empty store object. We can define as many test blocks as we want.
@@ -344,12 +344,11 @@ gravatar.save();
 ### Calling a mapping function with an event
 A user can create a custom event and pass it to a mapping function that is bound to the store:
 ```typescript
-import { newMockEvent } from "matchstick-as/assembly/index";
 import { store } from "matchstick-as/assembly/store";
 import { NewGravatar } from "../../generated/Gravity/Gravity";
 import { handleNewGravatars, createNewGravatarEvent } from "./mapping";
 
-let newGravatarEvent = newMockEvent(createNewGravatarEvent(12345, "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7", "cap", "pac")) as NewGravatar;
+let newGravatarEvent = createNewGravatarEvent(12345, "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7", "cap", "pac");
 
 handleNewGravatar(newGravatarEvent);
 ```
@@ -357,14 +356,13 @@ handleNewGravatar(newGravatarEvent);
 ### Calling all of the mappings with event fixtures
 Users can call the mappings with test fixtures.
 ```typescript
-import { newMockEvent } from "matchstick-as/assembly/index";
 import { NewGravatar } from "../../generated/Gravity/Gravity";
 import { store } from "matchstick-as/assembly/store";
 import { handleNewGravatars, createNewGravatarEvent } from "./mapping";
 
-let newGravatarEvent = newMockEvent(createNewGravatarEvent(12345, "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7", "cap", "pac")) as NewGravatar;
+let newGravatarEvent = createNewGravatarEvent(12345, "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7", "cap", "pac");
 
-let anotherGravatarEvent = newMockEvent(createNewGravatarEvent(3546, "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7", "cap", "pac")) as NewGravatar;
+let anotherGravatarEvent = createNewGravatarEvent(3546, "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7", "cap", "pac");
 
 handleNewGravatars([newGravatarEvent, anotherGravatarEvent]);
 ```
@@ -413,7 +411,7 @@ assert.fieldEquals("Gravatar", "gravatarId0", "id", "gravatarId0");
 Running the assert.fieldEquals() function will check for equality of the given field against the given expected value. The test will fail and an error message will be outputted if the values are **NOT** equal. Otherwise the test will pass successfully.
 
 ### Interacting with Event metadata
-Users can use default transaction metadata, which will exist on any mock event object, as long as it is created using the `newMockEvent()` function. The following example shows how you can read/write to those fields on the Event object:
+Users can use default transaction metadata, which could be returned as an ethereum.Event by using the  `newMockEvent()` function. The following example shows how you can read/write to those fields on the Event object:
 
 ```typescript
 let logType = newGravatarEvent.logType;
