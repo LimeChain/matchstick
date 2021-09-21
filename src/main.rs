@@ -102,7 +102,7 @@ pub fn module_from_path(path_to_wasm: &str) -> WasmInstance<Chain> {
 
 pub fn main() {
     let matches = App::new("Matchstick 🔥")
-        .version("0.1.2")
+        .version("0.1.3")
         .author("Limechain <https://limechain.tech>")
         .about("Unit testing framework for Subgraph development on The Graph protocol.")
         .arg(
