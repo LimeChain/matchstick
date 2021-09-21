@@ -27,6 +27,7 @@ colored = "2"
 clap = "2.33.3"
 serde = "1.0"
 serde_yaml = "0.8.17"
+web3 = "0.17.0"
 
 [patch.crates-io]
 # Include protection against stack overflow when parsing from this PR: https://github.com/graphql-rust/graphql-parser/commit/45167b53e9533c331298683577ba8df7e43480ac
