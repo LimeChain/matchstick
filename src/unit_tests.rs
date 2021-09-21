@@ -45,7 +45,7 @@ mod unit_tests {
         Version {
             major: 0,
             minor: 0,
-            patch: 4,
+            patch: 5,
             build: BuildMetadata::EMPTY,
             pre: Prerelease::new("").expect("Couldn't create new Prerelease."),
         }
