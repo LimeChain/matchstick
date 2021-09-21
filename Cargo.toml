@@ -5,13 +5,13 @@ authors = ["LimeChain <limechain.tech>"]
 edition = "2018"
 
 [dependencies]
-graph-runtime-wasm = { git = "https://github.com/georg-getz/graph-node", branch = "master" }
+graph-runtime-wasm = { git = "https://github.com/graphprotocol/graph-node", branch = "master" }
 ethabi = { git = "https://github.com/graphprotocol/ethabi.git", branch = "master" }
-graph = { git = "https://github.com/georg-getz/graph-node", package = "graph", branch = "master" }
-graph-mock = { git = "https://github.com/georg-getz/graph-node", package = "graph-mock", branch = "master" }
-graph-chain-ethereum = { git = "https://github.com/georg-getz/graph-node", branch = "master" }
-graph-core = { git = "https://github.com/georg-getz/graph-node", branch = "master" }
-graph-runtime-test = { git = "https://github.com/georg-getz/graph-node" , package = "graph-runtime-test", branch = "master" }
+graph = { git = "https://github.com/graphprotocol/graph-node", package = "graph", branch = "master" }
+graph-mock = { git = "https://github.com/graphprotocol/graph-node", package = "graph-mock", branch = "master" }
+graph-chain-ethereum = { git = "https://github.com/graphprotocol/graph-node", branch = "master" }
+graph-core = { git = "https://github.com/graphprotocol/graph-node", branch = "master" }
+graph-runtime-test = { git = "https://github.com/graphprotocol/graph-node" , package = "graph-runtime-test", branch = "master" }
 openssl = { version = "0.10", features = ["vendored"] }
 semver = "0.11.0"
 serde_json = "1.0.59"
