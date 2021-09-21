@@ -58,7 +58,7 @@ pub fn module_from_path(path_to_wasm: &str) -> WasmInstance<Chain> {
     let deployment_id =
         &DeploymentHash::new(subgraph_id).expect("Could not create DeploymentHash.");
     let deployment = DeploymentLocator::new(DeploymentId::new(42), deployment_id.clone());
-    let data_source = mock_data_source(path_to_wasm, Version::new(0, 0, 4));
+    let data_source = mock_data_source(path_to_wasm, Version::new(0, 0, 5));
 
     let metrics_registry = Arc::new(MockMetricsRegistry::new());
 
@@ -91,7 +91,7 @@ pub fn module_from_path(path_to_wasm: &str) -> WasmInstance<Chain> {
             deployment,
             data_source,
             Arc::from(mock_subgraph_store),
-            Version::new(0, 0, 4),
+            Version::new(0, 0, 5),
         ),
         host_metrics,
         None,
@@ -175,7 +175,7 @@ ___  ___      _       _         _   _      _
 
     println!("{}", ("Igniting tests 🔥\n").to_string().bright_red());
 
-    #[allow(non_fmt_panic)]
+    #[allow(non_fmt_panics)]
         run_tests.call(&[]).unwrap_or_else(|err| {
 
         fail_test("".to_string());
@@ -190,7 +190,7 @@ ___  ___      _       _         _   _      _
         2. A mocked function call reverted. Consider using 'try_functionName' to handle this in the mapping.
 
         Please ensure that you have proper null checks in your tests.
-        You can debug your test file using the 'log()' function, provided by matchstick-as (import { log } from "matchstick-as/assembly/log").
+        You can debug your test file using the 'debug()' function, provided by matchstick-as (import { debug } from "matchstick-as/assembly/log").
         "#);
 
         let msg = format!("{}\n {}", err, msg).red();
