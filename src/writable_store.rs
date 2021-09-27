@@ -55,6 +55,7 @@ impl WritableStore for MockWritableStore {
     fn transact_block_operations(
         &self,
         _block_ptr_to: BlockPtr,
+        _firehose_cursor: Option<String>,
         _mods: Vec<graph::prelude::EntityModification>,
         _stopwatch: StopwatchMetrics,
         _data_sources: Vec<graph::components::store::StoredDynamicDataSource>,
@@ -96,6 +97,10 @@ impl WritableStore for MockWritableStore {
     }
 
     fn shard(&self) -> &str {
+        unreachable!()
+    }
+
+    fn block_cursor(&self) -> Result<Option<String>, graph::prelude::StoreError> {
         unreachable!()
     }
 }
