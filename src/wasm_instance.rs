@@ -24,6 +24,7 @@ use graph_runtime_wasm::{
     mapping::{MappingContext, ValidModule},
     module::{ExperimentalFeatures, IntoTrap, IntoWasmRet, WasmInstanceContext},
 };
+use graph_runtime_wasm::asc_abi::class::EnumPayload;
 use graph_runtime_wasm::{host_exports::HostExportError, module::stopwatch::TimeoutStopwatch};
 use indexmap::IndexMap;
 use lazy_static::lazy_static;
@@ -37,6 +38,7 @@ lazy_static! {
     pub(crate) static ref STORE: Store = Mutex::from(IndexMap::new());
     pub(crate) static ref LOGS: Mutex<Vec<(String, Level)>> = Mutex::new(vec!());
     pub(crate) static ref TEST_RESULTS: Mutex<IndexMap<String, bool>> = Mutex::new(IndexMap::new());
+    pub(crate) static ref PANICKING_TESTS: Mutex<Vec<String>> = Mutex::new(vec!());
     pub(crate) static ref REVERTS_IDENTIFIER: Vec<Token> =
         vec!(Token::Bytes(vec!(255, 255, 255, 255, 255, 255, 255)));
 }
@@ -96,14 +98,18 @@ fn styled(s: &str, n: &Level) -> ColoredString {
     }
 }
 
-pub fn fail_test(msg: String) {
-    let test_name = TEST_RESULTS
+fn get_last_test_name() -> String {
+    TEST_RESULTS
         .lock()
         .expect("Cannot access TEST_RESULTS.")
         .keys()
         .last()
         .unwrap()
-        .clone();
+        .clone()
+}
+
+pub fn fail_test(msg: String) {
+    let test_name = get_last_test_name();
     TEST_RESULTS
         .lock()
         .expect("Cannot access TEST_RESULTS.")
@@ -111,6 +117,23 @@ pub fn fail_test(msg: String) {
     LOGS.lock()
         .expect("Cannot access LOGS.")
         .push((msg, Level::Error));
+}
+
+pub fn process_test_and_verify() -> bool {
+    let test_name = get_last_test_name();
+    if !PANICKING_TESTS
+        .lock()
+        .expect("Cannot access PANICKING_TESTS")
+        .contains(&test_name) {
+        fail_test("".to_string());
+        return false;
+    } else {
+        TEST_RESULTS
+            .lock()
+            .expect("Cannot access TEST_RESULTS.")
+            .insert(test_name.clone(), true);
+        true
+    }
 }
 
 pub fn flush_logs() {
@@ -146,10 +169,10 @@ pub trait WasmInstanceExtension<C: graph::blockchain::Blockchain> {
 }
 
 pub trait WICExtension {
-    fn log(&mut self, level: u32, msg: AscPtr<AscString>) -> Result<(), HostExportError>;
+    fn log(&mut self, level: u32, msg_ptr: AscPtr<AscString>) -> Result<(), HostExportError>;
     fn clear_store(&mut self) -> Result<(), HostExportError>;
     fn log_store(&mut self) -> Result<(), HostExportError>;
-    fn register_test(&mut self, name: AscPtr<AscString>) -> Result<(), HostExportError>;
+    fn register_test(&mut self, name_ptr: AscPtr<AscString>, should_throw_ptr: AscPtr<bool>) -> Result<bool, HostExportError>;
     fn assert_field_equals(
         &mut self,
         entity_type_ptr: AscPtr<AscString>,
@@ -241,27 +264,37 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         Ok(())
     }
 
-    fn register_test(&mut self, name_ptr: AscPtr<AscString>) -> Result<(), HostExportError> {
+    fn register_test(&mut self, name_ptr: AscPtr<AscString>, should_throw_ptr: AscPtr<bool>) -> Result<bool, HostExportError> {
         let name: String = asc_get(self, name_ptr)?;
+        let should_throw: bool = bool::from(EnumPayload(should_throw_ptr.wasm_ptr().into()));
 
         if TEST_RESULTS
             .lock()
             .expect("Cannot access TEST_RESULTS.")
             .contains_key(&name)
         {
-            let msg = format!("❌ ❌ ❌  Test with name '{}' already exists.", name).red();
-            panic!("{}", msg);
+            return Ok(false);
         }
-
-        TEST_RESULTS
-            .lock()
-            .expect("Cannot access TEST_RESULTS.")
-            .insert(name.clone(), true);
+        if should_throw {
+            TEST_RESULTS
+                .lock()
+                .expect("Cannot access TEST_RESULTS.")
+                .insert(name.clone(), false);
+            PANICKING_TESTS
+                .lock()
+                .expect("Cannot access PANICKING_TESTS.")
+                .push(name.clone());
+        } else {
+            TEST_RESULTS
+                .lock()
+                .expect("Cannot access TEST_RESULTS.")
+                .insert(name.clone(), true);
+        }
         LOGS.lock()
             .expect("Cannot access LOGS.")
             .push((name, Level::Info));
 
-        Ok(())
+        Ok(true)
     }
 
     fn assert_field_equals(
@@ -792,7 +825,7 @@ impl<C: Blockchain> WasmInstanceExtension<C> for WasmInstance<C> {
 
         link!("log.log", log, level, msg_ptr);
 
-        link!("registerTest", register_test, name_ptr);
+        link!("registerTest", register_test, name_ptr, should_throw_ptr);
 
         link!(
             "assert.fieldEquals",
