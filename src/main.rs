@@ -18,7 +18,8 @@ use serde_yaml::{Sequence, Value};
 
 use subgraph_store::MockSubgraphStore;
 use wasm_instance::{
-    fail_test, flush_logs, get_failed_tests, get_successful_tests, WasmInstanceExtension,
+    flush_logs, get_failed_tests, get_successful_tests, process_test_and_verify,
+    WasmInstanceExtension,
 };
 
 use crate::wasm_instance::WasmInstance;
@@ -100,6 +101,34 @@ pub fn module_from_path(path_to_wasm: &str) -> WasmInstance<Chain> {
     .expect("Could not create WasmInstance from valid module with context.")
 }
 
+fn call_run_tests(run_tests: wasmtime::Func) {
+    #[allow(non_fmt_panics)]
+    run_tests.call(&[]).unwrap_or_else(|err| {
+        if process_test_and_verify() {
+            call_run_tests(run_tests);
+            return Box::new([wasmtime::Val::I32(0)]);
+        } else {
+            flush_logs();
+
+            let msg = String::from(r#"
+            ❌ ❌ ❌  Unexpected error occurred while running tests.
+            See error stack trace above and double check the syntax in your test file.
+
+            This usually happens for three reasons:
+            1. You passed a 'null' value to one of our functions - assert.fieldEquals(), store.get(), store.set().
+            2. A mocked function call reverted. Consider using 'try_functionName' to handle this in the mapping.
+            3. The test was supposed to throw an error but the 'shouldThrow' parameter was not set to true.
+
+            Please ensure that you have proper null checks in your tests.
+            You can debug your test file using the 'debug()' function, provided by matchstick-as (import { debug } from "matchstick-as/assembly/log").
+            "#);
+
+            let msg = format!("{}\n {}", err, msg).red();
+            panic!("{}", msg);
+        }
+    });
+}
+
 pub fn main() {
     let matches = App::new("Matchstick 🔥")
         .version("0.1.3")
@@ -174,29 +203,7 @@ ___  ___      _       _         _   _      _
         "#);
 
     println!("{}", ("Igniting tests 🔥\n").to_string().bright_red());
-
-    #[allow(non_fmt_panics)]
-        run_tests.call(&[]).unwrap_or_else(|err| {
-
-        fail_test("".to_string());
-        flush_logs();
-
-        let msg = String::from(r#"
-        ❌ ❌ ❌  Unexpected error occurred while running tests.
-        See error stack trace above and double check the syntax in your test file.
-
-        This usually happens for two reasons:
-        1. You passed a 'null' value to one of our functions - assert.fieldEquals(), store.get(), store.set().
-        2. A mocked function call reverted. Consider using 'try_functionName' to handle this in the mapping.
-
-        Please ensure that you have proper null checks in your tests.
-        You can debug your test file using the 'debug()' function, provided by matchstick-as (import { debug } from "matchstick-as/assembly/log").
-        "#);
-
-        let msg = format!("{}\n {}", err, msg).red();
-        panic!("{}", msg);
-    });
-
+    call_run_tests(run_tests);
     flush_logs();
 
     let successful_tests = get_successful_tests();

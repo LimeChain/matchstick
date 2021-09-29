@@ -16,6 +16,7 @@ use graph::{
 };
 use graph_chain_ethereum::runtime::abi::AscUnresolvedContractCall_0_0_4;
 use graph_chain_ethereum::runtime::runtime_adapter::UnresolvedContractCall;
+use graph_runtime_wasm::asc_abi::class::EnumPayload;
 use graph_runtime_wasm::asc_abi::class::{Array, AscEntity, AscEnum, AscString};
 use graph_runtime_wasm::asc_abi::class::{AscEnumArray, EthereumValueKind};
 pub use graph_runtime_wasm::WasmInstance;
@@ -37,6 +38,7 @@ lazy_static! {
     pub(crate) static ref STORE: Store = Mutex::from(IndexMap::new());
     pub(crate) static ref LOGS: Mutex<Vec<(String, Level)>> = Mutex::new(vec!());
     pub(crate) static ref TEST_RESULTS: Mutex<IndexMap<String, bool>> = Mutex::new(IndexMap::new());
+    pub(crate) static ref PANICKING_TESTS: Mutex<Vec<String>> = Mutex::new(vec!());
     pub(crate) static ref REVERTS_IDENTIFIER: Vec<Token> =
         vec!(Token::Bytes(vec!(255, 255, 255, 255, 255, 255, 255)));
 }
@@ -83,6 +85,10 @@ pub fn clear_pub_static_refs() {
         .lock()
         .expect("Couldn't get FUNCTIONS_MAP.")
         .clear();
+    PANICKING_TESTS
+        .lock()
+        .expect("Couldn't get PANICKING_TESTS.")
+        .clear();
 }
 
 fn styled(s: &str, n: &Level) -> ColoredString {
@@ -96,14 +102,18 @@ fn styled(s: &str, n: &Level) -> ColoredString {
     }
 }
 
-pub fn fail_test(msg: String) {
-    let test_name = TEST_RESULTS
+fn get_last_test_name() -> String {
+    TEST_RESULTS
         .lock()
         .expect("Cannot access TEST_RESULTS.")
         .keys()
         .last()
         .unwrap()
-        .clone();
+        .clone()
+}
+
+pub fn fail_test(msg: String) {
+    let test_name = get_last_test_name();
     TEST_RESULTS
         .lock()
         .expect("Cannot access TEST_RESULTS.")
@@ -111,6 +121,24 @@ pub fn fail_test(msg: String) {
     LOGS.lock()
         .expect("Cannot access LOGS.")
         .push((msg, Level::Error));
+}
+
+pub fn process_test_and_verify() -> bool {
+    let test_name = get_last_test_name();
+    if !PANICKING_TESTS
+        .lock()
+        .expect("Cannot access PANICKING_TESTS")
+        .contains(&test_name)
+    {
+        fail_test("".to_string());
+        return false;
+    } else {
+        TEST_RESULTS
+            .lock()
+            .expect("Cannot access TEST_RESULTS.")
+            .insert(test_name.clone(), true);
+        true
+    }
 }
 
 pub fn flush_logs() {
@@ -146,10 +174,14 @@ pub trait WasmInstanceExtension<C: graph::blockchain::Blockchain> {
 }
 
 pub trait WICExtension {
-    fn log(&mut self, level: u32, msg: AscPtr<AscString>) -> Result<(), HostExportError>;
+    fn log(&mut self, level: u32, msg_ptr: AscPtr<AscString>) -> Result<(), HostExportError>;
     fn clear_store(&mut self) -> Result<(), HostExportError>;
     fn log_store(&mut self) -> Result<(), HostExportError>;
-    fn register_test(&mut self, name: AscPtr<AscString>) -> Result<(), HostExportError>;
+    fn register_test(
+        &mut self,
+        name_ptr: AscPtr<AscString>,
+        should_throw_ptr: AscPtr<bool>,
+    ) -> Result<bool, HostExportError>;
     fn assert_field_equals(
         &mut self,
         entity_type_ptr: AscPtr<AscString>,
@@ -190,7 +222,7 @@ pub trait WICExtension {
         fn_signature_ptr: AscPtr<AscString>,
         fn_args_ptr: u32,
         return_value_ptr: u32,
-        reverts: u32,
+        reverts_ptr: AscPtr<bool>,
     ) -> Result<(), HostExportError>;
     fn mock_data_source_create(
         &mut self,
@@ -241,27 +273,41 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         Ok(())
     }
 
-    fn register_test(&mut self, name_ptr: AscPtr<AscString>) -> Result<(), HostExportError> {
+    fn register_test(
+        &mut self,
+        name_ptr: AscPtr<AscString>,
+        should_throw_ptr: AscPtr<bool>,
+    ) -> Result<bool, HostExportError> {
         let name: String = asc_get(self, name_ptr)?;
+        let should_throw: bool = bool::from(EnumPayload(should_throw_ptr.to_payload()));
 
         if TEST_RESULTS
             .lock()
             .expect("Cannot access TEST_RESULTS.")
             .contains_key(&name)
         {
-            let msg = format!("❌ ❌ ❌  Test with name '{}' already exists.", name).red();
-            panic!("{}", msg);
+            return Ok(false);
         }
-
-        TEST_RESULTS
-            .lock()
-            .expect("Cannot access TEST_RESULTS.")
-            .insert(name.clone(), true);
+        if should_throw {
+            TEST_RESULTS
+                .lock()
+                .expect("Cannot access TEST_RESULTS.")
+                .insert(name.clone(), false);
+            PANICKING_TESTS
+                .lock()
+                .expect("Cannot access PANICKING_TESTS.")
+                .push(name.clone());
+        } else {
+            TEST_RESULTS
+                .lock()
+                .expect("Cannot access TEST_RESULTS.")
+                .insert(name.clone(), true);
+        }
         LOGS.lock()
             .expect("Cannot access LOGS.")
             .push((name, Level::Info));
 
-        Ok(())
+        Ok(true)
     }
 
     fn assert_field_equals(
@@ -468,7 +514,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         fn_signature_ptr: AscPtr<AscString>,
         fn_args_ptr: u32,
         return_value_ptr: u32,
-        reverts: u32,
+        reverts_ptr: AscPtr<bool>,
     ) -> Result<(), HostExportError> {
         let contract_address: Address = asc_get(self, contract_address_ptr.into())?;
         let fn_name: String = asc_get(self, fn_name_ptr)?;
@@ -479,6 +525,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             self,
             return_value_ptr.into(),
         )?;
+        let reverts: bool = bool::from(EnumPayload(reverts_ptr.to_payload()));
 
         let unique_fn_string = create_unique_fn_string(
             &contract_address.to_string(),
@@ -488,7 +535,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         );
         let mut map = FUNCTIONS_MAP.lock().expect("Couldn't get map.");
 
-        if reverts == 1 {
+        if reverts {
             map.insert(unique_fn_string, REVERTS_IDENTIFIER.clone());
         } else {
             map.insert(unique_fn_string, return_value);
@@ -792,7 +839,7 @@ impl<C: Blockchain> WasmInstanceExtension<C> for WasmInstance<C> {
 
         link!("log.log", log, level, msg_ptr);
 
-        link!("registerTest", register_test, name_ptr);
+        link!("registerTest", register_test, name_ptr, should_throw_ptr);
 
         link!(
             "assert.fieldEquals",

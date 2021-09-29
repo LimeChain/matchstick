@@ -193,17 +193,6 @@ mod integration_tests {
 
     #[test]
     #[serial]
-    #[should_panic(expected = "❌ ❌ ❌  Test with name 'duplicate key' already exists.")]
-    fn duplicate_test_name() {
-        let module = module_from_path("mocks/wasm/16_duplicate_test_name.wasm");
-        let run_tests = module.instance.get_func("runTests").unwrap();
-
-        run_tests.call(&[]).unwrap();
-        clear_pub_static_refs();
-    }
-
-    #[test]
-    #[serial]
     fn store_remove_fails_when_no_entity_found() {
         let module = module_from_path("mocks/wasm/17_store_remove_fails_when_no_entity_found.wasm");
         let run_tests = module.instance.get_func("runTests").unwrap();

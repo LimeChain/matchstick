@@ -3,5 +3,5 @@
         gravatar.save();
 
         let retrievedGravatar = Gravatar.load("gravatarId0");
-        assert.equals(ethereum.Value.fromString("gravatarId0"), ethereum.Value.fromString(retrievedGravatar.get("id").toString()));
+        assert.equals(ethereum.Value.fromString("gravatarId0"), ethereum.Value.fromString(retrievedGravatar!.get("id")!.toString()));
     });

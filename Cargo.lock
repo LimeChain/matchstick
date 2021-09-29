@@ -108,7 +108,7 @@ checksum = "648ed8c8d2ce5409ccd57453d9d1b214b342a0d69376a6feda1fd6cae3299308"
 dependencies = [
  "proc-macro2 1.0.29",
  "quote 1.0.9",
- "syn 1.0.76",
+ "syn 1.0.77",
 ]
 
 [[package]]
@@ -119,7 +119,7 @@ checksum = "44318e776df68115a881de9a8fd1b9e53368d7a4a5ce4cc48517da3393233a5e"
 dependencies = [
  "proc-macro2 1.0.29",
  "quote 1.0.9",
- "syn 1.0.76",
+ "syn 1.0.77",
 ]
 
 [[package]]
@@ -752,7 +752,7 @@ dependencies = [
  "proc-macro2 1.0.29",
  "quote 1.0.9",
  "rustc_version 0.3.3",
- "syn 1.0.76",
+ "syn 1.0.77",
 ]
 
 [[package]]
@@ -796,7 +796,7 @@ checksum = "45f5098f628d02a7a0f68ddba586fb61e80edec3bdc1be3b921f4ceec60858d3"
 dependencies = [
  "proc-macro2 1.0.29",
  "quote 1.0.9",
- "syn 1.0.76",
+ "syn 1.0.77",
 ]
 
 [[package]]
@@ -881,7 +881,7 @@ dependencies = [
  "heck",
  "proc-macro2 1.0.29",
  "quote 1.0.9",
- "syn 1.0.76",
+ "syn 1.0.77",
 ]
 
 [[package]]
@@ -910,11 +910,11 @@ dependencies = [
 
 [[package]]
 name = "errno-dragonfly"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "14ca354e36190500e1e1fb267c647932382b54053c50b14970856c0b00a35067"
+checksum = "aa68f1b12764fab894d2755d2518754e71b4fd80ecfb822714a1206c2aab39bf"
 dependencies = [
- "gcc",
+ "cc",
  "libc",
 ]
 
@@ -1238,7 +1238,7 @@ dependencies = [
  "proc-macro-hack",
  "proc-macro2 1.0.29",
  "quote 1.0.9",
- "syn 1.0.76",
+ "syn 1.0.77",
 ]
 
 [[package]]
@@ -1280,12 +1280,6 @@ dependencies = [
  "proc-macro-nested",
  "slab 0.4.4",
 ]
-
-[[package]]
-name = "gcc"
-version = "0.3.55"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f5f3913fa0bfe7ee1fd8248b6b9f42a5af4b9d65ec2dd2c3c26132b950ecfc2"
 
 [[package]]
 name = "generic-array"
@@ -1339,7 +1333,7 @@ checksum = "f0a01e0497841a3b2db4f8afa483cce65f7e96a3498bd6c541734792aeac8fe7"
 [[package]]
 name = "graph"
 version = "0.24.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#8f6ba8d89a0a8564f4a49eb93f9b1f073242a2e2"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#0fbd6bb83b58fa0287957e1aa889df02c616f5ae"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -1400,7 +1394,7 @@ dependencies = [
 [[package]]
 name = "graph-chain-ethereum"
 version = "0.24.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#8f6ba8d89a0a8564f4a49eb93f9b1f073242a2e2"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#0fbd6bb83b58fa0287957e1aa889df02c616f5ae"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1429,7 +1423,7 @@ dependencies = [
 [[package]]
 name = "graph-core"
 version = "0.24.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#8f6ba8d89a0a8564f4a49eb93f9b1f073242a2e2"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#0fbd6bb83b58fa0287957e1aa889df02c616f5ae"
 dependencies = [
  "async-trait",
  "atomic_refcell",
@@ -1451,7 +1445,7 @@ dependencies = [
 [[package]]
 name = "graph-graphql"
 version = "0.24.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#8f6ba8d89a0a8564f4a49eb93f9b1f073242a2e2"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#0fbd6bb83b58fa0287957e1aa889df02c616f5ae"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -1470,7 +1464,7 @@ dependencies = [
 [[package]]
 name = "graph-mock"
 version = "0.24.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#8f6ba8d89a0a8564f4a49eb93f9b1f073242a2e2"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#0fbd6bb83b58fa0287957e1aa889df02c616f5ae"
 dependencies = [
  "futures 0.1.31",
  "graph",
@@ -1483,17 +1477,17 @@ dependencies = [
 [[package]]
 name = "graph-runtime-derive"
 version = "0.24.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#8f6ba8d89a0a8564f4a49eb93f9b1f073242a2e2"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#0fbd6bb83b58fa0287957e1aa889df02c616f5ae"
 dependencies = [
  "anyhow",
  "quote 1.0.9",
- "syn 1.0.76",
+ "syn 1.0.77",
 ]
 
 [[package]]
 name = "graph-runtime-test"
 version = "0.24.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#8f6ba8d89a0a8564f4a49eb93f9b1f073242a2e2"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#0fbd6bb83b58fa0287957e1aa889df02c616f5ae"
 dependencies = [
  "graph",
  "graph-chain-ethereum",
@@ -1507,7 +1501,7 @@ dependencies = [
 [[package]]
 name = "graph-runtime-wasm"
 version = "0.24.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#8f6ba8d89a0a8564f4a49eb93f9b1f073242a2e2"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#0fbd6bb83b58fa0287957e1aa889df02c616f5ae"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1913,7 +1907,7 @@ checksum = "d5dacb10c5b3bb92d46ba347505a9041e676bb20ad220101326bffb0c93031ee"
 dependencies = [
  "proc-macro2 1.0.29",
  "quote 1.0.9",
- "syn 1.0.76",
+ "syn 1.0.77",
 ]
 
 [[package]]
@@ -2072,9 +2066,9 @@ checksum = "3576a87f2ba00f6f106fdfcd16db1d698d648a26ad8e0573cad8537c3c362d2a"
 
 [[package]]
 name = "libc"
-version = "0.2.102"
+version = "0.2.103"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a2a5ac8f984bfcf3a823267e5fde638acc3325f6496633a5da6bb6eb2171e103"
+checksum = "dd8f7255a17a627354f321ef0055d63b898c6fb27eff628af4d1b66b7331edf6"
 
 [[package]]
 name = "linked-hash-map"
@@ -2352,7 +2346,7 @@ dependencies = [
  "cfg-if 0.1.10",
  "proc-macro2 1.0.29",
  "quote 1.0.9",
- "syn 1.0.76",
+ "syn 1.0.77",
 ]
 
 [[package]]
@@ -2364,7 +2358,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "proc-macro2 1.0.29",
  "quote 1.0.9",
- "syn 1.0.76",
+ "syn 1.0.77",
 ]
 
 [[package]]
@@ -2585,7 +2579,7 @@ dependencies = [
  "proc-macro-crate",
  "proc-macro2 1.0.29",
  "quote 1.0.9",
- "syn 1.0.76",
+ "syn 1.0.77",
 ]
 
 [[package]]
@@ -2737,7 +2731,7 @@ checksum = "6e8fe8163d14ce7f0cdac2e040116f22eac817edabff0be91e8aff7e9accf389"
 dependencies = [
  "proc-macro2 1.0.29",
  "quote 1.0.9",
- "syn 1.0.76",
+ "syn 1.0.77",
 ]
 
 [[package]]
@@ -2760,9 +2754,9 @@ checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 
 [[package]]
 name = "pkg-config"
-version = "0.3.19"
+version = "0.3.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3831453b3449ceb48b6d9c7ad7c96d5ea673e9b470a1dc578c2ce6521230884c"
+checksum = "7c9b1041b4387893b91ee6746cddfc28516aff326a3519fb2adf820932c5e6cb"
 
 [[package]]
 name = "ppv-lite86"
@@ -2937,7 +2931,7 @@ dependencies = [
  "itertools",
  "proc-macro2 1.0.29",
  "quote 1.0.9",
- "syn 1.0.76",
+ "syn 1.0.77",
 ]
 
 [[package]]
@@ -3535,7 +3529,7 @@ checksum = "aaaae8f38bb311444cfb7f1979af0bc9240d95795f75f9ceddf6a59b79ceffa0"
 dependencies = [
  "proc-macro2 1.0.29",
  "quote 1.0.9",
- "syn 1.0.76",
+ "syn 1.0.77",
 ]
 
 [[package]]
@@ -3560,7 +3554,7 @@ dependencies = [
 [[package]]
 name = "secp256k1"
 version = "0.20.3"
-source = "git+https://github.com/rust-bitcoin/rust-secp256k1#cd62343407cc6870fb55136a438f31fef1300f66"
+source = "git+https://github.com/rust-bitcoin/rust-secp256k1#24a9c9c765ac3cc1b1b5219e3944efb206e4317c"
 dependencies = [
  "secp256k1-sys 0.4.1",
 ]
@@ -3577,7 +3571,7 @@ dependencies = [
 [[package]]
 name = "secp256k1-sys"
 version = "0.4.1"
-source = "git+https://github.com/rust-bitcoin/rust-secp256k1#cd62343407cc6870fb55136a438f31fef1300f66"
+source = "git+https://github.com/rust-bitcoin/rust-secp256k1#24a9c9c765ac3cc1b1b5219e3944efb206e4317c"
 dependencies = [
  "cc",
 ]
@@ -3664,7 +3658,7 @@ checksum = "d7bc1a1ab1961464eae040d96713baa5a724a8152c1222492465b54322ec508b"
 dependencies = [
  "proc-macro2 1.0.29",
  "quote 1.0.9",
- "syn 1.0.76",
+ "syn 1.0.77",
 ]
 
 [[package]]
@@ -3730,7 +3724,7 @@ checksum = "b2acd6defeddb41eb60bb468f8825d0cfd0c2a76bc03bfd235b6a1dc4f6a1ad5"
 dependencies = [
  "proc-macro2 1.0.29",
  "quote 1.0.9",
- "syn 1.0.76",
+ "syn 1.0.77",
 ]
 
 [[package]]
@@ -3989,7 +3983,7 @@ dependencies = [
  "heck",
  "proc-macro2 1.0.29",
  "quote 1.0.9",
- "syn 1.0.76",
+ "syn 1.0.77",
 ]
 
 [[package]]
@@ -4011,9 +4005,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "1.0.76"
+version = "1.0.77"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6f107db402c2c2055242dbf4d2af0e69197202e9faacbef9571bbe47f5a1b84"
+checksum = "5239bc68e0fef57495900cfea4e8dc75596d9a319d7e16b1e0a440d24e6fe0a0"
 dependencies = [
  "proc-macro2 1.0.29",
  "quote 1.0.9",
@@ -4098,7 +4092,7 @@ checksum = "bad553cc2c78e8de258400763a647e80e6d1b31ee237275d756f6836d204494c"
 dependencies = [
  "proc-macro2 1.0.29",
  "quote 1.0.9",
- "syn 1.0.76",
+ "syn 1.0.77",
 ]
 
 [[package]]
@@ -4141,9 +4135,9 @@ dependencies = [
 
 [[package]]
 name = "tinyvec"
-version = "1.4.0"
+version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5241dd6f21443a3606b432718b166d3cedc962fd4b8bea54a8bc7f514ebda986"
+checksum = "f83b2a3d4d9091d0abd7eba4dc2710b1718583bd4d8992e2190720ea38f391f7"
 dependencies = [
  "tinyvec_macros",
 ]
@@ -4319,7 +4313,7 @@ checksum = "e44da00bfc73a25f814cd8d7e57a68a5c31b74b3152a0a1d1f590c97ed06265a"
 dependencies = [
  "proc-macro2 1.0.29",
  "quote 1.0.9",
- "syn 1.0.76",
+ "syn 1.0.77",
 ]
 
 [[package]]
@@ -4330,7 +4324,7 @@ checksum = "54473be61f4ebe4efd09cec9bd5d16fa51d70ea0192213d754d2d500457db110"
 dependencies = [
  "proc-macro2 1.0.29",
  "quote 1.0.9",
- "syn 1.0.76",
+ "syn 1.0.77",
 ]
 
 [[package]]
@@ -4586,7 +4580,7 @@ dependencies = [
  "proc-macro2 1.0.29",
  "prost-build",
  "quote 1.0.9",
- "syn 1.0.76",
+ "syn 1.0.77",
 ]
 
 [[package]]
@@ -4642,7 +4636,7 @@ checksum = "98863d0dd09fa59a1b79c6750ad80dbda6b75f4e71c437a6a1a8cb91a8bcbd77"
 dependencies = [
  "proc-macro2 1.0.29",
  "quote 1.0.9",
- "syn 1.0.76",
+ "syn 1.0.77",
 ]
 
 [[package]]
@@ -4959,7 +4953,7 @@ dependencies = [
  "log 0.4.14",
  "proc-macro2 1.0.29",
  "quote 1.0.9",
- "syn 1.0.76",
+ "syn 1.0.77",
  "wasm-bindgen-shared",
 ]
 
@@ -4993,7 +4987,7 @@ checksum = "7803e0eea25835f8abdc585cd3021b3deb11543c6fe226dcd30b228857c5c5ab"
 dependencies = [
  "proc-macro2 1.0.29",
  "quote 1.0.9",
- "syn 1.0.76",
+ "syn 1.0.77",
  "wasm-bindgen-backend",
  "wasm-bindgen-shared",
 ]

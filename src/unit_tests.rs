@@ -2,8 +2,8 @@
 mod unit_tests {
     use crate::module_from_path;
     use crate::wasm_instance::{
-        clear_pub_static_refs, WICExtension, FUNCTIONS_MAP, LOGS, REVERTS_IDENTIFIER, STORE,
-        TEST_RESULTS,
+        clear_pub_static_refs, WICExtension, FUNCTIONS_MAP, LOGS, PANICKING_TESTS,
+        REVERTS_IDENTIFIER, STORE, TEST_RESULTS,
     };
     use ethabi::Token;
     use graph::data::store::Value;
@@ -142,32 +142,55 @@ mod unit_tests {
         clear_pub_static_refs();
 
         let initial_asc_string = asc_string_from_str("test");
-        let pointer = AscPtr::alloc_obj(initial_asc_string, &mut context);
+        let name_ptr =
+            AscPtr::alloc_obj(initial_asc_string, &mut context).expect("Couldn't unwrap pointer.");
+        let should_throw_ptr = AscPtr::new(0);
 
-        context
-            .register_test(pointer.expect("Couldn't unwrap pointer."))
+        let result = context
+            .register_test(name_ptr, should_throw_ptr)
             .expect("Couldn't call register_test.");
 
         let test_results = TEST_RESULTS.lock().expect("Cannot get TEST_RESULTS.");
+        let panicking_tests = PANICKING_TESTS.lock().expect("Cannot get PANICKING_TESTS.");
         assert_eq!(test_results.len(), 1);
+        assert_eq!(panicking_tests.len(), 0);
+        assert_eq!(result, true);
     }
 
     #[test]
     #[serial]
-    #[should_panic(expected = "Test with name 'duplicate test' already exists.")]
     fn register_test_duplicate_should_panic() {
         let mut context = get_context();
         clear_pub_static_refs();
+
         let mut test_results = TEST_RESULTS.lock().expect("Cannot get TEST_RESULTS.");
         test_results.insert("duplicate test".to_string(), true);
         drop(test_results);
 
         let initial_asc_string = asc_string_from_str("duplicate test");
-        let pointer = AscPtr::alloc_obj(initial_asc_string, &mut context);
+        let name_ptr =
+            AscPtr::alloc_obj(initial_asc_string, &mut context).expect("Couldn't unwrap pointer.");
+        let should_throw_ptr = AscPtr::new(1);
 
-        context
-            .register_test(pointer.expect("Couldn't unwrap pointer."))
+        let result = context
+            .register_test(name_ptr, should_throw_ptr)
             .expect("Couldn't call register_test.");
+
+        assert_eq!(result, false);
+
+        let non_duplicate = asc_string_from_str("name");
+        let non_duplicate_ptr =
+            AscPtr::alloc_obj(non_duplicate, &mut context).expect("Couldn't unwrap pointer.");
+
+        let result = context
+            .register_test(non_duplicate_ptr, should_throw_ptr)
+            .expect("Couldn't call register_test.");
+
+        let test_results = TEST_RESULTS.lock().expect("Cannot get TEST_RESULTS.");
+        let panicking_tests = PANICKING_TESTS.lock().expect("Cannot get PANICKING_TESTS.");
+        assert_eq!(test_results.len(), 2);
+        assert_eq!(panicking_tests.len(), 1);
+        assert_eq!(result, true);
     }
 
     #[test]
@@ -796,6 +819,7 @@ mod unit_tests {
         let func_signature_pointer =
             AscPtr::alloc_obj(func_signature, &mut context).expect("Couldn't create pointer.");
         let val_pointer = AscPtr::alloc_obj(val, &mut context).expect("Couldn't create pointer.");
+        let reverts_pointer = AscPtr::new(0);
 
         let asc_enum = AscEnum::<EthereumValueKind> {
             kind: EthereumValueKind::String,
@@ -817,7 +841,7 @@ mod unit_tests {
                 func_signature_pointer,
                 func_args_array_pointer.wasm_ptr(),
                 func_args_array_pointer.wasm_ptr(),
-                0,
+                reverts_pointer,
             )
             .expect("Couldn't call mock_function.");
 
@@ -851,6 +875,7 @@ mod unit_tests {
         let func_signature_pointer =
             AscPtr::alloc_obj(func_signature, &mut context).expect("Couldn't create pointer.");
         let val_pointer = AscPtr::alloc_obj(val, &mut context).expect("Couldn't create pointer.");
+        let reverts_pointer = AscPtr::new(1);
 
         let asc_enum = AscEnum::<EthereumValueKind> {
             kind: EthereumValueKind::String,
@@ -872,7 +897,7 @@ mod unit_tests {
                 func_signature_pointer,
                 func_args_array_pointer.wasm_ptr(),
                 func_args_array_pointer.wasm_ptr(),
-                1,
+                reverts_pointer,
             )
             .expect("Couldn't call mock_function.");
 
