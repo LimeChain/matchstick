@@ -114,9 +114,10 @@ fn call_run_tests(run_tests: wasmtime::Func) {
             ❌ ❌ ❌  Unexpected error occurred while running tests.
             See error stack trace above and double check the syntax in your test file.
 
-            This usually happens for two reasons:
+            This usually happens for three reasons:
             1. You passed a 'null' value to one of our functions - assert.fieldEquals(), store.get(), store.set().
             2. A mocked function call reverted. Consider using 'try_functionName' to handle this in the mapping.
+            3. The test was supposed to throw an error but the 'shouldThrow' parameter was not set to true.
 
             Please ensure that you have proper null checks in your tests.
             You can debug your test file using the 'debug()' function, provided by matchstick-as (import { debug } from "matchstick-as/assembly/log").
