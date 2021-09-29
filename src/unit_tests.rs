@@ -7,7 +7,7 @@ mod unit_tests {
     };
     use ethabi::Token;
     use graph::data::store::Value;
-    use graph::runtime::{asc_get, AscHeap, AscPtr, AscType};
+    use graph::runtime::{asc_get, AscPtr, AscType};
     use graph::semver::{BuildMetadata, Prerelease, Version};
     use graph_chain_ethereum::runtime::abi::AscUnresolvedContractCall_0_0_4;
     use graph_chain_ethereum::Chain;
@@ -819,6 +819,7 @@ mod unit_tests {
         let func_signature_pointer =
             AscPtr::alloc_obj(func_signature, &mut context).expect("Couldn't create pointer.");
         let val_pointer = AscPtr::alloc_obj(val, &mut context).expect("Couldn't create pointer.");
+        let reverts_pointer = AscPtr::new(0);
 
         let asc_enum = AscEnum::<EthereumValueKind> {
             kind: EthereumValueKind::String,
@@ -840,7 +841,7 @@ mod unit_tests {
                 func_signature_pointer,
                 func_args_array_pointer.wasm_ptr(),
                 func_args_array_pointer.wasm_ptr(),
-                0,
+                reverts_pointer,
             )
             .expect("Couldn't call mock_function.");
 
@@ -874,6 +875,7 @@ mod unit_tests {
         let func_signature_pointer =
             AscPtr::alloc_obj(func_signature, &mut context).expect("Couldn't create pointer.");
         let val_pointer = AscPtr::alloc_obj(val, &mut context).expect("Couldn't create pointer.");
+        let reverts_pointer = AscPtr::new(1);
 
         let asc_enum = AscEnum::<EthereumValueKind> {
             kind: EthereumValueKind::String,
@@ -895,7 +897,7 @@ mod unit_tests {
                 func_signature_pointer,
                 func_args_array_pointer.wasm_ptr(),
                 func_args_array_pointer.wasm_ptr(),
-                1,
+                reverts_pointer,
             )
             .expect("Couldn't call mock_function.");
 

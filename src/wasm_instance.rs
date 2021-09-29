@@ -222,7 +222,7 @@ pub trait WICExtension {
         fn_signature_ptr: AscPtr<AscString>,
         fn_args_ptr: u32,
         return_value_ptr: u32,
-        reverts: u32,
+        reverts_ptr: AscPtr<bool>,
     ) -> Result<(), HostExportError>;
     fn mock_data_source_create(
         &mut self,
@@ -514,7 +514,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         fn_signature_ptr: AscPtr<AscString>,
         fn_args_ptr: u32,
         return_value_ptr: u32,
-        reverts: u32,
+        reverts_ptr: AscPtr<bool>,
     ) -> Result<(), HostExportError> {
         let contract_address: Address = asc_get(self, contract_address_ptr.into())?;
         let fn_name: String = asc_get(self, fn_name_ptr)?;
@@ -525,6 +525,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             self,
             return_value_ptr.into(),
         )?;
+        let reverts: bool = bool::from(EnumPayload(reverts_ptr.to_payload()));
 
         let unique_fn_string = create_unique_fn_string(
             &contract_address.to_string(),
@@ -534,7 +535,7 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         );
         let mut map = FUNCTIONS_MAP.lock().expect("Couldn't get map.");
 
-        if reverts == 1 {
+        if reverts {
             map.insert(unique_fn_string, REVERTS_IDENTIFIER.clone());
         } else {
             map.insert(unique_fn_string, return_value);
