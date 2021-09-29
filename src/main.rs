@@ -18,7 +18,8 @@ use serde_yaml::{Sequence, Value};
 
 use subgraph_store::MockSubgraphStore;
 use wasm_instance::{
-    process_test_and_verify, flush_logs, get_failed_tests, get_successful_tests, WasmInstanceExtension,
+    flush_logs, get_failed_tests, get_successful_tests, process_test_and_verify,
+    WasmInstanceExtension,
 };
 
 use crate::wasm_instance::WasmInstance;
@@ -101,13 +102,11 @@ pub fn module_from_path(path_to_wasm: &str) -> WasmInstance<Chain> {
 }
 
 fn call_run_tests(run_tests: wasmtime::Func) {
-
     #[allow(non_fmt_panics)]
     run_tests.call(&[]).unwrap_or_else(|err| {
-
         if process_test_and_verify() {
             call_run_tests(run_tests);
-            return Box::new([wasmtime::Val::I32(23)]);
+            return Box::new([wasmtime::Val::I32(0)]);
         } else {
             flush_logs();
 
@@ -127,8 +126,6 @@ fn call_run_tests(run_tests: wasmtime::Func) {
             panic!("{}", msg);
         }
     });
-
-    flush_logs();
 }
 
 pub fn main() {
@@ -206,6 +203,7 @@ ___  ___      _       _         _   _      _
 
     println!("{}", ("Igniting tests 🔥\n").to_string().bright_red());
     call_run_tests(run_tests);
+    flush_logs();
 
     let successful_tests = get_successful_tests();
     let failed_tests = get_failed_tests();
