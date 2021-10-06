@@ -2160,6 +2160,7 @@ dependencies = [
  "graph",
  "graph-chain-ethereum",
  "graph-core",
+ "graph-graphql",
  "graph-mock",
  "graph-runtime-test",
  "graph-runtime-wasm",

@@ -16,6 +16,7 @@ use graph::{
 };
 use graph_chain_ethereum::runtime::abi::AscUnresolvedContractCall_0_0_4;
 use graph_chain_ethereum::runtime::runtime_adapter::UnresolvedContractCall;
+use graph_graphql::graphql_parser::schema;
 use graph_runtime_wasm::asc_abi::class::EnumPayload;
 use graph_runtime_wasm::asc_abi::class::{Array, AscEntity, AscEnum, AscString};
 use graph_runtime_wasm::asc_abi::class::{AscEnumArray, EthereumValueKind};
@@ -41,6 +42,17 @@ lazy_static! {
     pub(crate) static ref PANICKING_TESTS: Mutex<Vec<String>> = Mutex::new(vec!());
     pub(crate) static ref REVERTS_IDENTIFIER: Vec<Token> =
         vec!(Token::Bytes(vec!(255, 255, 255, 255, 255, 255, 255)));
+    pub(crate) static ref SCHEMA: schema::Document<'static, String> = {
+        let s = std::fs::read_to_string("build/schema.graphql").expect(
+            r#"❌ ❌ ❌  Something went wrong reading the 'build/schema.graphql' file.
+            Please ensure that you have run 'graph build' and a 'build' directory exists in the root of your project."#,
+        );
+        let s = schema::parse_schema::<String>(&s).expect(
+            r#"❌ ❌ ❌  Something went wrong when parsing 'build/schema.graphql'.
+                Please ensure that the file exists and that the schema is valid."#,
+        );
+        s.into_static()
+    };
 }
 
 pub enum Level {
@@ -131,12 +143,12 @@ pub fn process_test_and_verify() -> bool {
         .contains(&test_name)
     {
         fail_test("".to_string());
-        return false;
+        false
     } else {
         TEST_RESULTS
             .lock()
             .expect("Cannot access TEST_RESULTS.")
-            .insert(test_name.clone(), true);
+            .insert(test_name, true);
         true
     }
 }
@@ -431,6 +443,36 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let entity_type: String = asc_get(self, entity_type_ptr)?;
         let id: String = asc_get(self, id_ptr)?;
         let data: HashMap<String, Value> = try_asc_get(self, data_ptr)?;
+
+        let required_fields = SCHEMA
+            .definitions
+            .iter()
+            .find_map(|def| {
+                if let schema::Definition::TypeDefinition(schema::TypeDefinition::Object(o)) = def {
+                    Some(o)
+                } else {
+                    None
+                }
+            })
+            .expect("Something went wrong! Couldn't find the entity defined in the GraphQL schema.")
+            .fields
+            .iter()
+            .filter(|&f| matches!(f.field_type, schema::Type::NonNullType(..)));
+
+        for f in required_fields {
+            if !data.contains_key(&f.name) {
+                panic!(
+                    "❌ ❌ ❌  Missing a required field `{}` for entity `{}`.",
+                    f.name, entity_type
+                );
+            } else if let Value::Null = data.get(&f.name).unwrap() {
+                // TODO(VIVelev): Make a separate warn! macro for the whole project?
+                println!(
+                    "WARNING! The required field `{}` of entity type `{}` is null.",
+                    f.name, entity_type
+                );
+            }
+        }
 
         let mut map = STORE.lock().expect("Cannot get STORE.");
         let mut inner_map = if map.contains_key(&entity_type) {

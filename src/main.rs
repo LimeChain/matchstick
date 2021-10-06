@@ -162,15 +162,13 @@ ___  ___      _       _         _   _      _
         .value_of("DATASOURCE")
         .expect("Couldn't get datasource name.");
 
-    let subgraph_yaml_contents = std::fs::read_to_string("build/subgraph.yaml")
-        .expect(r#"
-        ❌ ❌ ❌  Something went wrong reading the 'build/subgraph.yaml' file.
-        Please ensure that you have run 'graph build' and a 'build' directory exists in the root of your project.
-        "#);
+    let subgraph_yaml = std::fs::read_to_string("build/subgraph.yaml").expect(
+        r#"❌ ❌ ❌  Something went wrong reading the 'build/subgraph.yaml' file.
+        Please ensure that you have run 'graph build' and a 'build' directory exists in the root of your project."#,
+    );
 
-    let subgraph_yaml: Value = serde_yaml::from_str(&subgraph_yaml_contents).expect(
-        r#"
-        ❌ ❌ ❌  Something went wrong when parsing 'build/subgraph.yaml'.
+    let subgraph_yaml: Value = serde_yaml::from_str(&subgraph_yaml).expect(
+        r#"❌ ❌ ❌  Something went wrong when parsing 'build/subgraph.yaml'.
         Please ensure that the file exists and that the yaml is valid."#,
     );
 
