@@ -460,17 +460,18 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
             .filter(|&f| matches!(f.field_type, schema::Type::NonNullType(..)));
 
         for f in required_fields {
+            let warn = |s: String| println!("{}", styled(s.as_str(), &Level::Warning));
+
             if !data.contains_key(&f.name) {
-                panic!(
-                    "❌ ❌ ❌  Missing a required field `{}` for entity `{}`.",
+                warn(format!(
+                    "Missing a required field `{}` for an entity of type `{}`.",
                     f.name, entity_type
-                );
+                ));
             } else if let Value::Null = data.get(&f.name).unwrap() {
-                // TODO(VIVelev): Make a separate warn! macro for the whole project?
-                println!(
-                    "WARNING! The required field `{}` of entity type `{}` is null.",
+                warn(format!(
+                    "The required field `{}` for an entity of type `{}` is null.",
                     f.name, entity_type
-                );
+                ));
             }
         }
 
