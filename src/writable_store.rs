@@ -36,7 +36,7 @@ impl WritableStore for MockWritableStore {
         unreachable!()
     }
 
-     async fn supports_proof_of_indexing(&self) -> Result<bool, StoreError> {
+    async fn supports_proof_of_indexing(&self) -> Result<bool, StoreError> {
         unreachable!()
     }
 
