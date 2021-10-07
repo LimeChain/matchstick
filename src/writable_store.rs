@@ -1,54 +1,49 @@
 use async_trait::async_trait;
 use graph::components::store::WritableStore;
 use graph::data::subgraph::*;
+use graph::prelude::StoreError;
 use graph::{
     blockchain::BlockPtr,
     prelude::{Logger, StopwatchMetrics},
 };
 use std::result::Result;
-use std::sync::Arc;
 
 pub struct MockWritableStore {}
 
 #[async_trait]
 impl WritableStore for MockWritableStore {
-    fn block_ptr(&self) -> Result<Option<BlockPtr>, anyhow::Error> {
+    fn block_ptr(&self) -> Result<Option<BlockPtr>, StoreError> {
         unreachable!()
     }
 
-    fn start_subgraph_deployment(
-        &self,
-        _logger: &Logger,
-    ) -> Result<(), graph::prelude::StoreError> {
+    fn block_cursor(&self) -> Result<Option<String>, StoreError> {
         unreachable!()
     }
 
-    fn revert_block_operations(
-        &self,
-        _block_ptr_to: BlockPtr,
-    ) -> Result<(), graph::prelude::StoreError> {
+    fn start_subgraph_deployment(&self, _logger: &Logger) -> Result<(), StoreError> {
         unreachable!()
     }
 
-    fn unfail(&self) -> Result<(), graph::prelude::StoreError> {
+    fn revert_block_operations(&self, _block_ptr_to: BlockPtr) -> Result<(), StoreError> {
         unreachable!()
     }
 
-    async fn fail_subgraph(
-        &self,
-        _error: schema::SubgraphError,
-    ) -> Result<(), graph::prelude::StoreError> {
+    fn unfail(&self) -> Result<(), StoreError> {
         unreachable!()
     }
 
-    fn supports_proof_of_indexing<'a>(self: Arc<Self>) -> graph::prelude::DynTryFuture<'a, bool> {
+    async fn fail_subgraph(&self, _error: schema::SubgraphError) -> Result<(), StoreError> {
+        unreachable!()
+    }
+
+     async fn supports_proof_of_indexing(&self) -> Result<bool, StoreError> {
         unreachable!()
     }
 
     fn get(
         &self,
         _key: &graph::prelude::EntityKey,
-    ) -> Result<Option<graph::prelude::Entity>, graph::prelude::QueryExecutionError> {
+    ) -> Result<Option<graph::prelude::Entity>, StoreError> {
         unreachable!()
     }
 
@@ -60,7 +55,7 @@ impl WritableStore for MockWritableStore {
         _stopwatch: StopwatchMetrics,
         _data_sources: Vec<graph::components::store::StoredDynamicDataSource>,
         _deterministic_errors: Vec<schema::SubgraphError>,
-    ) -> Result<(), graph::prelude::StoreError> {
+    ) -> Result<(), StoreError> {
         unreachable!()
     }
 
@@ -72,35 +67,30 @@ impl WritableStore for MockWritableStore {
             graph::components::store::EntityType,
             Vec<graph::prelude::Entity>,
         >,
-        graph::prelude::StoreError,
+        StoreError,
     > {
         unreachable!()
     }
 
-    fn deployment_synced(&self) -> Result<(), anyhow::Error> {
+    fn deployment_synced(&self) -> Result<(), StoreError> {
         unreachable!()
     }
 
-    async fn is_deployment_synced(&self) -> Result<bool, anyhow::Error> {
+    async fn is_deployment_synced(&self) -> Result<bool, StoreError> {
         unreachable!()
     }
 
-    fn unassign_subgraph(&self) -> Result<(), graph::prelude::StoreError> {
+    fn unassign_subgraph(&self) -> Result<(), StoreError> {
         unreachable!()
     }
 
     async fn load_dynamic_data_sources(
         &self,
-    ) -> Result<Vec<graph::components::store::StoredDynamicDataSource>, graph::prelude::StoreError>
-    {
+    ) -> Result<Vec<graph::components::store::StoredDynamicDataSource>, StoreError> {
         unreachable!()
     }
 
     fn shard(&self) -> &str {
-        unreachable!()
-    }
-
-    fn block_cursor(&self) -> Result<Option<String>, graph::prelude::StoreError> {
         unreachable!()
     }
 }
