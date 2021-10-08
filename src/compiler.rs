@@ -1,6 +1,5 @@
 use std::fs;
-use std::io;
-use std::process::{Command, Output};
+use std::process::{Command, ExitStatus};
 
 pub struct Compiler {
     exec: String,
@@ -9,6 +8,14 @@ pub struct Compiler {
     options: Vec<String>,
 }
 
+pub struct CompileOutput {
+    pub status: ExitStatus,
+    pub stdout: Vec<u8>,
+    pub stderr: Vec<u8>,
+    pub file: String,
+}
+
+#[allow(dead_code)]
 impl Compiler {
     pub fn default() -> Compiler {
         Compiler {
@@ -64,15 +71,20 @@ impl Compiler {
                     None
                 }
             })
-            .expect("No tests for {} datasource were found during compilation.");
+            .unwrap_or_else(|| {
+                panic!(
+                    "No tests for {} datasource were found during compilation.",
+                    datasource
+                )
+            });
 
         let in_files = if entry.file_type().unwrap().is_dir() {
             entry
                 .path()
                 .read_dir()
                 .unwrap()
-                .map(|file| file.unwrap())
-                .map(|file| file.path().to_str().unwrap().to_string())
+                .map(|file| file.unwrap().path().to_str().unwrap().to_string())
+                .filter(|path| path.ends_with(".test.ts"))
                 .collect()
         } else {
             vec![entry.path().to_str().unwrap().to_string()]
@@ -81,18 +93,24 @@ impl Compiler {
         return (in_files, format!("./tests/.bin/{}.wasm", datasource));
     }
 
-    pub fn compile(&self, datasource: &str) -> io::Result<Output> {
+    pub fn compile(&self, datasource: &str) -> CompileOutput {
         let (in_files, out_file) = Compiler::get_paths_for(datasource);
-        println!("{:?}", self.lib);
-
-        Command::new(&self.exec)
+        let output = Command::new(&self.exec)
             .args(in_files)
             .arg(&self.global)
             .arg("--lib")
             .arg(&self.lib)
             .args(&self.options)
             .arg("--outFile")
-            .arg(out_file)
+            .arg(out_file.clone())
             .output()
+            .expect("Internal error during compilation.");
+
+        CompileOutput {
+            status: output.status,
+            stdout: output.stdout,
+            stderr: output.stderr,
+            file: out_file,
+        }
     }
 }

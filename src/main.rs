@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::io::{self, Write};
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -16,15 +17,13 @@ use graph_runtime_test::common::{mock_context, mock_data_source};
 use graph_runtime_wasm::mapping::ValidModule;
 use graph_runtime_wasm::module::ExperimentalFeatures;
 
-use std::io::{self, Write};
-use std::process;
 use subgraph_store::MockSubgraphStore;
 use wasm_instance::{
     flush_logs, get_failed_tests, get_successful_tests, process_test_and_verify,
     WasmInstanceExtension,
 };
 
-use crate::compiler::Compiler;
+use crate::compiler::{CompileOutput, Compiler};
 use crate::wasm_instance::WasmInstance;
 
 mod compiler;
@@ -34,7 +33,7 @@ mod unit_tests;
 mod wasm_instance;
 mod writable_store;
 
-pub fn module_from_path(path_to_wasm: &str) -> WasmInstance<Chain> {
+fn instance_from_wasm(path_to_wasm: &str) -> WasmInstance<Chain> {
     let subgraph_id = "ipfsMap";
     let deployment_id =
         &DeploymentHash::new(subgraph_id).expect("Could not create DeploymentHash.");
@@ -188,28 +187,36 @@ ___  ___      _       _         _   _      _
         }
     };
 
+    println!("{}", ("Compiling...\n").to_string().bright_green());
     let compiler = Compiler::default().export_table();
-    let outputs: Vec<std::process::Output> = datasources
-        .iter()
-        .map(|s| compiler.compile(s).expect("ERROR"))
-        .collect();
+    let outputs: Vec<CompileOutput> = datasources.iter().map(|s| compiler.compile(s)).collect();
+
+    // Print any output on `stderr`.
     outputs
         .iter()
         .for_each(|output| io::stderr().write_all(&output.stderr).unwrap());
 
-    // let module = module_from_wasm(&path_to_wasm);
+    // NOTE: Is it actually too expensive to create a WASM Instance per datasource?
+    // Will there be a huge boost in performace if we were to creat just one, shared?
+    let wasm_instances: Vec<WasmInstance<Chain>> = outputs
+        .iter()
+        .map(|output| instance_from_wasm(&output.file))
+        .collect();
 
-    // let run_tests = module
-    //     .instance
-    //     .get_func("runTests")
-    //     .expect(r#"
-    //     ❌ ❌ ❌  Couldn't get wasm function 'runTests'.
-    //     Please ensure that you have named the function (that is defined in the test file) exactly 'runTests' and have imported it into the main mappings file.
-    //     "#);
-
-    // println!("{}", ("Igniting tests 🔥\n").to_string().bright_red());
-    // call_run_tests(run_tests);
-    // flush_logs();
+    println!("{}", ("Igniting tests 🔥\n").to_string().bright_red());
+    wasm_instances
+        .iter()
+        .map(|instance| {
+            instance
+                .instance
+                .get_func("runTests")
+                .expect(
+                    r#"❌ ❌ ❌  Couldn't get wasm function 'runTests'.
+                    Please ensure that you have named the function (that is defined in the test file) exactly 'runTests' and have imported it into the main mappings file."#
+                )
+        })
+        .for_each(call_run_tests);
+    flush_logs();
 
     let successful_tests = get_successful_tests();
     let failed_tests = get_failed_tests();
