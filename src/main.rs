@@ -191,12 +191,12 @@ ___  ___      _       _         _   _      _
     let compiler = Compiler::default().export_table();
     let outputs: Vec<CompileOutput> = datasources.iter().map(|s| compiler.compile(s)).collect();
 
-    // Print any output on `stderr`.
-    outputs
-        .iter()
-        .for_each(|output| io::stderr().write_all(&output.stderr).unwrap());
-
     if outputs.iter().any(|output| !output.status.success()) {
+        // Print any output on `stderr`.
+        outputs
+            .iter()
+            .for_each(|output| io::stderr().write_all(&output.stderr).unwrap());
+
         panic!("Please attend to the compilation errors above!");
     }
 
