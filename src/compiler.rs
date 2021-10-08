@@ -52,13 +52,12 @@ impl Compiler {
     }
 
     fn get_paths_for(datasource: &str) -> (Vec<String>, String) {
-        fs::create_dir_all("./tests/.bin/")
-            .expect("Something went wrong when creating `./tests/.bin/`.");
-
         let entry = fs::read_dir("./tests/")
-            .unwrap()
-            .map(|entry| entry.unwrap())
+            .expect(
+                "No tests were found: The `./tests/` directory does not exist or it could not be read.",
+            )
             .find_map(|entry| {
+                let entry = entry.unwrap();
                 if entry
                     .file_name()
                     .to_str()
@@ -89,6 +88,9 @@ impl Compiler {
         } else {
             vec![entry.path().to_str().unwrap().to_string()]
         };
+
+        fs::create_dir_all("./tests/.bin/")
+            .expect("Something went wrong when creating `./tests/.bin/`.");
 
         return (in_files, format!("./tests/.bin/{}.wasm", datasource));
     }
