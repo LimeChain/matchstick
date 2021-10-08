@@ -423,6 +423,18 @@ newGravatarEvent.address = Address.fromString(UPDATED_ADDRESS);
 ### Asserting variable equality
 ```typescript
 assert.equals(ethereum.Value.fromString("hello"); ethereum.Value.fromString("hello"));
+
+// String
+assert.stringEquals(DEFAULT_LOG_TYPE, newGravatarEvent.logType!);
+
+// Address
+assert.addressEquals(Address.fromString(DEFAULT_ADDRESS), newGravatarEvent.address);
+ 
+// BigInt
+assert.bigIntEquals(BigInt.fromI32(DEFAULT_LOG_INDEX), newGravatarEvent.logIndex);
+
+// Bytes & nested objects
+assert.bytesEquals((Bytes.fromHexString(DEFAULT_BLOCK_HASH) as Bytes), newGravatarEvent.block.hash);
 ```
 
 ### Asserting that an Entity is **not** in the store
@@ -431,6 +443,58 @@ Users can assert that an entity does not exist in the store. If the entity is in
 ```typescript
 assert.notInStore("Gravatar", "23");
 ```
+
+### Printing the whole store (for debug purposes)
+You can print the whole store to the console using this helper function:
+```typescript
+import { logStore } from "matchstick-as/assembly/store";
+
+logStore();
+```
+
+### Expected failure
+Users can have expected test failures, using the `shouldFail` flag on the `test()` functions:
+```typescript
+test("Should throw an error", () => {
+  throw new Error();
+}, true);
+```
+
+If the test is marked with `shouldFail = true` but **DOES NOT** fail, that will show up as an error in the logs and the test block will fail. Also, if it's marked with `shouldFail = false` (the default state), the test executor will crash.
+
+### Logging
+Having custom logs in the unit tests is exactly the same as logging in the mappings. The difference is that the log object needs to be imported from `matchstick-as` rather than `graph-ts`. Here's a simple example with all non-critical log types:
+```typescript
+import { test } from "matchstick-as/assembly/index";
+import { log } from "matchstick-as/assembly/log";
+
+export function runTests(): void {
+    test("Success", () => {
+        log.success("Success!". []);
+    });
+    test("Error", () => {
+        log.error("Error :( ", []);
+    });
+    test("Debug", () => {
+        log.debug("Debugging...", []);
+    });
+    test("Info", () => {
+        log.info("Info!", []);
+    });
+    test("Warning", () => {
+        log.warning("Warning!", []);
+    });
+}
+```
+
+Users can also simulate a critical failure, like so:
+```typescript
+test("Blow everything up", () => {
+    log.critical("Boom!");
+});
+```
+
+Logging critical errors will stop the execution of the tests and blow everything up. After all - we want to make sure you're code doesn't have critical logs in deployment, and you should notice right away if that were to happen.
 
 ### Test run time duration in the log output
 The log output includes the test run duration. Here's an example:
@@ -441,10 +505,6 @@ The log output includes the test run duration. Here's an example:
 The **Matchstick** framework is currently live for beta testing. There is a lot of room for improvements to everything we've talked about above. We're trying to gather as much feedback from subgraph developers as we can, to understand how we can solve the problems they face when building subgraphs, as well as how we can make the overall testing process as smooth and streamlined as possible.
 
 There's a GitHub project board where we keep track of day to day work which you can check out [here](https://github.com/LimeChain/matchstick/projects/1 "here").
-
-Here are some of the areas we're set to focus on from here on out:
-- Integration to in graph-cli.
-- Improvements and feature requests.
 
 Known issues:
 - When `runTests()` is imported in the mappings file the deployment to the hosted service will break. For now, it's required to remove/comment out the import.
