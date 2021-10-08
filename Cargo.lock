@@ -1333,7 +1333,7 @@ checksum = "f0a01e0497841a3b2db4f8afa483cce65f7e96a3498bd6c541734792aeac8fe7"
 [[package]]
 name = "graph"
 version = "0.24.2"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#5ede5efa1309e4b7c7126e0e8637370dd3bddb42"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#0e04248be3f84a9c486458f56df92b506df84c22"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -1394,7 +1394,7 @@ dependencies = [
 [[package]]
 name = "graph-chain-ethereum"
 version = "0.24.2"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#5ede5efa1309e4b7c7126e0e8637370dd3bddb42"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#0e04248be3f84a9c486458f56df92b506df84c22"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1423,7 +1423,7 @@ dependencies = [
 [[package]]
 name = "graph-chain-near"
 version = "0.24.1"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#5ede5efa1309e4b7c7126e0e8637370dd3bddb42"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#0e04248be3f84a9c486458f56df92b506df84c22"
 dependencies = [
  "graph",
  "graph-runtime-derive",
@@ -1438,7 +1438,7 @@ dependencies = [
 [[package]]
 name = "graph-core"
 version = "0.24.2"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#5ede5efa1309e4b7c7126e0e8637370dd3bddb42"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#0e04248be3f84a9c486458f56df92b506df84c22"
 dependencies = [
  "async-trait",
  "atomic_refcell",
@@ -1461,7 +1461,7 @@ dependencies = [
 [[package]]
 name = "graph-graphql"
 version = "0.24.2"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#5ede5efa1309e4b7c7126e0e8637370dd3bddb42"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#0e04248be3f84a9c486458f56df92b506df84c22"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -1480,7 +1480,7 @@ dependencies = [
 [[package]]
 name = "graph-mock"
 version = "0.24.2"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#5ede5efa1309e4b7c7126e0e8637370dd3bddb42"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#0e04248be3f84a9c486458f56df92b506df84c22"
 dependencies = [
  "futures 0.1.31",
  "graph",
@@ -1493,7 +1493,7 @@ dependencies = [
 [[package]]
 name = "graph-runtime-derive"
 version = "0.24.2"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#5ede5efa1309e4b7c7126e0e8637370dd3bddb42"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#0e04248be3f84a9c486458f56df92b506df84c22"
 dependencies = [
  "anyhow",
  "quote 1.0.10",
@@ -1503,7 +1503,7 @@ dependencies = [
 [[package]]
 name = "graph-runtime-test"
 version = "0.24.2"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#5ede5efa1309e4b7c7126e0e8637370dd3bddb42"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#0e04248be3f84a9c486458f56df92b506df84c22"
 dependencies = [
  "graph",
  "graph-chain-ethereum",
@@ -1517,7 +1517,7 @@ dependencies = [
 [[package]]
 name = "graph-runtime-wasm"
 version = "0.24.2"
-source = "git+https://github.com/graphprotocol/graph-node?branch=master#5ede5efa1309e4b7c7126e0e8637370dd3bddb42"
+source = "git+https://github.com/graphprotocol/graph-node?branch=master#0e04248be3f84a9c486458f56df92b506df84c22"
 dependencies = [
  "anyhow",
  "async-trait",
