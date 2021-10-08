@@ -85,7 +85,7 @@ fn call_run_tests(run_tests: wasmtime::Func) {
     run_tests.call(&[]).unwrap_or_else(|err| {
         if process_test_and_verify() {
             call_run_tests(run_tests);
-            return Box::new([wasmtime::Val::I32(0)]);
+           Box::new([wasmtime::Val::I32(0)])
         } else {
             flush_logs();
 
