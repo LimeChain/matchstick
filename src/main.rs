@@ -16,14 +16,18 @@ use graph_runtime_test::common::{mock_context, mock_data_source};
 use graph_runtime_wasm::mapping::ValidModule;
 use graph_runtime_wasm::module::ExperimentalFeatures;
 
+use std::io::{self, Write};
+use std::process;
 use subgraph_store::MockSubgraphStore;
 use wasm_instance::{
     flush_logs, get_failed_tests, get_successful_tests, process_test_and_verify,
     WasmInstanceExtension,
 };
 
+use crate::compiler::Compiler;
 use crate::wasm_instance::WasmInstance;
 
+mod compiler;
 mod integration_tests;
 mod subgraph_store;
 mod unit_tests;
@@ -181,8 +185,17 @@ ___  ___      _       _         _   _      _
             sources
         } else {
             available_sources
-        };
+        }
     };
+
+    let compiler = Compiler::default().export_table();
+    let outputs: Vec<std::process::Output> = datasources
+        .iter()
+        .map(|s| compiler.compile(s).expect("ERROR"))
+        .collect();
+    outputs
+        .iter()
+        .for_each(|output| io::stderr().write_all(&output.stderr).unwrap());
 
     // let module = module_from_wasm(&path_to_wasm);
 
