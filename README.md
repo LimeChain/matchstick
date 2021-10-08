@@ -22,21 +22,21 @@ brew install postgresql
 
 If you are using macOS 11/Big Sur
 ```
-curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.2/binary-macos-11 &&
+curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.4/binary-macos-11 &&
 mv binary-macos-11 matchstick &&
 chmod a+x matchstick
 ```
 
 If you are using macOS 10.15/Catalina
 ```
-curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.2/binary-macos-10.15 &&
+curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.4/binary-macos-10.15 &&
 mv binary-macos-10.15 matchstick &&
 chmod a+x matchstick
 ```
 
 If you are using macOS 10.14/Mojave
 ```
-curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.2/binary-macos-10.14 &&
+curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.4/binary-macos-10.14 &&
 mv binary-macos-10.14 matchstick &&
 chmod a+x matchstick
 ```
@@ -50,14 +50,14 @@ sudo apt install postgresql
 
 If you are using Ubuntu 20.04/Focal Fossa
 ```
-curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.2/binary-linux-20 &&
+curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.4/binary-linux-20 &&
 mv binary-linux-20 matchstick &&
 chmod a+x matchstick
 ```
 
 If you are using Ubuntu 18.04/Bionic Beaver
 ```
-curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.2/binary-linux-18 &&
+curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.4/binary-linux-18 &&
 mv binary-linux-18 matchstick &&
 chmod a+x matchstick
 ```
@@ -70,7 +70,7 @@ choco install postgresql12
 ```
 
 ```
-curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.2/binary-windows &&
+curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.4/binary-windows &&
 move binary-windows matchstick
 ```
 
