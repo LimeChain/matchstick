@@ -131,12 +131,12 @@ pub fn process_test_and_verify() -> bool {
         .contains(&test_name)
     {
         fail_test("".to_string());
-        return false;
+        false
     } else {
         TEST_RESULTS
             .lock()
             .expect("Cannot access TEST_RESULTS.")
-            .insert(test_name.clone(), true);
+            .insert(test_name, true);
         true
     }
 }
