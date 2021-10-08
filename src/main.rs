@@ -196,6 +196,10 @@ ___  ___      _       _         _   _      _
         .iter()
         .for_each(|output| io::stderr().write_all(&output.stderr).unwrap());
 
+    if outputs.iter().any(|output| !output.status.success()) {
+        panic!("Please attend to the compilation errors above!");
+    }
+
     // NOTE: Is it actually too expensive to create a WASM Instance per datasource?
     // Will there be a huge boost in performace if we were to creat just one, shared?
     let wasm_instances: Vec<WasmInstance<Chain>> = outputs
