@@ -1,5 +1,6 @@
 use crate::writable_store::MockWritableStore;
 use graph::data::subgraph::*;
+use graph::prelude::StoreError;
 use graph::slog::Logger;
 use graph::{
     blockchain::BlockPtr,
@@ -19,7 +20,7 @@ impl SubgraphStore for MockSubgraphStore {
         Ok(Some(String::from("ds")))
     }
 
-    fn is_deployed(&self, _id: &DeploymentHash) -> Result<bool, graph::prelude::StoreError> {
+    fn is_deployed(&self, _id: &DeploymentHash) -> Result<bool, StoreError> {
         unreachable!()
     }
 
