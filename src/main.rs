@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+use std::io::{self, Write};
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -14,7 +16,6 @@ use graph_mock::MockMetricsRegistry;
 use graph_runtime_test::common::{mock_context, mock_data_source};
 use graph_runtime_wasm::mapping::ValidModule;
 use graph_runtime_wasm::module::ExperimentalFeatures;
-use serde_yaml::{Sequence, Value};
 
 use subgraph_store::MockSubgraphStore;
 use wasm_instance::{
@@ -22,39 +23,17 @@ use wasm_instance::{
     WasmInstanceExtension,
 };
 
+use crate::compiler::{CompileOutput, Compiler};
 use crate::wasm_instance::WasmInstance;
 
+mod compiler;
 mod integration_tests;
 mod subgraph_store;
 mod unit_tests;
 mod wasm_instance;
 mod writable_store;
 
-fn get_build_path(sequence: Sequence, datasource_name: String) -> String {
-    for mapping in sequence {
-        if mapping
-            .get("name")
-            .unwrap()
-            .as_str()
-            .expect("Could not convert yaml field 'name' to &str.")
-            .to_string()
-            .to_lowercase()
-            == datasource_name.to_string().to_lowercase()
-        {
-            return mapping
-                .get("mapping")
-                .expect("Could not parse field 'mapping' from subgraph.yaml")
-                .get("file")
-                .expect("Could not parse field 'mapping/file' from subgraph.yaml")
-                .as_str()
-                .expect("Could not convert mapping/file to &str.")
-                .to_owned();
-        }
-    }
-    String::from("")
-}
-
-pub fn module_from_path(path_to_wasm: &str) -> WasmInstance<Chain> {
+fn instance_from_wasm(path_to_wasm: &str) -> WasmInstance<Chain> {
     let subgraph_id = "ipfsMap";
     let deployment_id =
         &DeploymentHash::new(subgraph_id).expect("Could not create DeploymentHash.");
@@ -129,16 +108,39 @@ fn call_run_tests(run_tests: wasmtime::Func) {
     });
 }
 
-pub fn main() {
+/// Returns the names of the sources specified in the subgraph.yaml file.
+fn get_available_datasources() -> HashSet<String> {
+    let subgraph_yaml = std::fs::read_to_string("subgraph.yaml").expect(
+        r#"❌ ❌ ❌  Something went wrong when reading the 'subgraph.yaml' file.
+        Please ensure that the file exists"#,
+    );
+
+    let subgraph_yaml: serde_yaml::Value = serde_yaml::from_str(&subgraph_yaml).expect(
+        r#"❌ ❌ ❌  Something went wrong when parsing 'subgraph.yaml'.
+        Please ensure that the yaml format is valid."#,
+    );
+
+    let datasources: serde_yaml::Sequence = subgraph_yaml["dataSources"]
+        .as_sequence()
+        .expect("Could not get the data sources from the yaml file.")
+        .to_vec();
+
+    datasources
+        .iter()
+        .map(|src| src.get("name").unwrap().as_str().unwrap().to_lowercase())
+        .collect()
+}
+
+fn main() {
     let matches = App::new("Matchstick 🔥")
         .version("0.1.3")
         .author("Limechain <https://limechain.tech>")
         .about("Unit testing framework for Subgraph development on The Graph protocol.")
         .arg(
-            Arg::with_name("DATASOURCE")
-                .help("Sets the name of the datasource to use.")
-                .required(true)
-                .index(1),
+            Arg::with_name("datasources")
+                .help("Please specify the names of the data sources you would like to test.")
+                .index(1)
+                .multiple(true),
         )
         .get_matches();
 
@@ -158,50 +160,66 @@ ___  ___      _       _         _   _      _
 
     let now = Instant::now();
 
-    let datasource_name = matches
-        .value_of("DATASOURCE")
-        .expect("Couldn't get datasource name.");
+    let datasources = {
+        let available_sources = get_available_datasources();
+        if let Some(vals) = matches.values_of("datasources") {
+            let sources: HashSet<String> = vals
+                .collect::<Vec<&str>>()
+                .iter()
+                .map(|&s| String::from(s).to_lowercase())
+                .collect();
 
-    let subgraph_yaml = std::fs::read_to_string("build/subgraph.yaml").expect(
-        r#"❌ ❌ ❌  Something went wrong reading the 'build/subgraph.yaml' file.
-        Please ensure that you have run 'graph build' and a 'build' directory exists in the root of your project."#,
-    );
+            let unrecog_sources: Vec<String> = sources
+                .difference(&available_sources)
+                .map(String::from)
+                .collect();
 
-    let subgraph_yaml: Value = serde_yaml::from_str(&subgraph_yaml).expect(
-        r#"❌ ❌ ❌  Something went wrong when parsing 'build/subgraph.yaml'.
-        Please ensure that the file exists and that the yaml is valid."#,
-    );
+            if !unrecog_sources.is_empty() {
+                panic!(
+                    "The following datasources could not be recognized: {}.",
+                    unrecog_sources.join(", ")
+                );
+            }
 
-    let sequence: Sequence = subgraph_yaml["dataSources"]
-        .as_sequence()
-        .expect("Could not get data sources from yaml file.")
-        .to_vec();
+            sources
+        } else {
+            available_sources
+        }
+    };
 
-    let mut path = get_build_path(sequence, datasource_name.to_owned());
+    println!("{}", ("Compiling...\n").to_string().bright_green());
+    let compiler = Compiler::default().export_table();
+    let outputs: Vec<CompileOutput> = datasources.iter().map(|s| compiler.compile(s)).collect();
 
-    // This means datasource is a template datasource
-    if path.is_empty() {
-        let sequence: Sequence = subgraph_yaml["templates"]
-            .as_sequence()
-            .expect("Could not get data sources from yaml file.")
-            .to_vec();
+    if outputs.iter().any(|output| !output.status.success()) {
+        // Print any output on `stderr`.
+        outputs
+            .iter()
+            .for_each(|output| io::stderr().write_all(&output.stderr).unwrap());
 
-        path = get_build_path(sequence, datasource_name.to_owned());
+        panic!("Please attend to the compilation errors above!");
     }
 
-    let path_to_wasm = format!("build/{}", path);
-    let module = module_from_path(&path_to_wasm);
-
-    let run_tests = module
-        .instance
-        .get_func("runTests")
-        .expect(r#"
-        ❌ ❌ ❌  Couldn't get wasm function 'runTests'.
-        Please ensure that you have named the function (that is defined in the test file) exactly 'runTests' and have imported it into the main mappings file.
-        "#);
+    // NOTE: Is it actually too expensive to create a WASM Instance per datasource?
+    // Will there be a huge boost in performace if we were to creat just one, shared?
+    let wasm_instances: Vec<WasmInstance<Chain>> = outputs
+        .iter()
+        .map(|output| instance_from_wasm(&output.file))
+        .collect();
 
     println!("{}", ("Igniting tests 🔥\n").to_string().bright_red());
-    call_run_tests(run_tests);
+    wasm_instances
+        .iter()
+        .map(|instance| {
+            instance
+                .instance
+                .get_func("runTests")
+                .expect(
+                    r#"❌ ❌ ❌  Couldn't get wasm function 'runTests'.
+                    Please ensure that you have named the function (that is defined in the test file) exactly 'runTests' and have imported it into the main mappings file."#
+                )
+        })
+        .for_each(call_run_tests);
     flush_logs();
 
     let successful_tests = get_successful_tests();
