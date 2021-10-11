@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 graph-runtime-wasm = { git = "https://github.com/graphprotocol/graph-node", branch = "master" }
+graph-graphql = { git = "https://github.com/graphprotocol/graph-node", branch = "master" }
 ethabi = { git = "https://github.com/graphprotocol/ethabi.git", branch = "master" }
 graph = { git = "https://github.com/graphprotocol/graph-node", package = "graph", branch = "master" }
 graph-mock = { git = "https://github.com/graphprotocol/graph-node", package = "graph-mock", branch = "master" }

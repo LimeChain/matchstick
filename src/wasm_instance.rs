@@ -16,6 +16,7 @@ use graph::{
 };
 use graph_chain_ethereum::runtime::abi::AscUnresolvedContractCall_0_0_4;
 use graph_chain_ethereum::runtime::runtime_adapter::UnresolvedContractCall;
+use graph_graphql::graphql_parser::schema;
 use graph_runtime_wasm::asc_abi::class::EnumPayload;
 use graph_runtime_wasm::asc_abi::class::{Array, AscEntity, AscEnum, AscString};
 use graph_runtime_wasm::asc_abi::class::{AscEnumArray, EthereumValueKind};
@@ -41,6 +42,27 @@ lazy_static! {
     pub(crate) static ref PANICKING_TESTS: Mutex<Vec<String>> = Mutex::new(vec!());
     pub(crate) static ref REVERTS_IDENTIFIER: Vec<Token> =
         vec!(Token::Bytes(vec!(255, 255, 255, 255, 255, 255, 255)));
+
+    // NOTE: `Option` is to be removed.
+    pub(crate) static ref SCHEMA: Option<schema::Document<'static, String>> = {
+        let s: String;
+        if let Ok(v) = std::fs::read_to_string("build/schema.graphql") {
+            s = v;
+        } else {
+            // NOTE: In the future, when new unit/integration tests are written, the follwing error
+            // should be thrown when 'build/schema.graphql' is missing:
+            //
+            // r#"❌ ❌ ❌  Something went wrong reading the 'build/schema.graphql' file.
+            // Please ensure that you have run 'graph build' and a 'build' directory exists in the root of your project."#
+            return None;
+        };
+
+        let s = schema::parse_schema::<String>(&s).expect(
+            r#"❌ ❌ ❌  Something went wrong when parsing 'build/schema.graphql'.
+                Please ensure that the file exists and that the schema is valid."#,
+        );
+        Some(s.into_static())
+    };
 }
 
 pub enum Level {
@@ -431,6 +453,50 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
         let entity_type: String = asc_get(self, entity_type_ptr)?;
         let id: String = asc_get(self, id_ptr)?;
         let data: HashMap<String, Value> = try_asc_get(self, data_ptr)?;
+
+        // NOTE: This `if` should be removed in the future, when test are updated.
+        if SCHEMA.is_some() {
+            let required_fields = SCHEMA
+                .as_ref()
+                .unwrap()
+                .definitions
+                .iter()
+                .find_map(|def| {
+                    if let schema::Definition::TypeDefinition(schema::TypeDefinition::Object(o)) =
+                        def
+                    {
+                        Some(o)
+                    } else {
+                        None
+                    }
+                })
+                .expect(
+                    "Something went wrong! Couldn't find the entity defined in the GraphQL schema.",
+                )
+                .fields
+                .iter()
+                .filter(|&f| matches!(f.field_type, schema::Type::NonNullType(..)));
+
+            for f in required_fields {
+                let warn = |s: String| println!("{}", styled(s.as_str(), &Level::Warning));
+
+                if !data.contains_key(&f.name) {
+                    warn(format!(
+                        "Missing a required field `{}` for an entity of type `{}`.",
+                        f.name, entity_type
+                    ));
+                    // NOTE: Temporary panic.
+                    panic!("Please address the WARNING(s) above!")
+                } else if let Value::Null = data.get(&f.name).unwrap() {
+                    warn(format!(
+                        "The required field `{}` for an entity of type `{}` is null.",
+                        f.name, entity_type
+                    ));
+                    // NOTE: Temporary panic.
+                    panic!("Please address the WARNING(s) above!")
+                }
+            }
+        }
 
         let mut map = STORE.lock().expect("Cannot get STORE.");
         let mut inner_map = if map.contains_key(&entity_type) {
