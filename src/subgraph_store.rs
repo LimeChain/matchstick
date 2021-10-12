@@ -1,7 +1,8 @@
 use crate::writable_store::MockWritableStore;
+use async_trait::async_trait;
+use graph::components::store::DeploymentId;
 use graph::data::subgraph::*;
 use graph::prelude::StoreError;
-use async_trait::async_trait;
 use graph::slog::Logger;
 use graph::{
     blockchain::BlockPtr,
@@ -10,7 +11,6 @@ use graph::{
 };
 use std::result::Result;
 use std::sync::Arc;
-use graph::components::store::DeploymentId;
 
 pub struct MockSubgraphStore {}
 
@@ -91,7 +91,10 @@ impl SubgraphStore for MockSubgraphStore {
         self: Arc<Self>,
         _logger: Logger,
         _deployment: DeploymentId,
-    ) -> Result<Arc<dyn graph::components::store::WritableStore>, graph::components::store::StoreError> {
+    ) -> Result<
+        Arc<dyn graph::components::store::WritableStore>,
+        graph::components::store::StoreError,
+    > {
         let mock_writable_store = MockWritableStore {};
         Ok(Arc::from(mock_writable_store))
     }
