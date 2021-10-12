@@ -47,7 +47,8 @@ impl Compiler {
     }
 
     pub fn runtime(mut self, s: &str) -> Compiler {
-        self.options.push(format!("--runtime {}", s));
+        self.options.push("--runtime".to_string());
+        self.options.push(s.to_string());
         self
     }
 
