@@ -188,7 +188,7 @@ ___  ___      _       _         _   _      _
     };
 
     println!("{}", ("Compiling...\n").to_string().bright_green());
-    let compiler = Compiler::default().export_table();
+    let compiler = Compiler::default().runtime("stub");
     let outputs: Vec<CompileOutput> = datasources.iter().map(|s| compiler.compile(s)).collect();
 
     if outputs.iter().any(|output| !output.status.success()) {
