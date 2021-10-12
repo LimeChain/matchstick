@@ -1,6 +1,7 @@
 use crate::writable_store::MockWritableStore;
 use graph::data::subgraph::*;
 use graph::prelude::StoreError;
+use async_trait::async_trait;
 use graph::slog::Logger;
 use graph::{
     blockchain::BlockPtr,
@@ -9,9 +10,11 @@ use graph::{
 };
 use std::result::Result;
 use std::sync::Arc;
+use graph::components::store::DeploymentId;
 
 pub struct MockSubgraphStore {}
 
+#[async_trait]
 impl SubgraphStore for MockSubgraphStore {
     fn find_ens_name(
         &self,
@@ -84,11 +87,11 @@ impl SubgraphStore for MockSubgraphStore {
         unreachable!()
     }
 
-    fn writable(
-        &self,
+    async fn writable(
+        self: Arc<Self>,
         _logger: Logger,
-        _deployment: &DeploymentLocator,
-    ) -> Result<Arc<dyn graph::components::store::WritableStore>, graph::prelude::StoreError> {
+        _deployment: DeploymentId,
+    ) -> Result<Arc<dyn graph::components::store::WritableStore>, graph::components::store::StoreError> {
         let mock_writable_store = MockWritableStore {};
         Ok(Arc::from(mock_writable_store))
     }
