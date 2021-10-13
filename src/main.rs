@@ -108,6 +108,7 @@ fn call_run_tests(run_tests: wasmtime::Func) {
     });
 }
 
+// TODO: WRONG! It should return only the data sources that have tests written for in `tests/`.
 /// Returns the names of the sources specified in the subgraph.yaml file.
 fn get_available_datasources() -> HashSet<String> {
     let subgraph_yaml = std::fs::read_to_string("subgraph.yaml").expect(
@@ -188,7 +189,11 @@ ___  ___      _       _         _   _      _
     };
 
     println!("{}", ("Compiling...\n").to_string().bright_green());
-    let compiler = Compiler::default().export_table();
+    let compiler = Compiler::default()
+        .export_runtime()
+        .runtime("stub")
+        .optimize()
+        .debug();
     let outputs: Vec<CompileOutput> = datasources.iter().map(|s| compiler.compile(s)).collect();
 
     if outputs.iter().any(|output| !output.status.success()) {

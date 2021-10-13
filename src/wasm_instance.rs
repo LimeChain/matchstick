@@ -46,11 +46,11 @@ lazy_static! {
     // NOTE: `Option` is to be removed.
     pub(crate) static ref SCHEMA: Option<schema::Document<'static, String>> = {
         let s: String;
-        if let Ok(v) = std::fs::read_to_string("build/schema.graphql") {
+        if let Ok(v) = std::fs::read_to_string("schema.graphql") {
             s = v;
         } else {
             // NOTE: In the future, when new unit/integration tests are written, the follwing error
-            // should be thrown when 'build/schema.graphql' is missing:
+            // should be thrown when 'schema.graphql' is missing:
             //
             // r#"❌ ❌ ❌  Something went wrong reading the 'build/schema.graphql' file.
             // Please ensure that you have run 'graph build' and a 'build' directory exists in the root of your project."#
@@ -58,8 +58,8 @@ lazy_static! {
         };
 
         let s = schema::parse_schema::<String>(&s).expect(
-            r#"❌ ❌ ❌  Something went wrong when parsing 'build/schema.graphql'.
-                Please ensure that the file exists and that the schema is valid."#,
+            r#"❌ ❌ ❌  Something went wrong when parsing 'schema.graphql'.
+            Please ensure that the file exists and that the schema is valid."#,
         );
         Some(s.into_static())
     };
@@ -465,7 +465,11 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
                     if let schema::Definition::TypeDefinition(schema::TypeDefinition::Object(o)) =
                         def
                     {
-                        Some(o)
+                        if o.name == entity_type {
+                            Some(o)
+                        } else {
+                            None
+                        }
                     } else {
                         None
                     }
@@ -485,15 +489,11 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
                         "Missing a required field `{}` for an entity of type `{}`.",
                         f.name, entity_type
                     ));
-                    // NOTE: Temporary panic.
-                    panic!("Please address the WARNING(s) above!")
                 } else if let Value::Null = data.get(&f.name).unwrap() {
                     warn(format!(
                         "The required field `{}` for an entity of type `{}` is null.",
                         f.name, entity_type
                     ));
-                    // NOTE: Temporary panic.
-                    panic!("Please address the WARNING(s) above!")
                 }
             }
         }

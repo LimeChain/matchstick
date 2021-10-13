@@ -18,6 +18,7 @@ pub struct CompileOutput {
 #[allow(dead_code)]
 impl Compiler {
     pub fn default() -> Compiler {
+        // TODO: add an option allowing the user to specify a path to exec, global and lib.
         Compiler {
             exec: String::from("./node_modules/assemblyscript/bin/asc"),
             global: String::from("./node_modules/@graphprotocol/graph-ts/global/global.ts"),
@@ -47,7 +48,8 @@ impl Compiler {
     }
 
     pub fn runtime(mut self, s: &str) -> Compiler {
-        self.options.push(format!("--runtime {}", s));
+        self.options.push("--runtime".to_string());
+        self.options.push(s.to_string());
         self
     }
 
