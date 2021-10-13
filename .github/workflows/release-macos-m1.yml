@@ -10,7 +10,7 @@ env:
 
 jobs:
   deploy:
-    name: Deploy for ${{ matrix.os }}
+    name: Deploy for macos (M1)
     if: startsWith(github.ref, 'refs/tags')
     runs-on: ${{ matrix.os }}
     strategy:
@@ -19,7 +19,7 @@ jobs:
 
         include:
           - name: macos-m1
-            os: macos-latest
+            os: macos-11
             artifact_name: matchstick
             asset_name: binary-macos-11
             
