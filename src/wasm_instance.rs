@@ -465,7 +465,11 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
                     if let schema::Definition::TypeDefinition(schema::TypeDefinition::Object(o)) =
                         def
                     {
-                        Some(o)
+                        if o.name == entity_type {
+                            Some(o)
+                        } else {
+                            None
+                        }
                     } else {
                         None
                     }
