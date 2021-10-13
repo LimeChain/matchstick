@@ -19,7 +19,7 @@ jobs:
 
         include:
           - name: macos-m1
-            os: macos-11
+            os: macos-latest
             artifact_name: matchstick
             asset_name: binary-macos-11
             
@@ -32,7 +32,7 @@ jobs:
           toolchain: stable
 
       - name: Build
-        run: cargo build --release --target aarch64-apple-darwin; mv target/release/${{ matrix.artifact_name }} target/release/${{ matrix.asset_name }}
+        run: rustup target add aarch64-apple-darwin; cargo build --release --target aarch64-apple-darwin; mv target/release/${{ matrix.artifact_name }} target/release/${{ matrix.asset_name }}
 
       - name: Upload binary to release
         run: echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token; gh release upload ${GITHUB_REF##*/} target/release/${{ matrix.asset_name }}
