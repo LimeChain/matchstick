@@ -486,14 +486,14 @@ impl<C: Blockchain> WICExtension for WasmInstanceContext<C> {
                         f.name, entity_type
                     ));
                     // NOTE: Temporary panic.
-                    panic!("Please address the WARNING(s) above!")
+                    // panic!("Please address the WARNING(s) above!")
                 } else if let Value::Null = data.get(&f.name).unwrap() {
                     warn(format!(
                         "The required field `{}` for an entity of type `{}` is null.",
                         f.name, entity_type
                     ));
                     // NOTE: Temporary panic.
-                    panic!("Please address the WARNING(s) above!")
+                    // panic!("Please address the WARNING(s) above!")
                 }
             }
         }
