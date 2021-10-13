@@ -18,9 +18,7 @@ pub struct CompileOutput {
 #[allow(dead_code)]
 impl Compiler {
     pub fn default() -> Compiler {
-        // TODO: What if ./node_modules/ does not exist?
-        // What if the user is using yarn berry?
-        // Should add an option allowing the user to specify a path to exec, global and lib.
+        // TODO: add an option allowing the user to specify a path to exec, global and lib.
         Compiler {
             exec: String::from("./node_modules/assemblyscript/bin/asc"),
             global: String::from("./node_modules/@graphprotocol/graph-ts/global/global.ts"),
