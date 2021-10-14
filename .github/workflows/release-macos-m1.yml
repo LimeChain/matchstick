@@ -21,7 +21,7 @@ jobs:
           - name: macos-m1
             os: macos-11
             artifact_name: matchstick
-            asset_name: binary-macos-11
+            asset_name: binary-macos-11-m1
             
     steps:
       - uses: actions/checkout@v2
