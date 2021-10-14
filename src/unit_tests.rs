@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod unit_tests {
-    use crate::module_from_path;
+    use crate::instance_from_wasm;
     use crate::wasm_instance::{
         clear_pub_static_refs, WICExtension, FUNCTIONS_MAP, LOGS, PANICKING_TESTS,
         REVERTS_IDENTIFIER, STORE, TEST_RESULTS,
@@ -24,7 +24,7 @@ mod unit_tests {
     use web3::types::H160;
 
     fn get_context() -> WasmInstanceContext<Chain> {
-        let module = module_from_path("mocks/wasm/Gravity.wasm");
+        let module = instance_from_wasm("mocks/wasm/Gravity.wasm");
         let context = module
             .instance_ctx
             .take()

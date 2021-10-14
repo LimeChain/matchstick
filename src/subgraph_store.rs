@@ -1,5 +1,9 @@
 use crate::writable_store::MockWritableStore;
+use async_trait::async_trait;
+use graph::components::store::DeploymentId;
 use graph::data::subgraph::*;
+use graph::prelude::StoreError;
+use graph::slog::Logger;
 use graph::{
     blockchain::BlockPtr,
     components::store::DeploymentLocator,
@@ -10,15 +14,16 @@ use std::sync::Arc;
 
 pub struct MockSubgraphStore {}
 
+#[async_trait]
 impl SubgraphStore for MockSubgraphStore {
     fn find_ens_name(
         &self,
         _hash: &str,
-    ) -> std::result::Result<Option<String>, graph::prelude::QueryExecutionError> {
+    ) -> std::result::Result<Option<String>, graph::prelude::StoreError> {
         Ok(Some(String::from("ds")))
     }
 
-    fn is_deployed(&self, _id: &DeploymentHash) -> Result<bool, anyhow::Error> {
+    fn is_deployed(&self, _id: &DeploymentHash) -> Result<bool, StoreError> {
         unreachable!()
     }
 
@@ -82,22 +87,30 @@ impl SubgraphStore for MockSubgraphStore {
         unreachable!()
     }
 
-    fn writable(
-        &self,
-        _deployment: &DeploymentLocator,
-    ) -> Result<Arc<dyn graph::components::store::WritableStore>, graph::prelude::StoreError> {
+    async fn writable(
+        self: Arc<Self>,
+        _logger: Logger,
+        _deployment: DeploymentId,
+    ) -> Result<
+        Arc<dyn graph::components::store::WritableStore>,
+        graph::components::store::StoreError,
+    > {
         let mock_writable_store = MockWritableStore {};
         Ok(Arc::from(mock_writable_store))
     }
 
     fn writable_for_network_indexer(
         &self,
+        _logger: Logger,
         _id: &DeploymentHash,
     ) -> Result<Arc<dyn graph::components::store::WritableStore>, graph::prelude::StoreError> {
         unreachable!()
     }
 
-    fn least_block_ptr(&self, _id: &DeploymentHash) -> Result<Option<BlockPtr>, anyhow::Error> {
+    fn least_block_ptr(
+        &self,
+        _id: &DeploymentHash,
+    ) -> Result<Option<BlockPtr>, graph::prelude::StoreError> {
         unreachable!()
     }
 
