@@ -1,28 +1,14 @@
 use std::collections::{HashMap, HashSet};
 use std::io::{self, Write};
-use std::sync::Arc;
 use std::time::Instant;
 
 use clap::{App, Arg};
-use colored::*;
-use graph::components::store::DeploymentId;
-use graph::{
-    components::store::DeploymentLocator,
-    prelude::{slog, DeploymentHash, HostMetrics, Logger, StopwatchMetrics},
-    semver::Version,
-};
+use colored::Colorize;
 use graph_chain_ethereum::Chain;
-use graph_mock::MockMetricsRegistry;
-use graph_runtime_test::common::{mock_context, mock_data_source};
-use graph_runtime_wasm::mapping::ValidModule;
-use graph_runtime_wasm::module::ExperimentalFeatures;
 
-use instance::MatchstickInstance;
-use subgraph_store::MockSubgraphStore;
-
-use compiler::{CompileOutput, Compiler};
-use test_abstractions::Test;
-
+use crate::compiler::{CompileOutput, Compiler};
+use crate::instance::MatchstickInstance;
+use crate::logging::Log;
 use crate::test_abstractions::TestCollection;
 
 mod compiler;
@@ -32,81 +18,6 @@ mod logging;
 mod subgraph_store;
 mod test_abstractions;
 mod writable_store;
-
-fn instance_from_wasm(data_source_name: &str, path_to_wasm: &str) -> MatchstickInstance<Chain> {
-    let subgraph_id = "ipfsMap";
-    let deployment_id =
-        &DeploymentHash::new(subgraph_id).expect("Could not create DeploymentHash.");
-    let deployment = DeploymentLocator::new(DeploymentId::new(42), deployment_id.clone());
-    let data_source = mock_data_source(path_to_wasm, Version::new(0, 0, 5));
-
-    let metrics_registry = Arc::new(MockMetricsRegistry::new());
-
-    let stopwatch_metrics = StopwatchMetrics::new(
-        Logger::root(slog::Discard, graph::prelude::o!()),
-        deployment_id.clone(),
-        metrics_registry.clone(),
-    );
-
-    let host_metrics = Arc::new(HostMetrics::new(
-        metrics_registry,
-        deployment_id.as_str(),
-        stopwatch_metrics,
-    ));
-
-    let experimental_features = ExperimentalFeatures {
-        allow_non_deterministic_ipfs: true,
-    };
-
-    let mock_subgraph_store = MockSubgraphStore {};
-    let valid_module = Arc::new(
-        ValidModule::new(Arc::new(std::fs::read(path_to_wasm).expect(r#"❌  Could not resolve path to wasm file. Please ensure that the datasource name you're providing is valid.
-        It should be the same as the 'name' field in the subgraph.yaml file, corresponding to the datasource you want to test."#)).as_ref())
-            .expect("Could not create ValidModule."),
-    );
-
-    MatchstickInstance::<Chain>::from_valid_module_with_ctx(
-        valid_module,
-        mock_context(
-            deployment,
-            data_source,
-            Arc::from(mock_subgraph_store),
-            Version::new(0, 0, 5),
-        ),
-        host_metrics,
-        None,
-        experimental_features,
-    )
-    .expect("Could not create WasmInstance from valid module with context.")
-}
-
-// fn call_run_tests(run_tests: wasmtime::Func) {
-//     #[allow(non_fmt_panics)]
-//     run_tests.call(&[]).unwrap_or_else(|err| {
-//         if process_test_and_verify() {
-//             call_run_tests(run_tests);
-//            Box::new([wasmtime::Val::I32(0)])
-//         } else {
-//             flush_logs();
-
-//             let msg = String::from(r#"
-//             ❌ ❌ ❌  Unexpected error occurred while running tests.
-//             See error stack trace above and double check the syntax in your test file.
-
-//             This usually happens for three reasons:
-//             1. You passed a 'null' value to one of our functions - assert.fieldEquals(), store.get(), store.set().
-//             2. A mocked function call reverted. Consider using 'try_functionName' to handle this in the mapping.
-//             3. The test was supposed to throw an error but the 'shouldThrow' parameter was not set to true.
-
-//             Please ensure that you have proper null checks in your tests.
-//             You can debug your test file using the 'debug()' function, provided by matchstick-as (import { debug } from "matchstick-as/assembly/log").
-//             "#);
-
-//             let msg = format!("{}\n {}", err, msg).red();
-//             panic!("{}", msg);
-//         }
-//     });
-// }
 
 /// Returns the names of the sources specified in the subgraph.yaml file.
 fn get_available_datasources() -> HashSet<String> {
@@ -210,43 +121,25 @@ ___  ___      _       _         _   _      _
         panic!("Please attend to the compilation errors above!");
     }
 
-    // A matchstick instance for each datasource.
+    // A matchstick instance for each data source.
     let ms_instances: HashMap<String, MatchstickInstance<Chain>> = outputs
         .iter()
-        .map(|(key, val)| (key.clone(), instance_from_wasm(key, &val.file)))
+        .map(|(key, val)| (key.clone(), MatchstickInstance::<Chain>::new(&val.file)))
         .collect();
 
-    ms_instances.values().for_each(|instance| {
-        let table = instance.instance.get_table("table").unwrap();
-        for i in 0..table.size() {
-            if let Some(wasmtime::Val::FuncRef(Some(func))) = table.get(i) {
-                println!("{:?}", func.ty());
-            } else {
-                println!("Not a func...");
-            }
+    // A test collection abstraction for each data source.
+    let test_collectins: HashMap<String, TestCollection> = ms_instances
+        .iter()
+        .map(|(key, val)| (key.clone(), TestCollection::from(val)))
+        .collect();
+
+    println!("{}", ("Igniting tests 🔥\n").to_string().bright_red());
+    test_collectins.iter().for_each(|(key, val)| {
+        Log::Info(format!("---> Data Source: {}", key)).print();
+        for test in &val.tests {
+            test.run();
         }
     });
-
-    let tests = TestCollection::from(ms_instances.values().next().unwrap());
-
-    for t in tests.tests {
-        t.func.call(&[]).unwrap_or_else(|err| panic!("{}", err));
-    }
-
-    // println!("{}", ("Igniting tests 🔥\n").to_string().bright_red());
-    // wasm_instances
-    //     .iter()
-    //     .map(|instance| {
-    //         instance
-    //             .instance
-    //             .get_func("runTests")
-    //             .expect(
-    //                 r#"❌ ❌ ❌  Couldn't get wasm function 'runTests'.
-    //                 Please ensure that you have named the function (that is defined in the test file) exactly 'runTests' and have imported it into the main mappings file."#
-    //             )
-    //     })
-    //     .for_each(call_run_tests);
-    // flush_logs();
 
     // let successful_tests = get_successful_tests();
     // let failed_tests = get_failed_tests();

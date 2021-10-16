@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 
-use super::logging::Log;
-
 use ethabi::{Address, Token};
 use graph::{
     blockchain::Blockchain,
@@ -21,6 +19,8 @@ use graph_runtime_wasm::{
 };
 use lazy_static::lazy_static;
 use serde_json::to_string_pretty;
+
+use crate::logging::Log;
 
 lazy_static! {
     /// Special tokens...
@@ -253,39 +253,40 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         // Q: What does try_asc_get do?
         let data: HashMap<String, Value> = try_asc_get(&self.wasm_ctx, data_ptr)?;
 
-        let required_fields = self
-            .schema
-            .as_ref()
-            .unwrap()
-            .definitions
-            .iter()
-            .find_map(|def| {
-                if let schema::Definition::TypeDefinition(schema::TypeDefinition::Object(o)) = def {
-                    Some(o)
-                } else {
-                    None
-                }
-            })
-            .expect("Something went wrong! Couldn't find the entity defined in the GraphQL schema.")
-            .fields
-            .iter()
-            .filter(|&f| matches!(f.field_type, schema::Type::NonNullType(..)));
+        // TODO: Well, fix, make it work.
+        // let required_fields = self
+        //     .schema
+        //     .as_ref()
+        //     .unwrap()
+        //     .definitions
+        //     .iter()
+        //     .find_map(|def| {
+        //         if let schema::Definition::TypeDefinition(schema::TypeDefinition::Object(o)) = def {
+        //             Some(o)
+        //         } else {
+        //             None
+        //         }
+        //     })
+        //     .expect("Something went wrong! Couldn't find the entity defined in the GraphQL schema.")
+        //     .fields
+        //     .iter()
+        //     .filter(|&f| matches!(f.field_type, schema::Type::NonNullType(..)));
 
-        for f in required_fields {
-            let warn = |s: String| Log::Warning(s).print();
+        // for f in required_fields {
+        //     let warn = |s: String| Log::Warning(s).print();
 
-            if !data.contains_key(&f.name) {
-                warn(format!(
-                    "Missing a required field `{}` for an entity of type `{}`.",
-                    f.name, entity_type
-                ));
-            } else if let Value::Null = data.get(&f.name).unwrap() {
-                warn(format!(
-                    "The required field `{}` for an entity of type `{}` is null.",
-                    f.name, entity_type
-                ));
-            }
-        }
+        //     if !data.contains_key(&f.name) {
+        //         warn(format!(
+        //             "Missing a required field `{}` for an entity of type `{}`.",
+        //             f.name, entity_type
+        //         ));
+        //     } else if let Value::Null = data.get(&f.name).unwrap() {
+        //         warn(format!(
+        //             "The required field `{}` for an entity of type `{}` is null.",
+        //             f.name, entity_type
+        //         ));
+        //     }
+        // }
 
         let mut entity_type_store = if self.store.contains_key(&entity_type) {
             self.store.get(&entity_type).unwrap().clone()

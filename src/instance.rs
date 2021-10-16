@@ -1,34 +1,84 @@
 use std::{cell::RefCell, rc::Rc, sync::Arc, time::Instant};
 
+use anyhow::{anyhow, Context};
 use graph::{
     blockchain::{Blockchain, HostFnCtx},
     cheap_clone::CheapClone,
-    prelude::{Duration, HostMetrics},
+    components::store::{DeploymentId, DeploymentLocator},
+    prelude::{DeploymentHash, Duration, HostMetrics, StopwatchMetrics},
     runtime::HostExportError,
     semver::Version,
 };
+use graph_chain_ethereum::Chain;
+use graph_mock::MockMetricsRegistry;
+use graph_runtime_test::common::{mock_context, mock_data_source};
 use graph_runtime_wasm::{
     error::DeterminismLevel,
     module::{IntoTrap, IntoWasmRet, TimeoutStopwatch, WasmInstanceContext},
     ExperimentalFeatures, MappingContext, ValidModule,
 };
 
-use anyhow::{anyhow, Context};
-
-use super::context::MatchstickInstanceContext;
+use crate::context::MatchstickInstanceContext;
+use crate::subgraph_store::MockSubgraphStore;
 
 /// The Matchstick Instance is simply a wrapper around WASM Instance and
 pub struct MatchstickInstance<C: Blockchain> {
     /// Handle to WASM Instace.
-    pub(crate) instance: wasmtime::Instance,
+    pub instance: wasmtime::Instance,
 
-    pub(crate) instance_ctx: Rc<RefCell<Option<MatchstickInstanceContext<C>>>>,
+    pub instance_ctx: Rc<RefCell<Option<MatchstickInstanceContext<C>>>>,
 }
 
 // Initialization functions.
 impl<C: Blockchain> MatchstickInstance<C> {
-    // TODO: should be made private
-    pub fn from_valid_module_with_ctx(
+    pub fn new(path_to_wasm: &str) -> MatchstickInstance<Chain> {
+        let subgraph_id = "ipfsMap";
+        let deployment_id =
+            &DeploymentHash::new(subgraph_id).expect("Could not create DeploymentHash.");
+        let deployment = DeploymentLocator::new(DeploymentId::new(42), deployment_id.clone());
+        let data_source = mock_data_source(path_to_wasm, Version::new(0, 0, 5));
+
+        let metrics_registry = Arc::new(MockMetricsRegistry::new());
+
+        let stopwatch_metrics = StopwatchMetrics::new(
+            slog::Logger::root(slog::Discard, graph::prelude::o!()),
+            deployment_id.clone(),
+            metrics_registry.clone(),
+        );
+
+        let host_metrics = Arc::new(HostMetrics::new(
+            metrics_registry,
+            deployment_id.as_str(),
+            stopwatch_metrics,
+        ));
+
+        let experimental_features = ExperimentalFeatures {
+            allow_non_deterministic_ipfs: true,
+        };
+
+        let mock_subgraph_store = MockSubgraphStore {};
+        let valid_module = Arc::new(
+        ValidModule::new(Arc::new(std::fs::read(path_to_wasm).expect(r#"❌  Could not resolve path to wasm file. Please ensure that the datasource name you're providing is valid.
+        It should be the same as the 'name' field in the subgraph.yaml file, corresponding to the datasource you want to test."#)).as_ref())
+            .expect("Could not create ValidModule."),
+    );
+
+        MatchstickInstance::<Chain>::from_valid_module_with_ctx(
+            valid_module,
+            mock_context(
+                deployment,
+                data_source,
+                Arc::from(mock_subgraph_store),
+                Version::new(0, 0, 5),
+            ),
+            host_metrics,
+            None,
+            experimental_features,
+        )
+        .expect("Could not create WasmInstance from valid module with context.")
+    }
+
+    fn from_valid_module_with_ctx(
         valid_module: Arc<ValidModule>,
         ctx: MappingContext<C>,
         host_metrics: Arc<HostMetrics>,

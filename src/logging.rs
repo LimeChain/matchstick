@@ -21,7 +21,7 @@ impl Log {
             4 => Log::Debug(s),
             5 => Log::Success(s),
 
-            _ => panic!("Level above 5 is not supported!"),
+            _ => panic!("Level is not supported!"),
         }
     }
 
@@ -36,12 +36,12 @@ impl Log {
 impl fmt::Display for Log {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
-            Log::Critical(s) => format!("❌ ❌ ❌ {}", s).red(),
-            Log::Error(s) => format!("ERROR {}", s).red(),
-            Log::Warning(s) => format!("WARNING {}", s).yellow(),
-            Log::Info(s) => format!("INFO {}", s).normal(),
-            Log::Debug(s) => format!("DEBUG {}", s).cyan(),
-            Log::Success(s) => format!("SUCCESS {}", s).green(),
+            Log::Critical(s) => format!("🆘 Critical: {}", s).red(),
+            Log::Error(s) => format!("❌ Error: {}", s).red(),
+            Log::Warning(s) => format!("🟡 Warning: {}", s).yellow(),
+            Log::Info(s) => format!("💬 Info: {}", s).normal(),
+            Log::Debug(s) => format!("🚧 Debug: {}", s).cyan(),
+            Log::Success(s) => format!("✅ Success: {}", s).green(),
         };
         write!(f, "{}", s)
     }

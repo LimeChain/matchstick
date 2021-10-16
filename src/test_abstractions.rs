@@ -5,7 +5,7 @@ use super::{instance::MatchstickInstance, logging::Log};
 pub struct Test {
     name: String,
     fails: bool,
-    pub func: wasmtime::Func,
+    func: wasmtime::Func,
     pub before_hooks: Vec<wasmtime::Func>,
     pub after_hooks: Vec<wasmtime::Func>,
 }
@@ -19,6 +19,52 @@ impl Test {
             before_hooks: vec![],
             after_hooks: vec![],
         }
+    }
+
+    fn call_hooks(hooks: &[wasmtime::Func]) {
+        // TODO: Handle possible errors better.
+        hooks.iter().for_each(|h| {
+            h.call(&[]).unwrap();
+        });
+    }
+
+    fn before(&self) {
+        Test::call_hooks(&self.before_hooks);
+    }
+
+    fn after(&self) {
+        Test::call_hooks(&self.after_hooks);
+    }
+
+    pub fn run(&self) {
+        self.before();
+
+        Log::Info(format!("-> Running {}", self.name)).print();
+        self.func.call(&[]).unwrap_or_else(|err| {
+                if self.fails {
+                    Box::new([wasmtime::Val::I32(0)])
+                } else {
+                    let msg = String::from(r#"
+                    Unexpected error occurred while running tests.
+                    See error stack trace above and double check the syntax in your test file.
+
+                    This usually happens for three reasons:
+                    1. You passed a 'null' value to one of our functions - assert.fieldEquals(), store.get(), store.set().
+                    2. A mocked function call reverted. Consider using 'try_functionName' to handle this in the mapping.
+                    3. The test was supposed to throw an error but the 'shouldThrow' parameter was not set to true.
+
+                    Please ensure that you have proper null checks in your tests.
+                    You can debug your test file using the 'debug()' function, provided by matchstick-as (import { debug } from "matchstick-as/assembly/log").
+                    "#);
+
+                    self.after();
+                    Log::Critical(format!("{}\n {}", err, msg)).print();
+                    Box::new([wasmtime::Val::I32(0)])
+                }
+            });
+
+        Log::Success("Test has passed!".to_string()).print();
+        self.after();
     }
 }
 
