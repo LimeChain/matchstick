@@ -411,7 +411,7 @@ impl<C: Blockchain> MatchstickInstance<C> {
         }
 
         link!(
-            "registerTest",
+            "_registerTest",
             register_test,
             name_ptr,
             should_fail_ptr,
@@ -419,7 +419,7 @@ impl<C: Blockchain> MatchstickInstance<C> {
         );
 
         link!(
-            "assert.fieldEquals",
+            "_assert.fieldEquals",
             assert_field_equals,
             entity_type_ptr,
             id_ptr,
@@ -427,9 +427,9 @@ impl<C: Blockchain> MatchstickInstance<C> {
             expected_val_ptr
         );
 
-        link!("assert.equals", assert_equals, expected_ptr, actual_ptr);
+        link!("_assert.equals", assert_equals, expected_ptr, actual_ptr);
         link!(
-            "assert.notInStore",
+            "_assert.notInStore",
             assert_not_in_store,
             entity_type_ptr,
             id_ptr

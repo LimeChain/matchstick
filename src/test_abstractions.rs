@@ -1,20 +1,24 @@
 use graph::blockchain::Blockchain;
 
-use super::{instance::MatchstickInstance, logging::Log};
+use crate::{instance::MatchstickInstance, logging::Log};
 
 pub struct Test {
     name: String,
-    fails: bool,
+    should_fail: bool,
     func: wasmtime::Func,
-    pub before_hooks: Vec<wasmtime::Func>,
-    pub after_hooks: Vec<wasmtime::Func>,
+    before_hooks: Vec<wasmtime::Func>,
+    after_hooks: Vec<wasmtime::Func>,
+}
+
+pub struct TestResult {
+    pub is_successful: bool,
 }
 
 impl Test {
-    fn new(name: String, fails: bool, func: wasmtime::Func) -> Self {
+    fn new(name: String, should_fail: bool, func: wasmtime::Func) -> Self {
         Test {
             name,
-            fails,
+            should_fail,
             func,
             before_hooks: vec![],
             after_hooks: vec![],
@@ -36,35 +40,29 @@ impl Test {
         Test::call_hooks(&self.after_hooks);
     }
 
-    pub fn run(&self) {
+    pub fn run(&self) -> TestResult {
         self.before();
 
+        let mut is_successful = true;
         Log::Info(format!("-> Running {}", self.name)).print();
-        self.func.call(&[]).unwrap_or_else(|err| {
-                if self.fails {
-                    Box::new([wasmtime::Val::I32(0)])
-                } else {
-                    let msg = String::from(r#"
-                    Unexpected error occurred while running tests.
-                    See error stack trace above and double check the syntax in your test file.
+        // NOTE: Calling a test func should not fail for any other reason than:
+        // - `should_fail` has been set to `true`
+        // - the behaviour tested does not hold
+        self.func.call(&[]).unwrap_or_else(|_err| {
+            if !self.should_fail {
+                is_successful = false;
+            }
+            Box::new([wasmtime::Val::I32(0)])
+        });
 
-                    This usually happens for three reasons:
-                    1. You passed a 'null' value to one of our functions - assert.fieldEquals(), store.get(), store.set().
-                    2. A mocked function call reverted. Consider using 'try_functionName' to handle this in the mapping.
-                    3. The test was supposed to throw an error but the 'shouldThrow' parameter was not set to true.
+        if is_successful {
+            Log::Success("Test has passed!".to_string()).print();
+        } else {
+            Log::Error("Test has failed!".to_string()).print();
+        }
 
-                    Please ensure that you have proper null checks in your tests.
-                    You can debug your test file using the 'debug()' function, provided by matchstick-as (import { debug } from "matchstick-as/assembly/log").
-                    "#);
-
-                    self.after();
-                    Log::Critical(format!("{}\n {}", err, msg)).print();
-                    Box::new([wasmtime::Val::I32(0)])
-                }
-            });
-
-        Log::Success("Test has passed!".to_string()).print();
         self.after();
+        TestResult { is_successful }
     }
 }
 

@@ -133,32 +133,36 @@ ___  ___      _       _         _   _      _
         .map(|(key, val)| (key.clone(), TestCollection::from(val)))
         .collect();
 
+    let mut successful_tests = 0;
+    let mut failed_tests = 0;
     println!("{}", ("Igniting tests 🔥\n").to_string().bright_red());
     test_collectins.iter().for_each(|(key, val)| {
         Log::Info(format!("---> Data Source: {}", key)).print();
         for test in &val.tests {
-            test.run();
+            let res = test.run();
+            if res.is_successful {
+                successful_tests += 1;
+            } else {
+                failed_tests += 1;
+            }
         }
     });
 
-    // let successful_tests = get_successful_tests();
-    // let failed_tests = get_failed_tests();
+    if failed_tests > 0 {
+        let failed = format!("{} failed", failed_tests).red();
+        let passed = format!("{} passed", successful_tests).green();
+        let all = format!("{} total", failed_tests + successful_tests);
 
-    // if failed_tests > 0 {
-    //     let failed = format!("{} failed", failed_tests).red();
-    //     let passed = format!("{} passed", successful_tests).green();
-    //     let all = format!("{} total", failed_tests + successful_tests);
+        println!("\n{}, {}, {}", failed, passed, all);
+        println!("Program execution time: {:?}", now.elapsed());
+        std::process::exit(1);
+    } else {
+        println!("\n{}", ("All tests passed! 😎").to_string().green());
+    }
 
-    //     println!("\n{}, {}, {}", failed, passed, all);
-    //     println!("Program execution time: {:?}", now.elapsed());
-    //     std::process::exit(1);
-    // } else {
-    //     println!("\n{}", ("All tests passed! 😎").to_string().green());
-    // }
-
-    // println!(
-    //     "{} tests executed in {:?}.",
-    //     failed_tests + successful_tests,
-    //     now.elapsed()
-    // );
+    println!(
+        "{} tests executed in {:?}.",
+        failed_tests + successful_tests,
+        now.elapsed()
+    );
 }

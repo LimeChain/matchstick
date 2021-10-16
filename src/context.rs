@@ -105,7 +105,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         Ok(())
     }
 
-    // function registerTest(name: string, shouldFail: bool, func_idx: i32): void
+    // function registerTest(name: string, shouldFail: bool, funcIdx: u32): void
     pub fn register_test(
         &mut self,
         name: AscPtr<AscString>,
