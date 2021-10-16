@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::io::{self, Write};
 use std::sync::Arc;
 use std::time::Instant;
@@ -17,23 +17,23 @@ use graph_runtime_test::common::{mock_context, mock_data_source};
 use graph_runtime_wasm::mapping::ValidModule;
 use graph_runtime_wasm::module::ExperimentalFeatures;
 
+use instance::MatchstickInstance;
 use subgraph_store::MockSubgraphStore;
-use wasm_instance::{
-    flush_logs, get_failed_tests, get_successful_tests, process_test_and_verify,
-    WasmInstanceExtension,
-};
 
-use crate::compiler::{CompileOutput, Compiler};
-use crate::wasm_instance::WasmInstance;
+use compiler::{CompileOutput, Compiler};
+use test_abstractions::Test;
+
+use crate::test_abstractions::TestCollection;
 
 mod compiler;
-mod integration_tests;
+mod context;
+mod instance;
+mod logging;
 mod subgraph_store;
-mod unit_tests;
-mod wasm_instance;
+mod test_abstractions;
 mod writable_store;
 
-fn instance_from_wasm(path_to_wasm: &str) -> WasmInstance<Chain> {
+fn instance_from_wasm(data_source_name: &str, path_to_wasm: &str) -> MatchstickInstance<Chain> {
     let subgraph_id = "ipfsMap";
     let deployment_id =
         &DeploymentHash::new(subgraph_id).expect("Could not create DeploymentHash.");
@@ -65,7 +65,7 @@ fn instance_from_wasm(path_to_wasm: &str) -> WasmInstance<Chain> {
             .expect("Could not create ValidModule."),
     );
 
-    <WasmInstance<Chain> as WasmInstanceExtension<Chain>>::from_valid_module_with_ctx(
+    MatchstickInstance::<Chain>::from_valid_module_with_ctx(
         valid_module,
         mock_context(
             deployment,
@@ -80,33 +80,33 @@ fn instance_from_wasm(path_to_wasm: &str) -> WasmInstance<Chain> {
     .expect("Could not create WasmInstance from valid module with context.")
 }
 
-fn call_run_tests(run_tests: wasmtime::Func) {
-    #[allow(non_fmt_panics)]
-    run_tests.call(&[]).unwrap_or_else(|err| {
-        if process_test_and_verify() {
-            call_run_tests(run_tests);
-           Box::new([wasmtime::Val::I32(0)])
-        } else {
-            flush_logs();
+// fn call_run_tests(run_tests: wasmtime::Func) {
+//     #[allow(non_fmt_panics)]
+//     run_tests.call(&[]).unwrap_or_else(|err| {
+//         if process_test_and_verify() {
+//             call_run_tests(run_tests);
+//            Box::new([wasmtime::Val::I32(0)])
+//         } else {
+//             flush_logs();
 
-            let msg = String::from(r#"
-            ❌ ❌ ❌  Unexpected error occurred while running tests.
-            See error stack trace above and double check the syntax in your test file.
+//             let msg = String::from(r#"
+//             ❌ ❌ ❌  Unexpected error occurred while running tests.
+//             See error stack trace above and double check the syntax in your test file.
 
-            This usually happens for three reasons:
-            1. You passed a 'null' value to one of our functions - assert.fieldEquals(), store.get(), store.set().
-            2. A mocked function call reverted. Consider using 'try_functionName' to handle this in the mapping.
-            3. The test was supposed to throw an error but the 'shouldThrow' parameter was not set to true.
+//             This usually happens for three reasons:
+//             1. You passed a 'null' value to one of our functions - assert.fieldEquals(), store.get(), store.set().
+//             2. A mocked function call reverted. Consider using 'try_functionName' to handle this in the mapping.
+//             3. The test was supposed to throw an error but the 'shouldThrow' parameter was not set to true.
 
-            Please ensure that you have proper null checks in your tests.
-            You can debug your test file using the 'debug()' function, provided by matchstick-as (import { debug } from "matchstick-as/assembly/log").
-            "#);
+//             Please ensure that you have proper null checks in your tests.
+//             You can debug your test file using the 'debug()' function, provided by matchstick-as (import { debug } from "matchstick-as/assembly/log").
+//             "#);
 
-            let msg = format!("{}\n {}", err, msg).red();
-            panic!("{}", msg);
-        }
-    });
-}
+//             let msg = format!("{}\n {}", err, msg).red();
+//             panic!("{}", msg);
+//         }
+//     });
+// }
 
 /// Returns the names of the sources specified in the subgraph.yaml file.
 fn get_available_datasources() -> HashSet<String> {
@@ -189,61 +189,83 @@ ___  ___      _       _         _   _      _
 
     println!("{}", ("Compiling...\n").to_string().bright_green());
     let compiler = Compiler::default()
+        .export_table()
         .export_runtime()
         .runtime("stub")
+        .enable("reference-types")
         .optimize()
         .debug();
-    let outputs: Vec<CompileOutput> = datasources.iter().map(|s| compiler.compile(s)).collect();
 
-    if outputs.iter().any(|output| !output.status.success()) {
+    let outputs: HashMap<String, CompileOutput> = datasources
+        .iter()
+        .map(|s| (s.clone(), compiler.compile(s)))
+        .collect();
+
+    if outputs.values().any(|output| !output.status.success()) {
         // Print any output on `stderr`.
         outputs
-            .iter()
+            .values()
             .for_each(|output| io::stderr().write_all(&output.stderr).unwrap());
 
         panic!("Please attend to the compilation errors above!");
     }
 
-    // NOTE: Is it actually too expensive to create a WASM Instance per datasource?
-    // Will there be a huge boost in performace if we were to creat just one, shared?
-    let wasm_instances: Vec<WasmInstance<Chain>> = outputs
+    // A matchstick instance for each datasource.
+    let ms_instances: HashMap<String, MatchstickInstance<Chain>> = outputs
         .iter()
-        .map(|output| instance_from_wasm(&output.file))
+        .map(|(key, val)| (key.clone(), instance_from_wasm(key, &val.file)))
         .collect();
 
-    println!("{}", ("Igniting tests 🔥\n").to_string().bright_red());
-    wasm_instances
-        .iter()
-        .map(|instance| {
-            instance
-                .instance
-                .get_func("runTests")
-                .expect(
-                    r#"❌ ❌ ❌  Couldn't get wasm function 'runTests'.
-                    Please ensure that you have named the function (that is defined in the test file) exactly 'runTests' and have imported it into the main mappings file."#
-                )
-        })
-        .for_each(call_run_tests);
-    flush_logs();
+    ms_instances.values().for_each(|instance| {
+        let table = instance.instance.get_table("table").unwrap();
+        for i in 0..table.size() {
+            if let Some(wasmtime::Val::FuncRef(Some(func))) = table.get(i) {
+                println!("{:?}", func.ty());
+            } else {
+                println!("Not a func...");
+            }
+        }
+    });
 
-    let successful_tests = get_successful_tests();
-    let failed_tests = get_failed_tests();
+    let tests = TestCollection::from(ms_instances.values().next().unwrap());
 
-    if failed_tests > 0 {
-        let failed = format!("{} failed", failed_tests).red();
-        let passed = format!("{} passed", successful_tests).green();
-        let all = format!("{} total", failed_tests + successful_tests);
-
-        println!("\n{}, {}, {}", failed, passed, all);
-        println!("Program execution time: {:?}", now.elapsed());
-        std::process::exit(1);
-    } else {
-        println!("\n{}", ("All tests passed! 😎").to_string().green());
+    for t in tests.tests {
+        t.func.call(&[]).unwrap_or_else(|err| panic!("{}", err));
     }
 
-    println!(
-        "{} tests executed in {:?}.",
-        failed_tests + successful_tests,
-        now.elapsed()
-    );
+    // println!("{}", ("Igniting tests 🔥\n").to_string().bright_red());
+    // wasm_instances
+    //     .iter()
+    //     .map(|instance| {
+    //         instance
+    //             .instance
+    //             .get_func("runTests")
+    //             .expect(
+    //                 r#"❌ ❌ ❌  Couldn't get wasm function 'runTests'.
+    //                 Please ensure that you have named the function (that is defined in the test file) exactly 'runTests' and have imported it into the main mappings file."#
+    //             )
+    //     })
+    //     .for_each(call_run_tests);
+    // flush_logs();
+
+    // let successful_tests = get_successful_tests();
+    // let failed_tests = get_failed_tests();
+
+    // if failed_tests > 0 {
+    //     let failed = format!("{} failed", failed_tests).red();
+    //     let passed = format!("{} passed", successful_tests).green();
+    //     let all = format!("{} total", failed_tests + successful_tests);
+
+    //     println!("\n{}, {}, {}", failed, passed, all);
+    //     println!("Program execution time: {:?}", now.elapsed());
+    //     std::process::exit(1);
+    // } else {
+    //     println!("\n{}", ("All tests passed! 😎").to_string().green());
+    // }
+
+    // println!(
+    //     "{} tests executed in {:?}.",
+    //     failed_tests + successful_tests,
+    //     now.elapsed()
+    // );
 }

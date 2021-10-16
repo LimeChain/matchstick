@@ -15,9 +15,8 @@ pub struct CompileOutput {
     pub file: String,
 }
 
-#[allow(dead_code)]
-impl Compiler {
-    pub fn default() -> Compiler {
+impl Default for Compiler {
+    fn default() -> Self {
         Compiler {
             exec: String::from("./node_modules/assemblyscript/bin/asc"),
             global: String::from("./node_modules/@graphprotocol/graph-ts/global/global.ts"),
@@ -25,29 +24,38 @@ impl Compiler {
             options: vec![String::from("--explicitStart")],
         }
     }
+}
 
-    pub fn export_table(mut self) -> Compiler {
+#[allow(dead_code)]
+impl Compiler {
+    pub fn export_table(mut self) -> Self {
         self.options.push("--exportTable".to_string());
         self
     }
 
-    pub fn optimize(mut self) -> Compiler {
+    pub fn optimize(mut self) -> Self {
         self.options.push("--optimize".to_string());
         self
     }
 
-    pub fn debug(mut self) -> Compiler {
+    pub fn debug(mut self) -> Self {
         self.options.push("--debug".to_string());
         self
     }
 
-    pub fn export_runtime(mut self) -> Compiler {
+    pub fn export_runtime(mut self) -> Self {
         self.options.push("--exportRuntime".to_string());
         self
     }
 
-    pub fn runtime(mut self, s: &str) -> Compiler {
+    pub fn runtime(mut self, s: &str) -> Self {
         self.options.push("--runtime".to_string());
+        self.options.push(s.to_string());
+        self
+    }
+
+    pub fn enable(mut self, s: &str) -> Self {
+        self.options.push("--enable".to_string());
         self.options.push(s.to_string());
         self
     }
