@@ -16,6 +16,7 @@ pub struct CompileOutput {
 }
 
 impl Default for Compiler {
+    // TODO: add an option allowing the user to specify a path to exec, global and lib.
     fn default() -> Self {
         Compiler {
             exec: String::from("./node_modules/assemblyscript/bin/asc"),

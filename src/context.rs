@@ -261,7 +261,11 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         //     .iter()
         //     .find_map(|def| {
         //         if let schema::Definition::TypeDefinition(schema::TypeDefinition::Object(o)) = def {
-        //             Some(o)
+        //             if o.name == entity_type {
+        //                 Some(o)
+        //             } else {
+        //                 None
+        //             }
         //         } else {
         //             None
         //         }

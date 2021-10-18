@@ -63,7 +63,7 @@ jobs:
       - name: Build
         run: cargo build --release; mv target/release/${{ matrix.artifact_name }} target/release/${{ matrix.asset_name }}
 
-      - name: Upload binaries to release
+      - name: Upload binary to release
         shell: bash
         run: echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token; gh release upload ${GITHUB_REF##*/} target/release/${{ matrix.asset_name }}
           
