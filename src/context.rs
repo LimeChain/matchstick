@@ -250,7 +250,6 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     ) -> Result<(), HostExportError> {
         let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr)?;
         let id: String = asc_get(&self.wasm_ctx, id_ptr)?;
-        // Q: What does try_asc_get do?
         let data: HashMap<String, Value> = try_asc_get(&self.wasm_ctx, data_ptr)?;
 
         // TODO: Well, fix, make it work.
@@ -407,7 +406,6 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         Ok(())
     }
 
-    // Q: What are the following for?
     pub fn mock_data_source_create(
         &mut self,
         _name_ptr: AscPtr<AscString>,
