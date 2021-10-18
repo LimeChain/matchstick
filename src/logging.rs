@@ -2,17 +2,17 @@ use std::fmt;
 
 use colored::Colorize;
 
-pub enum Log {
-    Critical(String),
-    Error(String),
-    Warning(String),
-    Info(String),
-    Debug(String),
-    Success(String),
+pub enum Log<T: fmt::Display> {
+    Critical(T),
+    Error(T),
+    Warning(T),
+    Info(T),
+    Debug(T),
+    Success(T),
 }
 
-impl Log {
-    pub fn new(level: u32, s: String) -> Self {
+impl<T: fmt::Display> Log<T> {
+    pub fn new(level: u32, s: T) -> Self {
         match level {
             0 => Log::Critical(s),
             1 => Log::Error(s),
@@ -25,15 +25,12 @@ impl Log {
         }
     }
 
-    pub fn print(&self) {
-        match self {
-            Log::Critical(_) => panic!("{}", self),
-            _ => println!("{}", self),
-        }
+    pub fn println(&self) {
+        println!("{}", self);
     }
 }
 
-impl fmt::Display for Log {
+impl<T: fmt::Display> fmt::Display for Log<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
             Log::Critical(s) => format!("🆘 Critical: {}", s).bright_white().on_red(),

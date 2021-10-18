@@ -23,18 +23,24 @@ mod writable_store;
 /// Returns the names of the sources specified in the subgraph.yaml file.
 fn get_available_datasources() -> HashSet<String> {
     let subgraph_yaml = std::fs::read_to_string("subgraph.yaml").expect(
-        r#"❌ ❌ ❌  Something went wrong when reading the 'subgraph.yaml' file.
-        Please ensure that the file exists"#,
+        &Log::Critical(
+            r#"Something went wrong when reading the 'subgraph.yaml' file.
+            Please ensure that the file exists"#,
+        )
+        .to_string(),
     );
 
     let subgraph_yaml: serde_yaml::Value = serde_yaml::from_str(&subgraph_yaml).expect(
-        r#"❌ ❌ ❌  Something went wrong when parsing 'subgraph.yaml'.
-        Please ensure that the yaml format is valid."#,
+        &Log::Critical(
+            r#"Something went wrong when parsing 'subgraph.yaml'.
+            Please ensure that the yaml format is valid."#,
+        )
+        .to_string(),
     );
 
     let datasources: serde_yaml::Sequence = subgraph_yaml["dataSources"]
         .as_sequence()
-        .expect("Could not get the data sources from the yaml file.")
+        .expect(&Log::Critical("Could not get the data sources from the yaml file.").to_string())
         .to_vec();
 
     datasources
@@ -45,7 +51,7 @@ fn get_available_datasources() -> HashSet<String> {
 
 fn main() {
     let matches = App::new("Matchstick 🔥")
-        .version("0.1.3")
+        .version("0.1.6a")
         .author("Limechain <https://limechain.tech>")
         .about("Unit testing framework for Subgraph development on The Graph protocol.")
         .arg(
@@ -87,10 +93,11 @@ ___  ___      _       _         _   _      _
                 .collect();
 
             if !unrecog_sources.is_empty() {
-                panic!(
+                panic!(Log::Critical(format!(
                     "The following datasources could not be recognized: {}.",
                     unrecog_sources.join(", ")
-                );
+                ))
+                .to_string());
             }
 
             sources
@@ -117,7 +124,7 @@ ___  ___      _       _         _   _      _
             .values()
             .for_each(|output| io::stderr().write_all(&output.stderr).unwrap());
 
-        panic!("Please attend to the compilation errors above!");
+        panic!(Log::Critical("Please attend to the compilation errors above!").to_string());
     }
 
     // A matchstick instance for each data source.
@@ -136,7 +143,7 @@ ___  ___      _       _         _   _      _
     let mut failed_tests = 0;
     println!("{}", ("Igniting tests 🔥\n").to_string().bright_red());
     test_collectins.iter().for_each(|(key, val)| {
-        Log::Info(format!("---> Data Source: {}", key)).print();
+        Log::Info(format!("---> Data Source: {}", key)).println();
         for test in &val.tests {
             let res = test.run();
             if res.is_successful {
