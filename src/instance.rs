@@ -18,8 +18,8 @@ use graph_runtime_wasm::{
     ExperimentalFeatures, MappingContext, ValidModule,
 };
 
-use crate::context::MatchstickInstanceContext;
 use crate::subgraph_store::MockSubgraphStore;
+use crate::{context::MatchstickInstanceContext, logging::Log};
 
 /// The Matchstick Instance is simply a wrapper around WASM Instance and
 pub struct MatchstickInstance<C: Blockchain> {
@@ -33,8 +33,12 @@ pub struct MatchstickInstance<C: Blockchain> {
 impl<C: Blockchain> MatchstickInstance<C> {
     pub fn new(path_to_wasm: &str) -> MatchstickInstance<Chain> {
         let subgraph_id = "ipfsMap";
-        let deployment_id =
-            &DeploymentHash::new(subgraph_id).expect("Could not create DeploymentHash.");
+        let deployment_id = &DeploymentHash::new(subgraph_id).unwrap_or_else(|err| {
+            panic!(
+                "{}",
+                Log::Critical(format!("Could not create deployment id: {}", err)),
+            );
+        });
         let deployment = DeploymentLocator::new(DeploymentId::new(42), deployment_id.clone());
         let data_source = mock_data_source(path_to_wasm, Version::new(0, 0, 5));
 
@@ -57,11 +61,27 @@ impl<C: Blockchain> MatchstickInstance<C> {
         };
 
         let mock_subgraph_store = MockSubgraphStore {};
+
         let valid_module = Arc::new(
-        ValidModule::new(Arc::new(std::fs::read(path_to_wasm).expect(r#"❌  Could not resolve path to wasm file. Please ensure that the datasource name you're providing is valid.
-        It should be the same as the 'name' field in the subgraph.yaml file, corresponding to the datasource you want to test."#)).as_ref())
-            .expect("Could not create ValidModule."),
-    );
+            ValidModule::new(
+                Arc::new(std::fs::read(path_to_wasm).unwrap_or_else(|err| {
+                    panic!(
+                        "{}",
+                        Log::Critical(format!(
+                            "Something went wrong while trying to read `{}`: {}",
+                            path_to_wasm, err,
+                        )),
+                    );
+                }))
+                .as_ref(),
+            )
+            .unwrap_or_else(|err| {
+                panic!(
+                    "{}",
+                    Log::Critical(format!("Could not create ValidModule: {}", err)),
+                );
+            }),
+        );
 
         MatchstickInstance::<Chain>::from_valid_module_with_ctx(
             valid_module,
@@ -75,7 +95,15 @@ impl<C: Blockchain> MatchstickInstance<C> {
             None,
             experimental_features,
         )
-        .expect("Could not create WasmInstance from valid module with context.")
+        .unwrap_or_else(|err| {
+            panic!(
+                "{}",
+                Log::Critical(format!(
+                    "Could not create WasmInstance from valid module with context: {}",
+                    err,
+                )),
+            );
+        })
     }
 
     fn from_valid_module_with_ctx(

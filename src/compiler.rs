@@ -1,6 +1,8 @@
 use std::fs;
 use std::process::{Command, ExitStatus};
 
+use crate::logging::Log;
+
 pub struct Compiler {
     exec: String,
     global: String,
@@ -63,9 +65,15 @@ impl Compiler {
 
     fn get_paths_for(datasource: &str) -> (Vec<String>, String) {
         let entry = fs::read_dir("./tests/")
-            .expect(
-                "No tests were found: The `./tests/` directory does not exist or it could not be read.",
-            )
+            .unwrap_or_else(|err| {
+                panic!(
+                    "{}",
+                    Log::Critical(format!(
+                        "Something went wrong while trying to read `tests/`: {}",
+                        err,
+                    )),
+                );
+            })
             .find_map(|entry| {
                 let entry = entry.unwrap();
                 if entry
@@ -82,9 +90,9 @@ impl Compiler {
             })
             .unwrap_or_else(|| {
                 panic!(
-                    "No tests for {} datasource were found during compilation.",
-                    datasource
-                )
+                    "{}",
+                    Log::Critical(format!("No tests were found for '{}'.", datasource)),
+                );
             });
 
         let in_files = if entry.file_type().unwrap().is_dir() {
@@ -99,8 +107,15 @@ impl Compiler {
             vec![entry.path().to_str().unwrap().to_string()]
         };
 
-        fs::create_dir_all("./tests/.bin/")
-            .expect("Something went wrong when creating `./tests/.bin/`.");
+        fs::create_dir_all("./tests/.bin/").unwrap_or_else(|err| {
+            panic!(
+                "{}",
+                Log::Critical(format!(
+                    "Something went wrong when trying to crate `./tests/.bin/`: {}",
+                    err,
+                )),
+            );
+        });
 
         return (in_files, format!("./tests/.bin/{}.wasm", datasource));
     }

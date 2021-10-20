@@ -92,10 +92,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
     /// function logStore(): void
     pub fn log_store(&mut self) -> Result<(), HostExportError> {
-        println!(
-            "{}",
-            Log::Debug(to_string_pretty(&self.store).expect("`store` can't be converted to JSON."))
-        );
+        Log::Debug(to_string_pretty(&self.store).expect("`store` can't be converted to JSON."))
+            .println();
         Ok(())
     }
 
@@ -135,9 +133,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         if !self.store.contains_key(&entity_type) {
             let msg = format!(
                 "(assert.fieldEquals) No entities with type '{}' found.",
-                &entity_type
+                &entity_type,
             );
-            Log::Error(msg).print();
+            Log::Error(msg).println();
             return Ok(false);
         }
 
@@ -145,9 +143,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         if !entities.contains_key(&id) {
             let msg = format!(
                 "(assert.fieldEquals) No entity with type '{}' and id '{}' found.",
-                &entity_type, &id
+                &entity_type, &id,
             );
-            Log::Error(msg).print();
+            Log::Error(msg).println();
             return Ok(false);
         }
 
@@ -155,9 +153,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         if !entity.contains_key(&field_name) {
             let msg = format!(
                 "(assert.fieldEquals) No field named '{}' on entity with type '{}' and id '{}' found.",
-                &field_name, &entity_type, &id
+                &field_name, &entity_type, &id,
             );
-            Log::Error(msg).print();
+            Log::Error(msg).println();
             return Ok(false);
         }
 
@@ -165,9 +163,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         if val.to_string() != expected_val {
             let msg = format!(
                 "(assert.fieldEquals) Expected field '{}' to equal '{}', but was '{}' instead.",
-                &field_name, &expected_val, val
+                &field_name, &expected_val, val,
             );
-            Log::Error(msg).print();
+            Log::Error(msg).println();
             return Ok(false);
         };
 
@@ -187,10 +185,10 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
         if expected != actual {
             let msg = format!(
-                "Expected value was '{:?}' but actual value was '{:?}'",
-                expected, actual
+                "(assert.equals) Expected value was '{:?}' but actual value was '{:?}'",
+                expected, actual,
             );
-            Log::Error(msg).print();
+            Log::Error(msg).println();
             return Ok(false);
         }
         Ok(true)
@@ -209,10 +207,10 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             && self.store.get(&entity_type).unwrap().contains_key(&id)
         {
             let msg = format!(
-                "Value for entity type: '{}' and id: '{}' was found in store.",
-                entity_type, id
+                "(assert.notInStore) Value for entity type: '{}' and id: '{}' was found in store.",
+                entity_type, id,
             );
-            Log::Error(msg).print();
+            Log::Error(msg).println();
             return Ok(false);
         }
 
@@ -276,7 +274,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         //     .filter(|&f| matches!(f.field_type, schema::Type::NonNullType(..)));
 
         // for f in required_fields {
-        //     let warn = |s: String| Log::Warning(s).print();
+        //     let warn = |s: String| Log::Warning(s).println();
 
         //     if !data.contains_key(&f.name) {
         //         warn(format!(
@@ -319,10 +317,10 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             self.store.insert(entity_type, entity_type_store);
         } else {
             let msg = format!(
-                "(store.remove) Entity with type '{}' and id '{}' does not exist. Problem originated from store.remove()",
-                &entity_type, &id
+                "(store.remove) Entity with type '{}' and id '{}' does not exist.",
+                &entity_type, &id,
             );
-            Log::Error(msg).print();
+            Log::Error(msg).println();
             return Ok(());
         }
         Ok(())
@@ -341,10 +339,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             &call.contract_address.to_string(),
             &call.function_name,
             &call.function_signature.unwrap_or_else(|| {
-                panic!(
-                    "{}",
-                    Log::Critical("Couldn't get function signature.".to_string()).to_string()
-                )
+                panic!("{}", Log::Critical("Could not get function signature."));
             }),
             call.function_args,
         );
@@ -359,15 +354,23 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 &mut self.wasm_ctx,
                 self.fn_ret_map
                     .get(&fn_id)
-                    .expect("Couldn't get value from map.")
+                    .unwrap_or_else(|| {
+                        panic!(
+                            "{}",
+                            Log::Critical("Could not get value from function map."),
+                        );
+                    })
                     .as_slice(),
             )?;
 
             Ok(return_val)
         } else {
             panic!(
-                "Key: '{}' not found in map. Please mock the function before calling it.",
-                &fn_id
+                "{}",
+                Log::Critical(format!(
+                    "Key: '{}' not found in map. Please mock the function before calling it.",
+                    &fn_id,
+                )),
             );
         }
     }

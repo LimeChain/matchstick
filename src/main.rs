@@ -22,25 +22,35 @@ mod writable_store;
 // TODO: WRONG! It should return only the data sources that have tests written for in `tests/`.
 /// Returns the names of the sources specified in the subgraph.yaml file.
 fn get_available_datasources() -> HashSet<String> {
-    let subgraph_yaml = std::fs::read_to_string("subgraph.yaml").expect(
-        &Log::Critical(
-            r#"Something went wrong when reading the 'subgraph.yaml' file.
-            Please ensure that the file exists"#,
-        )
-        .to_string(),
-    );
+    let subgraph_yaml = std::fs::read_to_string("subgraph.yaml").unwrap_or_else(|err| {
+        panic!(
+            "{}",
+            Log::Critical(format!(
+                "Something went wrong while reading `subgraph.yaml`: {}",
+                err,
+            )),
+        );
+    });
 
-    let subgraph_yaml: serde_yaml::Value = serde_yaml::from_str(&subgraph_yaml).expect(
-        &Log::Critical(
-            r#"Something went wrong when parsing 'subgraph.yaml'.
-            Please ensure that the yaml format is valid."#,
-        )
-        .to_string(),
-    );
+    let subgraph_yaml: serde_yaml::Value =
+        serde_yaml::from_str(&subgraph_yaml).unwrap_or_else(|err| {
+            panic!(
+                "{}",
+                Log::Critical(format!(
+                    "Something went wrong when parsing 'subgraph.yaml': {}",
+                    err,
+                )),
+            );
+        });
 
     let datasources: serde_yaml::Sequence = subgraph_yaml["dataSources"]
         .as_sequence()
-        .expect(&Log::Critical("Could not get the data sources from the yaml file.").to_string())
+        .unwrap_or_else(|| {
+            panic!(
+                "{}",
+                Log::Critical("Could not get the data sources from the yaml file."),
+            );
+        })
         .to_vec();
 
     datasources
@@ -93,11 +103,13 @@ ___  ___      _       _         _   _      _
                 .collect();
 
             if !unrecog_sources.is_empty() {
-                panic!(Log::Critical(format!(
-                    "The following datasources could not be recognized: {}.",
-                    unrecog_sources.join(", ")
-                ))
-                .to_string());
+                panic!(
+                    "{}",
+                    Log::Critical(format!(
+                        "The following datasources could not be recognized: {}",
+                        unrecog_sources.join(", "),
+                    )),
+                );
             }
 
             sources
@@ -120,11 +132,21 @@ ___  ___      _       _         _   _      _
 
     if outputs.values().any(|output| !output.status.success()) {
         // Print any output on `stderr`.
-        outputs
-            .values()
-            .for_each(|output| io::stderr().write_all(&output.stderr).unwrap());
+        outputs.values().for_each(|output| {
+            io::stderr()
+                .write_all(&output.stderr)
+                .unwrap_or_else(|err| {
+                    panic!(
+                        "{}",
+                        Log::Critical(format!("Could not write to `stderr`: {}", err)),
+                    );
+                });
+        });
 
-        panic!(Log::Critical("Please attend to the compilation errors above!").to_string());
+        panic!(
+            "{}",
+            Log::Critical("Please attend to the compilation errors above!"),
+        );
     }
 
     // A matchstick instance for each data source.
@@ -146,7 +168,7 @@ ___  ___      _       _         _   _      _
         Log::Info(format!("---> Data Source: {}", key)).println();
         for test in &val.tests {
             let res = test.run();
-            if res.is_successful {
+            if res.success {
                 successful_tests += 1;
             } else {
                 failed_tests += 1;
@@ -169,6 +191,6 @@ ___  ___      _       _         _   _      _
     println!(
         "{} tests executed in {:?}.",
         failed_tests + successful_tests,
-        now.elapsed()
+        now.elapsed(),
     );
 }

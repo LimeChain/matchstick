@@ -33,7 +33,7 @@ impl<T: fmt::Display> Log<T> {
 impl<T: fmt::Display> fmt::Display for Log<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
-            Log::Critical(s) => format!("🆘 Critical: {}", s).bright_white().on_red(),
+            Log::Critical(s) => format!("🆘 Critical: {}", s).bold().red(),
             Log::Error(s) => format!("❌ Error: {}", s).bold().red(),
             Log::Warning(s) => format!("🟡 Warning: {}", s).yellow(),
             Log::Info(s) => format!("💬 Info: {}", s).italic(),

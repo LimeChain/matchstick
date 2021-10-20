@@ -11,7 +11,7 @@ pub struct Test {
 }
 
 pub struct TestResult {
-    pub is_successful: bool,
+    pub success: bool,
 }
 
 impl Test {
@@ -26,9 +26,13 @@ impl Test {
     }
 
     fn call_hooks(hooks: &[wasmtime::Func]) {
-        // TODO: Handle possible errors better.
         hooks.iter().for_each(|h| {
-            h.call(&[]).unwrap();
+            h.call(&[]).unwrap_or_else(|err| {
+                panic!(
+                    "{}",
+                    Log::Critical(format!("Unexpected error upon calling hook: {}", err)),
+                );
+            });
         });
     }
 
@@ -43,26 +47,26 @@ impl Test {
     pub fn run(&self) -> TestResult {
         self.before();
 
-        let mut is_successful = true;
-        Log::Info(format!("-> Running {}", self.name)).print();
+        let mut success = true;
+        Log::Info(format!("-> Running {}", self.name)).println();
         // NOTE: Calling a test func should not fail for any other reason than:
         // - `should_fail` has been set to `true`
         // - the behaviour tested does not hold
-        self.func.call(&[]).unwrap_or_else(|_err| {
+        self.func.call(&[]).unwrap_or_else(|_| {
             if !self.should_fail {
-                is_successful = false;
+                success = false;
             }
             Box::new([wasmtime::Val::I32(0)])
         });
 
-        if is_successful {
-            Log::Success("Test has passed!".to_string()).print();
+        if success {
+            Log::Success("Test has passed!".to_string()).println();
         } else {
-            Log::Error("Test has failed!".to_string()).print();
+            Log::Error("Test has failed!".to_string()).println();
         }
 
         self.after();
-        TestResult { is_successful }
+        TestResult { success }
     }
 }
 
@@ -77,11 +81,9 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestCollection {
                 "{}",
                 Log::Critical(
                     "WebAssembly.Table was not exported from the AssemblyScript sources.
-                (Please compile with the `--exportTable` option.)"
-                        .to_string(),
-                )
-                .to_string()
-            )
+                    (Please compile with the `--exportTable` option.)"
+                ),
+            );
         });
 
         let mut collection = TestCollection { tests: vec![] };
@@ -89,7 +91,12 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestCollection {
             .instance_ctx
             .borrow()
             .as_ref()
-            .unwrap()
+            .unwrap_or_else(|| {
+                panic!(
+                    "{}",
+                    Log::Critical("Unexpected: MatchstickInstanceContext is 'None'."),
+                );
+            })
             .meta_tests
         {
             collection.tests.push(Test::new(
@@ -101,11 +108,10 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestCollection {
                         panic!(
                             "{}",
                             Log::Critical(format!(
-                                "Could not get WebAssembly.Table entry with index: {}.",
-                                func_idx
-                            ))
-                            .to_string()
-                        )
+                                "Could not get WebAssembly.Table entry with index '{}'.",
+                                func_idx,
+                            )),
+                        );
                     })
                     .unwrap_funcref()
                     .unwrap()
