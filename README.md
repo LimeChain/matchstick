@@ -221,7 +221,7 @@ export class Gravatar extends Entity {
   }
 }
 ```
-And finally, we have a handler function (**that we've written in our** `mapping.ts` **file**) that deals with the events. As well as two little helper functions - one for multiple events of the same type and another for creating new events of that type (You could of course consturct event objects manually each time, but it's a lot more hassle):
+And finally, we have a handler function (**that we've written in our** `mapping.ts` **file**) that deals with the events. As well as two little helper functions - one for multiple events of the same type and another for creating a filled instance of ethereum.Event - `newMockEvent` (Although `changetype` is inherently unsafe, most events can be safely upcast to the desired ethereum.Event extending class as shown in the example below):
 ```typescript
 export function handleNewGravatar(event: NewGravatar): void {
     let gravatar = new Gravatar(event.params.id.toHex())
@@ -238,9 +238,7 @@ export function handleNewGravatars(events: NewGravatar[]): void {
 }
 
 export function createNewGravatarEvent(id: i32, ownerAddress: string, displayName: string, imageUrl: string): NewGravatar {
-    let mockEvent = newMockEvent();
-    let newGravatarEvent = new NewGravatar(mockEvent.address, mockEvent.logIndex, mockEvent.transactionLogIndex,
-        mockEvent.logType, mockEvent.block, mockEvent.transaction, mockEvent.parameters);
+    let newGravatarEvent = changetype<NewGravatar>(newMockEvent()) 
     newGravatarEvent.parameters = new Array();
     let idParam = new ethereum.EventParam("id", ethereum.Value.fromI32(id));
     let addressParam = new ethereum.EventParam("ownderAddress", ethereum.Value.fromAddress(Address.fromString(ownerAddress)));
@@ -411,7 +409,7 @@ assert.fieldEquals("Gravatar", "gravatarId0", "id", "gravatarId0");
 Running the assert.fieldEquals() function will check for equality of the given field against the given expected value. The test will fail and an error message will be outputted if the values are **NOT** equal. Otherwise the test will pass successfully.
 
 ### Interacting with Event metadata
-Users can use default transaction metadata, which could be returned as an ethereum.Event by using the  `newMockEvent()` function. The following example shows how you can read/write to those fields on the Event object:
+Users can use default transaction metadata, which could be returned as an ethereum.Event by using the `newMockEvent()` function. The following example shows how you can read/write to those fields on the Event object:
 
 ```typescript
 let logType = newGravatarEvent.logType;
