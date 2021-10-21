@@ -28,7 +28,11 @@ impl WritableStore for MockWritableStore {
         unreachable!()
     }
 
-    fn unfail(&self) -> Result<(), StoreError> {
+    fn unfail(
+        &self,
+        _current_ptr: Option<BlockPtr>,
+        _parent_ptr: Option<BlockPtr>,
+    ) -> Result<(), StoreError> {
         unreachable!()
     }
 
