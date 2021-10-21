@@ -49,7 +49,7 @@ lazy_static! {
         if let Ok(v) = std::fs::read_to_string("build/schema.graphql") {
             s = v;
         } else {
-            // NOTE: In the future, when new unit/integration tests are written, the follwing error
+            // NOTE: In the future, when new unit/integration tests are written, the following error
             // should be thrown when 'build/schema.graphql' is missing:
             //
             // r#"❌ ❌ ❌  Something went wrong reading the 'build/schema.graphql' file.
