@@ -123,7 +123,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         Ok(())
     }
 
-    // function registerTest(name: string, shouldFail: bool, funcIdx: u32): void
+    /// function _registerTest(name: string, shouldFail: bool, funcIdx: u32): void
     pub fn register_test(
         &mut self,
         name: AscPtr<AscString>,
@@ -136,8 +136,10 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         Ok(())
     }
 
-    // function assert.
-    // fieldEquals(entityType: string, id: string, fieldName: string, expectedVal: string): bool
+    /// function _assert.fieldEquals(
+    ///     entityType: string, id: string,
+    ///     fieldName: string, expectedVal: string,
+    /// ): bool
     pub fn assert_field_equals(
         &mut self,
         entity_type_ptr: AscPtr<AscString>,
@@ -192,7 +194,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         Ok(true)
     }
 
-    // function assert.equals(expected: ethereum.Value, actual: ethereum.Value): bool
+    /// function _assert.equals(expected: ethereum.Value, actual: ethereum.Value): bool
     pub fn assert_equals(
         &mut self,
         expected_ptr: u32,
@@ -214,7 +216,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         Ok(true)
     }
 
-    // function assert.notInStore(entityType: string, id: string): bool
+    /// function _assert.notInStore(entityType: string, id: string): bool
     pub fn assert_not_in_store(
         &mut self,
         entity_type_ptr: AscPtr<AscString>,
@@ -237,7 +239,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         Ok(true)
     }
 
-    // function store.get(entityType: string, id: string): Entity
+    /// function store.get(entityType: string, id: string): Entity
     pub fn mock_store_get(
         &mut self,
         entity_type_ptr: AscPtr<AscString>,
@@ -260,6 +262,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         Ok(AscPtr::null())
     }
 
+    /// function store.set(entityType: string, id: string, data: map): void
     pub fn mock_store_set(
         &mut self,
         entity_type_ptr: AscPtr<AscString>,
@@ -321,6 +324,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         Ok(())
     }
 
+    /// function store.remove(entityType: string, id: string): void
     pub fn mock_store_remove(
         &mut self,
         entity_type_ptr: AscPtr<AscString>,
@@ -347,6 +351,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         Ok(())
     }
 
+    /// function ethereum.call(call: SmartContractCall): Array<Value> | null
     pub fn ethereum_call(
         &mut self,
         contract_call_ptr: u32,
@@ -396,6 +401,10 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         }
     }
 
+    /// function mockFunction(
+    ///     contractAddress: Address, fnName: string, fnSignature: string,
+    ///     fnArgs: ethereum.Value[], returnValue: ethereum.Value[], reverts: bool,
+    /// ): void
     pub fn mock_function(
         &mut self,
         contract_address_ptr: u32,
@@ -434,6 +443,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         Ok(())
     }
 
+    /// function dataSource.create(name: string, params: Array<string>): void
     pub fn mock_data_source_create(
         &mut self,
         _name_ptr: AscPtr<AscString>,
@@ -442,6 +452,10 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         Ok(())
     }
 
+    /// function  dataSource.createWithContext(
+    ///     name: string, params: Array<string>,
+    ///     context: DataSourceContext,
+    /// ): void
     pub fn mock_data_source_create_with_context(
         &mut self,
         _name_ptr: AscPtr<AscString>,
