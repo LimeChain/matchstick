@@ -1,6 +1,8 @@
 use std::fs;
 use std::process::{Command, ExitStatus};
 
+use crate::logging::Log;
+
 pub struct Compiler {
     exec: String,
     global: String,
@@ -15,10 +17,9 @@ pub struct CompileOutput {
     pub file: String,
 }
 
-#[allow(dead_code)]
-impl Compiler {
-    pub fn default() -> Compiler {
-        // TODO: add an option allowing the user to specify a path to exec, global and lib.
+impl Default for Compiler {
+    // TODO: add an option allowing the user to specify a path to exec, global and lib.
+    fn default() -> Self {
         Compiler {
             exec: String::from("./node_modules/assemblyscript/bin/asc"),
             global: String::from("./node_modules/@graphprotocol/graph-ts/global/global.ts"),
@@ -26,79 +27,80 @@ impl Compiler {
             options: vec![String::from("--explicitStart")],
         }
     }
+}
 
-    pub fn export_table(mut self) -> Compiler {
+#[allow(dead_code)]
+impl Compiler {
+    pub fn export_table(mut self) -> Self {
         self.options.push("--exportTable".to_string());
         self
     }
 
-    pub fn optimize(mut self) -> Compiler {
+    pub fn optimize(mut self) -> Self {
         self.options.push("--optimize".to_string());
         self
     }
 
-    pub fn debug(mut self) -> Compiler {
+    pub fn debug(mut self) -> Self {
         self.options.push("--debug".to_string());
         self
     }
 
-    pub fn export_runtime(mut self) -> Compiler {
+    pub fn export_runtime(mut self) -> Self {
         self.options.push("--exportRuntime".to_string());
         self
     }
 
-    pub fn runtime(mut self, s: &str) -> Compiler {
+    pub fn runtime(mut self, s: &str) -> Self {
         self.options.push("--runtime".to_string());
         self.options.push(s.to_string());
         self
     }
 
-    fn get_paths_for(datasource: &str) -> (Vec<String>, String) {
-        let entry = fs::read_dir("./tests/")
-            .expect(
-                "No tests were found: The `./tests/` directory does not exist or it could not be read.",
-            )
-            .find_map(|entry| {
-                let entry = entry.unwrap();
-                if entry
-                    .file_name()
-                    .to_str()
-                    .unwrap()
-                    .to_ascii_lowercase()
-                    .starts_with(datasource)
-                {
-                    Some(entry)
-                } else {
-                    None
-                }
-            })
-            .unwrap_or_else(|| {
-                panic!(
-                    "No tests for {} datasource were found during compilation.",
-                    datasource
-                )
-            });
+    pub fn enable(mut self, s: &str) -> Self {
+        self.options.push("--enable".to_string());
+        self.options.push(s.to_string());
+        self
+    }
 
-        let in_files = if entry.file_type().unwrap().is_dir() {
+    fn get_paths_for(name: String, entry: fs::DirEntry) -> (Vec<String>, String) {
+        let in_files = if entry
+            .file_type()
+            .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
+            .is_dir()
+        {
             entry
                 .path()
                 .read_dir()
-                .unwrap()
-                .map(|file| file.unwrap().path().to_str().unwrap().to_string())
+                .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
+                .map(|file| {
+                    file.unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
+                        .path()
+                        .to_str()
+                        .unwrap()
+                        .to_string()
+                })
                 .filter(|path| path.ends_with(".test.ts"))
                 .collect()
         } else {
             vec![entry.path().to_str().unwrap().to_string()]
         };
 
-        fs::create_dir_all("./tests/.bin/")
-            .expect("Something went wrong when creating `./tests/.bin/`.");
+        fs::create_dir_all("./tests/.bin/").unwrap_or_else(|err| {
+            panic!(
+                "{}",
+                Log::Critical(format!(
+                    "Something went wrong when trying to crate `./tests/.bin/`: {}",
+                    err,
+                )),
+            );
+        });
 
-        return (in_files, format!("./tests/.bin/{}.wasm", datasource));
+        return (in_files, format!("./tests/.bin/{}.wasm", name));
     }
 
-    pub fn compile(&self, datasource: &str) -> CompileOutput {
-        let (in_files, out_file) = Compiler::get_paths_for(datasource);
+    pub fn compile(&self, name: String, entry: fs::DirEntry) -> CompileOutput {
+        let (in_files, out_file) = Compiler::get_paths_for(name, entry);
         let output = Command::new(&self.exec)
             .args(in_files)
             .arg(&self.global)

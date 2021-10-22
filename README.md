@@ -1,19 +1,22 @@
-![GitHub Bannet-1](https://user-images.githubusercontent.com/32264020/128688825-29841c79-976a-428d-b5f0-0743739fc075.png)
+![GitHub Banner-1](https://user-images.githubusercontent.com/32264020/128688825-29841c79-976a-428d-b5f0-0743739fc075.png)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 👋 Welcome to **Matchstick** - a unit testing framework for The Graph protocol. Try out your mapping logic in a sandboxed environment and ensure your handlers run correctly when deploying your awesome subgraph!
 
 ## Quick Start 🚀
-The release binary comes in three flavours - for **MacOS**, **Linux** and **Windows**. To add **Matchstick** to your subgraph project just open up a terminal, navigate to the root folder of your project and simply follow these steps (depending on your OS):
+The release binary comes in three flavours - for **macOS**, **Linux** and **Windows**. To add **Matchstick** to your subgraph project just open up a terminal, navigate to the root folder of your project and simply follow these steps:
 
-❗ If you don't have Postgres installed, you will need to install it.
-As of version 0.22.0 of graph-cli the `graph test` command has been changed - now it downloads the latest Matchstick binary and runs the tests of the given datasource and is now the only thing you need to run to use Matchstick! - example usage: `graph test Gravity`
+❗ As of version 0.2.0, you no longer need to write the `runTests` function, just `test` blocks. <br>
+❗ As of version 0.2.0, tests' directory structure has changed. Please refer to [Conventions](#Conventions) for more details.
+
+❗ If you don't have Postgres installed, you will need to install it. <br>
 As of version 0.1.3 Matchstick is updating API version from 0.0.4 to 0.0.5
-❗ Subgraphs with API version 0.0.4 mappings won't work with Matchstick version 0.1.3+
-
+❗ Subgraphs with API version 0.0.4 mappings won't work with Matchstick version 0.1.3+ <br>
+As of version 0.22.0 of graph-cli the `graph test` command has been changed - now it downloads the latest Matchstick binary and runs the tests of the given datasource and is now the only thing you need to run to use Matchstick! - example usage: `graph test Gravity`
 ❗ The next section (up to Install dependencies) is completely unnecessary (expect installing postgres) if you are using version 0.22.0+ of graph-cli.
-### MacOS 
+
+### macOS 
 
 ❗ Postgres installation command:
 ```
@@ -22,42 +25,42 @@ brew install postgresql
 
 If you are using macOS 11/Big Sur
 ```
-curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.5/binary-macos-11 &&
+curl -OL https://github.com/LimeChain/matchstick/releases/download/0.2.0/binary-macos-11 &&
 mv binary-macos-11 matchstick &&
 chmod a+x matchstick
 ```
 
 If you are using macOS 10.15/Catalina
 ```
-curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.5/binary-macos-10.15 &&
+curl -OL https://github.com/LimeChain/matchstick/releases/download/0.2.0/binary-macos-10.15 &&
 mv binary-macos-10.15 matchstick &&
 chmod a+x matchstick
 ```
 
 If you are using macOS 10.14/Mojave
 ```
-curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.5/binary-macos-10.14 &&
+curl -OL https://github.com/LimeChain/matchstick/releases/download/0.2.0/binary-macos-10.14 &&
 mv binary-macos-10.14 matchstick &&
 chmod a+x matchstick
 ```
 
 ### Linux 🐧
 
-❗ Postgres installation command (depending on your distro):
+❗ Postgres installation command (depends on your distro):
 ```
 sudo apt install postgresql
 ```
 
 If you are using Ubuntu 20.04/Focal Fossa
 ```
-curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.5/binary-linux-20 &&
+curl -OL https://github.com/LimeChain/matchstick/releases/download/0.2.0/binary-linux-20 &&
 mv binary-linux-20 matchstick &&
 chmod a+x matchstick
 ```
 
 If you are using Ubuntu 18.04/Bionic Beaver
 ```
-curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.5/binary-linux-18 &&
+curl -OL https://github.com/LimeChain/matchstick/releases/download/0.2.0/binary-linux-18 &&
 mv binary-linux-18 matchstick &&
 chmod a+x matchstick
 ```
@@ -70,7 +73,7 @@ choco install postgresql12
 ```
 
 ```
-curl -OL https://github.com/LimeChain/matchstick/releases/download/0.1.5/binary-windows &&
+curl -OL https://github.com/LimeChain/matchstick/releases/download/0.2.0/binary-windows &&
 move binary-windows matchstick
 ```
 
@@ -82,40 +85,59 @@ yarn add matchstick-as
 ```
 
 ### Run
-I you are using version 0.22.0+ of graph-cli and API version 0.0.5 you can simply run Matchstick by using the `graph test` command followed by your datasource name (after you've compiled your subgraph using `graph build`).
-
-To run the framework with API version 0.0.4 mappings and an older version of graph-cli, you need to provide a datasource name (after you've compiled your subgraph using `graph build`).
-
 Just run the following in the root folder of your project:
 
-`./matchstick <DATASOURCE NAME>`
+`./matchstick <ONE-OR-MORE-TEST-NAMES>`
 
-For instance, in our [demo subgraph example](https://github.com/LimeChain/demo-subgraph "demo subgraph"), the command looks like this:
+For instance, in our [demo-subgraph example](https://github.com/LimeChain/demo-subgraph "demo-subgraph"), the command looks like this:
 
-`./matchstick Gravity`
+`./matchstick gravity`
 
-**Tip:** You can build your subgraph (along with your tests) and run the framework in one step using:
-`graph build && ./matchstick Gravity`
+**Tip:** You can run all tests at once by simply invoking:
+`./matchstick`
 
-**Tip:** Add this commant to your `package.json` file to run the tests with `yarn test` and possibly on CI:
-```js
-// package.json
-{
-  // ...
-  "scripts:" {
-    // ...
-    "test": "graph build && ./matchstick Gravity"
-  }
-}
+Now you can jump straight to the [test examples](https://github.com/LimeChain/demo-subgraph/blob/main/tests "examples of tests") in our [demo-subgraph](https://github.com/LimeChain/demo-subgraph "demo-subgraph") and start your journey in Subgraph unit testing!
+
+## Conventions
+
+### Directory structure
+
+For **Matchstick** to recognize your tests, you need to put them in a `tests/` folder in the root of your project.
+
+### Naming
+
+Your test file should start with a name of your chosing (for example the name of the tested data source) and end with `.test.ts`.
+For instance:
+```
+tests/
+└── gravity.test.ts
+
+1 file
 ```
 
-Now you can jump straight to the [test examples](https://github.com/LimeChain/demo-subgraph/blob/main/src/tests.ts "examples of tests") we have in our [demo subgraph](https://github.com/LimeChain/demo-subgraph "demo subgraph") and start your journey in Subgraph unit testing!
+---
 
-## Setting up locally 📍
-If you want to get the **Matchstick** project up and running on your system, follow these simple steps. This guide is aimed at both **MacOS** and **Linux** systems.
+You can also group related tests and other files into folders.
+For example:
+```
+tests/
+└── gravity
+    ├── gravity.test.ts
+    └── utils.ts
+
+1 directory, 2 files
+```
+
+Now, under the `gravity` folder, all files ending with `.test.ts` are interpreted as a single test with the name `gravity` (the name of the folder).
+
+### Caveats
+
+ - **Matchstick** is case-insensitive regarding data sources names. Meaning, *Gravity = gravity = gRaVitY*.
+
+## Building from source
 
 ### Prerequisites
-To build and run **Matchstick**  you need to have the following installed on your system:
+To build and run **Matchstick** you need to have the following installed on your system:
 
 - Rust - [How to install Rust](https://www.rust-lang.org/en-US/install.html "How to install Rust")
 - PostgreSQL – [PostgreSQL Downloads](https://www.postgresql.org/download/)
@@ -129,7 +151,7 @@ Clone this repository and run `cargo build`. If that executes successfully congr
 
 If you prefer learning through watching, here's a [video tutorial](https://www.youtube.com/watch?v=T-orbT4gRiA)!
 
-Let's explore a few common scenarios where we'd want to test our handler functions. We've created a [**demo subgraph repo**](https://github.com/LimeChain/demo-subgraph "demo subgraph") ❗to fully demonstrate how to use the framework and all its functionality. It uses the [Example Subgraph](https://thegraph.com/docs/developer/create-subgraph-hosted "Example Subgraph"), provided by [The Graph Docs](https://thegraph.com/docs "The Graph Docs"), which you most likely will be familiar with. For the full examples, feel free to check it out in depth. Let's dive in straight to the code on there! We've got the following simple **generated** event:
+Let's explore a few common scenarios where we'd want to test our handler functions. We've created a [**demo-subgraph repo**](https://github.com/LimeChain/demo-subgraph "demo-subgraph") to fully demonstrate how to use the framework and all its functionality. For the full examples, feel free to check it out in depth. Let's dive in! We've got the following simple **generated** event:
 ```typescript
 export class NewGravatar extends ethereum.Event {
   get params(): NewGravatar__Params {
@@ -161,6 +183,7 @@ export class NewGravatar__Params {
   }
 }
 ```
+
 Along with the following simple **generated** entity:
 ```typescript
 export class Gravatar extends Entity {
@@ -221,41 +244,51 @@ export class Gravatar extends Entity {
   }
 }
 ```
-And finally, we have a handler function (**that we've written in our** `mapping.ts` **file**) that deals with the events. As well as two little helper functions - one for multiple events of the same type and another for creating a filled instance of ethereum.Event - `newMockEvent` (Although `changetype` is inherently unsafe, most events can be safely upcast to the desired ethereum.Event extending class as shown in the example below):
+
+And finally, we have a handler function (**that we've written in our** `gravity.ts` **file**) that deals with the events. As well as two little helper functions - one for multiple events of the same type and another for creating a filled instance of ethereum.Event - `newMockEvent` (Although `changetype` is inherently unsafe, most events can be safely upcast to the desired ethereum.Event extending class as shown in the example below):
 ```typescript
 export function handleNewGravatar(event: NewGravatar): void {
-    let gravatar = new Gravatar(event.params.id.toHex())
-    gravatar.owner = event.params.owner
-    gravatar.displayName = event.params.displayName
-    gravatar.imageUrl = event.params.imageUrl
-    gravatar.save()
+  let gravatar = new Gravatar(event.params.id.toHex())
+  gravatar.owner = event.params.owner
+  gravatar.displayName = event.params.displayName
+  gravatar.imageUrl = event.params.imageUrl
+  gravatar.save()
 }
 
 export function handleNewGravatars(events: NewGravatar[]): void {
-    events.forEach(event => {
-        handleNewGravatar(event);
-    });
+  events.forEach(event => {
+    handleNewGravatar(event);
+  });
 }
 
 export function createNewGravatarEvent(id: i32, ownerAddress: string, displayName: string, imageUrl: string): NewGravatar {
-    let newGravatarEvent = changetype<NewGravatar>(newMockEvent()) 
-    newGravatarEvent.parameters = new Array();
-    let idParam = new ethereum.EventParam("id", ethereum.Value.fromI32(id));
-    let addressParam = new ethereum.EventParam("ownderAddress", ethereum.Value.fromAddress(Address.fromString(ownerAddress)));
-    let displayNameParam = new ethereum.EventParam("displayName", ethereum.Value.fromString(displayName));
-    let imageUrlParam = new ethereum.EventParam("imageUrl", ethereum.Value.fromString(imageUrl));
+  let newGravatarEvent = changetype<NewGravatar>(newMockEvent()) 
+  newGravatarEvent.parameters = new Array();
+  let idParam = new ethereum.EventParam("id", ethereum.Value.fromI32(id));
+  let addressParam = new ethereum.EventParam("ownderAddress", ethereum.Value.fromAddress(Address.fromString(ownerAddress)));
+  let displayNameParam = new ethereum.EventParam("displayName", ethereum.Value.fromString(displayName));
+  let imageUrlParam = new ethereum.EventParam("imageUrl", ethereum.Value.fromString(imageUrl));
 
-    newGravatarEvent.parameters.push(idParam);
-    newGravatarEvent.parameters.push(addressParam);
-    newGravatarEvent.parameters.push(displayNameParam);
-    newGravatarEvent.parameters.push(imageUrlParam);
+  newGravatarEvent.parameters.push(idParam);
+  newGravatarEvent.parameters.push(addressParam);
+  newGravatarEvent.parameters.push(displayNameParam);
+  newGravatarEvent.parameters.push(imageUrlParam);
 
-    return newGravatarEvent;
+  return newGravatarEvent;
 }
 ```
 That's all well and good, but what if we had more complex logic in the handler function? We would want to check that the event that gets saved in the store looks the way we want it to look like.
 
-What we need to do is create a test file, we can name it however we want - let's say `gravity.test.ts`, in our project. In our test file we need to define a function named `runTests()`, it's important that the function has that exact name (for now). This is an example of how our tests might look like:
+What we need to do is create a test file in the `tests/` subdirectory under the root folder. We can name it however we want as long as it ends with `.test.ts` - let's say `gravity.test.ts`. 
+
+**Tip:** You can also group test files into directories, for example:
+```bash
+tests/
+└── gravity
+    ├── foo.test.ts
+    └── bar.test.ts
+```
+Now, your test name would be `gravity` - the name of the directory.
 
 ```typescript
 import { clearStore, test, assert } from "matchstick-as/assembly/index";
@@ -263,61 +296,43 @@ import { Gravatar } from "../../generated/schema";
 import { NewGravatar } from "../../generated/Gravity/Gravity";
 import { createNewGravatarEvent, handleNewGravatars } from "../mappings/gravity";
 
-export function runTests(): void {
-  test("Can call mappings with custom events", () => {
-        // Initialise
-        let gravatar = new Gravatar("gravatarId0");
-        gravatar.save();
+test("Can call mappings with custom events", () => {
+  // Initialise
+  let gravatar = new Gravatar("gravatarId0");
+  gravatar.save();
 
-        // Call mappings
-        let newGravatarEvent = createNewGravatarEvent(
-            12345,
-            "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7",
-            "cap",
-            "pac",
-        );
+  // Call mappings
+  let newGravatarEvent = createNewGravatarEvent(
+      12345,
+      "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7",
+      "cap",
+      "pac",
+  );
 
-        let anotherGravatarEvent = createNewGravatarEvent(
-            3546,
-            "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7",
-            "cap",
-            "pac",
-        );
+  let anotherGravatarEvent = createNewGravatarEvent(
+      3546,
+      "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7",
+      "cap",
+      "pac",
+  );
 
-        handleNewGravatars([newGravatarEvent, anotherGravatarEvent]);
+  handleNewGravatars([newGravatarEvent, anotherGravatarEvent]);
 
-        assert.fieldEquals(
-            GRAVATAR_ENTITY_TYPE,
-            "gravatarId0",
-            "id",
-            "gravatarId0",
-        );
-        assert.fieldEquals(GRAVATAR_ENTITY_TYPE, "12345", "id", "12345");
-        assert.fieldEquals(GRAVATAR_ENTITY_TYPE, "3546", "id", "3546");
-        clearStore();
-    });
-  
-  test("Next test", () => {
-    //...
-  });
-}
-```
+  assert.fieldEquals(
+      GRAVATAR_ENTITY_TYPE,
+      "gravatarId0",
+      "id",
+      "gravatarId0",
+  );
+  assert.fieldEquals(GRAVATAR_ENTITY_TYPE, "12345", "id", "12345");
+  assert.fieldEquals(GRAVATAR_ENTITY_TYPE, "3546", "id", "3546");
+  clearStore();
+});
 
-❗ **IMPORTANT:** *In order for that to work, we need to import the `runTests()` function in our mappings file. It won't be used there, but it has to be imported there so that it can get picked up by Rust later when running the tests.*
+test("Next test", () => {
+  //...
+});
 
-You can import the tests wrapper function in your mappings file like this:
-
-```
-export { runTests } from "../tests/gravity.test.ts";
-```
-
-❗ **IMPORTANT:** *Currently there's an issue with using Matchstick when deploying your subgraph. Please only use Matchstick for local testing, and remove/comment out this line (`export { runTests } from "../tests/gravity.test.ts"`) once you're done. We expect to resolve this issue shortly, sorry for the inconvenience!*
-
-*If you don't remove that line, you will get the following error message when attempting to deploy your subgraph:*
-```
-/...
-Mapping terminated before handling trigger: oneshot canceled
-.../
 ```
 
 That's a lot to unpack! First off, an important thing to notice is that we're importing things from `matchstick-as`, that's our AssemblyScript helper library (distributed as an npm module), which you can check out [here](https://github.com/LimeChain/matchstick-as "here"). It provides us with useful testing methods and also defines the `test()` function which we will use to build our test blocks. The rest of it is pretty straightforward - here's what happens:
@@ -466,23 +481,21 @@ Having custom logs in the unit tests is exactly the same as logging in the mappi
 import { test } from "matchstick-as/assembly/index";
 import { log } from "matchstick-as/assembly/log";
 
-export function runTests(): void {
-    test("Success", () => {
-        log.success("Success!". []);
-    });
-    test("Error", () => {
-        log.error("Error :( ", []);
-    });
-    test("Debug", () => {
-        log.debug("Debugging...", []);
-    });
-    test("Info", () => {
-        log.info("Info!", []);
-    });
-    test("Warning", () => {
-        log.warning("Warning!", []);
-    });
-}
+test("Success", () => {
+    log.success("Success!". []);
+});
+test("Error", () => {
+    log.error("Error :( ", []);
+});
+test("Debug", () => {
+    log.debug("Debugging...", []);
+});
+test("Info", () => {
+    log.info("Info!", []);
+});
+test("Warning", () => {
+    log.warning("Warning!", []);
+});
 ```
 
 Users can also simulate a critical failure, like so:
@@ -503,9 +516,6 @@ The log output includes the test run duration. Here's an example:
 The **Matchstick** framework is currently live for beta testing. There is a lot of room for improvements to everything we've talked about above. We're trying to gather as much feedback from subgraph developers as we can, to understand how we can solve the problems they face when building subgraphs, as well as how we can make the overall testing process as smooth and streamlined as possible.
 
 There's a GitHub project board where we keep track of day to day work which you can check out [here](https://github.com/LimeChain/matchstick/projects/1 "here").
-
-Known issues:
-- When `runTests()` is imported in the mappings file the deployment to the hosted service will break. For now, it's required to remove/comment out the import.
 
 You can check out the full list of tasks [here](https://github.com/LimeChain/matchstick/projects/2).
 
