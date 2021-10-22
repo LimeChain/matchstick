@@ -20,8 +20,8 @@ mod subgraph_store;
 mod test_abstractions;
 mod writable_store;
 
-/// Returns the names and `fs::DirEntry`'s of the data sources that have tests written for in `tests/`.
-fn get_testable_sources() -> HashMap<String, fs::DirEntry> {
+/// Returns the names and `fs::DirEntry`'s of the testable sources under the `tests/` directory.
+fn get_testable() -> HashMap<String, fs::DirEntry> {
     let testable: HashMap<String, fs::DirEntry> = fs::read_dir("./tests/")
         .unwrap_or_else(|err| {
             panic!(
@@ -75,8 +75,8 @@ fn main() {
         .author("Limechain <https://limechain.tech>")
         .about("Unit testing framework for Subgraph development on The Graph protocol.")
         .arg(
-            Arg::with_name("datasources")
-                .help("Please specify the names of the data sources you would like to test.")
+            Arg::with_name("test_names")
+                .help("Please specify the names of the tests you would like to run.")
                 .index(1)
                 .multiple(true),
         )
@@ -98,9 +98,9 @@ ___  ___      _       _         _   _      _
 
     let now = Instant::now();
 
-    let datasources = {
-        let testable = get_testable_sources();
-        if let Some(vals) = matches.values_of("datasources") {
+    let test_sources = {
+        let testable = get_testable();
+        if let Some(vals) = matches.values_of("test_names") {
             let sources: HashSet<String> = vals
                 .collect::<Vec<&str>>()
                 .iter()
@@ -116,7 +116,7 @@ ___  ___      _       _         _   _      _
                 panic!(
                     "{}",
                     Log::Critical(format!(
-                        "The following datasources could not be recognized: {}",
+                        "The following tests could not be found: {}",
                         unrecog_sources.join(", "),
                     )),
                 );
@@ -138,7 +138,7 @@ ___  ___      _       _         _   _      _
         .optimize()
         .debug();
 
-    let outputs: HashMap<String, CompileOutput> = datasources
+    let outputs: HashMap<String, CompileOutput> = test_sources
         .into_iter()
         .map(|(name, entry)| (name.clone(), compiler.compile(name, entry)))
         .collect();
