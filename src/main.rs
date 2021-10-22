@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::fs;
 use std::io::{self, Write};
 use std::time::Instant;
 
@@ -19,44 +20,53 @@ mod subgraph_store;
 mod test_abstractions;
 mod writable_store;
 
-// TODO: WRONG! It should return only the data sources that have tests written for in `tests/`.
-/// Returns the names of the sources specified in the subgraph.yaml file.
-fn get_available_datasources() -> HashSet<String> {
-    let subgraph_yaml = std::fs::read_to_string("subgraph.yaml").unwrap_or_else(|err| {
-        panic!(
-            "{}",
-            Log::Critical(format!(
-                "Something went wrong while reading `subgraph.yaml`: {}",
-                err,
-            )),
-        );
-    });
-
-    let subgraph_yaml: serde_yaml::Value =
-        serde_yaml::from_str(&subgraph_yaml).unwrap_or_else(|err| {
+/// Returns the names and `fs::DirEntry`'s of the data sources that have tests written for in `tests/`.
+fn get_testable_sources() -> HashMap<String, fs::DirEntry> {
+    let testable: HashMap<String, fs::DirEntry> = fs::read_dir("./tests/")
+        .unwrap_or_else(|err| {
             panic!(
                 "{}",
                 Log::Critical(format!(
-                    "Something went wrong when parsing 'subgraph.yaml': {}",
+                    "Something went wrong while trying to read `tests/`: {}",
                     err,
                 )),
             );
-        });
-
-    let datasources: serde_yaml::Sequence = subgraph_yaml["dataSources"]
-        .as_sequence()
-        .unwrap_or_else(|| {
-            panic!(
-                "{}",
-                Log::Critical("Could not get the data sources from the yaml file."),
-            );
         })
-        .to_vec();
+        .filter_map(|entry| {
+            let entry = entry.unwrap_or_else(|err| panic!("{}", Log::Critical(err)));
+            let name = entry.file_name().to_str().unwrap().to_ascii_lowercase();
 
-    datasources
-        .iter()
-        .map(|src| src.get("name").unwrap().as_str().unwrap().to_lowercase())
-        .collect()
+            if name.ends_with(".test.ts") {
+                Some((name.replace(".test.ts", ""), entry))
+            } else if entry
+                .file_type()
+                .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
+                .is_dir()
+                && entry
+                    .path()
+                    .read_dir()
+                    .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
+                    .any(|entry| {
+                        entry
+                            .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
+                            .file_name()
+                            .to_str()
+                            .unwrap()
+                            .ends_with(".test.ts")
+                    })
+            {
+                Some((name, entry))
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    if testable.is_empty() {
+        panic!("{}", Log::Critical("No tests have been written yet."));
+    }
+
+    testable
 }
 
 fn main() {
@@ -89,16 +99,16 @@ ___  ___      _       _         _   _      _
     let now = Instant::now();
 
     let datasources = {
-        let available_sources = get_available_datasources();
+        let testable = get_testable_sources();
         if let Some(vals) = matches.values_of("datasources") {
             let sources: HashSet<String> = vals
                 .collect::<Vec<&str>>()
                 .iter()
-                .map(|&s| String::from(s).to_lowercase())
+                .map(|&s| String::from(s).to_ascii_lowercase())
                 .collect();
 
             let unrecog_sources: Vec<String> = sources
-                .difference(&available_sources)
+                .difference(&testable.keys().cloned().collect())
                 .map(String::from)
                 .collect();
 
@@ -112,9 +122,12 @@ ___  ___      _       _         _   _      _
                 );
             }
 
-            sources
+            testable
+                .into_iter()
+                .filter(|(name, _)| sources.contains(name))
+                .collect()
         } else {
-            available_sources
+            testable
         }
     };
 
@@ -126,8 +139,8 @@ ___  ___      _       _         _   _      _
         .debug();
 
     let outputs: HashMap<String, CompileOutput> = datasources
-        .iter()
-        .map(|s| (s.clone(), compiler.compile(s)))
+        .into_iter()
+        .map(|(name, entry)| (name.clone(), compiler.compile(name, entry)))
         .collect();
 
     if outputs.values().any(|output| !output.status.success()) {
@@ -151,8 +164,8 @@ ___  ___      _       _         _   _      _
 
     // A matchstick instance for each data source.
     let ms_instances: HashMap<String, MatchstickInstance<Chain>> = outputs
-        .iter()
-        .map(|(key, val)| (key.clone(), MatchstickInstance::<Chain>::new(&val.file)))
+        .into_iter()
+        .map(|(key, val)| (key, MatchstickInstance::<Chain>::new(&val.file)))
         .collect();
 
     // A test collection abstraction for each data source.
