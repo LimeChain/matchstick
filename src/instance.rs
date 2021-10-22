@@ -45,7 +45,7 @@ impl<C: Blockchain> MatchstickInstance<C> {
         let metrics_registry = Arc::new(MockMetricsRegistry::new());
 
         let stopwatch_metrics = StopwatchMetrics::new(
-            slog::Logger::root(slog::Discard, graph::prelude::o!()),
+            graph::slog::Logger::root(graph::slog::Discard, graph::prelude::o!()),
             deployment_id.clone(),
             metrics_registry.clone(),
         );

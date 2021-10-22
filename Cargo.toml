@@ -1,34 +1,27 @@
 [package]
 name = "matchstick"
-version = "0.1.3"
+version = "0.1.6"
 authors = ["LimeChain <limechain.tech>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
-graph-runtime-wasm = { git = "https://github.com/graphprotocol/graph-node", branch = "master" }
-graph-graphql = { git = "https://github.com/graphprotocol/graph-node", branch = "master" }
-ethabi = { git = "https://github.com/graphprotocol/ethabi.git", branch = "master" }
-graph = { git = "https://github.com/graphprotocol/graph-node", package = "graph", branch = "master" }
-graph-mock = { git = "https://github.com/graphprotocol/graph-node", package = "graph-mock", branch = "master" }
-graph-chain-ethereum = { git = "https://github.com/graphprotocol/graph-node", branch = "master" }
-graph-core = { git = "https://github.com/graphprotocol/graph-node", branch = "master" }
-graph-runtime-test = { git = "https://github.com/graphprotocol/graph-node" , package = "graph-runtime-test", branch = "master" }
-openssl = { version = "0.10", features = ["vendored"] }
-semver = "0.11.0"
-serde_json = "1.0.59"
-slog = "2.7.0"
-slog-term = "2.8.0"
+graph = { git = "https://github.com/graphprotocol/graph-node" }
+graph-core = { git = "https://github.com/graphprotocol/graph-node" }
+graph-chain-ethereum = { git = "https://github.com/graphprotocol/graph-node" }
+graph-graphql = { git = "https://github.com/graphprotocol/graph-node" }
+graph-mock = { git = "https://github.com/graphprotocol/graph-node" }
+graph-runtime-test = { git = "https://github.com/graphprotocol/graph-node" }
+graph-runtime-wasm = { git = "https://github.com/graphprotocol/graph-node" }
+ethabi = { git = "https://github.com/graphprotocol/ethabi", branch = "master" }
 wasmtime = "0.27.0"
 tokio = { version = "0.2.25", features = ["stream", "rt-threaded", "rt-util", "blocking", "time", "sync", "macros", "test-util", "net"] }
 anyhow = "1.0"
-indexmap = "1.6.2"
 lazy_static = "1.4.0"
 async-trait = "0.1.50"
 colored = "2"
 clap = "2.33.3"
-serde = "1.0"
 serde_yaml = "0.8.17"
-web3 = "0.17.0"
+serde_json = "1.0.59"
 
 [patch.crates-io]
 # Include protection against stack overflow when parsing from this PR: https://github.com/graphql-rust/graphql-parser/commit/45167b53e9533c331298683577ba8df7e43480ac
@@ -36,3 +29,4 @@ graphql-parser = { git = "https://github.com/graphql-rust/graphql-parser", rev =
 
 [dev-dependencies]
 serial_test = "0.5.1"
+web3 = "0.17.0"
