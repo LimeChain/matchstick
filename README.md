@@ -7,12 +7,12 @@
 ## Quick Start 🚀
 The release binary comes in three flavours - for **macOS**, **Linux** and **Windows**. To add **Matchstick** to your subgraph project just open up a terminal, navigate to the root folder of your project and simply follow these steps:
 
-❗ As of version 0.2.0, you no longer need to write the `runTests` function, just `test` blocks.
+❗ As of version 0.2.0, you no longer need to write the `runTests` function, just `test` blocks. <br>
 ❗ As of version 0.2.0, tests' directory structure has changed. Please refer to [Conventions](#Conventions) for more details.
 
-❗ If you don't have Postgres installed, you will need to install it.
+❗ If you don't have Postgres installed, you will need to install it. <br>
 As of version 0.1.3 Matchstick is updating API version from 0.0.4 to 0.0.5
-❗ Subgraphs with API version 0.0.4 mappings won't work with Matchstick version 0.1.3+
+❗ Subgraphs with API version 0.0.4 mappings won't work with Matchstick version 0.1.3+ <br>
 As of version 0.22.0 of graph-cli the `graph test` command has been changed - now it downloads the latest Matchstick binary and runs the tests of the given datasource and is now the only thing you need to run to use Matchstick! - example usage: `graph test Gravity`
 ❗ The next section (up to Install dependencies) is completely unnecessary (expect installing postgres) if you are using version 0.22.0+ of graph-cli.
 
