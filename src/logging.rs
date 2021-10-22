@@ -35,9 +35,9 @@ impl<T: fmt::Display> fmt::Display for Log<T> {
         let s = match self {
             Log::Critical(s) => format!("🆘 Critical: {}", s).bold().red(),
             Log::Error(s) => format!("❌ Error: {}", s).bold().red(),
-            Log::Warning(s) => format!("🟡 Warning: {}", s).yellow(),
+            Log::Warning(s) => format!("🚧 Warning: {}", s).yellow(),
             Log::Info(s) => format!("💬 Info: {}", s).italic(),
-            Log::Debug(s) => format!("🚧 Debug: {}", s).italic().cyan(),
+            Log::Debug(s) => format!("🛠  Debug: {}", s).italic().cyan(),
             Log::Success(s) => format!("✅ Success: {}", s).bold().green(),
         };
         write!(f, "{}", s)
