@@ -144,7 +144,6 @@ ___  ___      _       _         _   _      _
         .collect();
 
     if outputs.values().any(|output| !output.status.success()) {
-        // Print any output on `stderr`.
         outputs.values().for_each(|output| {
             io::stderr()
                 .write_all(&output.stderr)

@@ -1,13 +1,14 @@
 use graph::blockchain::Blockchain;
+use wasmtime::Func;
 
 use crate::{instance::MatchstickInstance, logging::Log};
 
 pub struct Test {
     name: String,
     should_fail: bool,
-    func: wasmtime::Func,
-    before_hooks: Vec<wasmtime::Func>,
-    after_hooks: Vec<wasmtime::Func>,
+    func: Func,
+    before_hooks: Vec<Func>,
+    after_hooks: Vec<Func>,
 }
 
 pub struct TestResult {
@@ -15,7 +16,7 @@ pub struct TestResult {
 }
 
 impl Test {
-    fn new(name: String, should_fail: bool, func: wasmtime::Func) -> Self {
+    fn new(name: String, should_fail: bool, func: Func) -> Self {
         Test {
             name,
             should_fail,
@@ -25,7 +26,7 @@ impl Test {
         }
     }
 
-    fn call_hooks(hooks: &[wasmtime::Func]) {
+    fn call_hooks(hooks: &[Func]) {
         hooks.iter().for_each(|h| {
             h.call(&[]).unwrap_or_else(|err| {
                 panic!(
