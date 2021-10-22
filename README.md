@@ -7,6 +7,9 @@
 ## Quick Start 🚀
 The release binary comes in three flavours - for **macOS**, **Linux** and **Windows**. To add **Matchstick** to your subgraph project just open up a terminal, navigate to the root folder of your project and simply follow these steps:
 
+❗ As of version 0.2.0, you no longer need to write the `runTests` function, just `test` blocks.
+❗ As of version 0.2.0, tests' directory structure has changed. Please refer to [Conventions](#Conventions) for more details.
+
 ❗ If you don't have Postgres installed, you will need to install it.
 As of version 0.1.3 Matchstick is updating API version from 0.0.4 to 0.0.5
 ❗ Subgraphs with API version 0.0.4 mappings won't work with Matchstick version 0.1.3+
@@ -94,6 +97,42 @@ For instance, in our [demo-subgraph example](https://github.com/LimeChain/demo-s
 `./matchstick`
 
 Now you can jump straight to the [test examples](https://github.com/LimeChain/demo-subgraph/blob/main/tests "examples of tests") in our [demo-subgraph](https://github.com/LimeChain/demo-subgraph "demo-subgraph") and start your journey in Subgraph unit testing!
+
+## Conventions
+
+### Directory structure
+
+For **Matchstick** to recognize your tests, you need to put them in a `tests/` folder in the root of your project.
+
+### Naming
+
+Your test file should start with a name of your chosing (for example the name of the tested data source) and end with `.test.ts`.
+For instance:
+```
+tests/
+└── gravity.test.ts
+
+1 file
+```
+
+---
+
+You can also group related tests and other files into folders.
+For example:
+```
+tests/
+└── gravity
+    ├── gravity.test.ts
+    └── utils.ts
+
+1 directory, 2 files
+```
+
+Now, under the `gravity` folder, all files ending with `.test.ts` are interpreted as a single test with the name `gravity` (the name of the folder).
+
+### Caveats
+
+ - **Matchstick** is case-insensitive regarding data sources names. Meaning, *Gravity = gravity = gRaVitY*.
 
 ## Building from source
 
