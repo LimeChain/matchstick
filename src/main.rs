@@ -177,6 +177,7 @@ ___  ___      _       _         _   _      _
     let mut failed_tests = 0;
     println!("{}", ("Igniting tests 🔥\n").to_string().bright_red());
     test_collectins.iter().for_each(|(key, val)| {
+        println!();
         Log::Info(format!("---> Data Source: {}", key)).println();
         for test in &val.tests {
             let res = test.run();

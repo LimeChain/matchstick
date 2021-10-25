@@ -49,7 +49,6 @@ impl Test {
         self.before();
 
         let mut success = true;
-        Log::Info(format!("-> Running {}", self.name)).println();
         // NOTE: Calling a test func should not fail for any other reason than:
         // - `should_fail` has been set to `true`
         // - the behaviour tested does not hold
@@ -61,9 +60,9 @@ impl Test {
         });
 
         if success {
-            Log::Success("Test has passed!".to_string()).println();
+            Log::Success(self.name.clone()).println();
         } else {
-            Log::Error("Test has failed!".to_string()).println();
+            Log::Error(self.name.clone()).println();
         }
 
         self.after();
