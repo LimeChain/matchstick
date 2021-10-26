@@ -1,23 +1,39 @@
-use std::fmt;
+use std::fmt::{self, Write};
 
 use colored::Colorize;
 
+/// Controls the indentation added and substracted.
 static MARGIN: usize = 2;
+/// Current indentation when logging.
 static mut INDENT: usize = 0;
 pub fn add_indent() {
-    unsafe {
-        INDENT += MARGIN;
-    }
+    unsafe { INDENT += MARGIN };
 }
 pub fn sub_indent() {
-    unsafe {
-        INDENT -= MARGIN;
-    }
+    unsafe { INDENT -= MARGIN };
 }
 pub fn clear_indent() {
+    unsafe { INDENT = 0 };
+}
+
+/// Whether to accumulate the logs or print them as they come.
+static mut ACCUM: bool = false;
+static mut LOGS: Vec<String> = vec![];
+/// Start accumulating the logs instead of printing them directly.
+pub fn accum() {
+    unsafe { ACCUM = true };
+}
+/// Flush the accumulated logs by producing a resulting string
+/// and exit the accumulation mode of logging.
+pub fn flush() -> String {
+    let mut buf = String::new();
     unsafe {
-        INDENT = 0;
-    }
+        ACCUM = false;
+        LOGS.iter()
+            .for_each(|s| writeln!(&mut buf, "{}", s).unwrap());
+        LOGS.clear();
+    };
+    buf
 }
 
 pub enum Log<T: fmt::Display> {
@@ -44,7 +60,14 @@ impl<T: fmt::Display> Log<T> {
     }
 
     pub fn println(&self) {
-        println!("{}", self);
+        let s = self.to_string();
+        unsafe {
+            if ACCUM {
+                LOGS.push(s);
+                return;
+            }
+        }
+        println!("{}", s);
     }
 }
 

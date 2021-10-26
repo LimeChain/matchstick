@@ -55,6 +55,7 @@ impl Test {
         // NOTE: Calling a test func should not fail for any other reason than:
         // - `should_fail` has been set to `true`
         // - the behaviour tested does not hold
+        logging::accum();
         logging::add_indent();
         self.func.call(&[]).unwrap_or_else(|_| {
             if !self.should_fail {
@@ -63,6 +64,7 @@ impl Test {
             Box::new([wasmtime::Val::I32(0)])
         });
         logging::sub_indent();
+        let logs = logging::flush();
 
         if passed {
             Log::Success(self.name.clone()).println();
@@ -70,16 +72,21 @@ impl Test {
             Log::Error(self.name.clone()).println();
         }
 
+        // Print the logs after the test result.
+        if !logs.is_empty() {
+            println!("{}", logs);
+        }
+
         self.after();
         TestResult { passed }
     }
 }
 
-pub struct TestCollection {
+pub struct TestSuite {
     pub tests: Vec<Test>,
 }
 
-impl<C: Blockchain> From<&MatchstickInstance<C>> for TestCollection {
+impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
     fn from(matchstick: &MatchstickInstance<C>) -> Self {
         let table = matchstick.instance.get_table("table").unwrap_or_else(|| {
             panic!(
@@ -91,7 +98,7 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestCollection {
             );
         });
 
-        let mut collection = TestCollection { tests: vec![] };
+        let mut suite = TestSuite { tests: vec![] };
         for (name, should_fail, func_idx) in &matchstick
             .instance_ctx
             .borrow()
@@ -104,7 +111,7 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestCollection {
             })
             .meta_tests
         {
-            collection.tests.push(Test::new(
+            suite.tests.push(Test::new(
                 name.to_string(),
                 *should_fail,
                 table
@@ -124,6 +131,6 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestCollection {
             ))
         }
 
-        collection
+        suite
     }
 }

@@ -104,7 +104,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         if let Log::Critical(_) = log {
             panic!("{}", log);
         } else {
-            println!("{}", log);
+            log.println();
         }
 
         Ok(())

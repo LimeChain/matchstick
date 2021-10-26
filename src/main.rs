@@ -10,14 +10,14 @@ use graph_chain_ethereum::Chain;
 use crate::compiler::{CompileOutput, Compiler};
 use crate::instance::MatchstickInstance;
 use crate::logging::Log;
-use crate::test_abstractions::TestCollection;
+use crate::test_suite::TestSuite;
 
 mod compiler;
 mod context;
 mod instance;
 mod logging;
 mod subgraph_store;
-mod test_abstractions;
+mod test_suite;
 mod writable_store;
 
 /// Returns the names and `fs::DirEntry`'s of the testable sources under the `tests/` directory.
@@ -75,8 +75,8 @@ fn main() {
         .author("Limechain <https://limechain.tech>")
         .about("Unit testing framework for Subgraph development on The Graph protocol.")
         .arg(
-            Arg::with_name("test_names")
-                .help("Please specify the names of the tests you would like to run.")
+            Arg::with_name("test_suites")
+                .help("Please specify the names of the test suites you would like to run.")
                 .index(1)
                 .multiple(true),
         )
@@ -100,7 +100,7 @@ ___  ___      _       _         _   _      _
 
     let test_sources = {
         let testable = get_testable();
-        if let Some(vals) = matches.values_of("test_names") {
+        if let Some(vals) = matches.values_of("test_suites") {
             let sources: HashSet<String> = vals
                 .collect::<Vec<&str>>()
                 .iter()
@@ -161,22 +161,22 @@ ___  ___      _       _         _   _      _
         );
     }
 
-    // A matchstick instance for each data source.
+    // A matchstick instance for each test suite wasm (the compiled source).
     let ms_instances: HashMap<String, MatchstickInstance<Chain>> = outputs
         .into_iter()
         .map(|(key, val)| (key, MatchstickInstance::<Chain>::new(&val.file)))
         .collect();
 
-    // A test collection abstraction for each data source.
-    let test_collectins: HashMap<String, TestCollection> = ms_instances
+    // A test suite abstraction for each instance.
+    let test_suites: HashMap<String, TestSuite> = ms_instances
         .iter()
-        .map(|(key, val)| (key.clone(), TestCollection::from(val)))
+        .map(|(key, val)| (key.clone(), TestSuite::from(val)))
         .collect();
 
     let mut passed_tests = 0;
     let mut failed_tests = 0;
     println!("{}", ("Igniting tests 🔥\n").to_string().bright_red());
-    test_collectins.iter().for_each(|(key, val)| {
+    test_suites.iter().for_each(|(key, val)| {
         println!("🧪 Running Test Suite: {}", key.blue());
         println!("{}\n", "=".repeat(50));
         logging::add_indent();
