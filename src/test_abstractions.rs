@@ -1,7 +1,10 @@
 use graph::blockchain::Blockchain;
 use wasmtime::Func;
 
-use crate::{instance::MatchstickInstance, logging::Log};
+use crate::{
+    instance::MatchstickInstance,
+    logging::{self, Log},
+};
 
 pub struct Test {
     name: String,
@@ -12,7 +15,7 @@ pub struct Test {
 }
 
 pub struct TestResult {
-    pub success: bool,
+    pub passed: bool,
 }
 
 impl Test {
@@ -48,25 +51,27 @@ impl Test {
     pub fn run(&self) -> TestResult {
         self.before();
 
-        let mut success = true;
+        let mut passed = true;
         // NOTE: Calling a test func should not fail for any other reason than:
         // - `should_fail` has been set to `true`
         // - the behaviour tested does not hold
+        logging::add_indent();
         self.func.call(&[]).unwrap_or_else(|_| {
             if !self.should_fail {
-                success = false;
+                passed = false;
             }
             Box::new([wasmtime::Val::I32(0)])
         });
+        logging::sub_indent();
 
-        if success {
+        if passed {
             Log::Success(self.name.clone()).println();
         } else {
             Log::Error(self.name.clone()).println();
         }
 
         self.after();
-        TestResult { success }
+        TestResult { passed }
     }
 }
 

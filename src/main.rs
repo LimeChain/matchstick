@@ -173,26 +173,28 @@ ___  ___      _       _         _   _      _
         .map(|(key, val)| (key.clone(), TestCollection::from(val)))
         .collect();
 
-    let mut successful_tests = 0;
+    let mut passed_tests = 0;
     let mut failed_tests = 0;
     println!("{}", ("Igniting tests 🔥\n").to_string().bright_red());
     test_collectins.iter().for_each(|(key, val)| {
-        println!();
-        Log::Info(format!("---> Data Source: {}", key)).println();
+        println!("🧪 Running Test Suite: {}", key.blue());
+        println!("{}\n", "=".repeat(50));
+        logging::add_indent();
         for test in &val.tests {
-            let res = test.run();
-            if res.success {
-                successful_tests += 1;
+            if test.run().passed {
+                passed_tests += 1;
             } else {
                 failed_tests += 1;
             }
         }
+        logging::clear_indent();
+        println!();
     });
 
     if failed_tests > 0 {
         let failed = format!("{} failed", failed_tests).red();
-        let passed = format!("{} passed", successful_tests).green();
-        let all = format!("{} total", failed_tests + successful_tests);
+        let passed = format!("{} passed", passed_tests).green();
+        let all = format!("{} total", failed_tests + passed_tests);
 
         println!("\n{}, {}, {}", failed, passed, all);
         println!("Program execution time: {:?}", now.elapsed());
@@ -203,7 +205,7 @@ ___  ___      _       _         _   _      _
 
     println!(
         "{} tests executed in {:?}.",
-        failed_tests + successful_tests,
+        failed_tests + passed_tests,
         now.elapsed(),
     );
 }

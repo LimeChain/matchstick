@@ -2,6 +2,24 @@ use std::fmt;
 
 use colored::Colorize;
 
+static MARGIN: usize = 2;
+static mut INDENT: usize = 0;
+pub fn add_indent() {
+    unsafe {
+        INDENT += MARGIN;
+    }
+}
+pub fn sub_indent() {
+    unsafe {
+        INDENT -= MARGIN;
+    }
+}
+pub fn clear_indent() {
+    unsafe {
+        INDENT = 0;
+    }
+}
+
 pub enum Log<T: fmt::Display> {
     Critical(T),
     Error(T),
@@ -34,12 +52,12 @@ impl<T: fmt::Display> fmt::Display for Log<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
             Log::Critical(s) => format!("🆘 Critical: {}", s).bold().red(),
-            Log::Error(s) => format!("❌ Error: {}", s).bold().red(),
+            Log::Error(s) => format!("❌ {}", s).bold().red(),
             Log::Warning(s) => format!("🚧 Warning: {}", s).yellow(),
             Log::Info(s) => format!("💬 Info: {}", s).italic(),
             Log::Debug(s) => format!("🛠  Debug: {}", s).italic().cyan(),
-            Log::Success(s) => format!("✅ Success: {}", s).bold().green(),
+            Log::Success(s) => format!("✅ {}", s).bold().green(),
         };
-        write!(f, "{}", s)
+        unsafe { write!(f, "{}{}", " ".repeat(INDENT), s) }
     }
 }
