@@ -2,7 +2,7 @@ use std::fmt::{self, Write};
 
 use colored::Colorize;
 
-/// Controls the indentation added and substracted.
+/// Controls the amount of indentation added and substracted.
 static MARGIN: usize = 2;
 /// Current indentation when logging.
 static mut INDENT: usize = 0;
@@ -29,8 +29,9 @@ pub fn flush() -> String {
     let mut buf = String::new();
     unsafe {
         ACCUM = false;
-        LOGS.iter()
-            .for_each(|s| writeln!(&mut buf, "{}", s).unwrap());
+        LOGS.iter().for_each(|s| {
+            writeln!(&mut buf, "{}", s).unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
+        });
         LOGS.clear();
     };
     buf
@@ -74,11 +75,11 @@ impl<T: fmt::Display> Log<T> {
 impl<T: fmt::Display> fmt::Display for Log<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
-            Log::Critical(s) => format!("🆘 Critical: {}", s).bold().red(),
+            Log::Critical(s) => format!("🆘 {}", s).bold().red(),
             Log::Error(s) => format!("❌ {}", s).bold().red(),
-            Log::Warning(s) => format!("🚧 Warning: {}", s).yellow(),
-            Log::Info(s) => format!("💬 Info: {}", s).italic(),
-            Log::Debug(s) => format!("🛠  Debug: {}", s).italic().cyan(),
+            Log::Warning(s) => format!("🚧 {}", s).yellow(),
+            Log::Info(s) => format!("💬 {}", s).italic(),
+            Log::Debug(s) => format!("🛠  {}", s).italic().cyan(),
             Log::Success(s) => format!("✅ {}", s).bold().green(),
         };
         unsafe { write!(f, "{}{}", " ".repeat(INDENT), s) }

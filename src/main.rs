@@ -80,6 +80,12 @@ fn main() {
                 .index(1)
                 .multiple(true),
         )
+        .arg(
+            Arg::with_name("verbose")
+                .help("Print the WASM backtrace on test failure.")
+                .long("verbose")
+                .short("v"),
+        )
         .get_matches();
 
     println!(
@@ -181,7 +187,7 @@ ___  ___      _       _         _   _      _
         println!("{}\n", "=".repeat(50));
         logging::add_indent();
         for test in &val.tests {
-            if test.run().passed {
+            if test.run(matches.is_present("verbose")).passed {
                 passed_tests += 1;
             } else {
                 failed_tests += 1;
