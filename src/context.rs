@@ -104,7 +104,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         if let Log::Critical(_) = log {
             panic!("{}", log);
         } else {
-            println!("{}", log);
+            log.println();
         }
 
         Ok(())
@@ -112,8 +112,10 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
     /// function logStore(): void
     pub fn log_store(&mut self) -> Result<(), HostExportError> {
-        Log::Debug(to_string_pretty(&self.store).expect("`store` can't be converted to JSON."))
-            .println();
+        Log::Debug(
+            to_string_pretty(&self.store).unwrap_or_else(|err| panic!("{}", Log::Critical(err))),
+        )
+        .println();
         Ok(())
     }
 

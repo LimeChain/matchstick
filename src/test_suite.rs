@@ -1,7 +1,10 @@
 use graph::blockchain::Blockchain;
 use wasmtime::Func;
 
-use crate::{instance::MatchstickInstance, logging::Log};
+use crate::{
+    instance::MatchstickInstance,
+    logging::{self, Log},
+};
 
 pub struct Test {
     name: String,
@@ -12,7 +15,7 @@ pub struct Test {
 }
 
 pub struct TestResult {
-    pub success: bool,
+    pub passed: bool,
 }
 
 impl Test {
@@ -45,37 +48,50 @@ impl Test {
         Test::call_hooks(&self.after_hooks);
     }
 
-    pub fn run(&self) -> TestResult {
+    pub fn run(&self, verbose: bool) -> TestResult {
         self.before();
 
-        let mut success = true;
-        Log::Info(format!("-> Running {}", self.name)).println();
+        let mut passed = true;
         // NOTE: Calling a test func should not fail for any other reason than:
         // - `should_fail` has been set to `true`
         // - the behaviour tested does not hold
-        self.func.call(&[]).unwrap_or_else(|_| {
+        logging::accum();
+        logging::add_indent();
+        self.func.call(&[]).unwrap_or_else(|err| {
             if !self.should_fail {
-                success = false;
+                passed = false;
+                if verbose {
+                    logging::add_indent();
+                    Log::Debug(err).println();
+                    logging::sub_indent();
+                }
             }
             Box::new([wasmtime::Val::I32(0)])
         });
+        logging::sub_indent();
+        let logs = logging::flush();
 
-        if success {
-            Log::Success("Test has passed!".to_string()).println();
+        if passed {
+            Log::Success(self.name.clone()).println();
         } else {
-            Log::Error("Test has failed!".to_string()).println();
+            Log::Error(self.name.clone()).println();
+        }
+
+        // Print the logs after the test result.
+        if !logs.is_empty() {
+            println!("{}", logs);
         }
 
         self.after();
-        TestResult { success }
+        TestResult { passed }
     }
 }
 
-pub struct TestCollection {
+pub struct TestSuite {
     pub tests: Vec<Test>,
 }
 
-impl<C: Blockchain> From<&MatchstickInstance<C>> for TestCollection {
+impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
     fn from(matchstick: &MatchstickInstance<C>) -> Self {
         let table = matchstick.instance.get_table("table").unwrap_or_else(|| {
             panic!(
@@ -87,7 +103,7 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestCollection {
             );
         });
 
-        let mut collection = TestCollection { tests: vec![] };
+        let mut suite = TestSuite { tests: vec![] };
         for (name, should_fail, func_idx) in &matchstick
             .instance_ctx
             .borrow()
@@ -100,7 +116,7 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestCollection {
             })
             .meta_tests
         {
-            collection.tests.push(Test::new(
+            suite.tests.push(Test::new(
                 name.to_string(),
                 *should_fail,
                 table
@@ -120,6 +136,6 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestCollection {
             ))
         }
 
-        collection
+        suite
     }
 }
