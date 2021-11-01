@@ -5,40 +5,15 @@
 👋 Welcome to **Matchstick** - a unit testing framework for The Graph protocol. Try out your mapping logic in a sandboxed environment and ensure your handlers run correctly when deploying your awesome subgraph!
 
 ## Quick Start 🚀
-The release binary comes in three flavours - for **macOS**, **Linux** and **Windows**. To add **Matchstick** to your subgraph project just open up a terminal, navigate to the root folder of your project and simply follow these steps:
+The release binary comes in three flavours - for **macOS**, **Linux** and **Windows**. To add **Matchstick** to your subgraph project just open up a terminal, navigate to the root folder of your project and simply run `graph test` - it downloads the latest Matchstick binary and runs the specified test or all tests in a test folder (or all existing tests if no datasource flag is specified). Example usage: `graph test Gravity`.
 
-❗ If you don't have Postgres installed, you will need to install it.
-
-❗ Subgraphs with API version 0.0.4 mappings won't work with Matchstick version 0.1.3+
-To run Matchstick, simply run `graph test` - now it downloads the latest Matchstick binary and runs the tests of the given datasource and is now the only thing you need to run to use Matchstick! - example usage: `graph test Gravity`
-
+❗ If you don't have Postgres installed, you will need to install it. More instructions below:
 
 ### macOS 
 
 ❗ Postgres installation command:
 ```
 brew install postgresql
-```
-
-If you are using macOS 11/Big Sur
-```
-curl -OL https://github.com/LimeChain/matchstick/releases/download/0.2.0/binary-macos-11 &&
-mv binary-macos-11 matchstick &&
-chmod a+x matchstick
-```
-
-If you are using macOS 10.15/Catalina
-```
-curl -OL https://github.com/LimeChain/matchstick/releases/download/0.2.0/binary-macos-10.15 &&
-mv binary-macos-10.15 matchstick &&
-chmod a+x matchstick
-```
-
-If you are using macOS 10.14/Mojave
-```
-curl -OL https://github.com/LimeChain/matchstick/releases/download/0.2.0/binary-macos-10.14 &&
-mv binary-macos-10.14 matchstick &&
-chmod a+x matchstick
 ```
 
 ### Linux 🐧
@@ -48,30 +23,11 @@ chmod a+x matchstick
 sudo apt install postgresql
 ```
 
-If you are using Ubuntu 20.04/Focal Fossa
-```
-curl -OL https://github.com/LimeChain/matchstick/releases/download/0.2.0/binary-linux-20 &&
-mv binary-linux-20 matchstick &&
-chmod a+x matchstick
-```
-
-If you are using Ubuntu 18.04/Bionic Beaver
-```
-curl -OL https://github.com/LimeChain/matchstick/releases/download/0.2.0/binary-linux-18 &&
-mv binary-linux-18 matchstick &&
-chmod a+x matchstick
-```
-
 ### Windows
 
 ❗ Postgres installation command:
 ```
 choco install postgresql12
-```
-
-```
-curl -OL https://github.com/LimeChain/matchstick/releases/download/0.2.0/binary-windows &&
-move binary-windows matchstick
 ```
 
 ### Install dependencies
@@ -80,18 +36,6 @@ In order to use the test helper methods and run the tests, you will need to inst
 ```
 yarn add matchstick-as
 ```
-
-### Run
-Just run the following in the root folder of your project:
-
-`./matchstick <ONE-OR-MORE-TEST-NAMES>`
-
-For instance, in our [demo-subgraph example](https://github.com/LimeChain/demo-subgraph "demo-subgraph"), the command looks like this:
-
-`./matchstick gravity`
-
-**Tip:** You can run all tests at once by simply invoking:
-`./matchstick`
 
 Now you can jump straight to the [test examples](https://github.com/LimeChain/demo-subgraph/blob/main/tests "examples of tests") in our [demo-subgraph](https://github.com/LimeChain/demo-subgraph "demo-subgraph") and start your journey in Subgraph unit testing!
 
