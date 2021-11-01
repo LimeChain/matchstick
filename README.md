@@ -37,7 +37,7 @@ In order to use the test helper methods and run the tests, you will need to inst
 yarn add matchstick-as
 ```
 
-Now you can jump straight to the [test examples](https://github.com/LimeChain/demo-subgraph/blob/main/tests "examples of tests") in our [demo-subgraph](https://github.com/LimeChain/demo-subgraph "demo-subgraph") and start your journey in Subgraph unit testing!
+Now you can jump straight to the [examples](https://github.com/LimeChain/demo-subgraph/tree/update-readme#example-usage- "examples of tests") in our [demo-subgraph](https://github.com/LimeChain/demo-subgraph "demo-subgraph") and start your journey in Subgraph unit testing!
 
 ## Building from source
 
