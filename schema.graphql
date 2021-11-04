@@ -1,0 +1,4 @@
+# used for testing
+type entity @entity {
+  id: ID!
+}

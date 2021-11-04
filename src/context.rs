@@ -24,7 +24,7 @@ use crate::logging::Log;
 
 lazy_static! {
     /// Special tokens...
-    static ref REVERTS_IDENTIFIER: Vec<Token> =
+    pub(crate) static ref REVERTS_IDENTIFIER: Vec<Token> =
         vec![Token::Bytes(vec![255, 255, 255, 255, 255, 255, 255])];
 
     /// The global GraphQL Schema from `schema.graphql`.
@@ -57,11 +57,10 @@ lazy_static! {
 pub struct MatchstickInstanceContext<C: Blockchain> {
     /// Handle to WASM Instance Context.
     pub wasm_ctx: WasmInstanceContext<C>,
-
     /// Store<EntityType, EntityTypeStore<EntityId, Entity<Field, Value>>>.
-    store: HashMap<String, HashMap<String, HashMap<String, Value>>>,
+    pub(crate) store: HashMap<String, HashMap<String, HashMap<String, Value>>>,
     /// Function-Return map storing mocked Smart Contracts' functions' return values.
-    fn_ret_map: HashMap<String, Vec<Token>>,
+    pub(crate) fn_ret_map: HashMap<String, Vec<Token>>,
     /// Registered tests metadata.
     pub meta_tests: Vec<(String, bool, u32)>,
 }
