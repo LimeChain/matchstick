@@ -18,7 +18,7 @@ pub fn clear_indent() {
 
 /// Whether to accumulate the logs or print them as they come.
 static mut ACCUM: bool = false;
-static mut LOGS: Vec<String> = vec![];
+pub(crate) static mut LOGS: Vec<String> = vec![];
 /// Start accumulating the logs instead of printing them directly.
 pub fn accum() {
     unsafe { ACCUM = true };
@@ -79,7 +79,7 @@ impl<T: fmt::Display> fmt::Display for Log<T> {
             Log::Error(s) => format!("❌ {}", s).bold().red(),
             Log::Warning(s) => format!("🚧 {}", s).yellow(),
             Log::Info(s) => format!("💬 {}", s).italic(),
-            Log::Debug(s) => format!("🛠  {}", s).italic().cyan(),
+            Log::Debug(s) => format!("🛠 {}", s).italic().cyan(),
             Log::Success(s) => format!("✅ {}", s).bold().green(),
         };
         unsafe { write!(f, "{}{}", " ".repeat(INDENT), s) }

@@ -1,6 +1,0 @@
-    test("Can test if mocked function reverts", () => {
-        createMockedFunction(Address.fromString("0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7"), "revert", "").reverts();
-        let val = ethereum.call(new ethereum.SmartContractCall("conName", Address.fromString("0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7"), "revert", "", []));
-
-        assert.equals(ethereum.Value.fromBoolean(true), ethereum.Value.fromBoolean(val == null));
-    });

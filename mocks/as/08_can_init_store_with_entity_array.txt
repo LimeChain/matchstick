@@ -1,8 +1,0 @@
-    test("Can initialise store with an array of Entity objects", () => {
-        let gravatar = new Gravatar("entryId");
-        gravatar.save();
-
-        assert.fieldEquals(GRAVATAR_ENTITY_TYPE, "entryId", "id", "entryId");
-
-        clearStore();
-    });

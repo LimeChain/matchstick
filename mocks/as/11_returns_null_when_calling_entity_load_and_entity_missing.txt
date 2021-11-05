@@ -1,4 +1,0 @@
-    test("Returns null when calling entity.load() if an entity doesn't exist", () => {
-        let retrievedGravatar = Gravatar.load("IDoNotExist");
-        assert.equals(ethereum.Value.fromBoolean(true), ethereum.Value.fromBoolean(retrievedGravatar == null));
-    });

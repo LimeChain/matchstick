@@ -15,9 +15,11 @@ use crate::test_suite::TestSuite;
 mod compiler;
 mod context;
 mod instance;
+mod integration_tests;
 mod logging;
 mod subgraph_store;
 mod test_suite;
+mod unit_tests;
 mod writable_store;
 
 /// Returns the names and `fs::DirEntry`'s of the testable sources under the `tests/` directory.
