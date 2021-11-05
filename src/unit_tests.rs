@@ -100,6 +100,7 @@ mod unit_tests {
     fn register_test_basic_test() {
         let mut context = get_context();
 
+        context.meta_tests = vec!();
         let initial_asc_string = asc_string_from_str("test");
         let name_ptr = AscPtr::alloc_obj(initial_asc_string, &mut context.wasm_ctx)
             .expect("Couldn't unwrap pointer.");

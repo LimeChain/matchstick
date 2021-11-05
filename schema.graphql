@@ -1,4 +1,303 @@
-# used for testing
 type entity @entity {
   id: ID!
+}
+
+type Gravatar @entity {
+  id: ID!
+  owner: Bytes!
+  displayName: String!
+  imageUrl: String!
+}
+
+type Transaction @entity {
+  id: ID!
+  displayName: String!
+  imageUrl: String!
+}
+
+enum TraitType {
+  TYPE
+  ACCESSORY
+}
+
+enum EventType {
+  ASSIGN
+  TRANSFER
+  ASK_CREATED
+  ASK_REMOVED
+  BID_CREATED
+  BID_REMOVED
+  SALE
+  WRAP
+  UNWRAP
+}
+
+enum OfferType {
+  BID
+  ASK
+}
+
+interface NFT {
+  id: ID!
+  contract: Contract
+  tokenId: BigInt!
+  owner: Account!
+  events: [Event!]! @derivedFrom(field: "nft")
+}
+
+interface Event {
+  id: ID!
+  contract: Contract
+  nft: NFT!
+  blockNumber: BigInt!
+  blockHhash: Bytes!
+  txHash: Bytes!
+  timestamp: BigInt!
+  type: EventType!
+  from: Account
+  to: Account
+  amount: BigInt
+}
+
+type Account @entity {
+  "Ethereum Address"
+  id: ID!
+
+  "All Punks owned by Account"
+  punksOwned: [Punk!] @derivedFrom(field: "owner")
+
+  "Purchases by Account"
+  bought: [Sale!]! @derivedFrom(field: "to")
+
+  "All Punks owned by Account"
+  nftsOwned: [NFT!]! @derivedFrom(field: "owner")
+
+  "Punks assigned to account (if any)"
+  assigned: [Assign!]! @derivedFrom(field: "to")
+
+  "Punk transfer by Account"
+  sent: [Transfer!]! @derivedFrom(field: "from")
+
+  received: [Transfer!]! @derivedFrom(field: "to")
+
+  "Query bids to Account or by Account"
+  bids: [Bid!]! @derivedFrom(field: "from")
+
+  "Punks offered for sale by Account"
+  asks: [Ask!]! @derivedFrom(field: "from")
+
+  numberOfPunksOwned: BigInt!
+}
+
+type Punk implements NFT @entity {
+  "Punk"
+  id: ID!
+  transferedTo: Account
+  assignedTo: Account
+  purchasedBy: Account
+  metadata: MetaData
+  contract: Contract
+  tokenId: BigInt!
+  owner: Account!
+  wrapped: Boolean!
+  events: [Event!]! @derivedFrom(field: "nft")
+}
+
+type MetaData @entity {
+  id: ID!
+  tokenId: BigInt!
+  tokenURI: String!
+  imageURI: String!
+  contractURI: String!
+  punk: Punk!
+  traits: [Trait!]
+}
+
+type Trait @entity {
+  id: ID!
+  type: TraitType!
+  metaDatas: [MetaData!]! @derivedFrom(field: "traits")
+  numberOfNfts: BigInt!
+}
+
+interface Offer {
+  id: ID!
+  from: Account!
+  open: Boolean!
+  amount: BigInt!
+  nft: NFT!
+  created: Event!
+  removed: Event
+  offerType: OfferType!
+}
+
+type Ask implements Offer @entity {
+  id: ID!
+  from: Account!
+  open: Boolean!
+  amount: BigInt!
+  nft: NFT!
+  created: Event!
+  removed: Event
+  offerType: OfferType!
+}
+
+type Bid implements Offer @entity {
+  id: ID!
+  from: Account!
+  open: Boolean!
+  amount: BigInt!
+  nft: NFT!
+  created: Event!
+  removed: Event
+  offerType: OfferType!
+}
+
+type Contract @entity {
+  "Contract Address"
+  id: ID!
+
+  "Token Symbol"
+  symbol: String
+
+  "Token name"
+  name: String
+
+  "Total supply of tokens"
+  totalSupply: BigInt!
+
+  totalSales: BigInt!
+
+  totalAmountTraded: BigInt!
+
+  "The hash of the composite image of all the Punks"
+  imageHash: String
+}
+
+type Assign implements Event @entity {
+  id: ID!
+  contract: Contract
+  nft: NFT!
+  blockNumber: BigInt!
+  blockHhash: Bytes!
+  txHash: Bytes!
+  timestamp: BigInt!
+  type: EventType!
+  to: Account
+  amount: BigInt
+  from: Account
+}
+
+type Sale implements Event @entity {
+  id: ID!
+  to: Account
+  amount: BigInt
+  from: Account
+  contract: Contract
+  nft: NFT!
+  blockNumber: BigInt!
+  blockHhash: Bytes!
+  txHash: Bytes!
+  timestamp: BigInt!
+  type: EventType!
+}
+
+type AskCreated implements Event @entity {
+  id: ID!
+  from: Account
+  to: Account
+  amount: BigInt
+  contract: Contract
+  nft: NFT!
+  blockNumber: BigInt!
+  blockHhash: Bytes!
+  txHash: Bytes!
+  timestamp: BigInt!
+  type: EventType!
+}
+
+type BidCreated implements Event @entity {
+  id: ID!
+  from: Account
+  to: Account
+  amount: BigInt
+  contract: Contract
+  nft: NFT!
+  blockNumber: BigInt!
+  blockHhash: Bytes!
+  txHash: Bytes!
+  timestamp: BigInt!
+  type: EventType!
+}
+
+type BidRemoved implements Event @entity {
+  id: ID!
+  from: Account
+  to: Account
+  amount: BigInt
+  bid: BidCreated!
+  contract: Contract
+  nft: NFT!
+  blockNumber: BigInt!
+  blockHhash: Bytes!
+  txHash: Bytes!
+  timestamp: BigInt!
+  type: EventType!
+}
+
+type AskRemoved implements Event @entity {
+  id: ID!
+  ask: AskCreated!
+  from: Account
+  to: Account
+  amount: BigInt
+  contract: Contract
+  nft: NFT!
+  blockNumber: BigInt!
+  blockHhash: Bytes!
+  txHash: Bytes!
+  timestamp: BigInt!
+  type: EventType!
+}
+
+type Transfer implements Event @entity {
+  id: ID!
+  from: Account
+  to: Account
+  amount: BigInt
+  contract: Contract
+  nft: NFT!
+  blockNumber: BigInt!
+  blockHhash: Bytes!
+  txHash: Bytes!
+  timestamp: BigInt!
+  type: EventType!
+}
+
+type Wrap implements Event @entity {
+  id: ID!
+  from: Account
+  to: Account
+  amount: BigInt
+  contract: Contract
+  nft: NFT!
+  blockNumber: BigInt!
+  blockHhash: Bytes!
+  txHash: Bytes!
+  timestamp: BigInt!
+  type: EventType!
+}
+
+type Unwrap implements Event @entity {
+  id: ID!
+  from: Account
+  to: Account
+  amount: BigInt
+  contract: Contract
+  nft: NFT!
+  blockNumber: BigInt!
+  blockHhash: Bytes!
+  txHash: Bytes!
+  timestamp: BigInt!
+  type: EventType!
 }

@@ -1,3 +1,0 @@
-    test("Can add, get, assert and remove from store", () => {
-        store.remove(GRAVATAR_ENTITY_TYPE, "23");
-    });

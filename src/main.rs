@@ -20,6 +20,7 @@ mod subgraph_store;
 mod test_suite;
 mod unit_tests;
 mod writable_store;
+mod integration_tests;
 
 /// Returns the names and `fs::DirEntry`'s of the testable sources under the `tests/` directory.
 fn get_testable() -> HashMap<String, fs::DirEntry> {

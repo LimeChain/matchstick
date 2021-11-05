@@ -1,7 +1,0 @@
-    test("Can use entity.load() to retrieve entity from store", () => {
-        let gravatar = new Gravatar("gravatarId0");
-        gravatar.save();
-
-        let retrievedGravatar = Gravatar.load("gravatarId0");
-        assert.equals(ethereum.Value.fromString("gravatarId0"), ethereum.Value.fromString(retrievedGravatar!.get("id")!.toString()));
-    });
