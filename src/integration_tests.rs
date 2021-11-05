@@ -1,10 +1,10 @@
 #[cfg(test)]
 mod integration_tests {
-    use serial_test::serial;
     use graph_chain_ethereum::Chain;
+    use serial_test::serial;
 
-    use crate::MatchstickInstance;
     use crate::test_suite::TestSuite;
+    use crate::MatchstickInstance;
 
     #[test]
     #[serial]
