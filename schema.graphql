@@ -1,3 +1,5 @@
+# FILE REQUIRED FOR TESTING
+
 type entity @entity {
   id: ID!
 }
