@@ -11,6 +11,8 @@ use crate::compiler::{CompileOutput, Compiler};
 use crate::instance::MatchstickInstance;
 use crate::logging::Log;
 use crate::test_suite::TestSuite;
+use graph::prelude::serde_yaml;
+use graph::prelude::serde_yaml::{Value, Sequence};
 
 mod compiler;
 mod context;
@@ -71,22 +73,51 @@ fn get_testable() -> HashMap<String, fs::DirEntry> {
     testable
 }
 
+fn generate_coverage_report() {
+    // TODO: Get subgraph
+    let subgraph_yaml_contents = fs::read_to_string("subgraph.yaml")
+        .expect("Something went wrong reading the 'subgraph.yaml' file");
+    let subgraph_yaml: Value = serde_yaml::from_str(&subgraph_yaml_contents)
+        .expect("Something went wrong when parsing 'subgraph.yaml'. Please ensure that the file exists and is valid.");
+    let datasources: Sequence = subgraph_yaml.get("dataSources").unwrap().as_sequence().unwrap().to_vec();
+
+    // TODO: value needs to be array of strings, also need smart formatting
+    let mut handlers: HashMap<String, String> = HashMap::new();
+    for d in datasources {
+        let events = d.get("mapping").unwrap().get("eventHandlers").unwrap().as_sequence().unwrap();
+        for e in events {
+            handlers.insert(serde_json::to_string(&d).unwrap(), serde_json::to_string(&e).unwrap());
+        }
+    }
+
+    println!("{:?}", handlers);
+
+}
+
 fn main() {
     let matches = App::new("Matchstick 🔥")
         .version("0.2.0")
         .author("Limechain <https://limechain.tech>")
         .about("Unit testing framework for Subgraph development on The Graph protocol.")
         .arg(
-            Arg::with_name("test_suites")
-                .help("Please specify the names of the test suites you would like to run.")
-                .index(1)
-                .multiple(true),
-        )
-        .arg(
             Arg::with_name("verbose")
                 .help("Print the WASM backtrace on test failure.")
                 .long("verbose")
                 .short("v"),
+        )
+        .arg(
+            Arg::with_name("coverage")
+                .help("Generate code coverage report.")
+                .long("coverage")
+                .short("c")
+                .takes_value(false)
+                .required(false)
+        )
+        .arg(
+            Arg::with_name("test_suites")
+                .help("Please specify the names of the test suites you would like to run.")
+                .index(1)
+                .multiple(true)
         )
         .get_matches();
 
@@ -167,6 +198,14 @@ ___  ___      _       _         _   _      _
             "{}",
             Log::Critical("Please attend to the compilation errors above!"),
         );
+    }
+
+    let coverage = matches.is_present("coverage");
+    if coverage {
+        println!("{}", ("Generating coverage report 📝\n").to_string().bright_red());
+        generate_coverage_report();
+
+        return;
     }
 
     // A matchstick instance for each test suite wasm (the compiled source).
