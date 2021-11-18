@@ -129,7 +129,7 @@ ___  ___      _       _         _   _      _
         .get("file")
         .expect("Couldn't get schema file location");
     SCHEMA_LOCATION.with(|path| *path.borrow_mut() = file_location.as_str().unwrap().to_string());
-    let default_tests_folder = &Value::String(String::from("./tests/".to_string()));
+    let default_tests_folder = &Value::String(String::from("./tests/"));
     let tests_folder = subgraph_yaml.get("testsFolder").unwrap_or_else(|| {
         println!("{}", ("If you want to change the default tests folder location (./tests/) you can add 'testsFolder: ./example/path' to the outermost level of your subgraph.yaml").cyan());
         default_tests_folder
