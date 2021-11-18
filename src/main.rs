@@ -1,8 +1,8 @@
+use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::io::{self, Write};
 use std::time::Instant;
-use std::cell::RefCell;
 
 use clap::{App, Arg};
 use colored::Colorize;
@@ -122,9 +122,12 @@ ___  ___      _       _         _   _      _
         ❌ ❌ ❌  Something went wrong when parsing 'subgraph.yaml'.
         Please ensure that the file exists and that the yaml is valid."#,
     );
-    let schema = subgraph_yaml.get("schema")
+    let schema = subgraph_yaml
+        .get("schema")
         .expect("Couldn't get schema from yaml file.");
-    let file_location = schema.get("file").expect("Couldn't get schema file location");
+    let file_location = schema
+        .get("file")
+        .expect("Couldn't get schema file location");
     SCHEMA_LOCATION.with(|path| *path.borrow_mut() = file_location.as_str().unwrap().to_string());
     let default_tests_folder = &Value::String(String::from("./tests/".to_string()));
     let tests_folder = subgraph_yaml.get("testsFolder").unwrap_or_else(|| {

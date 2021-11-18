@@ -43,7 +43,7 @@ lazy_static! {
                 );
             });
         });
-    
+
         schema::parse_schema::<String>(&s).unwrap_or_else(|err| {
             panic!(
                 "{}",
