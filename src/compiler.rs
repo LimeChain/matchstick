@@ -90,7 +90,7 @@ impl Compiler {
             panic!(
                 "{}",
                 Log::Critical(format!(
-                    "Something went wrong when trying to crate `./tests/.bin/`: {}",
+                    "Something went wrong when trying to create `./tests/.bin/`: {}",
                     err,
                 )),
             );

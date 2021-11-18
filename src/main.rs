@@ -2,10 +2,12 @@ use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::io::{self, Write};
 use std::time::Instant;
+use std::cell::RefCell;
 
 use clap::{App, Arg};
 use colored::Colorize;
 use graph_chain_ethereum::Chain;
+use serde_yaml::Value;
 
 use crate::compiler::{CompileOutput, Compiler};
 use crate::instance::MatchstickInstance;
@@ -22,47 +24,54 @@ mod test_suite;
 mod unit_tests;
 mod writable_store;
 
-/// Returns the names and `fs::DirEntry`'s of the testable sources under the `tests/` directory.
-fn get_testable() -> HashMap<String, fs::DirEntry> {
-    let testable: HashMap<String, fs::DirEntry> = fs::read_dir("./tests/")
-        .unwrap_or_else(|err| {
-            panic!(
-                "{}",
-                Log::Critical(format!(
-                    "Something went wrong while trying to read `tests/`: {}",
-                    err,
-                )),
-            );
-        })
-        .filter_map(|entry| {
-            let entry = entry.unwrap_or_else(|err| panic!("{}", Log::Critical(err)));
-            let name = entry.file_name().to_str().unwrap().to_ascii_lowercase();
+thread_local!(pub(crate) static SCHEMA_LOCATION: RefCell<String> = RefCell::new("".to_string()));
+thread_local!(pub(crate) static TESTS_LOCATION: RefCell<String> = RefCell::new("".to_string()));
 
-            if name.ends_with(".test.ts") {
-                Some((name.replace(".test.ts", ""), entry))
-            } else if entry
-                .file_type()
-                .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
-                .is_dir()
-                && entry
-                    .path()
-                    .read_dir()
+/// Returns the names and `fs::DirEntry`'s of the testable sources under the selected tests directory.
+fn get_testable() -> HashMap<String, fs::DirEntry> {
+    let mut testable: HashMap<String, fs::DirEntry> = HashMap::new();
+    TESTS_LOCATION.with(|path| {
+        testable = fs::read_dir(&*path.borrow())
+            .unwrap_or_else(|err| {
+                panic!(
+                    "{}",
+                    Log::Critical(format!(
+                        "Something went wrong while trying to read `{}`: {}",
+                        &*path.borrow(),
+                        err,
+                    )),
+                );
+            })
+            .filter_map(|entry| {
+                let entry = entry.unwrap_or_else(|err| panic!("{}", Log::Critical(err)));
+                let name = entry.file_name().to_str().unwrap().to_ascii_lowercase();
+
+                if name.ends_with(".test.ts") {
+                    Some((name.replace(".test.ts", ""), entry))
+                } else if entry
+                    .file_type()
                     .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
-                    .any(|entry| {
-                        entry
-                            .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
-                            .file_name()
-                            .to_str()
-                            .unwrap()
-                            .ends_with(".test.ts")
-                    })
-            {
-                Some((name, entry))
-            } else {
-                None
-            }
-        })
-        .collect();
+                    .is_dir()
+                    && entry
+                        .path()
+                        .read_dir()
+                        .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
+                        .any(|entry| {
+                            entry
+                                .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
+                                .file_name()
+                                .to_str()
+                                .unwrap()
+                                .ends_with(".test.ts")
+                        })
+                {
+                    Some((name, entry))
+                } else {
+                    None
+                }
+            })
+            .collect();
+    });
 
     if testable.is_empty() {
         panic!("{}", Log::Critical("No tests have been written yet."));
@@ -105,6 +114,24 @@ ___  ___      _       _         _   _      _
     );
 
     let now = Instant::now();
+
+    let subgraph_yaml_contents = std::fs::read_to_string("subgraph.yaml")
+        .expect("❌ ❌ ❌  Something went wrong reading the 'subgraph.yaml' file.");
+    let subgraph_yaml: Value = serde_yaml::from_str(&subgraph_yaml_contents).expect(
+        r#"
+        ❌ ❌ ❌  Something went wrong when parsing 'subgraph.yaml'.
+        Please ensure that the file exists and that the yaml is valid."#,
+    );
+    let schema = subgraph_yaml.get("schema")
+        .expect("Couldn't get schema from yaml file.");
+    let file_location = schema.get("file").expect("Couldn't get schema file location");
+    SCHEMA_LOCATION.with(|path| *path.borrow_mut() = file_location.as_str().unwrap().to_string());
+    let default_tests_folder = &Value::String(String::from("./tests/".to_string()));
+    let tests_folder = subgraph_yaml.get("testsFolder").unwrap_or_else(|| {
+        println!("{}", ("If you want to change the default tests folder location (./tests/) you can add 'testsFolder: ./example/path' to the outermost level of your subgraph.yaml").cyan());
+        default_tests_folder
+    });
+    TESTS_LOCATION.with(|path| *path.borrow_mut() = tests_folder.as_str().unwrap().to_string());
 
     let test_sources = {
         let testable = get_testable();

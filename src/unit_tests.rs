@@ -20,9 +20,10 @@ mod unit_tests {
     use crate::context::MatchstickInstanceContext;
     use crate::context::REVERTS_IDENTIFIER;
     use crate::logging::{accum, flush, LOGS};
-    use crate::MatchstickInstance;
+    use crate::{MatchstickInstance, SCHEMA_LOCATION};
 
     fn get_context() -> MatchstickInstanceContext<Chain> {
+        SCHEMA_LOCATION.with(|path| *path.borrow_mut() = "./mocks/schema.graphql".to_string());
         let module = <MatchstickInstance<Chain>>::new("mocks/wasm/Gravity.wasm");
         let context = module
             .instance_ctx
@@ -62,7 +63,6 @@ mod unit_tests {
         accum();
         context.log(3, pointer).expect("Couldn't call log.");
 
-        // let mut logs = LOGS.lock().expect("Cannot access LOGS.");
         unsafe {
             assert_eq!(LOGS.len(), 1);
             assert!(LOGS.pop().unwrap().contains("log message"));
