@@ -24,12 +24,12 @@ mod unit_tests {
 
     fn get_context() -> MatchstickInstanceContext<Chain> {
         let module = <MatchstickInstance<Chain>>::new("mocks/wasm/Gravity.wasm");
-        let context = module
+        
+        module
             .instance_ctx
             .take()
             .take()
-            .expect("Couldn't get context from module.");
-        return context;
+            .expect("Couldn't get context from module.")
     }
 
     fn asc_string_from_str(initial_string: &str) -> AscString {
@@ -37,7 +37,7 @@ mod unit_tests {
         let mut u16_vector = vec![];
         utf_16_iterator.for_each(|element| u16_vector.push(element));
         let version = get_version();
-        return AscString::new(&u16_vector, version.clone()).expect("Couldn't create AscString.");
+        AscString::new(&u16_vector, version).expect("Couldn't create AscString.")
     }
 
     fn get_version() -> Version {
