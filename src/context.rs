@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use ethabi::{Address, Token};
 use graph::{
     blockchain::Blockchain,
-    data::store::Value,
+    data::{graphql::ext::DirectiveFinder, store::Value},
     prelude::Entity,
     runtime::{asc_get, asc_new, try_asc_get, AscPtr, HostExportError},
 };
@@ -301,7 +301,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             })
             .fields
             .iter()
-            .filter(|&f| matches!(f.field_type, schema::Type::NonNullType(..)));
+            .filter(|&f| matches!(f.field_type, schema::Type::NonNullType(..)) && f.find_directive("derivedFrom").is_none());
 
         for f in required_fields {
             let warn = |s: String| Log::Warning(s).println();
