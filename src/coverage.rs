@@ -202,9 +202,18 @@ pub fn generate_coverage_report() {
     let mut global_handlers_count: i32 = 0;
     let mut global_handlers_called: i32 = 0;
 
-    for f in files {
-        let destination: String = f.chars().take(f.len() - 2).collect::<String>().to_string() + "t";
-        let temp1 = f.chars().take(f.len() - 5).collect::<String>().to_string();
+    for file in files {
+        let destination: String = file
+            .chars()
+            .take(file.len() - 2)
+            .collect::<String>()
+            .to_string()
+            + "t";
+        let temp1 = file
+            .chars()
+            .take(file.len() - 5)
+            .collect::<String>()
+            .to_string();
         let temp2 = temp1.split('/').collect::<Vec<&str>>();
         let f_name = temp2
             .last()
@@ -212,7 +221,7 @@ pub fn generate_coverage_report() {
 
         let convert_command = format!(
             "{} {} {} {}",
-            "tests/.tools/wabt/build/wasm2wat", f, "-o", destination
+            "tests/.tools/wabt/build/wasm2wat", file, "-o", destination
         );
 
         let options = ScriptOptions::new();
@@ -222,12 +231,12 @@ pub fn generate_coverage_report() {
 
         let wat_contents = fs::read_to_string(&destination).expect("Couldn't read wat file.");
 
-        for d in &datasources {
-            if *f_name != d.mapping.name {
+        for datasource in &datasources {
+            if *f_name != datasource.mapping.name {
                 continue;
             }
 
-            let d_name = d
+            let d_name = datasource
                 .name
                 .split('\n')
                 .collect::<String>()
@@ -238,15 +247,16 @@ pub fn generate_coverage_report() {
             let mut called: i32 = 0;
             let mut all_handlers: i32 = 0;
 
-            all_handlers += d.mapping.event_handlers.len() as i32;
+            all_handlers += datasource.mapping.event_handlers.len() as i32;
 
-            let called_event_handlers = inspect_handlers(&wat_contents, &d.mapping.event_handlers);
+            let called_event_handlers =
+                inspect_handlers(&wat_contents, &datasource.mapping.event_handlers);
             called += called_event_handlers;
 
-            all_handlers += d.mapping.call_handlers.len() as i32;
+            all_handlers += datasource.mapping.call_handlers.len() as i32;
 
             let called_function_handlers =
-                inspect_handlers(&wat_contents, &d.mapping.call_handlers);
+                inspect_handlers(&wat_contents, &datasource.mapping.call_handlers);
             called += called_function_handlers;
 
             global_handlers_count += all_handlers;
