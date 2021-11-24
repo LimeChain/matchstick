@@ -72,7 +72,7 @@ fn install_wabt() {
     run_or_exit(
         r#"
          cd tests/.tools/wabt &&
-         mkdir build &&
+         mkdir -p build &&
          cd build &&
          cmake .. &&
          cmake --build . &&
