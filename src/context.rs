@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use ethabi::{Address, Token};
 use graph::{
     blockchain::Blockchain,
-    data::store::Value,
+    data::{graphql::ext::DirectiveFinder, store::Value},
     prelude::Entity,
     runtime::{asc_get, asc_new, try_asc_get, AscPtr, HostExportError},
 };
@@ -21,6 +21,7 @@ use lazy_static::lazy_static;
 use serde_json::to_string_pretty;
 
 use crate::logging::Log;
+use crate::SCHEMA_LOCATION;
 
 lazy_static! {
     /// Special tokens...
@@ -29,14 +30,18 @@ lazy_static! {
 
     /// The global GraphQL Schema from `schema.graphql`.
     static ref SCHEMA: schema::Document<'static, String> = {
-        let s = std::fs::read_to_string("schema.graphql").unwrap_or_else(|err| {
-            panic!(
-                "{}",
-                Log::Critical(format!(
-                    "Something went wrong when trying to read `schema.graphql`: {}",
-                    err,
-                )),
-            );
+        let mut s = "".to_string();
+        SCHEMA_LOCATION.with(|path| {
+            s = std::fs::read_to_string(&*path.borrow()).unwrap_or_else(|err| {
+                panic!(
+                    "{}",
+                    Log::Critical(format!(
+                        "Something went wrong when trying to read `{}`: {}",
+                        &*path.borrow(),
+                        err,
+                    )),
+                );
+            });
         });
 
         schema::parse_schema::<String>(&s).unwrap_or_else(|err| {
@@ -296,7 +301,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             })
             .fields
             .iter()
-            .filter(|&f| matches!(f.field_type, schema::Type::NonNullType(..)));
+            .filter(|&f| matches!(f.field_type, schema::Type::NonNullType(..)) && f.find_directive("derivedFrom").is_none());
 
         for f in required_fields {
             let warn = |s: String| Log::Warning(s).println();

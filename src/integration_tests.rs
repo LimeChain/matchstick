@@ -4,11 +4,12 @@ mod integration_tests {
     use serial_test::serial;
 
     use crate::test_suite::TestSuite;
-    use crate::MatchstickInstance;
+    use crate::{MatchstickInstance, SCHEMA_LOCATION};
 
     #[test]
     #[serial]
     fn run_all_gravity_demo_subgraph_tests() {
+        SCHEMA_LOCATION.with(|path| *path.borrow_mut() = "./mocks/schema.graphql".to_string());
         let module = <MatchstickInstance<Chain>>::new("mocks/wasm/Gravity.wasm");
         let test_suite = TestSuite::from(&module);
 

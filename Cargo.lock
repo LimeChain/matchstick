@@ -2196,6 +2196,7 @@ dependencies = [
  "regex",
  "run_script",
  "serde_json",
+ "serde_yaml",
  "serial_test",
  "tokio 0.2.25",
  "wasmtime",

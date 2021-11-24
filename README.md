@@ -34,7 +34,7 @@ choco install postgresql12
 In order to use the test helper methods and run the tests, you will need to install the following dependencies:
 
 ```
-yarn add matchstick-as
+yarn add --dev matchstick-as
 ```
 
 Now you can jump straight to the [examples](https://github.com/LimeChain/demo-subgraph#readme "examples of tests") in our [demo-subgraph](https://github.com/LimeChain/demo-subgraph "demo-subgraph") and start your journey in Subgraph unit testing!
