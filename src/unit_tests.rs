@@ -24,7 +24,7 @@ mod unit_tests {
 
     fn get_context() -> MatchstickInstanceContext<Chain> {
         let module = <MatchstickInstance<Chain>>::new("mocks/wasm/Gravity.wasm");
-        
+
         module
             .instance_ctx
             .take()
