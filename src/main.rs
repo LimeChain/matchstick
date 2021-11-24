@@ -15,8 +15,11 @@ use crate::instance::MatchstickInstance;
 use crate::logging::Log;
 use crate::test_suite::TestSuite;
 
+use crate::coverage::generate_coverage_report;
+
 mod compiler;
 mod context;
+mod coverage;
 mod instance;
 mod integration_tests;
 mod logging;
@@ -87,12 +90,6 @@ fn main() {
         .author("Limechain <https://limechain.tech>")
         .about("Unit testing framework for Subgraph development on The Graph protocol.")
         .arg(
-            Arg::with_name("test_suites")
-                .help("Please specify the names of the test suites you would like to run.")
-                .index(1)
-                .multiple(true),
-        )
-        .arg(
             Arg::with_name("verbose")
                 .help("Print the WASM backtrace on test failure.")
                 .long("verbose")
@@ -105,6 +102,20 @@ fn main() {
                 .short("l")
                 .takes_value(true)
                 .default_value("./node_modules/"),
+        )
+        .arg(
+            Arg::with_name("coverage")
+                .help("Generate code coverage report.")
+                .long("coverage")
+                .short("c")
+                .takes_value(false)
+                .required(false),
+        )
+        .arg(
+            Arg::with_name("test_suites")
+                .help("Please specify the names of the test suites you would like to run.")
+                .index(1)
+                .multiple(true),
         )
         .get_matches();
 
@@ -210,6 +221,16 @@ ___  ___      _       _         _   _      _
             "{}",
             Log::Critical("Please attend to the compilation errors above!"),
         );
+    }
+
+    let coverage = matches.is_present("coverage");
+    if coverage {
+        println!(
+            "{}",
+            ("Running in coverage report mode.\n️").to_string().cyan()
+        );
+        generate_coverage_report();
+        return;
     }
 
     // A matchstick instance for each test suite wasm (the compiled source).
