@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::io::{self, Write};
+use std::path::PathBuf;
 use std::time::Instant;
 
 use clap::{App, Arg};
@@ -95,6 +96,14 @@ fn main() {
                 .short("v"),
         )
         .arg(
+            Arg::with_name("lib")
+                .help("Path to `node_modules`.")
+                .long("lib")
+                .short("l")
+                .takes_value(true)
+                .default_value("./node_modules/"),
+        )
+        .arg(
             Arg::with_name("coverage")
                 .help("Generate code coverage report.")
                 .long("coverage")
@@ -181,11 +190,15 @@ ___  ___      _       _         _   _      _
     };
 
     println!("{}", ("Compiling...\n").to_string().bright_green());
-    let compiler = Compiler::default()
-        .export_table()
-        .runtime("stub")
-        .optimize()
-        .debug();
+    let compiler = Compiler::new(PathBuf::from(
+        matches
+            .value_of("lib")
+            .expect("unexpected: lib should always have a value"),
+    ))
+    .export_table()
+    .runtime("stub")
+    .optimize()
+    .debug();
 
     let outputs: HashMap<String, CompileOutput> = test_sources
         .into_iter()
