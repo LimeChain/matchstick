@@ -6,11 +6,11 @@
 
 ## Quick Start 🚀
 ### Docker 🐳
-The quickest way to use **Matchstick** "out of the box" is to build and run an ubuntu-based Docker container with a Matchstick image. In order to do that you will need to have [Docker](https://docs.docker.com/get-docker/) installed on your machine. 
+The quickest way to use **Matchstick** "out of the box" is to build and run an ubuntu-based Docker container with a **Matchstick** image. In order to do that you will need to have [Docker](https://docs.docker.com/get-docker/) installed on your machine. 
 
 Next, create a file named Dockerfile in the root folder of your subgraph project, and paste [the contents of this file](https://github.com/LimeChain/demo-subgraph/blob/main/Dockerfile) there.
 
-Now you can build a Matchstick image using the following command:
+Now you can build a **Matchstick** image using the following command:
 ```
 docker build -t matchstick .
 ```
@@ -24,6 +24,10 @@ If you want to pass in arguments to **Matchstick** (for instance to test only a 
 ```
 docker run -e ARGS="gravity" --rm matchstick
 ```
+
+After that you can go straight to [the final setup step](https://github.com/LimeChain/matchstick/tree/dockerize#install-dependencies) and you'll be all set to start writing your first unit test.
+
+❗ Although using the Docker approach is easy, we highly recommend using **Matchstick** via OS-specific binary (which is downloaded automatically when you run `graph test`). The Docker approach should only be considered if for some reason you cannot get `graph test` to work, or if you just want to quickly try something out.
 
 ### OS-specific release binaries
 The release binary comes in three flavours - for **macOS**, **Linux** and **Windows**. To add **Matchstick** to your subgraph project just open up a terminal, navigate to the root folder of your project and simply run `graph test` - it downloads the latest **Matchstick** binary and runs the specified test or all tests in a test folder (or all existing tests if no datasource flag is specified). Example usage: `graph test Gravity`.
