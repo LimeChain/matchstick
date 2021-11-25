@@ -29,7 +29,7 @@ After that you can go straight to [the final setup step](https://github.com/Lime
 
 ❗ Although using the Docker approach is easy, we highly recommend using **Matchstick** via OS-specific binary (which is downloaded automatically when you run `graph test`). The Docker approach should only be considered if for some reason you cannot get `graph test` to work, or if you just want to quickly try something out.
 
-### OS-specific release binaries
+### OS-specific release binaries ⚙️
 The release binary comes in three flavours - for **macOS**, **Linux** and **Windows**. To add **Matchstick** to your subgraph project just open up a terminal, navigate to the root folder of your project and simply run `graph test` - it downloads the latest **Matchstick** binary and runs the specified test or all tests in a test folder (or all existing tests if no datasource flag is specified). Example usage: `graph test Gravity`.
 
 ❗ If you don't have Postgres installed, you will need to install it. Instructions for that below:
