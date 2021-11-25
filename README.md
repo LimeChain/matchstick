@@ -6,7 +6,7 @@
 
 ## Quick Start 🚀
 ### Docker 🐳
-The quickest way to use **Matchstick** "out of the box" is to build and run an ubuntu-based Docker container with a Matchstick image. In order to do that you need to have [Docker](https://docs.docker.com/get-docker/) installed. 
+The quickest way to use **Matchstick** "out of the box" is to build and run an ubuntu-based Docker container with a Matchstick image. In order to do that you will need to have [Docker](https://docs.docker.com/get-docker/) installed on your machine. 
 
 Next, create a file named Dockerfile in the root folder of your subgraph project, and paste [the contents of this file](https://github.com/LimeChain/demo-subgraph/blob/main/Dockerfile) there.
 
