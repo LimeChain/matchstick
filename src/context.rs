@@ -6,6 +6,7 @@ use graph::{
     data::store::Value,
     prelude::Entity,
     runtime::{asc_get, asc_new, try_asc_get, AscPtr, HostExportError},
+    components::store::DeploymentId
 };
 use graph_chain_ethereum::runtime::{
     abi::AscUnresolvedContractCall_0_0_4, runtime_adapter::UnresolvedContractCall,
@@ -455,6 +456,49 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         _name_ptr: AscPtr<AscString>,
         _params_ptr: AscPtr<Array<AscPtr<AscString>>>,
     ) -> Result<(), HostExportError> {
+        let api_version = Version::new(0, 0, 5);
+        let templates = vec![DataSourceTemplate {
+            kind: String::from("ethereum/contract"),
+            name: String::from("KashiPair"),
+            network: Some(String::from("mainnet")),
+            source: TemplateSource {
+                abi: String::from("foo"),
+            },
+            mapping: Mapping {
+                kind: String::from("ethereum/events"),
+                api_version,
+                language: String::from("wasm/assemblyscript"),
+                entities: vec![],
+                abis: vec![],
+                event_handlers: vec![],
+                call_handlers: vec![],
+                block_handlers: vec![],
+                link: Link {
+                    link: "link".to_owned(),
+                },
+                runtime: Arc::new(vec![]),
+            },
+        }];
+
+        let subgraph_id = "ipfsMap";
+        let deployment_id = &DeploymentHash::new(subgraph_id).unwrap_or_else(|err| {
+            panic!(
+                "{}",
+                Log::Critical(format!("Could not create deployment id: {}", err)),
+            );
+        });
+        let data_source = mock_data_source("./tests/.bin/gravity.wasm", Version::new(0, 0, 5));
+        let network = data_source.network.clone().unwrap();
+
+        // let plot_twist = ;
+        self.wasm_ctx.ctx.host_exports = Arc::new(HostExports::new(
+            deployment_id.clone(),
+            &data_source,
+            network,
+            Arc::new(templates),
+            Arc::new(graph_core::LinkResolver::from(IpfsClient::localhost())),
+            Arc::new(MockSubgraphStore {}),
+        ));
         Ok(())
     }
 
@@ -471,3 +515,18 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         Ok(())
     }
 }
+use ethabi::Contract;
+use graph::components::store::DeploymentLocator;
+use graph::data::subgraph::*;
+use graph::ipfs_client::IpfsClient;
+use graph::log;
+use graph::prelude::*;
+use graph_chain_ethereum::{
+    Chain, DataSource, DataSourceTemplate, Mapping, MappingABI, TemplateSource,
+};
+use graph_runtime_wasm::{HostExports, MappingContext};
+use graph::semver::{BuildMetadata, Prerelease, Version};
+use std::env;
+use std::str::FromStr;
+use crate::subgraph_store::MockSubgraphStore;
+use graph_runtime_test::common::mock_data_source;

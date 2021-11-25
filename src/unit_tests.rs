@@ -7,7 +7,7 @@ mod unit_tests {
     use graph::{
         data::store::Value,
         runtime::{asc_get, AscPtr, AscType},
-        semver::{BuildMetadata, Prerelease, Version},
+        semver::Version,
     };
     use graph_chain_ethereum::{runtime::abi::AscUnresolvedContractCall_0_0_4, Chain};
     use graph_runtime_wasm::asc_abi::class::{
@@ -42,13 +42,7 @@ mod unit_tests {
     }
 
     fn get_version() -> Version {
-        Version {
-            major: 0,
-            minor: 0,
-            patch: 5,
-            build: BuildMetadata::EMPTY,
-            pre: Prerelease::new("").expect("Couldn't create new Prerelease."),
-        }
+        Version::new(0, 0, 5)
     }
 
     #[test]
