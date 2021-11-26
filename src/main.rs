@@ -90,12 +90,6 @@ fn main() {
         .author("Limechain <https://limechain.tech>")
         .about("Unit testing framework for Subgraph development on The Graph protocol.")
         .arg(
-            Arg::with_name("verbose")
-                .help("Print the WASM backtrace on test failure.")
-                .long("verbose")
-                .short("v"),
-        )
-        .arg(
             Arg::with_name("lib")
                 .help("Path to `node_modules`.")
                 .long("lib")
@@ -253,7 +247,7 @@ ___  ___      _       _         _   _      _
         println!("{}\n", "=".repeat(50));
         logging::add_indent();
         for test in &val.tests {
-            if test.run(matches.is_present("verbose")).passed {
+            if test.run().passed {
                 passed_tests += 1;
             } else {
                 failed_tests += 1;
