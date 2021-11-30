@@ -1,12 +1,13 @@
 use std::fs;
+use std::path::PathBuf;
 use std::process::{Command, ExitStatus};
 
 use crate::logging::Log;
 
 pub struct Compiler {
-    exec: String,
-    global: String,
-    lib: String,
+    lib: PathBuf,
+    exec: PathBuf,
+    global: PathBuf,
     options: Vec<String>,
 }
 
@@ -17,20 +18,27 @@ pub struct CompileOutput {
     pub file: String,
 }
 
-impl Default for Compiler {
-    // TODO: add an option allowing the user to specify a path to exec, global and lib.
-    fn default() -> Self {
+#[allow(dead_code)]
+impl Compiler {
+    pub fn new(lib: PathBuf) -> Self {
+        if !lib.exists() {
+            panic!(
+                "{}",
+                Log::Critical(format!(
+                    "Path to lib `{}` does not exist!",
+                    lib.to_str()
+                        .expect("unexpected: lib should always have a value"),
+                )),
+            );
+        }
         Compiler {
-            exec: String::from("./node_modules/assemblyscript/bin/asc"),
-            global: String::from("./node_modules/@graphprotocol/graph-ts/global/global.ts"),
-            lib: String::from("./node_modules/"),
+            exec: lib.join("assemblyscript/bin/asc"),
+            global: lib.join("@graphprotocol/graph-ts/global/global.ts"),
+            lib,
             options: vec![String::from("--explicitStart")],
         }
     }
-}
 
-#[allow(dead_code)]
-impl Compiler {
     pub fn export_table(mut self) -> Self {
         self.options.push("--exportTable".to_string());
         self
@@ -110,7 +118,12 @@ impl Compiler {
             .arg("--outFile")
             .arg(out_file.clone())
             .output()
-            .expect("Internal error during compilation.");
+            .unwrap_or_else(|err| {
+                panic!(
+                    "{}",
+                    Log::Critical(format!("Internal error during compilation: {}", err)),
+                );
+            });
 
         CompileOutput {
             status: output.status,
