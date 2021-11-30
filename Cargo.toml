@@ -29,4 +29,4 @@ graphql-parser = { git = "https://github.com/graphql-rust/graphql-parser", rev =
 
 [dev-dependencies]
 serial_test = "0.5.1"
-web3 = "0.17.0"
+web3 = { git = "https://github.com/graphprotocol/rust-web3", branch = "master" }
