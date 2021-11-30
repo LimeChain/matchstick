@@ -48,7 +48,7 @@ impl Test {
         Test::call_hooks(&self.after_hooks);
     }
 
-    pub fn run(&self, verbose: bool) -> TestResult {
+    pub fn run(&self) -> TestResult {
         self.before();
 
         let mut passed = true;
@@ -60,11 +60,10 @@ impl Test {
         self.func.call(&[]).unwrap_or_else(|err| {
             if !self.should_fail {
                 passed = false;
-                if verbose {
-                    logging::add_indent();
-                    Log::Debug(err).println();
-                    logging::sub_indent();
-                }
+                // Log WASM backtrace
+                logging::add_indent();
+                Log::Debug(err).println();
+                logging::sub_indent();
             }
             Box::new([wasmtime::Val::I32(0)])
         });
