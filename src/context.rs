@@ -5,7 +5,7 @@ use graph::{
     blockchain::Blockchain,
     data::store::Value,
     prelude::Entity,
-    runtime::{asc_get, asc_new, try_asc_get, AscPtr, HostExportError}
+    runtime::{asc_get, asc_new, try_asc_get, AscPtr, HostExportError},
 };
 use graph_chain_ethereum::runtime::{
     abi::AscUnresolvedContractCall_0_0_4, runtime_adapter::UnresolvedContractCall,
