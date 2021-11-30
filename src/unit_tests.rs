@@ -7,7 +7,7 @@ mod unit_tests {
     use graph::{
         data::store::Value,
         runtime::{asc_get, AscPtr, AscType},
-        semver::{BuildMetadata, Prerelease, Version},
+        semver::Version,
     };
     use graph_chain_ethereum::{runtime::abi::AscUnresolvedContractCall_0_0_4, Chain};
     use graph_runtime_wasm::asc_abi::class::{
@@ -42,13 +42,7 @@ mod unit_tests {
     }
 
     fn get_version() -> Version {
-        Version {
-            major: 0,
-            minor: 0,
-            patch: 5,
-            build: BuildMetadata::EMPTY,
-            pre: Prerelease::new("").expect("Couldn't create new Prerelease."),
-        }
+        Version::new(0, 0, 5)
     }
 
     #[test]
@@ -550,7 +544,7 @@ mod unit_tests {
 
         let contract_name = asc_string_from_str("contractName");
         // Necessary step because H160 fits (hashes) the address into 20 bytes whereas otherwise it will be 42 and asc_get (in ethereum_call) will crash
-        let h160_address = H160::from_str("0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7")
+        let h160_address = H160::from_str("89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7")
             .expect("Couldn't create H160.");
         let address = TypedArray::new(h160_address.as_bytes(), &mut context.wasm_ctx)
             .expect("Coudln't create address.");
@@ -617,7 +611,7 @@ mod unit_tests {
 
         let contract_name = asc_string_from_str("contractName");
         // Necessary step because H160 fits (hashes) the address into 20 bytes whereas otherwise it will be 42 and asc_get (in ethereum_call) will crash
-        let h160_address = H160::from_str("0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7")
+        let h160_address = H160::from_str("89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7")
             .expect("Couldn't create H160.");
         let address = TypedArray::new(h160_address.as_bytes(), &mut context.wasm_ctx)
             .expect("Coudln't create address.");
@@ -673,7 +667,7 @@ mod unit_tests {
         let mut context = get_context();
 
         // Necessary step because H160 fits (hashes) the address into 20 bytes whereas otherwise it will be 42
-        let h160_address = H160::from_str("0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7")
+        let h160_address = H160::from_str("89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7")
             .expect("Couldn't create H160.");
         let address = TypedArray::new(h160_address.as_bytes(), &mut context.wasm_ctx)
             .expect("Coudln't create address.");
@@ -730,7 +724,7 @@ mod unit_tests {
         let mut context = get_context();
 
         // Necessary step because H160 fits (hashes) the address into 20 bytes whereas otherwise it will be 42
-        let h160_address = H160::from_str("0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7")
+        let h160_address = H160::from_str("89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7")
             .expect("Couldn't create H160.");
         let address = TypedArray::new(h160_address.as_bytes(), &mut context.wasm_ctx)
             .expect("Coudln't create address.");

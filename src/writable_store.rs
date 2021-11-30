@@ -28,11 +28,15 @@ impl WritableStore for MockWritableStore {
         unreachable!()
     }
 
-    fn unfail(
+    fn unfail_deterministic_error(
         &self,
-        _current_ptr: Option<BlockPtr>,
-        _parent_ptr: Option<BlockPtr>,
+        _current_ptr: &BlockPtr,
+        _parent_ptr: &BlockPtr,
     ) -> Result<(), StoreError> {
+        unreachable!()
+    }
+
+    fn unfail_non_deterministic_error(&self, _current_ptr: &BlockPtr) -> Result<(), StoreError> {
         unreachable!()
     }
 
