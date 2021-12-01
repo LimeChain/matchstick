@@ -17,6 +17,7 @@ pub struct Test {
 
 pub struct TestResult {
     pub passed: bool,
+    pub logs: String,
 }
 
 impl Test {
@@ -85,12 +86,9 @@ impl Test {
         }
 
         // Print the logs after the test result.
-        if !logs.is_empty() {
-            println!("{}", logs);
-        }
 
         self.after();
-        TestResult { passed }
+        TestResult { passed, logs }
     }
 }
 
