@@ -1,6 +1,6 @@
 use graph::blockchain::Blockchain;
-use wasmtime::Func;
 use std::time::Instant;
+use wasmtime::Func;
 
 use crate::{
     instance::MatchstickInstance,
@@ -13,7 +13,6 @@ pub struct Test {
     func: Func,
     before_hooks: Vec<Func>,
     after_hooks: Vec<Func>,
-
 }
 
 pub struct TestResult {

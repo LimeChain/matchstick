@@ -275,7 +275,10 @@ ___  ___      _       _         _   _      _
 
         println!("\n{}, {}, {}", failed, passed, all);
     } else {
-        println!("\n{}", format!("All {} tests passed! 😎", passed_tests).green());
+        println!(
+            "\n{}",
+            format!("All {} tests passed! 😎", passed_tests).green()
+        );
     }
 
     println!(
