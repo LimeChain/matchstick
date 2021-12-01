@@ -7,6 +7,7 @@ use std::time::Instant;
 
 use clap::{App, Arg};
 use colored::Colorize;
+use chrono::prelude::*;
 use graph_chain_ethereum::Chain;
 use serde_yaml::Value;
 
@@ -241,15 +242,20 @@ ___  ___      _       _         _   _      _
 
     let mut passed_tests = 0;
     let mut failed_tests = 0;
+    let mut all_failed_tests: Vec<String> = Vec::new();
+
     println!("{}", ("Igniting tests 🔥\n").to_string().bright_red());
+
     test_suites.iter().for_each(|(key, val)| {
         println!("🧪 Running Test Suite: {}", key.blue());
         println!("{}\n", "=".repeat(50));
         logging::add_indent();
+
         for test in &val.tests {
             if test.run().passed {
                 passed_tests += 1;
             } else {
+                all_failed_tests.push(test.name.clone());
                 failed_tests += 1;
             }
         }
@@ -262,16 +268,22 @@ ___  ___      _       _         _   _      _
         let passed = format!("{} passed", passed_tests).green();
         let all = format!("{} total", failed_tests + passed_tests);
 
+        println!("Failed tests: \n");
+        for f in all_failed_tests {
+            let ft = format!("{}", f).red();
+            println!("{}", ft);
+        }
+
         println!("\n{}, {}, {}", failed, passed, all);
-        println!("Program execution time: {:?}", now.elapsed());
-        std::process::exit(1);
+
+        // std::process::exit(1);
     } else {
-        println!("\n{}", ("All tests passed! 😎").to_string().green());
+        println!("\n{}", format!("All {} tests passed! 😎", passed_tests).green());
     }
 
     println!(
-        "{} tests executed in {:?}.",
-        failed_tests + passed_tests,
-        now.elapsed(),
+        "\n[{}] Program executed in: {:?}.",
+        Local::now().to_rfc2822(),
+        now.elapsed()
     );
 }
