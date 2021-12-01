@@ -5,9 +5,9 @@ use std::io::{self, Write};
 use std::path::PathBuf;
 use std::time::Instant;
 
+use chrono::prelude::*;
 use clap::{App, Arg};
 use colored::Colorize;
-use chrono::prelude::*;
 use graph_chain_ethereum::Chain;
 use serde_yaml::Value;
 
@@ -269,9 +269,8 @@ ___  ___      _       _         _   _      _
         let all = format!("{} total", failed_tests + passed_tests);
 
         println!("Failed tests: \n");
-        for f in all_failed_tests {
-            let ft = format!("{}", f).red();
-            println!("{}", ft);
+        for test in all_failed_tests {
+            println!("{}", test.to_string().red());
         }
 
         println!("\n{}, {}, {}", failed, passed, all);
