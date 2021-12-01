@@ -71,11 +71,14 @@ impl Test {
             Box::new([wasmtime::Val::I32(0)])
         });
         let elapsed = now.elapsed();
+        // Convert the elapsed time to milliseconds
+        // Seems hacky, might need refactoring
+        let elapsed_in_ms = elapsed.as_secs_f32() * 1000.0
 
         logging::sub_indent();
         let logs = logging::flush();
 
-        let msg = format!("{} - {:?}", self.name.clone(), elapsed);
+        let msg = format!("{} in {:.3?}ms", self.name.clone(), elapsed_in_ms);
         if passed {
             Log::Success(msg).println();
         } else {

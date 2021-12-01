@@ -275,14 +275,12 @@ ___  ___      _       _         _   _      _
         }
 
         println!("\n{}, {}, {}", failed, passed, all);
-
-        // std::process::exit(1);
     } else {
         println!("\n{}", format!("All {} tests passed! 😎", passed_tests).green());
     }
 
     println!(
-        "\n[{}] Program executed in: {:?}.",
+        "\n[{}] Program executed in: {:.3?}.",
         Local::now().to_rfc2822(),
         now.elapsed()
     );
