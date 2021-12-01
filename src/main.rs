@@ -242,7 +242,7 @@ ___  ___      _       _         _   _      _
 
     let mut passed_tests = 0;
     let mut failed_tests = 0;
-    let mut all_failed_tests: Vec<String> = Vec::new();
+    let mut all_failed_tests: HashMap<String, String> = HashMap::new();
 
     println!("{}", ("Igniting tests 🔥\n").to_string().bright_red());
 
@@ -252,10 +252,11 @@ ___  ___      _       _         _   _      _
         logging::add_indent();
 
         for test in &val.tests {
-            if test.run().passed {
+            let result = test.run();
+            if result.passed {
                 passed_tests += 1;
             } else {
-                all_failed_tests.push(test.name.clone());
+                all_failed_tests.insert(test.name.clone(), result.logs);
                 failed_tests += 1;
             }
         }
@@ -269,8 +270,12 @@ ___  ___      _       _         _   _      _
         let all = format!("{} total", failed_tests + passed_tests);
 
         println!("Failed tests: \n");
-        for test in all_failed_tests {
-            println!("{}", test.to_string().red());
+        for (key, value) in all_failed_tests {
+            println!("{}", key.to_string().red());
+
+            if !value.is_empty() {
+                println!("{}", value);
+            }
         }
 
         println!("\n{}, {}, {}", failed, passed, all);
