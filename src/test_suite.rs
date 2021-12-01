@@ -1,5 +1,6 @@
 use graph::blockchain::Blockchain;
 use wasmtime::Func;
+use std::time::Instant;
 
 use crate::{
     instance::MatchstickInstance,
@@ -7,11 +8,12 @@ use crate::{
 };
 
 pub struct Test {
-    name: String,
+    pub name: String,
     should_fail: bool,
     func: Func,
     before_hooks: Vec<Func>,
     after_hooks: Vec<Func>,
+
 }
 
 pub struct TestResult {
@@ -57,6 +59,7 @@ impl Test {
         // - the behaviour tested does not hold
         logging::accum();
         logging::add_indent();
+        let now = Instant::now();
         self.func.call(&[]).unwrap_or_else(|err| {
             if !self.should_fail {
                 passed = false;
@@ -67,13 +70,16 @@ impl Test {
             }
             Box::new([wasmtime::Val::I32(0)])
         });
+        let elapsed = now.elapsed();
+
         logging::sub_indent();
         let logs = logging::flush();
 
+        let msg = format!("{} - {:?}", self.name.clone(), elapsed);
         if passed {
-            Log::Success(self.name.clone()).println();
+            Log::Success(msg).println();
         } else {
-            Log::Error(self.name.clone()).println();
+            Log::Error(msg).println();
         }
 
         // Print the logs after the test result.
