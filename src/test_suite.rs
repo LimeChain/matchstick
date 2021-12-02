@@ -70,10 +70,10 @@ impl Test {
             }
             Box::new([wasmtime::Val::I32(0)])
         });
-        let elapsed = now.elapsed();
+
         // Convert the elapsed time to milliseconds
         // Seems hacky, might need refactoring
-        let elapsed_in_ms = elapsed.as_secs_f32() * 1000.0;
+        let elapsed_in_ms = now.elapsed().as_secs_f32() * 1000.0;
 
         logging::sub_indent();
         let logs = logging::flush();
