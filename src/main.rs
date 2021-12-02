@@ -14,9 +14,10 @@ use serde_yaml::Value;
 use crate::compiler::{CompileOutput, Compiler};
 use crate::instance::MatchstickInstance;
 use crate::logging::Log;
-use crate::test_suite::TestSuite;
+use crate::test_suite::{TestResult, TestSuite};
 
 use crate::coverage::generate_coverage_report;
+use crate::tests_location::get_tests_paths;
 
 mod compiler;
 mod context;
@@ -26,6 +27,7 @@ mod integration_tests;
 mod logging;
 mod subgraph_store;
 mod test_suite;
+mod tests_location;
 mod unit_tests;
 mod writable_store;
 
@@ -240,41 +242,61 @@ ___  ___      _       _         _   _      _
         .map(|(key, val)| (key.clone(), TestSuite::from(val)))
         .collect();
 
-    let mut passed_tests = 0;
-    let mut failed_tests = 0;
-    let mut all_failed_tests: HashMap<String, String> = HashMap::new();
-
     println!("{}", ("Igniting tests 🔥\n").to_string().bright_red());
 
-    test_suites.iter().for_each(|(key, val)| {
-        println!("🧪 Running Test Suite: {}", key.blue());
-        println!("{}\n", "=".repeat(50));
-        logging::add_indent();
+    let tests_full_paths = TESTS_LOCATION.with(|path| get_tests_paths(&*path.borrow()));
+    let (mut num_passed, mut num_failed) = (0, 0);
+    let failed_suites: HashMap<String, HashMap<String, TestResult>> = test_suites
+        .into_iter()
+        .filter_map(|(name, suite)| {
+            println!("🧪 Running Test Suite: {}", name.bright_blue());
+            println!("{}\n", "=".repeat(50));
+            logging::add_indent();
+            let failed: HashMap<String, TestResult> = suite
+                .tests
+                .into_iter()
+                .filter_map(|test| {
+                    let result = test.run();
+                    if result.passed {
+                        num_passed += 1;
+                        None
+                    } else {
+                        num_failed += 1;
+                        Some((test.name, result))
+                    }
+                })
+                .collect();
+            logging::clear_indent();
+            println!();
 
-        for test in &val.tests {
-            let result = test.run();
-            if result.passed {
-                passed_tests += 1;
+            if failed.is_empty() {
+                None
             } else {
-                all_failed_tests.insert(test.name.clone(), result.logs);
-                failed_tests += 1;
+                Some((name, failed))
             }
-        }
-        logging::clear_indent();
-        println!();
-    });
+        })
+        .collect();
 
-    if failed_tests > 0 {
-        let failed = format!("{} failed", failed_tests).red();
-        let passed = format!("{} passed", passed_tests).green();
-        let all = format!("{} total", failed_tests + passed_tests);
+    if num_failed > 0 {
+        let failed = format!("{} failed", num_failed).red();
+        let passed = format!("{} passed", num_passed).green();
+        let all = format!("{} total", num_failed + num_passed);
 
         println!("Failed tests: \n");
-        for (key, value) in all_failed_tests {
-            println!("{}", key.to_string().red());
+        for (suite, tests) in failed_suites {
+            for (name, result) in tests {
+                let path = tests_full_paths.get(&suite).unwrap().get(&name).unwrap();
 
-            if !value.is_empty() {
-                println!("{}", value);
+                println!(
+                    "{} {} {}",
+                    suite.bright_blue(),
+                    name.red(),
+                    format!("located in {}", path).cyan()
+                );
+
+                if !result.logs.is_empty() {
+                    println!("{}", result.logs);
+                }
             }
         }
 
@@ -282,7 +304,7 @@ ___  ___      _       _         _   _      _
     } else {
         println!(
             "\n{}",
-            format!("All {} tests passed! 😎", passed_tests).green()
+            format!("All {} tests passed! 😎", num_passed).green()
         );
     }
 
