@@ -5,9 +5,9 @@ use std::io::{self, Write};
 use std::path::PathBuf;
 use std::time::Instant;
 
-use chrono::prelude::*;
 use clap::{App, Arg};
 use colored::Colorize;
+use graph::prelude::chrono::prelude::*;
 use graph_chain_ethereum::Chain;
 use serde_yaml::Value;
 
