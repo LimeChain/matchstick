@@ -1,3 +1,4 @@
+use regex::Regex;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -38,11 +39,14 @@ pub fn get_tests_paths(root: &str) -> HashMap<String, HashMap<String, String>> {
                 .lines()
                 .into_iter()
                 .filter_map(|line| {
+                    let line_as_string = line.as_ref().unwrap();
                     if line.as_ref().unwrap().starts_with("test(") {
-                        let start = line.as_ref().unwrap().find("(\"").unwrap();
-                        let end = line.as_ref().unwrap().find("\",").unwrap();
-                        let name = &line.unwrap()[(start + 2)..end];
-
+                        let start_regex = Regex::new(r#"\(\s*""#).unwrap();
+                        let end_regex = Regex::new(r#""\s*,"#).unwrap();
+                        let start = start_regex.find(line_as_string).unwrap().end();
+                        let end = end_regex.find(line_as_string).unwrap().start();
+                        let name = &line.unwrap()[start..end];
+                        println!("{:?}", name);
                         line_number += 1;
                         Some((name.to_string(), format!("{:?}:{}", path, line_number)))
                     } else {
