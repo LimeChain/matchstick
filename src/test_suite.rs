@@ -1,3 +1,4 @@
+use colored::Colorize;
 use graph::blockchain::Blockchain;
 use std::time::Instant;
 use wasmtime::Func;
@@ -78,7 +79,11 @@ impl Test {
         logging::sub_indent();
         let logs = logging::flush();
 
-        let msg = format!("{} - {:.3?}ms", self.name.clone(), elapsed_in_ms);
+        let msg = format!(
+            "{} - {}",
+            self.name.clone(),
+            format!("{:.3?}ms", elapsed_in_ms).bright_blue()
+        );
         if passed {
             Log::Success(msg).println();
         } else {
