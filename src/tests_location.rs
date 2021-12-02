@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 
 // Accumulates the paths of all test files
-fn collect_files(root: &String) -> Vec<std::path::PathBuf> {
+fn collect_files(root: &str) -> Vec<std::path::PathBuf> {
     let mut files: Vec<std::path::PathBuf> = Vec::new();
 
     for element in std::path::Path::new(&root).read_dir().unwrap() {
@@ -23,7 +23,7 @@ fn collect_files(root: &String) -> Vec<std::path::PathBuf> {
 }
 
 // Map the test name to the test file path and line
-pub fn get_tests_paths(root: &String) -> HashMap<String, HashMap<String, String>> {
+pub fn get_tests_paths(root: &str) -> HashMap<String, HashMap<String, String>> {
     let file_paths = collect_files(root);
     let suite_tests: HashMap<String, HashMap<String, String>> = file_paths
         .into_iter()
@@ -31,7 +31,7 @@ pub fn get_tests_paths(root: &String) -> HashMap<String, HashMap<String, String>
             let mut line_number = 1;
             let tests = File::open(path.clone()).unwrap();
             let reader = BufReader::new(tests);
-            let v: Vec<&str> = path.to_str().unwrap().split("/").collect();
+            let v: Vec<&str> = path.to_str().unwrap().split('/').collect();
             let test_suite = v.get(2).unwrap().replace(".test.ts", "");
 
             let test_paths: HashMap<String, String> = reader
