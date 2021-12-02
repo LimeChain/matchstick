@@ -3,7 +3,8 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-// Accumulates the paths of all test files
+// Iterates over all files and folders in the test folder and
+// accumulates the file path for each .test.ts file.
 fn collect_files(root: &str) -> Vec<std::path::PathBuf> {
     let mut files: Vec<std::path::PathBuf> = Vec::new();
 
@@ -23,7 +24,13 @@ fn collect_files(root: &str) -> Vec<std::path::PathBuf> {
     files
 }
 
-// Map the test name to the test file path and line
+// Reads each test file line by line and looks if the line starts with "test("
+// and counts the lines.
+// If the line contains "test(", gets the name of the test using a regex to determine
+// the start and end position of the test name
+// Maps the test path/to/file:line to the test name
+// Also groups the test by the test suite name in case there are
+// duplicated test names in different test suites
 pub fn get_tests_paths(root: &str) -> HashMap<String, HashMap<String, String>> {
     let file_paths = collect_files(root);
     let suite_tests: HashMap<String, HashMap<String, String>> = file_paths
@@ -43,11 +50,16 @@ pub fn get_tests_paths(root: &str) -> HashMap<String, HashMap<String, String>> {
                     let line_as_string = line.as_ref().unwrap();
 
                     if line.as_ref().unwrap().starts_with("test(") {
+                        // This regex finds the beginning of the test name
+                        // It looks for (", but also handles situations if there are
+                        // white spaces between the opening ( and "
                         let start = Regex::new(r#"\(\s*""#)
                             .unwrap()
                             .find(line_as_string)
                             .unwrap()
                             .end();
+                        // This one looks for ", after the test name
+                        // Also handles if there are whitespaces between the " and ,
                         let end = Regex::new(r#""\s*,"#)
                             .unwrap()
                             .find(line_as_string)
