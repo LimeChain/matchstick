@@ -68,7 +68,10 @@ pub fn get_tests_paths(root: &str) -> HashMap<String, HashMap<String, String>> {
 
                         let name = &line.unwrap()[start..end];
 
-                        Some((name.to_string(), format!("{:?}:{}", path, line_number)))
+                        Some((
+                            name.to_string(),
+                            format!("{}:{}", path.to_str().unwrap(), line_number),
+                        ))
                     } else {
                         None
                     }
