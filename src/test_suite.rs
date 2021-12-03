@@ -1,4 +1,6 @@
+use colored::Colorize;
 use graph::blockchain::Blockchain;
+use std::time::Instant;
 use wasmtime::Func;
 
 use crate::{
@@ -7,7 +9,7 @@ use crate::{
 };
 
 pub struct Test {
-    name: String,
+    pub name: String,
     should_fail: bool,
     func: Func,
     before_hooks: Vec<Func>,
@@ -16,6 +18,7 @@ pub struct Test {
 
 pub struct TestResult {
     pub passed: bool,
+    pub logs: String,
 }
 
 impl Test {
@@ -57,6 +60,7 @@ impl Test {
         // - the behaviour tested does not hold
         logging::accum();
         logging::add_indent();
+        let now = Instant::now();
         self.func.call(&[]).unwrap_or_else(|err| {
             if !self.should_fail {
                 passed = false;
@@ -67,22 +71,29 @@ impl Test {
             }
             Box::new([wasmtime::Val::I32(0)])
         });
+
+        // Convert the elapsed time to milliseconds
+        // Seems hacky, might need refactoring
+        let elapsed_in_ms = now.elapsed().as_secs_f32() * 1000.0;
+
         logging::sub_indent();
         let logs = logging::flush();
 
+        let msg = format!(
+            "{} - {}",
+            self.name.clone(),
+            format!("{:.3?}ms", elapsed_in_ms).bright_blue()
+        );
         if passed {
-            Log::Success(self.name.clone()).println();
+            Log::Success(msg).println();
         } else {
-            Log::Error(self.name.clone()).println();
+            Log::Error(msg).println();
         }
 
         // Print the logs after the test result.
-        if !logs.is_empty() {
-            println!("{}", logs);
-        }
 
         self.after();
-        TestResult { passed }
+        TestResult { passed, logs }
     }
 }
 
