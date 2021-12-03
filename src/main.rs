@@ -17,7 +17,6 @@ use crate::logging::Log;
 use crate::test_suite::{TestResult, TestSuite};
 
 use crate::coverage::generate_coverage_report;
-use crate::tests_location::get_tests_paths;
 
 mod compiler;
 mod context;
@@ -27,7 +26,6 @@ mod integration_tests;
 mod logging;
 mod subgraph_store;
 mod test_suite;
-mod tests_location;
 mod unit_tests;
 mod writable_store;
 
@@ -244,7 +242,6 @@ ___  ___      _       _         _   _      _
 
     println!("{}", ("Igniting tests 🔥\n").to_string().bright_red());
 
-    let tests_full_paths = TESTS_LOCATION.with(|path| get_tests_paths(&*path.borrow()));
     let (mut num_passed, mut num_failed) = (0, 0);
     let failed_suites: HashMap<String, HashMap<String, TestResult>> = test_suites
         .into_iter()
@@ -285,14 +282,7 @@ ___  ___      _       _         _   _      _
         println!("Failed tests: \n");
         for (suite, tests) in failed_suites {
             for (name, result) in tests {
-                let path = tests_full_paths.get(&suite).unwrap().get(&name).unwrap();
-
-                println!(
-                    "{} {} {}",
-                    suite.bright_blue(),
-                    name.red(),
-                    format!("located in {}", path).cyan()
-                );
+                println!("{} {}", suite.bright_blue(), name.red(),);
 
                 if !result.logs.is_empty() {
                     println!("{}", result.logs);
