@@ -1,6 +1,14 @@
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus};
+
+use colored::Colorize;
+
+#[cfg(unix)]
+use std::os::unix::process::ExitStatusExt;
+
+#[cfg(windows)]
+use std::os::winows::process::ExitStatusExt;
 
 use crate::logging::Log;
 
@@ -16,6 +24,29 @@ pub struct CompileOutput {
     pub stdout: Vec<u8>,
     pub stderr: Vec<u8>,
     pub file: String,
+}
+
+fn is_modified(in_files: &[String], out_file: &str) -> bool {
+    let mut is_modified = false;
+
+    let wasm_modified = fs::metadata(out_file)
+        .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
+        .modified()
+        .unwrap();
+
+    for file in in_files {
+        let in_file_modified = fs::metadata(file)
+            .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
+            .modified()
+            .unwrap();
+
+        if in_file_modified > wasm_modified {
+            is_modified = true;
+            break;
+        }
+    }
+
+    is_modified
 }
 
 #[allow(dead_code)]
@@ -108,28 +139,42 @@ impl Compiler {
     }
 
     pub fn compile(&self, name: String, entry: fs::DirEntry) -> CompileOutput {
-        let (in_files, out_file) = Compiler::get_paths_for(name, entry);
-        let output = Command::new(&self.exec)
-            .args(in_files)
-            .arg(&self.global)
-            .arg("--lib")
-            .arg(&self.lib)
-            .args(&self.options)
-            .arg("--outFile")
-            .arg(out_file.clone())
-            .output()
-            .unwrap_or_else(|err| {
-                panic!(
-                    "{}",
-                    Log::Critical(format!("Internal error during compilation: {}", err)),
-                );
-            });
+        let (in_files, out_file) = Compiler::get_paths_for(name.clone(), entry);
 
-        CompileOutput {
-            status: output.status,
-            stdout: output.stdout,
-            stderr: output.stderr,
-            file: out_file,
+        if !Path::new(&out_file).exists() || is_modified(&in_files, &out_file) {
+            Log::Info(format!("Compiling {}...", &name.bright_blue())).println();
+
+            let output = Command::new(&self.exec)
+                .args(in_files)
+                .arg(&self.global)
+                .arg("--lib")
+                .arg(&self.lib)
+                .args(&self.options)
+                .arg("--outFile")
+                .arg(out_file.clone())
+                .output()
+                .unwrap_or_else(|err| {
+                    panic!(
+                        "{}",
+                        Log::Critical(format!("Internal error during compilation: {}", err)),
+                    );
+                });
+
+            CompileOutput {
+                status: output.status,
+                stdout: output.stdout,
+                stderr: output.stderr,
+                file: out_file,
+            }
+        } else {
+            Log::Info(format!("{} skipped!", &name.bright_blue())).println();
+
+            CompileOutput {
+                status: ExitStatusExt::from_raw(0),
+                stdout: vec![],
+                stderr: vec![],
+                file: out_file,
+            }
         }
     }
 }
