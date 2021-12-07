@@ -148,7 +148,7 @@ impl Compiler {
     }
 }
 
-pub fn should_compile(in_files: &[String], out_file: &str) -> bool {
+pub fn is_source_modified(in_files: &[String], out_file: &str) -> bool {
     let mut is_modified = false;
 
     let wasm_modified = fs::metadata(out_file)

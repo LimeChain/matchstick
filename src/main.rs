@@ -201,7 +201,7 @@ ___  ___      _       _         _   _      _
             let (in_files, out_file) = Compiler::get_paths_for(name.clone(), entry);
 
             let output = if !Path::new(&out_file).exists()
-                || compiler::should_compile(&in_files, &out_file)
+                || compiler::is_source_modified(&in_files, &out_file)
             {
                 Log::Info(format!("Compiling {}...", name.bright_blue())).println();
 
