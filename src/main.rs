@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::io::{self, Write};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::time::Instant;
 
 use clap::{App, Arg};
@@ -197,23 +197,7 @@ ___  ___      _       _         _   _      _
 
     let outputs: HashMap<String, CompileOutput> = test_sources
         .into_iter()
-        .map(|(name, entry)| {
-            let (in_files, out_file) = Compiler::get_paths_for(name.clone(), entry);
-
-            let output = if !Path::new(&out_file).exists()
-                || compiler::is_source_modified(&in_files, &out_file)
-            {
-                Log::Info(format!("Compiling {}...", name.bright_blue())).println();
-
-                compiler.compile(in_files, out_file)
-            } else {
-                Log::Info(format!("{} skipped!", name.bright_blue())).println();
-
-                compiler.skip_compile(out_file)
-            };
-
-            (name, output)
-        })
+        .map(|(name, entry)| (name.clone(), compiler.execute(name, entry)))
         .collect();
 
     if outputs.values().any(|output| !output.status.success()) {

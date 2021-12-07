@@ -1,5 +1,6 @@
+use colored::Colorize;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus};
 
 #[cfg(unix)]
@@ -113,7 +114,21 @@ impl Compiler {
         return (in_files, format!("./tests/.bin/{}.wasm", name));
     }
 
-    pub fn compile(&self, in_files: Vec<String>, out_file: String) -> CompileOutput {
+    pub fn execute(&self, name: String, entry: fs::DirEntry) -> CompileOutput {
+        let (in_files, out_file) = Compiler::get_paths_for(name.clone(), entry);
+
+        if !Path::new(&out_file).exists() || is_source_modified(&in_files, &out_file) {
+            Log::Info(format!("Compiling {}...", name.bright_blue())).println();
+
+            self.compile(in_files, out_file)
+        } else {
+            Log::Info(format!("{} skipped!", name.bright_blue())).println();
+
+            self.skip_compile(out_file)
+        }
+    }
+
+    fn compile(&self, in_files: Vec<String>, out_file: String) -> CompileOutput {
         let output = Command::new(&self.exec)
             .args(in_files)
             .arg(&self.global)
@@ -138,7 +153,7 @@ impl Compiler {
         }
     }
 
-    pub fn skip_compile(&self, out_file: String) -> CompileOutput {
+    fn skip_compile(&self, out_file: String) -> CompileOutput {
         CompileOutput {
             status: ExitStatusExt::from_raw(0),
             stdout: vec![],
@@ -148,7 +163,7 @@ impl Compiler {
     }
 }
 
-pub fn is_source_modified(in_files: &[String], out_file: &str) -> bool {
+fn is_source_modified(in_files: &[String], out_file: &str) -> bool {
     let mut is_modified = false;
 
     let wasm_modified = fs::metadata(out_file)
