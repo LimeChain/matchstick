@@ -123,7 +123,7 @@ impl Compiler {
         });
 
         if !Path::new(&out_file).exists()
-            || self.is_source_modified(&suite_folder, &in_files, &out_file)
+            || Compiler::is_source_modified(&suite_folder, &in_files, &out_file)
         {
             Log::Info(format!("Compiling {}...", name.bright_blue())).println();
 
@@ -169,7 +169,7 @@ impl Compiler {
         }
     }
 
-    fn is_source_modified(&self, test_folder: &str, in_files: &[String], out_file: &str) -> bool {
+    fn is_source_modified(test_folder: &str, in_files: &[String], out_file: &str) -> bool {
         let mut is_modified = false;
 
         let wasm_modified = fs::metadata(out_file)
