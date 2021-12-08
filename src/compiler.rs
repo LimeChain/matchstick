@@ -1,6 +1,13 @@
+use colored::Colorize;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus};
+
+#[cfg(unix)]
+use std::os::unix::process::ExitStatusExt;
+
+#[cfg(windows)]
+use std::os::winows::process::ExitStatusExt;
 
 use crate::logging::Log;
 
@@ -107,8 +114,28 @@ impl Compiler {
         return (in_files, format!("./tests/.bin/{}.wasm", name));
     }
 
-    pub fn compile(&self, name: String, entry: fs::DirEntry) -> CompileOutput {
-        let (in_files, out_file) = Compiler::get_paths_for(name, entry);
+    pub fn execute(&self, name: String, entry: fs::DirEntry) -> CompileOutput {
+        let (in_files, out_file) = Compiler::get_paths_for(name.clone(), entry);
+        let mut suite_folder = String::new();
+
+        crate::TESTS_LOCATION.with(|path| {
+            suite_folder = format!("{}/{}", &*path.borrow(), name);
+        });
+
+        if !Path::new(&out_file).exists()
+            || Compiler::is_source_modified(&suite_folder, &in_files, &out_file)
+        {
+            Log::Info(format!("Compiling {}...", name.bright_blue())).println();
+
+            self.compile(in_files, out_file)
+        } else {
+            Log::Info(format!("{} skipped!", name.bright_blue())).println();
+
+            self.skip_compile(out_file)
+        }
+    }
+
+    fn compile(&self, in_files: Vec<String>, out_file: String) -> CompileOutput {
         let output = Command::new(&self.exec)
             .args(in_files)
             .arg(&self.global)
@@ -131,5 +158,46 @@ impl Compiler {
             stderr: output.stderr,
             file: out_file,
         }
+    }
+
+    fn skip_compile(&self, out_file: String) -> CompileOutput {
+        CompileOutput {
+            status: ExitStatusExt::from_raw(0),
+            stdout: vec![],
+            stderr: vec![],
+            file: out_file,
+        }
+    }
+
+    fn is_source_modified(test_folder: &str, in_files: &[String], out_file: &str) -> bool {
+        let mut is_modified = false;
+
+        let wasm_modified = fs::metadata(out_file)
+            .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
+            .modified()
+            .unwrap();
+
+        let suite_folder_modified = fs::metadata(test_folder)
+            .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
+            .modified()
+            .unwrap();
+
+        if suite_folder_modified > wasm_modified {
+            is_modified = true
+        } else {
+            for file in in_files {
+                let in_file_modified = fs::metadata(file)
+                    .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
+                    .modified()
+                    .unwrap();
+
+                if in_file_modified > wasm_modified {
+                    is_modified = true;
+                    break;
+                }
+            }
+        }
+
+        is_modified
     }
 }

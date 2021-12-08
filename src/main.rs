@@ -197,7 +197,7 @@ ___  ___      _       _         _   _      _
 
     let outputs: HashMap<String, CompileOutput> = test_sources
         .into_iter()
-        .map(|(name, entry)| (name.clone(), compiler.compile(name, entry)))
+        .map(|(name, entry)| (name.clone(), compiler.execute(name, entry)))
         .collect();
 
     if outputs.values().any(|output| !output.status.success()) {
@@ -240,7 +240,7 @@ ___  ___      _       _         _   _      _
         .map(|(key, val)| (key.clone(), TestSuite::from(val)))
         .collect();
 
-    println!("{}", ("Igniting tests 🔥\n").to_string().bright_red());
+    println!("{}", ("\nIgniting tests 🔥\n").to_string().bright_red());
 
     let (mut num_passed, mut num_failed) = (0, 0);
     let failed_suites: HashMap<String, HashMap<String, TestResult>> = test_suites
