@@ -2150,6 +2150,7 @@ dependencies = [
  "graph-mock",
  "graph-runtime-test",
  "graph-runtime-wasm",
+ "graphql-parser",
  "lazy_static",
  "regex",
  "run_script",
@@ -5383,8 +5384,3 @@ dependencies = [
  "cc",
  "libc",
 ]
-
-[[patch.unused]]
-name = "graphql-parser"
-version = "0.3.0"
-source = "git+https://github.com/graphql-rust/graphql-parser?rev=45167b53e9533c331298683577ba8df7e43480ac#45167b53e9533c331298683577ba8df7e43480ac"
