@@ -1,10 +1,12 @@
 use std::collections::HashMap;
 
-use ethabi::{Address, Token};
 use graph::{
     blockchain::Blockchain,
     data::{graphql::ext::DirectiveFinder, store::Value},
-    prelude::Entity,
+    prelude::{
+        Entity,
+        ethabi::{Token, Address}
+    },
     runtime::{asc_get, asc_new, try_asc_get, AscPtr, HostExportError},
 };
 use graph_chain_ethereum::runtime::{

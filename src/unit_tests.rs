@@ -3,11 +3,11 @@ mod unit_tests {
     use std::collections::HashMap;
     use std::str::FromStr;
 
-    use ethabi::Token;
     use graph::{
         data::store::Value,
         runtime::{asc_get, AscPtr, AscType},
         semver::Version,
+        prelude::ethabi::Token
     };
     use graph_chain_ethereum::{runtime::abi::AscUnresolvedContractCall_0_0_4, Chain};
     use graph_runtime_wasm::asc_abi::class::{
@@ -715,7 +715,7 @@ mod unit_tests {
             .get("0x8920…43e7funcNamefuncName(address):(string,string)val")
             .unwrap()[0]
             .clone();
-        assert_eq!(&token.to_string().unwrap(), "val");
+        assert_eq!(&token.to_string(), "val");
     }
 
     #[test]

@@ -1,12 +1,19 @@
+
+use std::{
+    collections::BTreeMap,
+    num::NonZeroU64
+};
+
 use async_trait::async_trait;
-use graph::components::store::WritableStore;
-use graph::data::subgraph::*;
-use graph::prelude::StoreError;
 use graph::{
     blockchain::BlockPtr,
-    prelude::{Logger, StopwatchMetrics},
+    components::store::{WritableStore, StoredDynamicDataSource, EntityType},
+    data::{
+        store::EntityVersion,
+        subgraph::schema::{SubgraphError, SubgraphHealth}
+    },
+    prelude::*,
 };
-use std::result::Result;
 
 pub struct MockWritableStore {}
 
@@ -40,7 +47,7 @@ impl WritableStore for MockWritableStore {
         unreachable!()
     }
 
-    async fn fail_subgraph(&self, _error: schema::SubgraphError) -> Result<(), StoreError> {
+    async fn fail_subgraph(&self, _error: SubgraphError) -> Result<(), StoreError> {
         unreachable!()
     }
 
@@ -50,8 +57,8 @@ impl WritableStore for MockWritableStore {
 
     fn get(
         &self,
-        _key: &graph::prelude::EntityKey,
-    ) -> Result<Option<graph::prelude::Entity>, StoreError> {
+        _key: &EntityKey,
+    ) -> Result<Option<EntityVersion>, StoreError> {
         unreachable!()
     }
 
@@ -59,21 +66,21 @@ impl WritableStore for MockWritableStore {
         &self,
         _block_ptr_to: BlockPtr,
         _firehose_cursor: Option<String>,
-        _mods: Vec<graph::prelude::EntityModification>,
+        _mods: Vec<EntityModification>,
         _stopwatch: StopwatchMetrics,
-        _data_sources: Vec<graph::components::store::StoredDynamicDataSource>,
-        _deterministic_errors: Vec<schema::SubgraphError>,
-    ) -> Result<(), StoreError> {
+        _data_sources: Vec<StoredDynamicDataSource>,
+        _deterministic_errors: Vec<SubgraphError>,
+    ) -> Result<Vec<(EntityKey, Option<NonZeroU64>)>, StoreError> {
         unreachable!()
     }
 
     fn get_many(
         &self,
-        _ids_for_type: std::collections::BTreeMap<&graph::components::store::EntityType, Vec<&str>>,
+        _ids_for_type: BTreeMap<&EntityType, Vec<&str>>,
     ) -> Result<
-        std::collections::BTreeMap<
-            graph::components::store::EntityType,
-            Vec<graph::prelude::Entity>,
+        BTreeMap<
+            EntityType,
+            Vec<EntityVersion>,
         >,
         StoreError,
     > {
@@ -94,11 +101,15 @@ impl WritableStore for MockWritableStore {
 
     async fn load_dynamic_data_sources(
         &self,
-    ) -> Result<Vec<graph::components::store::StoredDynamicDataSource>, StoreError> {
+    ) -> Result<Vec<StoredDynamicDataSource>, StoreError> {
         unreachable!()
     }
 
     fn shard(&self) -> &str {
+        unreachable!()
+    }
+
+    async fn health(&self, _id: &DeploymentHash) -> Result<SubgraphHealth, StoreError> {
         unreachable!()
     }
 }
