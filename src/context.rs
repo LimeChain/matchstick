@@ -4,8 +4,8 @@ use graph::{
     blockchain::Blockchain,
     data::{graphql::ext::DirectiveFinder, store::Value},
     prelude::{
+        ethabi::{Address, Token},
         Entity,
-        ethabi::{Token, Address}
     },
     runtime::{asc_get, asc_new, try_asc_get, AscPtr, HostExportError},
 };

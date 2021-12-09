@@ -1,16 +1,12 @@
-
-use std::{
-    collections::BTreeMap,
-    num::NonZeroU64
-};
+use std::{collections::BTreeMap, num::NonZeroU64};
 
 use async_trait::async_trait;
 use graph::{
     blockchain::BlockPtr,
-    components::store::{WritableStore, StoredDynamicDataSource, EntityType},
+    components::store::{EntityType, StoredDynamicDataSource, WritableStore},
     data::{
         store::EntityVersion,
-        subgraph::schema::{SubgraphError, SubgraphHealth}
+        subgraph::schema::{SubgraphError, SubgraphHealth},
     },
     prelude::*,
 };
@@ -55,10 +51,7 @@ impl WritableStore for MockWritableStore {
         unreachable!()
     }
 
-    fn get(
-        &self,
-        _key: &EntityKey,
-    ) -> Result<Option<EntityVersion>, StoreError> {
+    fn get(&self, _key: &EntityKey) -> Result<Option<EntityVersion>, StoreError> {
         unreachable!()
     }
 
@@ -77,13 +70,7 @@ impl WritableStore for MockWritableStore {
     fn get_many(
         &self,
         _ids_for_type: BTreeMap<&EntityType, Vec<&str>>,
-    ) -> Result<
-        BTreeMap<
-            EntityType,
-            Vec<EntityVersion>,
-        >,
-        StoreError,
-    > {
+    ) -> Result<BTreeMap<EntityType, Vec<EntityVersion>>, StoreError> {
         unreachable!()
     }
 
@@ -99,9 +86,7 @@ impl WritableStore for MockWritableStore {
         unreachable!()
     }
 
-    async fn load_dynamic_data_sources(
-        &self,
-    ) -> Result<Vec<StoredDynamicDataSource>, StoreError> {
+    async fn load_dynamic_data_sources(&self) -> Result<Vec<StoredDynamicDataSource>, StoreError> {
         unreachable!()
     }
 

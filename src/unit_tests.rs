@@ -5,9 +5,9 @@ mod unit_tests {
 
     use graph::{
         data::store::Value,
+        prelude::ethabi::Token,
         runtime::{asc_get, AscPtr, AscType},
         semver::Version,
-        prelude::ethabi::Token
     };
     use graph_chain_ethereum::{runtime::abi::AscUnresolvedContractCall_0_0_4, Chain};
     use graph_runtime_wasm::asc_abi::class::{
