@@ -2137,7 +2137,7 @@ checksum = "a3e378b66a060d48947b590737b30a1be76706c8dd7b8ba0f2fe3989c68a853f"
 
 [[package]]
 name = "matchstick"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5167,7 +5167,7 @@ dependencies = [
 [[package]]
 name = "web3"
 version = "0.10.0-graph"
-source = "git+https://github.com/graphprotocol/rust-web3?branch=master#585c9db21576fd9aace40607b764ec870a5faebb"
+source = "git+https://github.com/graphprotocol/rust-web3?rev=585c9db21576fd9aace40607b764ec870a5faebb#585c9db21576fd9aace40607b764ec870a5faebb"
 dependencies = [
  "arrayvec 0.5.2",
  "base64 0.12.3",
