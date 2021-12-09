@@ -3,9 +3,9 @@ mod unit_tests {
     use std::collections::HashMap;
     use std::str::FromStr;
 
-    use ethabi::Token;
     use graph::{
         data::store::Value,
+        prelude::ethabi::Token,
         runtime::{asc_get, AscPtr, AscType},
         semver::Version,
     };
@@ -715,7 +715,7 @@ mod unit_tests {
             .get("0x8920…43e7funcNamefuncName(address):(string,string)val")
             .unwrap()[0]
             .clone();
-        assert_eq!(&token.to_string().unwrap(), "val");
+        assert_eq!(&token.to_string(), "val");
     }
 
     #[test]

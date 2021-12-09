@@ -1,18 +1,17 @@
 [package]
 name = "matchstick"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["LimeChain <limechain.tech>"]
 edition = "2021"
 
 [dependencies]
-graph = { git = "https://github.com/graphprotocol/graph-node" }
-graph-core = { git = "https://github.com/graphprotocol/graph-node" }
-graph-chain-ethereum = { git = "https://github.com/graphprotocol/graph-node" }
-graph-graphql = { git = "https://github.com/graphprotocol/graph-node" }
-graph-mock = { git = "https://github.com/graphprotocol/graph-node" }
-graph-runtime-test = { git = "https://github.com/graphprotocol/graph-node" }
-graph-runtime-wasm = { git = "https://github.com/graphprotocol/graph-node" }
-ethabi = { git = "https://github.com/graphprotocol/ethabi", branch = "master" }
+graph = { git = "https://github.com/graphprotocol/graph-node", rev = "5ddc3e1994ec9599522ece67c478c8c3d8769d79" }
+graph-core = { git = "https://github.com/graphprotocol/graph-node", rev = "5ddc3e1994ec9599522ece67c478c8c3d8769d79" }
+graph-chain-ethereum = { git = "https://github.com/graphprotocol/graph-node", rev = "5ddc3e1994ec9599522ece67c478c8c3d8769d79" }
+graph-graphql = { git = "https://github.com/graphprotocol/graph-node", rev = "5ddc3e1994ec9599522ece67c478c8c3d8769d79" }
+graph-mock = { git = "https://github.com/graphprotocol/graph-node", rev = "5ddc3e1994ec9599522ece67c478c8c3d8769d79" }
+graph-runtime-test = { git = "https://github.com/graphprotocol/graph-node", rev = "5ddc3e1994ec9599522ece67c478c8c3d8769d79" }
+graph-runtime-wasm = { git = "https://github.com/graphprotocol/graph-node", rev = "5ddc3e1994ec9599522ece67c478c8c3d8769d79" }
 wasmtime = "0.27.0"
 tokio = { version = "0.2.25", features = ["stream", "rt-threaded", "rt-util", "blocking", "time", "sync", "macros", "test-util", "net"] }
 anyhow = "1.0"
@@ -24,11 +23,8 @@ serde_json = "1.0.59"
 run_script = "0.9"
 regex = "1.5.4"
 serde_yaml = "0.8.21"
-
-[patch.crates-io]
-# Include protection against stack overflow when parsing from this PR: https://github.com/graphql-rust/graphql-parser/commit/45167b53e9533c331298683577ba8df7e43480ac
-graphql-parser = { git = "https://github.com/graphql-rust/graphql-parser", rev = "45167b53e9533c331298683577ba8df7e43480ac" }
+graphql-parser = "0.4.0"
 
 [dev-dependencies]
 serial_test = "0.5.1"
-web3 = { git = "https://github.com/graphprotocol/rust-web3", branch = "master" }
+web3 = { git = "https://github.com/graphprotocol/rust-web3", rev = "585c9db21576fd9aace40607b764ec870a5faebb" }
