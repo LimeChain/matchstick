@@ -37,53 +37,6 @@ impl Datasource {
     }
 }
 
-fn install_wabt(tests_location: &str) {
-    let options = ScriptOptions::new();
-    let args = vec![];
-
-    println!(
-        "{}",
-        ("Downloading necessary tools... 🛠️").to_string().cyan()
-    );
-
-    let git_clone_wabt = format!(
-        r#"cd {} &&
-        mkdir .tools &&
-        cd .tools &&
-        git clone --recursive https://github.com/WebAssembly/wabt &&
-        cd wabt && git submodule update --init
-        cd ../..
-        "#,
-        tests_location
-    );
-
-    run_or_exit(&git_clone_wabt, &args, &options);
-
-    let options = ScriptOptions::new();
-    let args = vec![];
-
-    println!(
-        "{}",
-        ("Building. This might take a while... ⌛️")
-            .to_string()
-            .cyan()
-    );
-
-    let cmake_build = format!(
-        r#"
-        cd {}/.tools/wabt &&
-        mkdir -p build &&
-        cd build &&
-        cmake .. &&
-        cmake --build . &&
-        cd ../../..
-        "#,
-        tests_location
-    );
-
-    run_or_exit(&cmake_build, &args, &options);
-}
-
 fn inspect_handlers(wat_contents: &str, handlers: &[String]) -> i32 {
     let mut called = 0;
 
@@ -121,8 +74,6 @@ pub fn generate_coverage_report() {
     crate::TESTS_LOCATION.with(|path| {
         tests_location = (&*path.borrow()).to_string();
     });
-
-    install_wabt(&tests_location);
 
     let subgraph_yaml_contents = fs::read_to_string("subgraph.yaml")
         .expect("Something went wrong reading the 'subgraph.yaml' file");
@@ -228,10 +179,17 @@ pub fn generate_coverage_report() {
             .last()
             .expect("Couldn't get last element of string Vec 'f_name'.");
 
-        let convert_command = format!(
-            "{}/{} {} {} {}",
-            tests_location, ".tools/wabt/build/wasm2wat", file, "-o", destination
-        );
+        let mut convert_command = "".to_string();
+        crate::LIBS_LOCATION.with(|path| {
+            convert_command = format!(
+                "{}/{} {} {} {}",
+                &*path.borrow(),
+                "matchstick-as/node_modules/wabt/bin/wasm2wat",
+                file,
+                "-o",
+                destination
+            );
+        });
 
         let options = ScriptOptions::new();
         let args = vec![];
