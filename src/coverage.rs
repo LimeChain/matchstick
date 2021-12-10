@@ -37,52 +37,6 @@ impl Datasource {
     }
 }
 
-fn install_wabt() {
-    let options = ScriptOptions::new();
-    let args = vec![];
-
-    println!(
-        "{}",
-        ("Downloading necessary tools... 🛠️").to_string().cyan()
-    );
-
-    run_or_exit(
-        r#"
-         cd tests &&
-         mkdir .tools &&
-         cd .tools &&
-         git clone --recursive https://github.com/WebAssembly/wabt &&
-         cd wabt && git submodule update --init
-         cd ../..
-         "#,
-        &args,
-        &options,
-    );
-
-    let options = ScriptOptions::new();
-    let args = vec![];
-
-    println!(
-        "{}",
-        ("Building. This might take a while... ⌛️")
-            .to_string()
-            .cyan()
-    );
-
-    run_or_exit(
-        r#"
-         cd tests/.tools/wabt &&
-         mkdir -p build &&
-         cd build &&
-         cmake .. &&
-         cmake --build . &&
-         cd ../../..
-         "#,
-        &args,
-        &options,
-    );
-}
-
 fn inspect_handlers(wat_contents: &str, handlers: &[String]) -> i32 {
     let mut called = 0;
 
@@ -115,8 +69,6 @@ fn parse(v: &Value) -> String {
 }
 
 pub fn generate_coverage_report() {
-    install_wabt();
-
     let subgraph_yaml_contents = fs::read_to_string("subgraph.yaml")
         .expect("Something went wrong reading the 'subgraph.yaml' file");
     let subgraph_yaml: Value = serde_yaml::from_str(&subgraph_yaml_contents)
@@ -219,10 +171,17 @@ pub fn generate_coverage_report() {
             .last()
             .expect("Couldn't get last element of string Vec 'f_name'.");
 
-        let convert_command = format!(
-            "{} {} {} {}",
-            "tests/.tools/wabt/build/wasm2wat", file, "-o", destination
-        );
+        let mut convert_command = "".to_string();
+        crate::LIBS_LOCATION.with(|path| {
+            convert_command = format!(
+                "{}/{} {} {} {}",
+                &*path.borrow(),
+                "matchstick-as/node_modules/wabt/bin/wasm2wat",
+                file,
+                "-o",
+                destination
+            );
+        });
 
         let options = ScriptOptions::new();
         let args = vec![];
