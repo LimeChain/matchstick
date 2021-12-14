@@ -5,13 +5,13 @@ authors = ["LimeChain <limechain.tech>"]
 edition = "2021"
 
 [dependencies]
-graph = { git = "https://github.com/graphprotocol/graph-node", rev = "5ddc3e1994ec9599522ece67c478c8c3d8769d79" }
-graph-core = { git = "https://github.com/graphprotocol/graph-node", rev = "5ddc3e1994ec9599522ece67c478c8c3d8769d79" }
-graph-chain-ethereum = { git = "https://github.com/graphprotocol/graph-node", rev = "5ddc3e1994ec9599522ece67c478c8c3d8769d79" }
-graph-graphql = { git = "https://github.com/graphprotocol/graph-node", rev = "5ddc3e1994ec9599522ece67c478c8c3d8769d79" }
-graph-mock = { git = "https://github.com/graphprotocol/graph-node", rev = "5ddc3e1994ec9599522ece67c478c8c3d8769d79" }
-graph-runtime-test = { git = "https://github.com/graphprotocol/graph-node", rev = "5ddc3e1994ec9599522ece67c478c8c3d8769d79" }
-graph-runtime-wasm = { git = "https://github.com/graphprotocol/graph-node", rev = "5ddc3e1994ec9599522ece67c478c8c3d8769d79" }
+graph = { git = "https://github.com/georg-getz/graph-node", rev = "2b55c0423acce2bd364a4515c7e75f2af87d1d93" }
+graph-core = { git = "https://github.com/georg-getz/graph-node", rev = "2b55c0423acce2bd364a4515c7e75f2af87d1d93" }
+graph-chain-ethereum = { git = "https://github.com/georg-getz/graph-node", rev = "2b55c0423acce2bd364a4515c7e75f2af87d1d93" }
+graph-graphql = { git = "https://github.com/georg-getz/graph-node", rev = "2b55c0423acce2bd364a4515c7e75f2af87d1d93" }
+graph-mock = { git = "https://github.com/georg-getz/graph-node", rev = "2b55c0423acce2bd364a4515c7e75f2af87d1d93" }
+graph-runtime-test = { git = "https://github.com/georg-getz/graph-node", rev = "2b55c0423acce2bd364a4515c7e75f2af87d1d93" }
+graph-runtime-wasm = { git = "https://github.com/georg-getz/graph-node", rev = "2b55c0423acce2bd364a4515c7e75f2af87d1d93" }
 wasmtime = "0.27.0"
 tokio = { version = "0.2.25", features = ["stream", "rt-threaded", "rt-util", "blocking", "time", "sync", "macros", "test-util", "net"] }
 anyhow = "1.0"
@@ -24,7 +24,8 @@ run_script = "0.9"
 regex = "1.5.4"
 serde_yaml = "0.8.21"
 graphql-parser = "0.4.0"
+itertools = "0.10.3"
 
 [dev-dependencies]
 serial_test = "0.5.1"
-web3 = { git = "https://github.com/graphprotocol/rust-web3", rev = "585c9db21576fd9aace40607b764ec870a5faebb" }
+web3 = { git = "https://github.com/georg-getz/rust-web3", rev = "53eeeb4b42fc90cd6754500e8ee93874b68bd3d7" }

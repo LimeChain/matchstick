@@ -89,7 +89,7 @@ impl<C: Blockchain> MatchstickInstance<C> {
                 deployment,
                 data_source,
                 Arc::from(mock_subgraph_store),
-                Version::new(0, 0, 5),
+                &vec!(),
             ),
             host_metrics,
             None,
