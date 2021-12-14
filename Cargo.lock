@@ -1176,7 +1176,7 @@ checksum = "f0a01e0497841a3b2db4f8afa483cce65f7e96a3498bd6c541734792aeac8fe7"
 [[package]]
 name = "graph"
 version = "0.25.0"
-source = "git+https://github.com/georg-getz/graph-node?rev=2b55c0423acce2bd364a4515c7e75f2af87d1d93#2b55c0423acce2bd364a4515c7e75f2af87d1d93"
+source = "git+https://github.com/georg-getz/graph-node?rev=7a833a289db2a749980bb07f2e6de21f1312135c#7a833a289db2a749980bb07f2e6de21f1312135c"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -1237,7 +1237,7 @@ dependencies = [
 [[package]]
 name = "graph-chain-ethereum"
 version = "0.25.0"
-source = "git+https://github.com/georg-getz/graph-node?rev=2b55c0423acce2bd364a4515c7e75f2af87d1d93#2b55c0423acce2bd364a4515c7e75f2af87d1d93"
+source = "git+https://github.com/georg-getz/graph-node?rev=7a833a289db2a749980bb07f2e6de21f1312135c#7a833a289db2a749980bb07f2e6de21f1312135c"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1264,7 +1264,7 @@ dependencies = [
 [[package]]
 name = "graph-chain-near"
 version = "0.25.0"
-source = "git+https://github.com/georg-getz/graph-node?rev=2b55c0423acce2bd364a4515c7e75f2af87d1d93#2b55c0423acce2bd364a4515c7e75f2af87d1d93"
+source = "git+https://github.com/georg-getz/graph-node?rev=7a833a289db2a749980bb07f2e6de21f1312135c#7a833a289db2a749980bb07f2e6de21f1312135c"
 dependencies = [
  "base64 0.13.0",
  "graph",
@@ -1279,7 +1279,7 @@ dependencies = [
 [[package]]
 name = "graph-core"
 version = "0.25.0"
-source = "git+https://github.com/georg-getz/graph-node?rev=2b55c0423acce2bd364a4515c7e75f2af87d1d93#2b55c0423acce2bd364a4515c7e75f2af87d1d93"
+source = "git+https://github.com/georg-getz/graph-node?rev=7a833a289db2a749980bb07f2e6de21f1312135c#7a833a289db2a749980bb07f2e6de21f1312135c"
 dependencies = [
  "async-trait",
  "atomic_refcell",
@@ -1302,7 +1302,7 @@ dependencies = [
 [[package]]
 name = "graph-graphql"
 version = "0.25.0"
-source = "git+https://github.com/georg-getz/graph-node?rev=2b55c0423acce2bd364a4515c7e75f2af87d1d93#2b55c0423acce2bd364a4515c7e75f2af87d1d93"
+source = "git+https://github.com/georg-getz/graph-node?rev=7a833a289db2a749980bb07f2e6de21f1312135c#7a833a289db2a749980bb07f2e6de21f1312135c"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -1321,7 +1321,7 @@ dependencies = [
 [[package]]
 name = "graph-mock"
 version = "0.25.0"
-source = "git+https://github.com/georg-getz/graph-node?rev=2b55c0423acce2bd364a4515c7e75f2af87d1d93#2b55c0423acce2bd364a4515c7e75f2af87d1d93"
+source = "git+https://github.com/georg-getz/graph-node?rev=7a833a289db2a749980bb07f2e6de21f1312135c#7a833a289db2a749980bb07f2e6de21f1312135c"
 dependencies = [
  "graph",
 ]
@@ -1329,7 +1329,7 @@ dependencies = [
 [[package]]
 name = "graph-runtime-derive"
 version = "0.25.0"
-source = "git+https://github.com/georg-getz/graph-node?rev=2b55c0423acce2bd364a4515c7e75f2af87d1d93#2b55c0423acce2bd364a4515c7e75f2af87d1d93"
+source = "git+https://github.com/georg-getz/graph-node?rev=7a833a289db2a749980bb07f2e6de21f1312135c#7a833a289db2a749980bb07f2e6de21f1312135c"
 dependencies = [
  "anyhow",
  "quote 1.0.10",
@@ -1339,7 +1339,7 @@ dependencies = [
 [[package]]
 name = "graph-runtime-test"
 version = "0.25.0"
-source = "git+https://github.com/georg-getz/graph-node?rev=2b55c0423acce2bd364a4515c7e75f2af87d1d93#2b55c0423acce2bd364a4515c7e75f2af87d1d93"
+source = "git+https://github.com/georg-getz/graph-node?rev=7a833a289db2a749980bb07f2e6de21f1312135c#7a833a289db2a749980bb07f2e6de21f1312135c"
 dependencies = [
  "graph",
  "graph-chain-ethereum",
@@ -1353,7 +1353,7 @@ dependencies = [
 [[package]]
 name = "graph-runtime-wasm"
 version = "0.25.0"
-source = "git+https://github.com/georg-getz/graph-node?rev=2b55c0423acce2bd364a4515c7e75f2af87d1d93#2b55c0423acce2bd364a4515c7e75f2af87d1d93"
+source = "git+https://github.com/georg-getz/graph-node?rev=7a833a289db2a749980bb07f2e6de21f1312135c#7a833a289db2a749980bb07f2e6de21f1312135c"
 dependencies = [
  "anyhow",
  "async-trait",
