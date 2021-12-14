@@ -7,7 +7,7 @@ use std::process::{Command, ExitStatus};
 use std::os::unix::process::ExitStatusExt;
 
 #[cfg(windows)]
-use std::os::winows::process::ExitStatusExt;
+use std::os::windows::process::ExitStatusExt;
 
 use crate::logging::Log;
 
