@@ -5,13 +5,13 @@ authors = ["LimeChain <limechain.tech>"]
 edition = "2021"
 
 [dependencies]
-graph = { git = "https://github.com/georg-getz/graph-node", rev = "2b55c0423acce2bd364a4515c7e75f2af87d1d93" }
-graph-core = { git = "https://github.com/georg-getz/graph-node", rev = "2b55c0423acce2bd364a4515c7e75f2af87d1d93" }
-graph-chain-ethereum = { git = "https://github.com/georg-getz/graph-node", rev = "2b55c0423acce2bd364a4515c7e75f2af87d1d93" }
-graph-graphql = { git = "https://github.com/georg-getz/graph-node", rev = "2b55c0423acce2bd364a4515c7e75f2af87d1d93" }
-graph-mock = { git = "https://github.com/georg-getz/graph-node", rev = "2b55c0423acce2bd364a4515c7e75f2af87d1d93" }
-graph-runtime-test = { git = "https://github.com/georg-getz/graph-node", rev = "2b55c0423acce2bd364a4515c7e75f2af87d1d93" }
-graph-runtime-wasm = { git = "https://github.com/georg-getz/graph-node", rev = "2b55c0423acce2bd364a4515c7e75f2af87d1d93" }
+graph = { git = "https://github.com/georg-getz/graph-node", rev = "7a833a289db2a749980bb07f2e6de21f1312135c" }
+graph-core = { git = "https://github.com/georg-getz/graph-node", rev = "7a833a289db2a749980bb07f2e6de21f1312135c" }
+graph-chain-ethereum = { git = "https://github.com/georg-getz/graph-node", rev = "7a833a289db2a749980bb07f2e6de21f1312135c" }
+graph-graphql = { git = "https://github.com/georg-getz/graph-node", rev = "7a833a289db2a749980bb07f2e6de21f1312135c" }
+graph-mock = { git = "https://github.com/georg-getz/graph-node", rev = "7a833a289db2a749980bb07f2e6de21f1312135c" }
+graph-runtime-test = { git = "https://github.com/georg-getz/graph-node", rev = "7a833a289db2a749980bb07f2e6de21f1312135c" }
+graph-runtime-wasm = { git = "https://github.com/georg-getz/graph-node", rev = "7a833a289db2a749980bb07f2e6de21f1312135c" }
 wasmtime = "0.27.0"
 tokio = { version = "0.2.25", features = ["stream", "rt-threaded", "rt-util", "blocking", "time", "sync", "macros", "test-util", "net"] }
 anyhow = "1.0"
