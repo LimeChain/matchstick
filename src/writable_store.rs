@@ -1,11 +1,10 @@
-use std::{collections::BTreeMap, num::NonZeroU64};
+use std::collections::BTreeMap;
 
 use async_trait::async_trait;
 use graph::{
     blockchain::BlockPtr,
     components::store::{EntityType, StoredDynamicDataSource, WritableStore},
     data::{
-        store::EntityVersion,
         subgraph::schema::{SubgraphError, SubgraphHealth},
     },
     prelude::*,
@@ -51,7 +50,7 @@ impl WritableStore for MockWritableStore {
         unreachable!()
     }
 
-    fn get(&self, _key: &EntityKey) -> Result<Option<EntityVersion>, StoreError> {
+    fn get(&self, _key: &EntityKey) -> Result<Option<Entity>, StoreError> {
         unreachable!()
     }
 
@@ -63,14 +62,14 @@ impl WritableStore for MockWritableStore {
         _stopwatch: StopwatchMetrics,
         _data_sources: Vec<StoredDynamicDataSource>,
         _deterministic_errors: Vec<SubgraphError>,
-    ) -> Result<Vec<(EntityKey, Option<NonZeroU64>)>, StoreError> {
+    ) -> Result<(), StoreError> {
         unreachable!()
     }
 
     fn get_many(
         &self,
         _ids_for_type: BTreeMap<&EntityType, Vec<&str>>,
-    ) -> Result<BTreeMap<EntityType, Vec<EntityVersion>>, StoreError> {
+    ) -> Result<BTreeMap<EntityType, Vec<Entity>>, StoreError> {
         unreachable!()
     }
 
