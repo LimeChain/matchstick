@@ -5,13 +5,13 @@ authors = ["LimeChain <limechain.tech>"]
 edition = "2021"
 
 [dependencies]
-graph = { git = "https://github.com/graphprotocol/graph-node", rev = "5ddc3e1994ec9599522ece67c478c8c3d8769d79" }
-graph-core = { git = "https://github.com/graphprotocol/graph-node", rev = "5ddc3e1994ec9599522ece67c478c8c3d8769d79" }
-graph-chain-ethereum = { git = "https://github.com/graphprotocol/graph-node", rev = "5ddc3e1994ec9599522ece67c478c8c3d8769d79" }
-graph-graphql = { git = "https://github.com/graphprotocol/graph-node", rev = "5ddc3e1994ec9599522ece67c478c8c3d8769d79" }
-graph-mock = { git = "https://github.com/graphprotocol/graph-node", rev = "5ddc3e1994ec9599522ece67c478c8c3d8769d79" }
-graph-runtime-test = { git = "https://github.com/graphprotocol/graph-node", rev = "5ddc3e1994ec9599522ece67c478c8c3d8769d79" }
-graph-runtime-wasm = { git = "https://github.com/graphprotocol/graph-node", rev = "5ddc3e1994ec9599522ece67c478c8c3d8769d79" }
+graph = { git = "https://github.com/graphprotocol/graph-node", rev = "753cee7f559eab70861c0bb84a0d9fef727e3099" }
+graph-core = { git = "https://github.com/graphprotocol/graph-node", rev = "753cee7f559eab70861c0bb84a0d9fef727e3099" }
+graph-chain-ethereum = { git = "https://github.com/graphprotocol/graph-node", rev = "753cee7f559eab70861c0bb84a0d9fef727e3099" }
+graph-graphql = { git = "https://github.com/graphprotocol/graph-node", rev = "753cee7f559eab70861c0bb84a0d9fef727e3099" }
+graph-mock = { git = "https://github.com/graphprotocol/graph-node", rev = "753cee7f559eab70861c0bb84a0d9fef727e3099" }
+graph-runtime-test = { git = "https://github.com/graphprotocol/graph-node", rev = "753cee7f559eab70861c0bb84a0d9fef727e3099" }
+graph-runtime-wasm = { git = "https://github.com/graphprotocol/graph-node", rev = "753cee7f559eab70861c0bb84a0d9fef727e3099" }
 wasmtime = "0.27.0"
 tokio = { version = "0.2.25", features = ["stream", "rt-threaded", "rt-util", "blocking", "time", "sync", "macros", "test-util", "net"] }
 anyhow = "1.0"
@@ -27,4 +27,4 @@ graphql-parser = "0.4.0"
 
 [dev-dependencies]
 serial_test = "0.5.1"
-web3 = { git = "https://github.com/graphprotocol/rust-web3", rev = "585c9db21576fd9aace40607b764ec870a5faebb" }
+web3 = { git = "https://github.com/graphprotocol/rust-web3", branch = "lutter/graph-0.15.0" }
