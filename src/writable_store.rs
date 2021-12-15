@@ -4,9 +4,7 @@ use async_trait::async_trait;
 use graph::{
     blockchain::BlockPtr,
     components::store::{EntityType, StoredDynamicDataSource, WritableStore},
-    data::{
-        subgraph::schema::{SubgraphError, SubgraphHealth},
-    },
+    data::subgraph::schema::{SubgraphError, SubgraphHealth},
     prelude::*,
 };
 
