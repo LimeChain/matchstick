@@ -91,6 +91,9 @@ impl Test {
         }
 
         // Print the logs after the test result.
+        if passed && !logs.is_empty() {
+            println!("{}", logs);
+        }
 
         self.after();
         TestResult { passed, logs }
