@@ -43,6 +43,8 @@ docker run -e ARGS="gravity" -it --rm --mount type=bind,source=<absolute/path/to
 
 After that you can go straight to [the final setup step](https://github.com/LimeChain/matchstick/tree/dockerize#install-dependencies) and you'll be all set to start writing your first unit test.
 
+❗ If you have previously ran `graph test` you may encounter the following error during `docker build`: `error from sender: failed to xattr node_modules/binary-install-raw/bin/binary-<platform>: permission denied`. In this case create a file named `.dockeringore` in the root folder and add `node_modules/binary-install-raw/bin`
+
 ❗ Although using the Docker approach is easy, we highly recommend using **Matchstick** via OS-specific binary (which is downloaded automatically when you run `graph test`). The Docker approach should only be considered if for some reason you cannot get `graph test` to work, or if you just want to quickly try something out.
 
 ### OS-specific release binaries ⚙️
