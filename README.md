@@ -25,7 +25,7 @@ docker run --rm matchstick
 or
 
 ```
-docker run -it --rm --mount type=bind,source=<absolute/path/to/project>,target=/matchstick  matchstick
+docker run -it --rm --mount type=bind,source=<absolute/path/to/project>,target=/matchstick matchstick
 ```
 
 ❗ If you want to pass arguments to **Matchstick** (for instance to test only a specific datasource or to generate a test coverage report) you can do so like this:
@@ -36,7 +36,7 @@ docker run -e ARGS="gravity" --rm matchstick
 or
 
 ```
-docker run -e ARGS="gravity" -it --rm --mount type=bind,source=<absolute/path/to/project>,target=/matchstick  matchstick
+docker run -e ARGS="gravity" -it --rm --mount type=bind,source=<absolute/path/to/project>,target=/matchstick matchstick
 ```
 
 ❗ **Note:** The second command will mount the project folder in the container, so you don't need to rebuild the image after every change to your code. Also any changes that happen to files during the run will persist on the host machine as well. [More info about docker bind mounts](https://docs.docker.com/storage/bind-mounts/)
