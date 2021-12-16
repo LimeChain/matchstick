@@ -116,15 +116,8 @@ impl Compiler {
 
     pub fn execute(&self, name: String, entry: fs::DirEntry) -> CompileOutput {
         let (in_files, out_file) = Compiler::get_paths_for(name.clone(), entry);
-        let mut suite_folder = String::new();
 
-        crate::TESTS_LOCATION.with(|path| {
-            suite_folder = format!("{}/{}", &*path.borrow(), name);
-        });
-
-        if !Path::new(&out_file).exists()
-            || Compiler::is_source_modified(&suite_folder, &in_files, &out_file)
-        {
+        if !Path::new(&out_file).exists() || Compiler::is_source_modified(&in_files, &out_file) {
             Log::Info(format!("Compiling {}...", name.bright_blue())).println();
 
             self.compile(in_files, out_file)
@@ -169,7 +162,7 @@ impl Compiler {
         }
     }
 
-    fn is_source_modified(test_folder: &str, in_files: &[String], out_file: &str) -> bool {
+    fn is_source_modified(in_files: &[String], out_file: &str) -> bool {
         let mut is_modified = false;
 
         let wasm_modified = fs::metadata(out_file)
@@ -177,24 +170,15 @@ impl Compiler {
             .modified()
             .unwrap();
 
-        let suite_folder_modified = fs::metadata(test_folder)
-            .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
-            .modified()
-            .unwrap();
+        for file in in_files {
+            let in_file_modified = fs::metadata(file)
+                .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
+                .modified()
+                .unwrap();
 
-        if suite_folder_modified > wasm_modified {
-            is_modified = true
-        } else {
-            for file in in_files {
-                let in_file_modified = fs::metadata(file)
-                    .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
-                    .modified()
-                    .unwrap();
-
-                if in_file_modified > wasm_modified {
-                    is_modified = true;
-                    break;
-                }
+            if in_file_modified > wasm_modified {
+                is_modified = true;
+                break;
             }
         }
 
