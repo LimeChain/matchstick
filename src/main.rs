@@ -109,7 +109,7 @@ fn main() {
         )
         .arg(
             Arg::with_name("recompile")
-                .help("Recompiles the tests.")
+                .help("Force-recompiles the tests.")
                 .long("recompile")
                 .short("r")
                 .takes_value(false)
