@@ -108,6 +108,14 @@ fn main() {
                 .required(false),
         )
         .arg(
+            Arg::with_name("recompile")
+                .help("Recompiles the tests.")
+                .long("recompile")
+                .short("r")
+                .takes_value(false)
+                .required(false),
+        )
+        .arg(
             Arg::with_name("test_suites")
                 .help("Please specify the names of the test suites you would like to run.")
                 .index(1)
@@ -199,7 +207,7 @@ ___  ___      _       _         _   _      _
 
     let outputs: HashMap<String, CompileOutput> = test_sources
         .into_iter()
-        .map(|(name, entry)| (name.clone(), compiler.execute(name, entry)))
+        .map(|(name, entry)| (name.clone(), compiler.execute(name, entry, matches.is_present("recompile"))))
         .collect();
 
     if outputs.values().any(|output| !output.status.success()) {
