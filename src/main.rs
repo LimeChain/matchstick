@@ -205,7 +205,12 @@ ___  ___      _       _         _   _      _
 
     let outputs: HashMap<String, CompileOutput> = test_sources
         .into_iter()
-        .map(|(name, entry)| (name.clone(), compiler.execute(name, entry, matches.is_present("recompile"))))
+        .map(|(name, entry)| {
+            (
+                name.clone(),
+                compiler.execute(name, entry, matches.is_present("recompile")),
+            )
+        })
         .collect();
 
     if outputs.values().any(|output| !output.status.success()) {
