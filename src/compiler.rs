@@ -223,16 +223,24 @@ impl Compiler {
 
     fn get_include_absolute_path(file: &str, incl: &str) -> PathBuf {
         let mut path = format!("{}.ts", incl);
+        let mut nesting_level = 1;
 
-        if path.starts_with("../../") || path.starts_with("../") {
-            let re = Regex::new(r"(../)+").unwrap();
-            path = re.replace(&path, "").to_string();
+        if path.starts_with("../../") {
+            nesting_level = 3;
+            path = path.replace("../../", "").to_string();
+        } else if path.starts_with("../") {
+            nesting_level = 2;
+            path = path.replace("../", "").to_string();
         } else if path.starts_with("./") {
-            let re = Regex::new(r"[\w\d-]*.test.ts").unwrap();
-            path = path.replace("./", "");
-            path = re.replace(file, &path).to_string();
+            path = path.replace("./", "").to_string();
         }
-        println!("{:?}", path);
+
+        let v: Vec<&str> = file.split("/").collect();
+        let mut v2: Vec<&str> = v[0..v.len() - nesting_level].to_vec();
+
+        v2.insert(v2.len(), &path);
+        path = v2.join("/");
+
         fs::canonicalize(&path).unwrap_or_else(|_| panic!("{} does not exists!", &path))
     }
 }
