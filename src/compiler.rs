@@ -215,7 +215,10 @@ impl Compiler {
         let file_as_str =
             fs::read_to_string(file).unwrap_or_else(|err| panic!("{}", Log::Critical(err)));
 
-        regex.captures_iter(&file_as_str).map(|m| m[1].to_string()).collect()
+        regex
+            .captures_iter(&file_as_str)
+            .map(|m| m[1].to_string())
+            .collect()
     }
 
     fn get_include_absolute_path(file: &str, incl: &str) -> PathBuf {
@@ -265,7 +268,9 @@ mod compiler_tests {
     #[test]
     fn it_should_panic_if_include_does_not_exist_test() {
         let test_file = "mocks/as/mock-includes.test.ts";
-        let result = std::panic::catch_unwind(|| Compiler::get_include_absolute_path(&test_file, "../generated/schema"));
+        let result = std::panic::catch_unwind(|| {
+            Compiler::get_include_absolute_path(&test_file, "../generated/schema")
+        });
 
         assert!(result.is_err());
 
