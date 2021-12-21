@@ -227,15 +227,15 @@ impl Compiler {
 
         if path.starts_with("../../") {
             nesting_level = 3;
-            path = path.replace("../../", "").to_string();
+            path = path.replace("../../", "");
         } else if path.starts_with("../") {
             nesting_level = 2;
-            path = path.replace("../", "").to_string();
+            path = path.replace("../", "");
         } else if path.starts_with("./") {
-            path = path.replace("./", "").to_string();
+            path = path.replace("./", "");
         }
 
-        let v: Vec<&str> = file.split("/").collect();
+        let v: Vec<&str> = file.split('/').collect();
         let mut v2: Vec<&str> = v[0..v.len() - nesting_level].to_vec();
 
         v2.insert(v2.len(), &path);
