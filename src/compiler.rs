@@ -1,7 +1,9 @@
 use colored::Colorize;
+use regex::Regex;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus};
+use std::time::SystemTime;
 
 #[cfg(unix)]
 use std::os::unix::process::ExitStatusExt;
@@ -180,8 +182,94 @@ impl Compiler {
                 is_modified = true;
                 break;
             }
+
+            is_modified = Compiler::are_imports_modified(file, wasm_modified);
         }
 
         is_modified
+    }
+
+    fn are_imports_modified(file: &str, wasm_modified: SystemTime) -> bool {
+        let mut is_modified = false;
+        let matches: Vec<String> = Compiler::get_includes_from_file(file);
+
+        for m in matches {
+            let absolute_path = Compiler::get_include_absolute_path(file, &m);
+
+            let import_modified = fs::metadata(absolute_path)
+                .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
+                .modified()
+                .unwrap();
+
+            if import_modified > wasm_modified {
+                is_modified = true;
+                break;
+            }
+        }
+
+        is_modified
+    }
+
+    fn get_includes_from_file(file: &str) -> Vec<String> {
+        let regex = Regex::new(r#"[import.*from]\s*"\s*([../+|./].*)\s*""#).unwrap();
+        let file_as_str =
+            fs::read_to_string(file).unwrap_or_else(|err| panic!("{}", Log::Critical(err)));
+
+        regex.captures_iter(&file_as_str).map(|m| m[1].to_string()).collect()
+    }
+
+    fn get_include_absolute_path(file: &str, incl: &str) -> PathBuf {
+        let mut path = format!("{}.ts", incl);
+
+        if path.starts_with("../../") || path.starts_with("../") {
+            let re = Regex::new(r"(../)+").unwrap();
+            path = re.replace(&path, "").to_string();
+        } else if path.starts_with("./") {
+            let re = Regex::new(r"[\w\d-]*.test.ts").unwrap();
+            path = path.replace("./", "");
+            path = re.replace(file, &path).to_string();
+        }
+        println!("{:?}", path);
+        fs::canonicalize(&path).unwrap_or_else(|_| panic!("{} does not exists!", &path))
+    }
+}
+
+#[cfg(test)]
+mod compiler_tests {
+    use crate::compiler::Compiler;
+    use std::fs;
+    use std::path::PathBuf;
+
+    #[test]
+    fn it_gets_project_includes_test() {
+        let test_file = "mocks/as/mock-includes.test.ts";
+        let includes = Compiler::get_includes_from_file(&test_file);
+
+        assert_eq!(
+            includes,
+            ["./utils", "../generated/schema", "../../src/gravity"]
+        )
+    }
+
+    #[test]
+    fn it_get_absolute_path_of_includes_test() {
+        let test_file = "mocks/as/mock-includes.test.ts";
+        let root_path = fs::canonicalize("./").expect("Something went wrong!");
+
+        let result = Compiler::get_include_absolute_path(&test_file, "./utils");
+        let abs_path = PathBuf::from(format!("{}/mocks/as/utils.ts", root_path.to_str().unwrap()));
+
+        assert_eq!(result, abs_path);
+    }
+
+    #[test]
+    fn it_should_panic_if_include_does_not_exist_test() {
+        let test_file = "mocks/as/mock-includes.test.ts";
+        let result = std::panic::catch_unwind(|| Compiler::get_include_absolute_path(&test_file, "../generated/schema"));
+
+        assert!(result.is_err());
+
+        let err = *(result.unwrap_err().downcast::<String>().unwrap());
+        assert!(err.contains("generated/schema.ts does not exists!"));
     }
 }
