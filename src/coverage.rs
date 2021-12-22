@@ -176,7 +176,7 @@ pub fn generate_coverage_report() {
             convert_command = format!(
                 "{}{} {} {} {}",
                 &*path.borrow(),
-                "matchstick-as/node_modules/.bin/wasm2wat",
+                "node_modules/wabt/bin/wasm2wat",
                 file,
                 "-o",
                 destination
