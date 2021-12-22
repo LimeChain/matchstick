@@ -114,10 +114,18 @@ impl Compiler {
         return (in_files, format!("./tests/.bin/{}.wasm", name));
     }
 
-    pub fn execute(&self, name: String, entry: fs::DirEntry) -> CompileOutput {
+    pub fn execute(
+        &self,
+        name: String,
+        entry: fs::DirEntry,
+        should_recompile: bool,
+    ) -> CompileOutput {
         let (in_files, out_file) = Compiler::get_paths_for(name.clone(), entry);
 
-        if !Path::new(&out_file).exists() || Compiler::is_source_modified(&in_files, &out_file) {
+        if should_recompile
+            || !Path::new(&out_file).exists()
+            || Compiler::is_source_modified(&in_files, &out_file)
+        {
             Log::Info(format!("Compiling {}...", name.bright_blue())).println();
 
             self.compile(in_files, out_file)
