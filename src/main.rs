@@ -154,10 +154,17 @@ ___  ___      _       _         _   _      _
     SCHEMA_LOCATION.with(|path| *path.borrow_mut() = file_location.as_str().unwrap().to_string());
     let default_tests_folder = &Value::String(String::from("./tests/"));
     let tests_folder = subgraph_yaml.get("testsFolder").unwrap_or_else(|| {
-        println!("{}", ("If you want to change the default tests folder location (./tests/) you can add 'testsFolder: ./example/path' to the outermost level of your subgraph.yaml").cyan());
+        println!("{}", ("If you want to change the default tests folder location (./tests) you can add 'testsFolder: ./example/path' to the outermost level of your subgraph.yaml").cyan());
         default_tests_folder
     });
-    TESTS_LOCATION.with(|path| *path.borrow_mut() = tests_folder.as_str().unwrap().to_string());
+    TESTS_LOCATION.with(|path| {
+        let mut tests_path = tests_folder.as_str().unwrap().to_string();
+        if tests_path.ends_with('/') {
+            tests_path.pop();
+        }
+
+        *path.borrow_mut() = tests_path;
+    });
 
     let test_sources = {
         let testable = get_testable();

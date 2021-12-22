@@ -79,6 +79,12 @@ impl Compiler {
     }
 
     fn get_paths_for(name: String, entry: fs::DirEntry) -> (Vec<String>, String) {
+        let mut bin_location = "".to_string();
+
+        crate::TESTS_LOCATION.with(|path| {
+            bin_location = format!("{}/.bin", &*path.borrow());
+        });
+
         let in_files = if entry
             .file_type()
             .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
@@ -101,17 +107,17 @@ impl Compiler {
             vec![entry.path().to_str().unwrap().to_string()]
         };
 
-        fs::create_dir_all("./tests/.bin/").unwrap_or_else(|err| {
+        fs::create_dir_all(&bin_location).unwrap_or_else(|err| {
             panic!(
                 "{}",
                 Log::Critical(format!(
-                    "Something went wrong when trying to create `./tests/.bin/`: {}",
-                    err,
+                    "Something went wrong when trying to create `{}`: {}",
+                    bin_location, err,
                 )),
             );
         });
 
-        return (in_files, format!("./tests/.bin/{}.wasm", name));
+        return (in_files, format!("{}/{}.wasm", bin_location, name));
     }
 
     pub fn execute(

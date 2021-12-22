@@ -37,7 +37,7 @@ impl Datasource {
     }
 }
 
-fn install_wabt() {
+fn install_wabt(tests_location: &str) {
     let options = ScriptOptions::new();
     let args = vec![];
 
@@ -46,18 +46,18 @@ fn install_wabt() {
         ("Downloading necessary tools... 🛠️").to_string().cyan()
     );
 
-    run_or_exit(
-        r#"
-         cd tests &&
-         mkdir .tools &&
-         cd .tools &&
-         git clone --recursive https://github.com/WebAssembly/wabt &&
-         cd wabt && git submodule update --init
-         cd ../..
-         "#,
-        &args,
-        &options,
+    let git_clone_wabt = format!(
+        r#"cd {} &&
+        mkdir .tools &&
+        cd .tools &&
+        git clone --recursive https://github.com/WebAssembly/wabt &&
+        cd wabt && git submodule update --init
+        cd ../..
+        "#,
+        tests_location
     );
+
+    run_or_exit(&git_clone_wabt, &args, &options);
 
     let options = ScriptOptions::new();
     let args = vec![];
@@ -69,18 +69,19 @@ fn install_wabt() {
             .cyan()
     );
 
-    run_or_exit(
+    let cmake_build = format!(
         r#"
-         cd tests/.tools/wabt &&
-         mkdir -p build &&
-         cd build &&
-         cmake .. &&
-         cmake --build . &&
-         cd ../../..
-         "#,
-        &args,
-        &options,
+        cd {}/.tools/wabt &&
+        mkdir -p build &&
+        cd build &&
+        cmake .. &&
+        cmake --build . &&
+        cd ../../..
+        "#,
+        tests_location
     );
+
+    run_or_exit(&cmake_build, &args, &options);
 }
 
 fn inspect_handlers(wat_contents: &str, handlers: &[String]) -> i32 {
@@ -115,7 +116,13 @@ fn parse(v: &Value) -> String {
 }
 
 pub fn generate_coverage_report() {
-    install_wabt();
+    let mut tests_location = "".to_string();
+
+    crate::TESTS_LOCATION.with(|path| {
+        tests_location = (&*path.borrow()).to_string();
+    });
+
+    install_wabt(&tests_location);
 
     let subgraph_yaml_contents = fs::read_to_string("subgraph.yaml")
         .expect("Something went wrong reading the 'subgraph.yaml' file");
@@ -178,7 +185,9 @@ pub fn generate_coverage_report() {
         datasources.push(datasource);
     }
 
-    let paths = fs::read_dir("tests/.bin").expect("Couldn't find folder 'tests/.bin'.");
+    let msg = format!("Couldn't find folder '{}/.bin'.", &tests_location);
+    let paths = fs::read_dir(format!("{}/.bin", &tests_location)).expect(&msg);
+
     let mut files: Vec<String> = Vec::new();
 
     for path in paths {
@@ -220,8 +229,8 @@ pub fn generate_coverage_report() {
             .expect("Couldn't get last element of string Vec 'f_name'.");
 
         let convert_command = format!(
-            "{} {} {} {}",
-            "tests/.tools/wabt/build/wasm2wat", file, "-o", destination
+            "{}/{} {} {} {}",
+            tests_location, ".tools/wabt/build/wasm2wat", file, "-o", destination
         );
 
         let options = ScriptOptions::new();
