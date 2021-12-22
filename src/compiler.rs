@@ -189,12 +189,12 @@ impl Compiler {
         is_modified
     }
 
-    fn are_imports_modified(file: &str, wasm_modified: SystemTime) -> bool {
+    fn are_imports_modified(in_file: &str, wasm_modified: SystemTime) -> bool {
         let mut is_modified = false;
-        let matches: Vec<String> = Compiler::get_includes_from_file(file);
+        let matches: Vec<String> = Compiler::get_imports_from_file(in_file);
 
         for m in matches {
-            let absolute_path = Compiler::get_include_absolute_path(file, &m);
+            let absolute_path = Compiler::get_import_absolute_path(in_file, &m);
 
             let import_modified = fs::metadata(absolute_path)
                 .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
@@ -210,30 +210,36 @@ impl Compiler {
         is_modified
     }
 
-    fn get_includes_from_file(file: &str) -> Vec<String> {
-        let regex = Regex::new(r#"[import.*from]\s*"\s*([../+|./].*)\s*""#).unwrap();
+    fn get_imports_from_file(in_file: &str) -> Vec<String> {
+        // Regex should match the file path of each import statement except for node_modules
+        let imports_regex = Regex::new(r#"[import.*from]\s*"\s*([../+|./].*)\s*""#).unwrap();
         let file_as_str =
-            fs::read_to_string(file).unwrap_or_else(|err| panic!("{}", Log::Critical(err)));
+            fs::read_to_string(in_file).unwrap_or_else(|err| panic!("{}", Log::Critical(err)));
 
-        regex
+        imports_regex
             .captures_iter(&file_as_str)
             .map(|m| m[1].to_string())
             .collect()
     }
 
-    fn get_include_absolute_path(file: &str, incl: &str) -> PathBuf {
-        let mut path = format!("{}.ts", incl);
-        let regex = Regex::new(r"[.]{2}/").unwrap();
+    fn get_import_absolute_path(in_file: &str, imported_file: &str) -> PathBuf {
+        let imported_file_name = format!("{}.ts", imported_file);
+        // Regex should match every ../ in the file path
+        // I'll be used to determine the number of up levels
+        let nesting_level_regex = Regex::new(r"[.]{2}/").unwrap();
+        let nesting_level = nesting_level_regex.find_iter(in_file).count() + 1;
 
-        let nesting_level = regex.find_iter(file).count() + 1;
+        let in_file_parts: Vec<&str> = in_file.split('/').collect();
+        // Using the nesting_level determine the parent dir of the imported file
+        let mut imported_file_parts: Vec<&str> =
+            in_file_parts[0..in_file_parts.len() - nesting_level].to_vec();
+        // Add the imported file name to the vector
+        imported_file_parts.insert(imported_file_parts.len(), &imported_file_name);
+        // Join all parts of imported file path
+        let combined_path = imported_file_parts.join("/");
 
-        let v: Vec<&str> = file.split('/').collect();
-        let mut v2: Vec<&str> = v[0..v.len() - nesting_level].to_vec();
-
-        v2.insert(v2.len(), &path);
-        path = v2.join("/");
-
-        fs::canonicalize(&path).unwrap_or_else(|_| panic!("{} does not exists!", &path))
+        fs::canonicalize(&combined_path)
+            .unwrap_or_else(|_| panic!("{} does not exists!", &combined_path))
     }
 }
 
@@ -244,9 +250,9 @@ mod compiler_tests {
     use std::path::PathBuf;
 
     #[test]
-    fn it_gets_project_includes_test() {
-        let test_file = "mocks/as/mock-includes.test.ts";
-        let includes = Compiler::get_includes_from_file(&test_file);
+    fn it_gets_project_imports_test() {
+        let in_file = "mocks/as/mock-includes.test.ts";
+        let includes = Compiler::get_imports_from_file(&in_file);
 
         assert_eq!(
             includes,
@@ -255,21 +261,21 @@ mod compiler_tests {
     }
 
     #[test]
-    fn it_get_absolute_path_of_includes_test() {
-        let test_file = "mocks/as/mock-includes.test.ts";
+    fn it_get_absolute_path_of_imports_test() {
+        let in_file = "mocks/as/mock-includes.test.ts";
         let root_path = fs::canonicalize("./").expect("Something went wrong!");
 
-        let result = Compiler::get_include_absolute_path(&test_file, "./utils");
+        let result = Compiler::get_import_absolute_path(&in_file, "./utils");
         let abs_path = PathBuf::from(format!("{}/mocks/as/utils.ts", root_path.to_str().unwrap()));
 
         assert_eq!(result, abs_path);
     }
 
     #[test]
-    fn it_should_panic_if_include_does_not_exist_test() {
-        let test_file = "mocks/as/mock-includes.test.ts";
+    fn it_should_panic_if_imports_does_not_exist_test() {
+        let in_file = "mocks/as/mock-includes.test.ts";
         let result = std::panic::catch_unwind(|| {
-            Compiler::get_include_absolute_path(&test_file, "../generated/schema")
+            Compiler::get_import_absolute_path(&in_file, "../generated/schema")
         });
 
         assert!(result.is_err());
