@@ -176,7 +176,7 @@ pub fn generate_coverage_report() {
             convert_command = format!(
                 "{}{} {} {} {}",
                 &*path.borrow(),
-                "node_modules/wabt/bin/wasm2wat",
+                "/wabt/bin/wasm2wat",
                 file,
                 "-o",
                 destination
