@@ -54,23 +54,37 @@ impl Test {
     pub fn run(&self) -> TestResult {
         self.before();
 
-        let mut passed = true;
         // NOTE: Calling a test func should not fail for any other reason than:
         // - `should_fail` has been set to `true`
         // - the behaviour tested does not hold
         logging::accum();
         logging::add_indent();
         let now = Instant::now();
-        self.func.call(&[]).unwrap_or_else(|err| {
-            if !self.should_fail {
-                passed = false;
-                // Log WASM backtrace
-                logging::add_indent();
-                Log::Debug(err).println();
-                logging::sub_indent();
+
+        let passed: bool = match self.func.call(&[]) {
+            Ok(_) => {
+                // Log error and mark test as failed if should_fail is `true`, but test passes
+                // Otherwise mark test as passed
+                if self.should_fail {
+                    Log::Error("Expected test to fail but it passed successfully!").println();
+                    false
+                } else {
+                    true
+                }
             }
-            Box::new([wasmtime::Val::I32(0)])
-        });
+            Err(err) => {
+                // Mark test as passed if should_fail is `true`
+                // Log error and mark test as failed if should_fail is `false`
+                if self.should_fail {
+                    true
+                } else {
+                    logging::add_indent();
+                    Log::Debug(err).println();
+                    logging::sub_indent();
+                    false
+                }
+            }
+        };
 
         // Convert the elapsed time to milliseconds
         // Seems hacky, might need refactoring
