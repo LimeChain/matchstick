@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 
 pub fn parse_backtrace(logs: &str) -> (String, i32) {
-    let test_path_regex = Regex::new(r#"<unknown>!start:(.*)~anonymous\|(\d)"#).unwrap();
+    let test_path_regex = Regex::new(r#"<unknown>!start:(.*)~anonymous\|(\d+)"#).unwrap();
     let matches = test_path_regex.captures(logs).unwrap();
     let test_id = matches[2].parse::<i32>().unwrap();
     let path = format!("{}.ts", &matches[1]);
