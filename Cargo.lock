@@ -1814,7 +1814,7 @@ checksum = "a3e378b66a060d48947b590737b30a1be76706c8dd7b8ba0f2fe3989c68a853f"
 
 [[package]]
 name = "matchstick"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4318,7 +4318,7 @@ dependencies = [
 [[package]]
 name = "web3"
 version = "0.15.0-graph"
-source = "git+https://github.com/graphprotocol/rust-web3?branch=lutter/graph-0.15.0#738e547708ab1a4581ce3693d90fcd8df9506a4f"
+source = "git+https://github.com/graphprotocol/rust-web3?branch=lutter/graph-0.15.0#6d6ee87a98250c73f7b36087400a17f502e6d699"
 dependencies = [
  "arrayvec 0.5.2",
  "async-native-tls",
