@@ -1,19 +1,19 @@
 [package]
 name = "matchstick"
-version = "0.2.2"
+version = "0.2.3"
 authors = ["LimeChain <limechain.tech>"]
 edition = "2021"
 
 [dependencies]
-graph = { git = "https://github.com/graphprotocol/graph-node", rev = "753cee7f559eab70861c0bb84a0d9fef727e3099" }
-graph-core = { git = "https://github.com/graphprotocol/graph-node", rev = "753cee7f559eab70861c0bb84a0d9fef727e3099" }
-graph-chain-ethereum = { git = "https://github.com/graphprotocol/graph-node", rev = "753cee7f559eab70861c0bb84a0d9fef727e3099" }
-graph-graphql = { git = "https://github.com/graphprotocol/graph-node", rev = "753cee7f559eab70861c0bb84a0d9fef727e3099" }
-graph-mock = { git = "https://github.com/graphprotocol/graph-node", rev = "753cee7f559eab70861c0bb84a0d9fef727e3099" }
-graph-runtime-test = { git = "https://github.com/graphprotocol/graph-node", rev = "753cee7f559eab70861c0bb84a0d9fef727e3099" }
-graph-runtime-wasm = { git = "https://github.com/graphprotocol/graph-node", rev = "753cee7f559eab70861c0bb84a0d9fef727e3099" }
+graph = { git = "https://github.com/graphprotocol/graph-node", rev = "4d4947e2e0a4a662c2001fa49662c8d0078d4585" }
+graph-core = { git = "https://github.com/graphprotocol/graph-node", rev = "4d4947e2e0a4a662c2001fa49662c8d0078d4585" }
+graph-chain-ethereum = { git = "https://github.com/graphprotocol/graph-node", rev = "4d4947e2e0a4a662c2001fa49662c8d0078d4585" }
+graph-graphql = { git = "https://github.com/graphprotocol/graph-node", rev = "4d4947e2e0a4a662c2001fa49662c8d0078d4585" }
+graph-mock = { git = "https://github.com/graphprotocol/graph-node", rev = "4d4947e2e0a4a662c2001fa49662c8d0078d4585" }
+graph-runtime-test = { git = "https://github.com/graphprotocol/graph-node", rev = "4d4947e2e0a4a662c2001fa49662c8d0078d4585" }
+graph-runtime-wasm = { git = "https://github.com/graphprotocol/graph-node", rev = "4d4947e2e0a4a662c2001fa49662c8d0078d4585" }
 wasmtime = "0.27.0"
-tokio = { version = "0.2.25", features = ["stream", "rt-threaded", "rt-util", "blocking", "time", "sync", "macros", "test-util", "net"] }
+tokio = "1.15.0"
 anyhow = "1.0"
 lazy_static = "1.4.0"
 async-trait = "0.1.50"

@@ -89,7 +89,7 @@ fn get_testable() -> HashMap<String, fs::DirEntry> {
 
 fn main() {
     let matches = App::new("Matchstick 🔥")
-        .version("0.2.2")
+        .version("0.2.3")
         .author("Limechain <https://limechain.tech>")
         .about("Unit testing framework for Subgraph development on The Graph protocol.")
         .arg(
