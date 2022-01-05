@@ -237,23 +237,12 @@ impl Compiler {
     }
 
     fn get_import_absolute_path(in_file: &str, imported_file: &str) -> PathBuf {
-        let imported_file_name = format!("{}.ts", imported_file);
-        // Regex should match every ../ in the file path
-        // I'll be used to determine the number of up levels
-        let nesting_level_regex = Regex::new(r"[.]{2}/").unwrap();
-        let nesting_level = nesting_level_regex.find_iter(in_file).count() + 1;
-
-        let in_file_parts: Vec<&str> = in_file.split('/').collect();
-        // Using the nesting_level determine the parent dir of the imported file
-        let mut imported_file_parts: Vec<&str> =
-            in_file_parts[0..in_file_parts.len() - nesting_level].to_vec();
-        // Add the imported file name to the vector
-        imported_file_parts.insert(imported_file_parts.len(), &imported_file_name);
-        // Join all parts of imported file path
-        let combined_path = imported_file_parts.join("/");
-
-        fs::canonicalize(&combined_path)
-            .unwrap_or_else(|_| panic!("{} does not exists!", &combined_path))
+        let mut combined_path = PathBuf::from(in_file);
+        combined_path.pop();
+        combined_path.push(format!("{}.ts", imported_file));
+        combined_path
+            .canonicalize()
+            .unwrap_or_else(|_| panic!("{} does not exists!", &imported_file))
     }
 }
 
@@ -295,6 +284,7 @@ mod compiler_tests {
         assert!(result.is_err());
 
         let err = *(result.unwrap_err().downcast::<String>().unwrap());
-        assert!(err.contains("generated/schema.ts does not exists!"));
+
+        assert!(err.contains("../generated/schema does not exists!"));
     }
 }
