@@ -306,7 +306,9 @@ ___  ___      _       _         _   _      _
             for (name, result) in tests {
                 println!("{} {}", suite.bright_blue(), name.red());
 
-                println!("{}", result.logs);
+                if !result.logs.is_empty() {
+                    println!("{}", result.logs);
+                }
             }
         }
 
