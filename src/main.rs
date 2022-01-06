@@ -304,12 +304,7 @@ ___  ___      _       _         _   _      _
         println!("Failed tests: \n");
         for (suite, tests) in failed_suites {
             for (name, result) in tests {
-
-                println!(
-                    "{} {}",
-                    suite.bright_blue(),
-                    name.red()
-                );
+                println!("{} {}", suite.bright_blue(), name.red());
 
                 println!("{}", result.logs);
             }
