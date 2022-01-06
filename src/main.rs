@@ -18,7 +18,6 @@ use crate::test_suite::{TestResult, TestSuite};
 
 use crate::coverage::generate_coverage_report;
 
-mod backtrace;
 mod compiler;
 mod context;
 mod coverage;
@@ -305,14 +304,11 @@ ___  ___      _       _         _   _      _
         println!("Failed tests: \n");
         for (suite, tests) in failed_suites {
             for (name, result) in tests {
-                let (file_path, test_id) = backtrace::parse_backtrace(&result.logs);
-                let line_number = backtrace::get_test_line(&file_path, test_id);
 
                 println!(
-                    "{} {} {}",
+                    "{} {}",
                     suite.bright_blue(),
-                    name.red(),
-                    format!("at ./{}:{}", file_path, line_number).cyan()
+                    name.red()
                 );
 
                 println!("{}", result.logs);
