@@ -446,6 +446,8 @@ impl<C: Blockchain> MatchstickInstance<C> {
             func_idx
         );
 
+        link!("_registerHook", register_hook, func_idx, role);
+
         link!(
             "_assert.fieldEquals",
             assert_field_equals,

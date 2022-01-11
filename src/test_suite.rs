@@ -32,7 +32,7 @@ impl Test {
         }
     }
 
-    fn call_hooks(hooks: &[Func]) {
+    pub fn call_hooks(hooks: &[Func]) {
         hooks.iter().for_each(|h| {
             h.call(&[]).unwrap_or_else(|err| {
                 panic!(
@@ -116,6 +116,8 @@ impl Test {
 
 pub struct TestSuite {
     pub tests: Vec<Test>,
+    pub before_all: Vec<Func>,
+    pub after_all: Vec<Func>,
 }
 
 impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
@@ -130,8 +132,17 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
             );
         });
 
-        let mut suite = TestSuite { tests: vec![] };
-        for (name, should_fail, func_idx) in &matchstick
+        let mut suite = TestSuite {
+            tests: vec![],
+            before_all: vec![],
+            after_all: vec![],
+        };
+
+        let mut before_each = vec![];
+        let mut after_each = vec![];
+        let mut tests = vec![];
+
+        for (name, should_fail, func_idx, role) in &matchstick
             .instance_ctx
             .borrow()
             .as_ref()
@@ -143,25 +154,38 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
             })
             .meta_tests
         {
-            suite.tests.push(Test::new(
-                name.to_string(),
-                *should_fail,
-                table
-                    .get(*func_idx)
-                    .unwrap_or_else(|| {
-                        panic!(
-                            "{}",
-                            Log::Critical(format!(
-                                "Could not get WebAssembly.Table entry with index '{}'.",
-                                func_idx,
-                            )),
-                        );
-                    })
-                    .unwrap_funcref()
-                    .unwrap()
-                    .to_owned(),
-            ))
+            let func = table
+                .get(*func_idx)
+                .unwrap_or_else(|| {
+                    panic!(
+                        "{}",
+                        Log::Critical(format!(
+                            "Could not get WebAssembly.Table entry with index '{}'.",
+                            func_idx,
+                        )),
+                    );
+                })
+                .unwrap_funcref()
+                .unwrap()
+                .to_owned();
+
+            match role.as_str() {
+                "beforeAll" => suite.before_all.push(func),
+                "afterAll" => suite.after_all.push(func),
+                "beforeEach" => before_each.push(func),
+                "afterEach" => after_each.push(func),
+                _ => tests.push(Test::new(name.to_string(), *should_fail, func)),
+            };
         }
+
+        suite.tests = tests
+            .into_iter()
+            .map(|mut test| {
+                test.before_hooks = before_each.clone();
+                test.after_hooks = after_each.clone();
+                test
+            })
+            .collect();
 
         suite
     }

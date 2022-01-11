@@ -69,7 +69,7 @@ pub struct MatchstickInstanceContext<C: Blockchain> {
     /// Function-Return map storing mocked Smart Contracts' functions' return values.
     pub(crate) fn_ret_map: HashMap<String, Vec<Token>>,
     /// Registered tests metadata.
-    pub meta_tests: Vec<(String, bool, u32)>,
+    pub meta_tests: Vec<(String, bool, u32, String)>,
     /// Holding the derived field type and a tuple of the entity it points to
     /// with a vector of all the field names and the corresponding derived field names.
     /// The example below is taken from a schema.graphql file and will fill the map in the following way:
@@ -84,7 +84,7 @@ pub struct MatchstickInstanceContext<C: Blockchain> {
     ///     signer: GraphAccount!
     /// }
     /// ```
-    derived: HashMap<String, (String, Vec<(String, String)>)>,
+    derived: HashMap<String, (String, Vec<(String, String)>)>
 }
 
 /// Implementation of non-external functions.
@@ -156,7 +156,19 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     ) -> Result<(), HostExportError> {
         let name: String = asc_get(&self.wasm_ctx, name)?;
         let should_fail = bool::from(EnumPayload(should_fail.to_payload()));
-        self.meta_tests.push((name, should_fail, func_idx));
+        self.meta_tests
+            .push((name, should_fail, func_idx, String::from("test")));
+        Ok(())
+    }
+
+    /// function _registerHook(funcIdx: u32, role: string): void
+    pub fn register_hook(
+        &mut self,
+        func_idx: u32,
+        role: AscPtr<AscString>,
+    ) -> Result<(), HostExportError> {
+        let role: String = asc_get(&self.wasm_ctx, role)?;
+        self.meta_tests.push((String::from(""), false, func_idx, role));
         Ok(())
     }
 

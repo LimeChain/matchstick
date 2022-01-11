@@ -14,7 +14,7 @@ use serde_yaml::Value;
 use crate::compiler::{CompileOutput, Compiler};
 use crate::instance::MatchstickInstance;
 use crate::logging::Log;
-use crate::test_suite::{TestResult, TestSuite};
+use crate::test_suite::{Test, TestResult, TestSuite};
 
 use crate::coverage::generate_coverage_report;
 
@@ -271,6 +271,9 @@ ___  ___      _       _         _   _      _
             println!("🧪 Running Test Suite: {}", name.bright_blue());
             println!("{}\n", "=".repeat(50));
             logging::add_indent();
+
+            Test::call_hooks(&suite.before_all);
+
             let failed: HashMap<String, TestResult> = suite
                 .tests
                 .into_iter()
@@ -285,6 +288,9 @@ ___  ___      _       _         _   _      _
                     }
                 })
                 .collect();
+
+            Test::call_hooks(&suite.after_all);
+
             logging::clear_indent();
             println!();
 
