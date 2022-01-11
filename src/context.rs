@@ -168,7 +168,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         role: AscPtr<AscString>,
     ) -> Result<(), HostExportError> {
         let role: String = asc_get(&self.wasm_ctx, role)?;
-        self.meta_tests.push((String::from(""), false, func_idx, role));
+        self.meta_tests
+            .push((String::from(""), false, func_idx, role));
         Ok(())
     }
 
