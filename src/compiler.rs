@@ -226,6 +226,9 @@ impl Compiler {
 
     fn get_imports_from_file(in_file: &str) -> Vec<String> {
         // Regex should match the file path of each import statement except for node_modules
+        // e.g. should return `../generated/schema` from `import { Gravatar } from '../generated/schema'`
+        // but it will ignore `import { test, log } from 'matchstick-as/assembly/index'`
+        // Handles single and double quotes
         let imports_regex = Regex::new(r#"[import.*from]\s*["|']\s*([../+|./].*)\s*["|']"#).unwrap();
         let file_as_str =
             fs::read_to_string(in_file).unwrap_or_else(|err| panic!("{}", Log::Critical(err)));
