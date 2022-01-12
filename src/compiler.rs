@@ -226,7 +226,7 @@ impl Compiler {
 
     fn get_imports_from_file(in_file: &str) -> Vec<String> {
         // Regex should match the file path of each import statement except for node_modules
-        let imports_regex = Regex::new(r#"[import.*from]\s*"\s*([../+|./].*)\s*""#).unwrap();
+        let imports_regex = Regex::new(r#"[import.*from]\s*["|']\s*([../+|./].*)\s*["|']"#).unwrap();
         let file_as_str =
             fs::read_to_string(in_file).unwrap_or_else(|err| panic!("{}", Log::Critical(err)));
 
