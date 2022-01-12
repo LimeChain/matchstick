@@ -229,7 +229,12 @@ pub fn generate_coverage_report() {
             global_handlers_count += all_handlers;
             global_handlers_called += called;
 
-            let percentage = (called * 100) / all_handlers;
+            let mut percentage = 0;
+
+            if all_handlers > 0 {
+                percentage = (called * 100) / all_handlers;
+            }
+
             println!(
                 "Test coverage: {}% ({}/{} handlers).\n",
                 (percentage as f32).ceil(),
@@ -239,7 +244,12 @@ pub fn generate_coverage_report() {
         }
     }
 
-    let percentage = (global_handlers_called * 100) / global_handlers_count;
+    let mut percentage = 0;
+
+    if global_handlers_count > 0 {
+        percentage = (global_handlers_called * 100) / global_handlers_count;
+    }
+
     println!(
         "Global test coverage: {}% ({}/{} handlers).\n",
         (percentage as f32).ceil(),
