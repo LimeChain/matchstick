@@ -3,6 +3,7 @@ use graph::prelude::serde_yaml;
 use graph::prelude::serde_yaml::{Sequence, Value};
 use regex::Regex;
 use run_script::{run_or_exit, ScriptOptions};
+use std::collections::HashMap;
 use std::fs;
 
 #[derive(Debug)]
@@ -37,28 +38,16 @@ impl Datasource {
     }
 }
 
-fn inspect_handlers(wat_contents: &str, handlers: &[String]) -> i32 {
-    let mut called = 0;
+/// Performs a check if a handler is called in a test suite
+fn is_called(wat_contents: &str, handler: &str) -> bool {
+    let pattern = format!(r#"call.+{}"#, handler);
+    let regex = Regex::new(&pattern).expect("Not a valid regex pattern.");
+    let captures = regex.captures(wat_contents);
 
-    for handler in handlers {
-        let pattern = format!(r#"call.+{}"#, handler);
-
-        let regex = Regex::new(&pattern).expect("Not a valid regex pattern.");
-
-        let captures = regex.captures(wat_contents);
-        if captures.is_some() {
-            called += 1;
-            let msg = format!("Handler '{}' is tested.", handler);
-            println!("{}", msg.green());
-        } else {
-            let msg = format!("Handler '{}' is not tested.", handler);
-            println!("{}", msg.red());
-        }
-    }
-
-    called
+    captures.is_some()
 }
 
+/// Extracts the handler name
 fn parse(v: &Value) -> String {
     serde_yaml::to_string(v)
         .expect("Could not convert serde_yaml value to string.")
@@ -162,47 +151,38 @@ pub fn generate_coverage_report() {
     let mut global_handlers_count: i32 = 0;
     let mut global_handlers_called: i32 = 0;
 
-    for file in files {
-        let destination: String = file
-            .chars()
-            .take(file.len() - 2)
-            .collect::<String>()
-            .to_string()
-            + "t";
-        let temp1 = file
-            .chars()
-            .take(file.len() - 5)
-            .collect::<String>()
-            .to_string();
-        let temp2 = temp1.split('/').collect::<Vec<&str>>();
-        let f_name = temp2
-            .last()
-            .expect("Couldn't get last element of string Vec 'f_name'.");
+    // Converts each wasm file to wat
+    // Returns a collection of all .wat files paths
+    let wat_files: Vec<String> = files
+        .iter()
+        .map(|file| {
+            let destination: String = file.chars().take(file.len() - 2).collect::<String>() + "t";
 
-        let mut convert_command = "".to_string();
-        crate::LIBS_LOCATION.with(|path| {
-            convert_command = format!(
-                "{}{} {} {} {}",
-                &*path.borrow(),
-                "wabt/bin/wasm2wat",
-                file,
-                "-o",
-                destination
-            );
-        });
+            let mut convert_command = "".to_string();
+            crate::LIBS_LOCATION.with(|path| {
+                convert_command = format!(
+                    "{}{} {} {} {}",
+                    &*path.borrow(),
+                    "wabt/bin/wasm2wat",
+                    file,
+                    "-o",
+                    destination
+                );
+            });
 
-        let options = ScriptOptions::new();
-        let args = vec![];
+            let options = ScriptOptions::new();
+            let args = vec![];
 
-        run_or_exit(&convert_command, &args, &options);
+            run_or_exit(&convert_command, &args, &options);
 
-        let wat_contents = fs::read_to_string(&destination).expect("Couldn't read wat file.");
+            destination
+        })
+        .collect();
 
-        for datasource in &datasources {
-            if *f_name != datasource.mapping.name {
-                continue;
-            }
-
+    // Maps every source name ot its handlers
+    let source_handlers: HashMap<String, Vec<String>> = datasources
+        .iter()
+        .map(|datasource| {
             let d_name = datasource
                 .name
                 .split('\n')
@@ -210,38 +190,66 @@ pub fn generate_coverage_report() {
                 .split("---")
                 .collect::<String>();
 
-            println!("Handlers for source '{}':", d_name);
-            let mut called: i32 = 0;
-            let mut all_handlers: i32 = 0;
+            let mut handlers = vec![];
 
-            all_handlers += datasource.mapping.event_handlers.len() as i32;
-
-            let called_event_handlers =
-                inspect_handlers(&wat_contents, &datasource.mapping.event_handlers);
-            called += called_event_handlers;
-
-            all_handlers += datasource.mapping.call_handlers.len() as i32;
-
-            let called_function_handlers =
-                inspect_handlers(&wat_contents, &datasource.mapping.call_handlers);
-            called += called_function_handlers;
-
-            global_handlers_count += all_handlers;
-            global_handlers_called += called;
-
-            let mut percentage = 0;
-
-            if all_handlers > 0 {
-                percentage = (called * 100) / all_handlers;
+            for handler in &datasource.mapping.event_handlers {
+                handlers.push(handler.clone());
             }
 
-            println!(
-                "Test coverage: {}% ({}/{} handlers).\n",
-                (percentage as f32).ceil(),
-                called,
-                all_handlers
-            );
+            for handler in &datasource.mapping.call_handlers {
+                handlers.push(handler.clone());
+            }
+
+            (d_name, handlers)
+        })
+        .collect();
+
+    for (name, handlers) in source_handlers.into_iter() {
+        println!("Handlers for source '{}':", name);
+
+        let mut called: i32 = 0;
+        let all_handlers: i32 = handlers.len().try_into().unwrap();
+
+        // Iterates over every handler and checks if the handler has been called in any test suite
+        // If called, it'll set `is_tested` to true and break out of the loop
+        // called will be incremented by 1
+        for handler in handlers {
+            let mut is_tested = false;
+
+            for wat_file in &wat_files {
+                let wat_contents = fs::read_to_string(&wat_file).expect("Couldn't read wat file.");
+
+                if is_called(&wat_contents, &handler) {
+                    is_tested = true;
+                    break;
+                }
+            }
+
+            if is_tested {
+                called += 1;
+                let msg = format!("Handler '{}' is tested.", handler);
+                println!("{}", msg.green());
+            } else {
+                let msg = format!("Handler '{}' is not tested.", handler);
+                println!("{}", msg.red());
+            }
         }
+
+        let mut percentage = 0;
+
+        if all_handlers > 0 {
+            percentage = (called * 100) / all_handlers;
+        }
+
+        println!(
+            "Test coverage: {}% ({}/{} handlers).\n",
+            (percentage as f32).ceil(),
+            called,
+            all_handlers
+        );
+
+        global_handlers_count += all_handlers;
+        global_handlers_called += called;
     }
 
     let mut percentage = 0;
