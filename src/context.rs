@@ -161,6 +161,18 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         Ok(())
     }
 
+    /// function _registerDescribe(name: string, funcIdx: u32): void
+    pub fn register_describe(
+        &mut self,
+        name: AscPtr<AscString>,
+        func_idx: u32,
+    ) -> Result<(), HostExportError> {
+        let name: String = asc_get(&self.wasm_ctx, name)?;
+        self.meta_tests
+            .push((name, false, func_idx, String::from("describe")));
+        Ok(())
+    }
+
     /// function _registerHook(funcIdx: u32, role: string): void
     pub fn register_hook(
         &mut self,

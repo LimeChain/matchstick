@@ -27,6 +27,8 @@ pub struct MatchstickInstance<C: Blockchain> {
     pub instance: wasmtime::Instance,
 
     pub instance_ctx: Rc<RefCell<Option<MatchstickInstanceContext<C>>>>,
+
+    pub wasm: String
 }
 
 // Initialization functions.
@@ -446,6 +448,8 @@ impl<C: Blockchain> MatchstickInstance<C> {
             func_idx
         );
 
+        link!("_registerDescribe", register_describe, name_ptr, func_idx);
+
         link!("_registerHook", register_hook, func_idx, role);
 
         link!(
@@ -496,6 +500,7 @@ impl<C: Blockchain> MatchstickInstance<C> {
         Ok(MatchstickInstance {
             instance,
             instance_ctx: shared_ctx,
+            wasm: "".to_string()
         })
     }
 }
