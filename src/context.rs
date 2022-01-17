@@ -537,20 +537,20 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                             .contains(&Value::from(id.clone()))
                         {
                             let mut innermost_value_list =
-                                innermost_value.as_list().unwrap().clone();
-                            innermost_value_list.push(Value::from(id.clone()));
+                                innermost_value.as_list().unwrap();
+                            innermost_value_list.push(Value::from(id));
                             innermost_store
-                                .insert(linking_field.0.clone(), Value::List(innermost_value_list));
+                                .insert(linking_field.0, Value::List(innermost_value_list));
                         }
                     } else {
                         innermost_store.insert(
                             linking_field.0.clone(),
-                            Value::List(vec![Value::from(id.clone())]),
+                            Value::List(vec![Value::from(id)]),
                         );
                     }
                     inner_store.insert(derived_field_string_value, innermost_store);
                 }
-                self.store.insert(original_entity.clone(), inner_store);
+                self.store.insert(original_entity, inner_store);
             }
         }
     }
