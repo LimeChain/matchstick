@@ -375,10 +375,15 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 let mut field_names_vec = self
                     .derived
                     .get(&clean_field_type)
-                    .expect(&format!(
-                        "Failed to get field names vector for type {}",
-                        clean_field_type
-                    ))
+                    .unwrap_or_else(|| {
+                        panic!(
+                            "{}",
+                            Log::Critical(format!(
+                                "Failed to get field names vector for type {}",
+                                clean_field_type
+                            ))
+                        )
+                    })
                     .1
                     .clone();
                 field_names_vec.push((
@@ -417,10 +422,15 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             let linking_fields = self
                 .derived
                 .get(&entity_type)
-                .expect(&format!(
-                    "Couldn't find value for key {} in derived map",
-                    entity_type
-                ))
+                .unwrap_or_else(|| {
+                    panic!(
+                        "{}",
+                        Log::Critical(format!(
+                            "Couldn't find value for key {} in derived map",
+                            entity_type
+                        ))
+                    )
+                })
                 .1
                 .clone();
             let original_entity = self.derived.get(&entity_type).unwrap().0.clone();
@@ -428,10 +438,15 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 if data.contains_key(&linking_field.1) {
                     let derived_field_value = data
                         .get(&linking_field.1)
-                        .expect(&format!(
-                            "Couldn't find value for {} in submitted data",
-                            linking_field.1
-                        ))
+                        .unwrap_or_else(|| {
+                            panic!(
+                                "{}",
+                                Log::Critical(format!(
+                                    "Couldn't find value for {} in submitted data",
+                                    linking_field.1
+                                ))
+                            )
+                        })
                         .clone();
                     if matches!(derived_field_value, Value::List(_)) {
                         for derived_field_value in derived_field_value.as_list().unwrap().clone() {
@@ -479,26 +494,41 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 let mut inner_store = self
                     .store
                     .get(&original_entity)
-                    .expect(&format!(
-                        "Couldn't find value for {} in store",
-                        original_entity
-                    ))
+                    .unwrap_or_else(|| {
+                        panic!(
+                            "{}",
+                            Log::Critical(format!(
+                                "Couldn't find value for {} in store",
+                                original_entity
+                            ))
+                        )
+                    })
                     .clone();
                 if inner_store.contains_key(&derived_field_string_value) {
                     let mut innermost_store = inner_store
                         .get(&derived_field_string_value)
-                        .expect(&format!(
-                            "Couldn't find value for {} in inner store",
-                            derived_field_string_value
-                        ))
+                        .unwrap_or_else(|| {
+                            panic!(
+                                "{}",
+                                Log::Critical(format!(
+                                    "Couldn't find value for {} in inner store",
+                                    derived_field_string_value
+                                ))
+                            )
+                        })
                         .clone();
                     if innermost_store.contains_key(&linking_field.0) {
                         let innermost_value = innermost_store
                             .get(&linking_field.0)
-                            .expect(&format!(
-                                "Couldn't find value for {} in innermost store",
-                                linking_field.0
-                            ))
+                            .unwrap_or_else(|| {
+                                panic!(
+                                    "{}",
+                                    Log::Critical(format!(
+                                        "Couldn't find value for {} in innermost store",
+                                        linking_field.0
+                                    ))
+                                )
+                            })
                             .clone();
                         if !innermost_value
                             .clone()
