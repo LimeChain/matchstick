@@ -84,7 +84,7 @@ pub struct MatchstickInstanceContext<C: Blockchain> {
     ///     signer: GraphAccount!
     /// }
     /// ```
-    derived: HashMap<String, (String, Vec<(String, String)>)>
+    derived: HashMap<String, (String, Vec<(String, String)>)>,
 }
 
 /// Implementation of non-external functions.
@@ -96,7 +96,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             store: HashMap::new(),
             fn_ret_map: HashMap::new(),
             meta_tests: Vec::new(),
-            derived: HashMap::new()
+            derived: HashMap::new(),
         }
     }
 
@@ -363,30 +363,92 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
         for f in derived_fields {
             // field type is received as: '[ExampleClass!]!' and needs to be reduced to a class string
-            let clean_field_type = f.field_type.to_string().replace("!", "").replace("[", "").replace("]", "");
+            let clean_field_type = f
+                .field_type
+                .to_string()
+                .replace("!", "")
+                .replace("[", "")
+                .replace("]", "");
             let mut directive = f.find_directive("derivedFrom").unwrap().clone();
 
             if self.derived.contains_key(&clean_field_type) {
-                let mut field_names_vec = self.derived.get(&clean_field_type).expect(&format!("Failed to get field names vector for type {}", clean_field_type)).1.clone();
-                field_names_vec.push((f.name.clone(), directive.arguments.pop().unwrap().1.to_string().replace("\"", "")));
-                self.derived.insert(clean_field_type, (entity_type.clone(), field_names_vec));
+                let mut field_names_vec = self
+                    .derived
+                    .get(&clean_field_type)
+                    .expect(&format!(
+                        "Failed to get field names vector for type {}",
+                        clean_field_type
+                    ))
+                    .1
+                    .clone();
+                field_names_vec.push((
+                    f.name.clone(),
+                    directive
+                        .arguments
+                        .pop()
+                        .unwrap()
+                        .1
+                        .to_string()
+                        .replace("\"", ""),
+                ));
+                self.derived
+                    .insert(clean_field_type, (entity_type.clone(), field_names_vec));
             } else {
-                self.derived.insert(clean_field_type, (entity_type.clone(), vec!((f.name.clone(), directive.arguments.pop().unwrap().1.to_string().replace("\"", "")))));
+                self.derived.insert(
+                    clean_field_type,
+                    (
+                        entity_type.clone(),
+                        vec![(
+                            f.name.clone(),
+                            directive
+                                .arguments
+                                .pop()
+                                .unwrap()
+                                .1
+                                .to_string()
+                                .replace("\"", ""),
+                        )],
+                    ),
+                );
             }
         }
 
         if self.derived.contains_key(&entity_type) {
-            let linking_fields = self.derived.get(&entity_type).expect(&format!("Couldn't find value for key {} in derived map", entity_type)).1.clone();
+            let linking_fields = self
+                .derived
+                .get(&entity_type)
+                .expect(&format!(
+                    "Couldn't find value for key {} in derived map",
+                    entity_type
+                ))
+                .1
+                .clone();
             let original_entity = self.derived.get(&entity_type).unwrap().0.clone();
-            for linking_field in  linking_fields {
+            for linking_field in linking_fields {
                 if data.contains_key(&linking_field.1) {
-                    let derived_field_value = data.get(&linking_field.1).expect(&format!("Couldn't find value for {} in submitted data", linking_field.1)).clone();
+                    let derived_field_value = data
+                        .get(&linking_field.1)
+                        .expect(&format!(
+                            "Couldn't find value for {} in submitted data",
+                            linking_field.1
+                        ))
+                        .clone();
                     if matches!(derived_field_value, Value::List(_)) {
                         for derived_field_value in derived_field_value.as_list().unwrap().clone() {
-                            self.insert_derived_field_in_store(derived_field_value, original_entity.clone(), linking_field.clone(), id.clone());
+                            self.insert_derived_field_in_store(
+                                derived_field_value,
+                                original_entity.clone(),
+                                linking_field.clone(),
+                                id.clone(),
+                            );
                         }
                     } else {
-                        self.insert_derived_field_in_store(derived_field_value, original_entity.clone(), linking_field.clone(), id.clone());
+                        self.insert_derived_field_in_store(
+                            derived_field_value,
+                            original_entity.clone(),
+                            linking_field.clone(),
+                            id.clone(),
+                        );
                     }
                 }
             }
@@ -404,22 +466,57 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     }
     /// This function checks whether all the necessary data is present in the store to avoid linking
     /// entities to other non existent entities which may cause serious collision problems later
-    fn insert_derived_field_in_store(&mut self, derived_field_value: Value, original_entity: String, linking_field: (String, String), id: String) {
+    fn insert_derived_field_in_store(
+        &mut self,
+        derived_field_value: Value,
+        original_entity: String,
+        linking_field: (String, String),
+        id: String,
+    ) {
         if derived_field_value.is_string() {
             let derived_field_string_value = derived_field_value.as_string().unwrap();
             if self.store.contains_key(&original_entity) {
-                let mut inner_store = self.store.get(&original_entity).expect(&format!("Couldn't find value for {} in store", original_entity)).clone();
+                let mut inner_store = self
+                    .store
+                    .get(&original_entity)
+                    .expect(&format!(
+                        "Couldn't find value for {} in store",
+                        original_entity
+                    ))
+                    .clone();
                 if inner_store.contains_key(&derived_field_string_value) {
-                    let mut innermost_store = inner_store.get(&derived_field_string_value).expect(&format!("Couldn't find value for {} in inner store", derived_field_string_value)).clone();
+                    let mut innermost_store = inner_store
+                        .get(&derived_field_string_value)
+                        .expect(&format!(
+                            "Couldn't find value for {} in inner store",
+                            derived_field_string_value
+                        ))
+                        .clone();
                     if innermost_store.contains_key(&linking_field.0) {
-                        let innermost_value = innermost_store.get(&linking_field.0).expect(&format!("Couldn't find value for {} in innermost store", linking_field.0)).clone();
-                        if !innermost_value.clone().as_list().unwrap().contains(&Value::from(id.clone())) {
-                            let mut innermost_value_list = innermost_value.as_list().unwrap().clone();
+                        let innermost_value = innermost_store
+                            .get(&linking_field.0)
+                            .expect(&format!(
+                                "Couldn't find value for {} in innermost store",
+                                linking_field.0
+                            ))
+                            .clone();
+                        if !innermost_value
+                            .clone()
+                            .as_list()
+                            .unwrap()
+                            .contains(&Value::from(id.clone()))
+                        {
+                            let mut innermost_value_list =
+                                innermost_value.as_list().unwrap().clone();
                             innermost_value_list.push(Value::from(id.clone()));
-                            innermost_store.insert(linking_field.0.clone(), Value::List(innermost_value_list));
+                            innermost_store
+                                .insert(linking_field.0.clone(), Value::List(innermost_value_list));
                         }
                     } else {
-                        innermost_store.insert(linking_field.0.clone(), Value::List(vec!(Value::from(id.clone()))));
+                        innermost_store.insert(
+                            linking_field.0.clone(),
+                            Value::List(vec![Value::from(id.clone())]),
+                        );
                     }
                     inner_store.insert(derived_field_string_value, innermost_store);
                 }
