@@ -8,15 +8,13 @@ use std::fs;
 
 #[derive(Debug)]
 struct Mapping {
-    name: String,
     event_handlers: Vec<String>,
     call_handlers: Vec<String>,
 }
 
 impl Mapping {
-    pub fn new(name: String) -> Self {
+    pub fn new() -> Self {
         Mapping {
-            name,
             event_handlers: vec![],
             call_handlers: vec![],
         }
@@ -30,10 +28,10 @@ struct Datasource {
 }
 
 impl Datasource {
-    pub fn new(name: String, mapping: String) -> Self {
+    pub fn new(name: String) -> Self {
         Datasource {
             name,
-            mapping: Mapping::new(mapping),
+            mapping: Mapping::new(),
         }
     }
 }
@@ -81,23 +79,9 @@ pub fn generate_coverage_report() {
         let name = d.get("name").expect("No field 'name' in datasource.");
 
         let mapping = d.get("mapping").expect("No field 'mapping' in datasource.");
-        let file_path =
-            serde_yaml::to_string(mapping.get("file").expect("No field 'file' on mapping."))
-                .expect("Could not convert serde yaml value to string.");
-
-        let parts = file_path.split('/').collect::<Vec<&str>>();
-        let file = parts
-            .last()
-            .expect("Could not get last element of string Vec 'file'.")
-            .split('.')
-            .collect::<Vec<&str>>();
-        let mapping_name = *file
-            .first()
-            .expect("Could not get first element of string Vec 'mapping_name'.");
 
         let mut datasource = Datasource::new(
-            serde_yaml::to_string(name).expect("Could not convert serde yaml value to string."),
-            mapping_name.to_string(),
+            serde_yaml::to_string(name).expect("Could not convert serde yaml value to string.")
         );
 
         let events = mapping.get("eventHandlers");
