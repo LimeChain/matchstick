@@ -51,6 +51,7 @@ After that you can go straight to [the final setup step](https://github.com/Lime
 The release binary comes in two flavours - for **МacOS** and **Linux**. To add **Matchstick** to your subgraph project just open up a terminal, navigate to the root folder of your project and simply run `graph test` - it downloads the latest **Matchstick** binary and runs the specified test or all tests in a test folder (or all existing tests if no datasource flag is specified). Example usage: `graph test gravity`.
 
 ❗ If you don't have Postgres installed, you will need to install it. Instructions for that below:
+❗❗❗ Since graph-node depends on diesel (and diesel requires a local postgres installation) we highly advise using the commands below as adding it in any other way may cause unexpected errors!
 
 #### MacOS 
 ❗ Postgres installation command:
