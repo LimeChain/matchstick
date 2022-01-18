@@ -311,12 +311,12 @@ fn test_groups(path: &str) -> BTreeMap<i32, Vec<i32>> {
         .unwrap()
         .iter()
         .filter_map(|obj| {
-            let parent_regex = Regex::new(r#"test~anonymous.{1}\d+$"#).expect("Incorrect regex");
-            let child_regex = Regex::new(r#"(~anonymous.{1}\d+){2}"#).expect("Incorrect regex");
+            let parent_regex = Regex::new(r#"test~anonymous\|\d+$"#).expect("Incorrect regex");
+            let test_regex = Regex::new(r#"test~anonymous\|\d+"#).expect("Incorrect regex");
 
             let name = obj["name"].as_str().unwrap().to_string();
 
-            if !parent_regex.is_match(&name) && !child_regex.is_match(&name) { nested_children += 1 }
+            if !test_regex.is_match(&name) { nested_children += 1 }
 
             if parent_regex.is_match(&name) {
                 let child_regex = Regex::new(r#"data\[\d+\]"#).expect("Incorrect regex");
@@ -332,7 +332,7 @@ fn test_groups(path: &str) -> BTreeMap<i32, Vec<i32>> {
                 let children: Vec<i32> = (prev_parent_id + 1..p_id).collect();
                 prev_parent_id = p_id;
                 nested_children = 0;
-                
+
                 Some((p_id, children))
             } else {
                 None
