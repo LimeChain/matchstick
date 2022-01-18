@@ -1,14 +1,10 @@
 use colored::Colorize;
 use graph::blockchain::Blockchain;
+use regex::Regex;
+use serde_json::Value;
+use std::collections::BTreeMap;
 use std::time::Instant;
 use wasmtime::Func;
-use twiggy_parser;
-use twiggy_analyze;
-use twiggy_opt;
-use twiggy_traits;
-use serde_json::{Value};
-use std::collections::BTreeMap;
-use regex::Regex;
 
 use crate::{
     instance::MatchstickInstance,
@@ -135,7 +131,7 @@ pub struct TestGroup {
     pub name: String,
     pub before_all: Vec<Func>,
     pub after_all: Vec<Func>,
-    pub tests: Vec<Test>
+    pub tests: Vec<Test>,
 }
 
 impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
@@ -152,7 +148,7 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
 
         let test_groups = test_groups(&matchstick.wasm);
 
-        let mut suite_new = TestSuite {
+        let mut suite = TestSuite {
             groups: BTreeMap::new(),
             before_all: vec![],
             after_all: vec![],
@@ -165,7 +161,7 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
                 before_all: vec![],
                 after_all: vec![],
             };
-            suite_new.groups.insert(*k, test_group);
+            suite.groups.insert(*k, test_group);
         }
 
         let mut before_each: BTreeMap<i32, Vec<Func>> = BTreeMap::new();
@@ -199,71 +195,82 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
                 .to_owned();
 
             let id = *func_idx as i32;
+            let parent_id = get_parent_id(id, test_groups.clone());
 
             match role.as_str() {
                 "beforeAll" => {
-                    let parent_id = get_parent_id(id.clone(), test_groups.clone());
-
                     if parent_id == id {
-                        suite_new.before_all.push(func.clone());
+                        suite.before_all.push(func.clone());
                     } else {
-                        suite_new.groups.get_mut(&parent_id).unwrap().before_all.push(func.clone());
+                        suite
+                            .groups
+                            .get_mut(&parent_id)
+                            .unwrap()
+                            .before_all
+                            .push(func.clone());
                     }
-                },
+                }
                 "afterAll" => {
-                    let parent_id = get_parent_id(id.clone(), test_groups.clone());
-
                     if parent_id == id {
-                        suite_new.after_all.push(func.clone());
+                        suite.after_all.push(func.clone());
                     } else {
-                        suite_new.groups.get_mut(&parent_id).unwrap().after_all.push(func.clone());
+                        suite
+                            .groups
+                            .get_mut(&parent_id)
+                            .unwrap()
+                            .after_all
+                            .push(func.clone());
                     }
-                },
+                }
                 "beforeEach" => {
-                    let parent_id = get_parent_id(id.clone(), test_groups.clone());
-
                     if parent_id == id {
-                        for (_, group) in suite_new.groups.iter_mut() {
+                        for (_, group) in suite.groups.iter_mut() {
                             group.before_all.push(func.clone());
                         }
                     } else {
-                        before_each.entry(parent_id).or_insert_with_key(|_| vec![func.clone()]);
+                        before_each
+                            .entry(parent_id)
+                            .or_insert_with_key(|_| vec![func.clone()]);
                     }
-                },
+                }
                 "afterEach" => {
-                    let parent_id = get_parent_id(id.clone(), test_groups.clone());
-
                     if parent_id == id {
-                        for (_, group) in suite_new.groups.iter_mut() {
+                        for (_, group) in suite.groups.iter_mut() {
                             group.after_all.push(func.clone());
                         }
                     } else {
-                        after_each.entry(parent_id).or_insert_with_key(|_| vec![func.clone()]);
+                        after_each
+                            .entry(parent_id)
+                            .or_insert_with_key(|_| vec![func.clone()]);
                     }
-                },
+                }
                 "describe" => {
-                    suite_new.groups.get_mut(&id).unwrap().name = name.clone();
-                },
+                    suite.groups.get_mut(&id).unwrap().name = name.clone();
+                }
                 _ => {
-                    let parent_id = get_parent_id(id.clone(), test_groups.clone());
-                    suite_new.groups.get_mut(&parent_id).unwrap().tests.push(Test::new(name.to_string(), *should_fail, func.clone()));
-                },
+                    suite
+                        .groups
+                        .get_mut(&parent_id)
+                        .unwrap()
+                        .tests
+                        .push(Test::new(name.to_string(), *should_fail, func.clone()));
+                }
             };
         }
 
         for (id, funcs) in before_each {
-            for test in suite_new.groups.get_mut(&id).unwrap().tests.iter_mut() {
+            for test in suite.groups.get_mut(&id).unwrap().tests.iter_mut() {
                 test.before_hooks = funcs.clone();
             }
         }
 
         for (id, funcs) in after_each {
-            for test in suite_new.groups.get_mut(&id).unwrap().tests.iter_mut() {
+            for test in suite.groups.get_mut(&id).unwrap().tests.iter_mut() {
                 test.after_hooks = funcs.clone();
             }
         }
 
-        suite_new
+        suite
     }
 }
 
@@ -274,11 +281,9 @@ fn get_parent_id(id: i32, test_groups: BTreeMap<i32, Vec<i32>>) -> i32 {
         if *parent == id {
             parent_id = id;
             break;
-        } else {
-            if children.contains(&id) {
-                parent_id = *parent;
-                break;
-            }
+        } else if children.contains(&id) {
+            parent_id = *parent;
+            break;
         }
     }
 
@@ -286,6 +291,7 @@ fn get_parent_id(id: i32, test_groups: BTreeMap<i32, Vec<i32>>) -> i32 {
 }
 
 fn test_groups(path: &str) -> BTreeMap<i32, Vec<i32>> {
+    println!("File Path: {}", path);
     let mut wasm = twiggy_parser::read_and_parse(path, twiggy_traits::ParseMode::Auto).unwrap();
 
     let mut opts = twiggy_opt::Paths::new();
@@ -295,7 +301,7 @@ fn test_groups(path: &str) -> BTreeMap<i32, Vec<i32>> {
     opts.set_max_paths(0);
     let paths = twiggy_analyze::paths(&mut wasm, &opts).unwrap();
     let mut buf = Vec::new();
-    paths.emit_json(&mut wasm, &mut buf).unwrap();
+    paths.emit_json(&wasm, &mut buf).unwrap();
     let result = String::from_utf8(buf).unwrap();
     let values: Value = serde_json::from_str(&result).unwrap();
 
@@ -311,13 +317,13 @@ fn test_groups(path: &str) -> BTreeMap<i32, Vec<i32>> {
             let name = obj["name"].as_str().unwrap().to_string();
             if regex.is_match(&name) {
                 let p_id = i as i32 + 1;
-                let children: Vec<i32> = (prev_parent_id+1..p_id).collect();
+                let children: Vec<i32> = (prev_parent_id + 1..p_id).collect();
                 prev_parent_id = p_id;
 
                 Some((p_id, children))
             } else {
                 None
             }
-        }).collect()
-
+        })
+        .collect()
 }
