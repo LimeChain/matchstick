@@ -281,7 +281,11 @@ ___  ___      _       _         _   _      _
                     if group.tests.is_empty() {
                         None
                     } else {
+                        println!("{}", group.name.cyan().bold());
+                        logging::add_indent();
+
                         Test::call_hooks(&group.before_all);
+
                         let failed: HashMap<String, TestResult> = group
                             .tests
                             .into_iter()
@@ -298,6 +302,8 @@ ___  ___      _       _         _   _      _
                             .collect();
                         Test::call_hooks(&group.after_all);
 
+                        logging::sub_indent();
+
                         Some((id, failed))
                     }
                 })
@@ -306,7 +312,7 @@ ___  ___      _       _         _   _      _
             Test::call_hooks(&suite.after_all);
 
             logging::clear_indent();
-            println!();
+
             if failed_gr.is_empty() {
                 None
             } else {
