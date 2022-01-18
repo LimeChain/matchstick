@@ -28,7 +28,7 @@ pub struct MatchstickInstance<C: Blockchain> {
 
     pub instance_ctx: Rc<RefCell<Option<MatchstickInstanceContext<C>>>>,
 
-    pub wasm: String
+    pub wasm: String,
 }
 
 // Initialization functions.
@@ -85,7 +85,7 @@ impl<C: Blockchain> MatchstickInstance<C> {
             }),
         );
 
-        MatchstickInstance::<Chain>::from_valid_module_with_ctx(
+        let mut instance = MatchstickInstance::<Chain>::from_valid_module_with_ctx(
             valid_module,
             mock_context(
                 deployment,
@@ -105,7 +105,10 @@ impl<C: Blockchain> MatchstickInstance<C> {
                     err,
                 )),
             );
-        })
+        });
+
+        instance.wasm = path_to_wasm.to_string();
+        instance
     }
 
     fn from_valid_module_with_ctx(
@@ -500,7 +503,7 @@ impl<C: Blockchain> MatchstickInstance<C> {
         Ok(MatchstickInstance {
             instance,
             instance_ctx: shared_ctx,
-            wasm: "".to_string()
+            wasm: "".to_string(),
         })
     }
 }

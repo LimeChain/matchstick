@@ -14,9 +14,11 @@ mod integration_tests {
         let test_suite = TestSuite::from(&module);
 
         let mut failed_tests = 0;
-        for test in &test_suite.tests {
-            if !test.run().passed {
-                failed_tests += 1;
+        for (_, group) in &test_suite.groups {
+            for test in &group.tests {
+                if !test.run().passed {
+                    failed_tests += 1;
+                }
             }
         }
 

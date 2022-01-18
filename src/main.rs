@@ -253,11 +253,7 @@ ___  ___      _       _         _   _      _
     // A matchstick instance for each test suite wasm (the compiled source).
     let ms_instances: HashMap<String, MatchstickInstance<Chain>> = outputs
         .into_iter()
-        .map(|(key, val)| {
-            let mut instance = MatchstickInstance::<Chain>::new(&val.file);
-            instance.wasm = val.file.clone();
-            (key, instance)
-        })
+        .map(|(key, val)| (key, MatchstickInstance::<Chain>::new(&val.file)))
         .collect();
 
     // A test suite abstraction for each instance.
@@ -286,7 +282,7 @@ ___  ___      _       _         _   _      _
                         None
                     } else {
                         Test::call_hooks(&group.before_all);
-                         let failed: HashMap<String, TestResult> = group
+                        let failed: HashMap<String, TestResult> = group
                             .tests
                             .into_iter()
                             .filter_map(|test| {
