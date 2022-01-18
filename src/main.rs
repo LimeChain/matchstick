@@ -253,7 +253,11 @@ ___  ___      _       _         _   _      _
     // A matchstick instance for each test suite wasm (the compiled source).
     let ms_instances: HashMap<String, MatchstickInstance<Chain>> = outputs
         .into_iter()
-        .map(|(key, val)| (key, MatchstickInstance::<Chain>::new(&val.file)))
+        .map(|(key, val)| {
+            let mut instance = MatchstickInstance::<Chain>::new(&val.file);
+            instance.wasm = val.file.clone();
+            (key, instance)
+        })
         .collect();
 
     // A test suite abstraction for each instance.
@@ -265,7 +269,7 @@ ___  ___      _       _         _   _      _
     println!("{}", ("\nIgniting tests 🔥\n").to_string().bright_red());
 
     let (mut num_passed, mut num_failed) = (0, 0);
-    let failed_suites: HashMap<String, HashMap<String, TestResult>> = test_suites
+    let failed_suites: HashMap<String, HashMap<i32, HashMap<String, TestResult>>> = test_suites
         .into_iter()
         .filter_map(|(name, suite)| {
             println!("🧪 Running Test Suite: {}", name.bright_blue());
@@ -274,17 +278,31 @@ ___  ___      _       _         _   _      _
 
             Test::call_hooks(&suite.before_all);
 
-            let failed: HashMap<String, TestResult> = suite
-                .tests
+            let failed_gr: HashMap<i32, HashMap<String, TestResult>> = suite
+                .groups
                 .into_iter()
-                .filter_map(|test| {
-                    let result = test.run();
-                    if result.passed {
-                        num_passed += 1;
+                .filter_map(|(id, group)| {
+                    if group.tests.is_empty() {
                         None
                     } else {
-                        num_failed += 1;
-                        Some((test.name, result))
+                        Test::call_hooks(&group.before_all);
+                         let failed: HashMap<String, TestResult> = group
+                            .tests
+                            .into_iter()
+                            .filter_map(|test| {
+                                let result = test.run();
+                                if result.passed {
+                                    num_passed += 1;
+                                    None
+                                } else {
+                                    num_failed += 1;
+                                    Some((test.name, result))
+                                }
+                            })
+                            .collect();
+                        Test::call_hooks(&group.after_all);
+
+                        Some((id, failed))
                     }
                 })
                 .collect();
@@ -293,11 +311,10 @@ ___  ___      _       _         _   _      _
 
             logging::clear_indent();
             println!();
-
-            if failed.is_empty() {
+            if failed_gr.is_empty() {
                 None
             } else {
-                Some((name, failed))
+                Some((name, failed_gr))
             }
         })
         .collect();
@@ -307,13 +324,16 @@ ___  ___      _       _         _   _      _
         let passed = format!("{} passed", num_passed).green();
         let all = format!("{} total", num_failed + num_passed);
 
-        println!("Failed tests: \n");
-        for (suite, tests) in failed_suites {
-            for (name, result) in tests {
-                println!("{} {}", suite.bright_blue(), name.red());
+        println!("Failed tests:");
 
-                if !result.logs.is_empty() {
-                    println!("{}", result.logs);
+        for (suite, group) in failed_suites {
+            for (_, tests) in group {
+                for (name, result) in tests {
+                    println!("{} {}", suite.bright_blue(), name.red());
+
+                    if !result.logs.is_empty() {
+                        println!("{}", result.logs);
+                    }
                 }
             }
         }
