@@ -297,7 +297,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let id: String = asc_get(&self.wasm_ctx, id_ptr)?;
         let data: HashMap<String, Value> = try_asc_get(&self.wasm_ctx, data_ptr)?;
 
-        let required_fields = SCHEMA
+        let schema_fields_iter = SCHEMA
             .definitions
             .iter()
             .find_map(|def| {
@@ -318,7 +318,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 );
             })
             .fields
-            .iter()
+            .iter();
+
+        let required_fields = schema_fields_iter.clone()
             .filter(|&f| matches!(f.field_type, schema::Type::NonNullType(..)) && !f.is_derived());
 
         for f in required_fields {
@@ -337,28 +339,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             }
         }
 
-        let derived_fields = SCHEMA
-            .definitions
-            .iter()
-            .find_map(|def| {
-                if let schema::Definition::TypeDefinition(schema::TypeDefinition::Object(o)) = def {
-                    if o.name == entity_type {
-                        Some(o)
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                }
-            })
-            .unwrap_or_else(|| {
-                panic!(
-                    "{}",
-                    Log::Critical(format!("Something went wrong! Could not find the entity of type '{}' defined in the GraphQL schema.", &entity_type))
-                );
-            })
-            .fields
-            .iter()
+        let derived_fields = schema_fields_iter
             .filter(|&f| matches!(f.field_type, schema::Type::NonNullType(..)) && f.is_derived());
 
         for f in derived_fields {

@@ -42,7 +42,7 @@ mod unit_tests {
     }
 
     fn get_version() -> Version {
-        Version::new(0, 0, 5)
+        Version::new(0, 0, 6)
     }
 
     #[test]
