@@ -291,35 +291,48 @@ fn get_parent_id(id: i32, test_groups: BTreeMap<i32, Vec<i32>>) -> i32 {
 }
 
 fn test_groups(path: &str) -> BTreeMap<i32, Vec<i32>> {
-    println!("File Path: {}", path);
     let mut wasm = twiggy_parser::read_and_parse(path, twiggy_traits::ParseMode::Auto).unwrap();
 
     let mut opts = twiggy_opt::Paths::new();
     opts.add_function("anonymous".to_string());
     opts.set_using_regexps(true);
     opts.set_descending(true);
-    opts.set_max_paths(0);
-    let paths = twiggy_analyze::paths(&mut wasm, &opts).unwrap();
+    opts.set_max_paths(100);
+    let json_paths = twiggy_analyze::paths(&mut wasm, &opts).unwrap();
     let mut buf = Vec::new();
-    paths.emit_json(&wasm, &mut buf).unwrap();
+    json_paths.emit_json(&wasm, &mut buf).unwrap();
     let result = String::from_utf8(buf).unwrap();
-    let values: Value = serde_json::from_str(&result).unwrap();
+    let paths: Value = serde_json::from_str(&result).unwrap();
 
     let mut prev_parent_id = 0;
-
-    values
+    let mut nested_children = 0;
+    paths
         .as_array()
         .unwrap()
         .iter()
-        .enumerate()
-        .filter_map(|(i, obj)| {
-            let regex = Regex::new(r#"test~anonymous.{1}\d+$"#).expect("Incorrect regex");
+        .filter_map(|obj| {
+            let parent_regex = Regex::new(r#"test~anonymous.{1}\d+$"#).expect("Incorrect regex");
+            let child_regex = Regex::new(r#"(~anonymous.{1}\d+){2}"#).expect("Incorrect regex");
+
             let name = obj["name"].as_str().unwrap().to_string();
-            if regex.is_match(&name) {
-                let p_id = i as i32 + 1;
+
+            if !parent_regex.is_match(&name) && !child_regex.is_match(&name) { nested_children += 1 }
+
+            if parent_regex.is_match(&name) {
+                let child_regex = Regex::new(r#"data\[\d+\]"#).expect("Incorrect regex");
+                let mut children_num = 0;
+
+                for caller in obj["callers"].as_array().unwrap().iter() {
+                    let c_name = caller["name"].as_str().unwrap().to_string();
+
+                    if child_regex.is_match(&c_name) { children_num += 1 }
+                }
+
+                let p_id = prev_parent_id + children_num + nested_children + 1;
                 let children: Vec<i32> = (prev_parent_id + 1..p_id).collect();
                 prev_parent_id = p_id;
-
+                nested_children = 0;
+                
                 Some((p_id, children))
             } else {
                 None
