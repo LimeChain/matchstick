@@ -24,6 +24,7 @@ pub struct Test {
     after_hooks: Vec<Func>,
 }
 
+#[derive(Debug)]
 pub struct TestResult {
     pub passed: bool,
     pub logs: String,
@@ -122,12 +123,6 @@ impl Test {
     }
 }
 
-pub struct TestSuiteOld {
-    pub tests: Vec<Test>,
-    pub before_all: Vec<Func>,
-    pub after_all: Vec<Func>,
-}
-
 #[derive(Debug)]
 pub struct TestSuite {
     pub groups: BTreeMap<i32, TestGroup>,
@@ -157,12 +152,6 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
 
         let test_groups = test_groups(&matchstick.wasm);
 
-        let mut suite = TestSuiteOld {
-            tests: vec![],
-            before_all: vec![],
-            after_all: vec![],
-        };
-
         let mut suite_new = TestSuite {
             groups: BTreeMap::new(),
             before_all: vec![],
@@ -179,11 +168,8 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
             suite_new.groups.insert(*k, test_group);
         }
 
-        let mut before_each_new: BTreeMap<i32, Vec<Func>> = BTreeMap::new();
-        let mut after_each_new: BTreeMap<i32, Vec<Func>> = BTreeMap::new();
-        let mut before_each = vec![];
-        let mut after_each = vec![];
-        let mut tests = vec![];
+        let mut before_each: BTreeMap<i32, Vec<Func>> = BTreeMap::new();
+        let mut after_each: BTreeMap<i32, Vec<Func>> = BTreeMap::new();
 
         for (name, should_fail, func_idx, role) in &matchstick
             .instance_ctx
@@ -212,90 +198,70 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
                 .unwrap()
                 .to_owned();
 
+            let id = *func_idx as i32;
+
             match role.as_str() {
                 "beforeAll" => {
-                    let id = *func_idx as i32;
                     let parent_id = get_parent_id(id.clone(), test_groups.clone());
+
                     if parent_id == id {
                         suite_new.before_all.push(func.clone());
                     } else {
                         suite_new.groups.get_mut(&parent_id).unwrap().before_all.push(func.clone());
                     }
-
-                    suite.before_all.push(func.clone());
                 },
                 "afterAll" => {
-                    let id = *func_idx as i32;
                     let parent_id = get_parent_id(id.clone(), test_groups.clone());
+
                     if parent_id == id {
                         suite_new.after_all.push(func.clone());
                     } else {
                         suite_new.groups.get_mut(&parent_id).unwrap().after_all.push(func.clone());
                     }
-
-                    suite.after_all.push(func.clone());
                 },
                 "beforeEach" => {
-                    let id = *func_idx as i32;
                     let parent_id = get_parent_id(id.clone(), test_groups.clone());
+
                     if parent_id == id {
                         for (_, group) in suite_new.groups.iter_mut() {
                             group.before_all.push(func.clone());
                         }
                     } else {
-                        before_each_new.entry(parent_id).or_insert_with_key(|_| vec![func.clone()]);
+                        before_each.entry(parent_id).or_insert_with_key(|_| vec![func.clone()]);
                     }
-
-                    before_each.push(func.clone())
                 },
                 "afterEach" => {
-                    let id = *func_idx as i32;
                     let parent_id = get_parent_id(id.clone(), test_groups.clone());
-                    println!("{}", parent_id);
+
                     if parent_id == id {
                         for (_, group) in suite_new.groups.iter_mut() {
                             group.after_all.push(func.clone());
                         }
                     } else {
-                        after_each_new.entry(parent_id).or_insert_with_key(|_| vec![func.clone()]);
+                        after_each.entry(parent_id).or_insert_with_key(|_| vec![func.clone()]);
                     }
-
-                    after_each.push(func.clone())
                 },
                 "describe" => {
-                    let id = *func_idx as i32;
                     suite_new.groups.get_mut(&id).unwrap().name = name.clone();
                 },
                 _ => {
-                    let id = *func_idx as i32;
                     let parent_id = get_parent_id(id.clone(), test_groups.clone());
                     suite_new.groups.get_mut(&parent_id).unwrap().tests.push(Test::new(name.to_string(), *should_fail, func.clone()));
-                    tests.push(Test::new(name.to_string(), *should_fail, func))
                 },
             };
         }
 
-        for (id, funcs) in before_each_new {
+        for (id, funcs) in before_each {
             for test in suite_new.groups.get_mut(&id).unwrap().tests.iter_mut() {
                 test.before_hooks = funcs.clone();
             }
         }
 
-        for (id, funcs) in after_each_new {
+        for (id, funcs) in after_each {
             for test in suite_new.groups.get_mut(&id).unwrap().tests.iter_mut() {
                 test.after_hooks = funcs.clone();
             }
         }
-
-        println!("{:?}", suite_new);
-        suite.tests = tests
-            .into_iter()
-            .map(|mut test| {
-                test.before_hooks = before_each.clone();
-                test.after_hooks = after_each.clone();
-                test
-            })
-            .collect();
 
         suite_new
     }
