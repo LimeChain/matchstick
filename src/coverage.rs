@@ -66,22 +66,32 @@ pub fn generate_coverage_report() {
         .expect("Something went wrong reading the 'subgraph.yaml' file");
     let subgraph_yaml: Value = serde_yaml::from_str(&subgraph_yaml_contents)
         .expect("Something went wrong when parsing 'subgraph.yaml'. Please ensure that the file exists and is valid.");
-    let datasources_yml: Sequence = subgraph_yaml
+    let mut sources_yml: Sequence = subgraph_yaml
         .get("dataSources")
         .expect("No DataSources in subgraph_yaml.")
         .as_sequence()
         .expect("An unexpected error occurred when converting datasources to sequence.")
         .to_vec();
 
+    let mut templates_yml = match subgraph_yaml.get("templates") {
+        Some(templates) => templates
+            .as_sequence()
+            .expect("An unexpected error occurred when converting datasources to sequence.")
+            .to_vec(),
+        None => Vec::new(),
+    };
+
+    sources_yml.append(&mut templates_yml);
+
     let mut datasources = vec![];
 
-    for d in datasources_yml {
+    for d in sources_yml {
         let name = d.get("name").expect("No field 'name' in datasource.");
 
         let mapping = d.get("mapping").expect("No field 'mapping' in datasource.");
 
         let mut datasource = Datasource::new(
-            serde_yaml::to_string(name).expect("Could not convert serde yaml value to string.")
+            serde_yaml::to_string(name).expect("Could not convert serde yaml value to string."),
         );
 
         let events = mapping.get("eventHandlers");
