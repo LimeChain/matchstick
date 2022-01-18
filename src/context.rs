@@ -320,7 +320,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             .fields
             .iter();
 
-        let required_fields = schema_fields_iter.clone()
+        let required_fields = schema_fields_iter
+            .clone()
             .filter(|&f| matches!(f.field_type, schema::Type::NonNullType(..)) && !f.is_derived());
 
         for f in required_fields {
