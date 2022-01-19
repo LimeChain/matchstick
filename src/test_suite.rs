@@ -251,7 +251,7 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
                     suite
                         .groups
                         .get_mut(&parent_id)
-                        .unwrap()
+                        .expect(&format!("Expected parent_id: {}", parent_id))
                         .tests
                         .push(Test::new(name.to_string(), *should_fail, func.clone()));
                 }
@@ -312,11 +312,11 @@ fn test_groups(path: &str) -> BTreeMap<i32, Vec<i32>> {
         .iter()
         .filter_map(|obj| {
             let parent_regex = Regex::new(r#"test~anonymous\|\d+$"#).expect("Incorrect regex");
-            let test_regex = Regex::new(r#"test~anonymous\|\d+"#).expect("Incorrect regex");
+            let child_regex = Regex::new(r#"test(~anonymous\|\d+~anonymous\|\d+\z)"#).expect("Incorrect regex");
 
             let name = obj["name"].as_str().unwrap().to_string();
 
-            if !test_regex.is_match(&name) { nested_children += 1 }
+            if !parent_regex.is_match(&name) && !child_regex.is_match(&name) { nested_children += 1 }
 
             if parent_regex.is_match(&name) {
                 let child_regex = Regex::new(r#"data\[\d+\]"#).expect("Incorrect regex");
