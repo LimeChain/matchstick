@@ -146,6 +146,7 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
             );
         });
 
+        // Map parent to descendent functions
         let test_groups = test_groups(&matchstick.wasm);
 
         let mut suite = TestSuite {
@@ -154,14 +155,15 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
             after_all: vec![],
         };
 
-        for (k, _v) in test_groups.iter() {
+        // Pre-initialises all test groups
+        for (id, _descendents) in test_groups.iter() {
             let test_group = TestGroup {
                 name: "".to_string(),
                 tests: vec![],
                 before_all: vec![],
                 after_all: vec![],
             };
-            suite.groups.insert(*k, test_group);
+            suite.groups.insert(*id, test_group);
         }
 
         let mut before_each: BTreeMap<i32, Vec<Func>> = BTreeMap::new();
@@ -251,7 +253,7 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
                     suite
                         .groups
                         .get_mut(&parent_id)
-                        .expect(&format!("Expected parent_id: {}", parent_id))
+                        .unwrap_or_else(|| panic!("Expected parent_id: {}", parent_id))
                         .tests
                         .push(Test::new(name.to_string(), *should_fail, func.clone()));
                 }
@@ -274,6 +276,8 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
     }
 }
 
+/// Determines if the current function is a parent or a descendent
+/// Returns the parent ID if descendent
 fn get_parent_id(id: i32, test_groups: BTreeMap<i32, Vec<i32>>) -> i32 {
     let mut parent_id = 0;
 
@@ -290,53 +294,91 @@ fn get_parent_id(id: i32, test_groups: BTreeMap<i32, Vec<i32>>) -> i32 {
     parent_id
 }
 
+/// Calculates the ID of each describe function
+/// and which functions are its children
+/// Also handles before/after hooks and test functions
+/// that are not part of a group
 fn test_groups(path: &str) -> BTreeMap<i32, Vec<i32>> {
-    let mut wasm = twiggy_parser::read_and_parse(path, twiggy_traits::ParseMode::Auto).unwrap();
-
-    let mut opts = twiggy_opt::Paths::new();
-    opts.add_function("anonymous".to_string());
-    opts.set_using_regexps(true);
-    opts.set_descending(true);
-    opts.set_max_paths(100);
-    let json_paths = twiggy_analyze::paths(&mut wasm, &opts).unwrap();
-    let mut buf = Vec::new();
-    json_paths.emit_json(&wasm, &mut buf).unwrap();
-    let result = String::from_utf8(buf).unwrap();
-    let paths: Value = serde_json::from_str(&result).unwrap();
+    // A collection of all anonymous functions in the wasm file
+    let paths: Value = parse_wasm(path);
 
     let mut prev_parent_id = 0;
     let mut nested_children = 0;
+
     paths
         .as_array()
         .unwrap()
         .iter()
-        .filter_map(|obj| {
+        .filter_map(|path| {
+            // Will match `start:tests/gravity/gravity.test~anonymous|0`
             let parent_regex = Regex::new(r#"test~anonymous\|\d+$"#).expect("Incorrect regex");
-            let child_regex = Regex::new(r#"test(~anonymous\|\d+~anonymous\|\d+\z)"#).expect("Incorrect regex");
 
-            let name = obj["name"].as_str().unwrap().to_string();
+            // Will match `start:tests/gravity/gravity.test~anonymous|0~anonymous|0`
+            let child_regex =
+                Regex::new(r#"test(~anonymous\|\d+~anonymous\|\d+\z)"#).expect("Incorrect regex");
 
-            if !parent_regex.is_match(&name) && !child_regex.is_match(&name) { nested_children += 1 }
+            let name = path["name"].as_str().unwrap().to_string();
 
+            // Looks for any anonymous functions that are not direct descendents
+            // `tests/gravity/utils/handleNewGravatars~anonymous|0`
+            // ` start:tests/gravity/gravity.test~anonymous|0~anonymous|0~anonymous|0`
+            if !parent_regex.is_match(&name) && !child_regex.is_match(&name) {
+                nested_children += 1
+            }
+
+            // If parent function is detected e.g `start:tests/gravity/gravity.test~anonymous|0`
+            // calculates the ID and the ID of its descendents
             if parent_regex.is_match(&name) {
-                let child_regex = Regex::new(r#"data\[\d+\]"#).expect("Incorrect regex");
-                let mut children_num = 0;
+                let parent_id = calculate_parent_id(path, prev_parent_id, nested_children);
 
-                for caller in obj["callers"].as_array().unwrap().iter() {
-                    let c_name = caller["name"].as_str().unwrap().to_string();
+                let children: Vec<i32> = (prev_parent_id + 1..parent_id).collect();
 
-                    if child_regex.is_match(&c_name) { children_num += 1 }
-                }
-
-                let p_id = prev_parent_id + children_num + nested_children + 1;
-                let children: Vec<i32> = (prev_parent_id + 1..p_id).collect();
-                prev_parent_id = p_id;
+                prev_parent_id = parent_id;
                 nested_children = 0;
 
-                Some((p_id, children))
+                Some((parent_id, children))
             } else {
                 None
             }
         })
         .collect()
+}
+
+/// Reads and parses the wasm file to serde_json Value
+fn parse_wasm(path: &str) -> Value {
+    // Reads and parses the wasm file
+    let mut wasm = twiggy_parser::read_and_parse(path, twiggy_traits::ParseMode::Auto).unwrap();
+
+    // Build the options for the paths parsing
+    let mut opts = twiggy_opt::Paths::new();
+    opts.add_function("anonymous".to_string());
+    opts.set_using_regexps(true);
+    opts.set_descending(true);
+    opts.set_max_paths(100);
+
+    // Fetches all anonymous functions and which functions have been called from it
+    let json_paths = twiggy_analyze::paths(&mut wasm, &opts).unwrap();
+    let mut buf = Vec::new();
+    json_paths.emit_json(&wasm, &mut buf).unwrap();
+    let result = String::from_utf8(buf).unwrap();
+
+    serde_json::from_str(&result).unwrap()
+}
+
+fn calculate_parent_id(path: &Value, prev_parent_id: i32, nested_children: i32) -> i32 {
+    // All anonymous functions that are invoked from inside another
+    // function are displayed as data[<integer>]
+    let child_regex = Regex::new(r#"data\[\d+\]"#).expect("Incorrect regex");
+
+    let mut children_num = 0;
+
+    for caller in path["callers"].as_array().unwrap().iter() {
+        let name = caller["name"].as_str().unwrap().to_string();
+
+        if child_regex.is_match(&name) {
+            children_num += 1
+        }
+    }
+
+    prev_parent_id + children_num + nested_children + 1
 }

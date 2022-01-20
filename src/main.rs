@@ -269,9 +269,10 @@ ___  ___      _       _         _   _      _
         .into_iter()
         .filter_map(|(name, suite)| {
             println!("🧪 Running Test Suite: {}", name.bright_blue());
-            println!("{}\n", "=".repeat(50));
+            println!("{}", "=".repeat(50));
             logging::add_indent();
 
+            println!();
             Test::call_hooks(&suite.before_all);
 
             let failed_gr: HashMap<i32, HashMap<String, TestResult>> = suite
@@ -281,8 +282,11 @@ ___  ___      _       _         _   _      _
                     if group.tests.is_empty() {
                         None
                     } else {
-                        println!("{}", group.name.cyan().bold());
-                        logging::add_indent();
+                        if group.name.is_empty() {
+                            logging::sub_indent();
+                        } else {
+                            println!("{}", group.name.cyan().bold());
+                        }
 
                         Test::call_hooks(&group.before_all);
 
@@ -300,17 +304,20 @@ ___  ___      _       _         _   _      _
                                 }
                             })
                             .collect();
+
                         Test::call_hooks(&group.after_all);
 
-                        logging::sub_indent();
-
+                        if group.name.is_empty() {
+                            logging::add_indent()
+                        }
+                        println!();
                         Some((id, failed))
                     }
                 })
                 .collect();
 
             Test::call_hooks(&suite.after_all);
-
+            println!();
             logging::clear_indent();
 
             if failed_gr.is_empty() {
@@ -326,7 +333,7 @@ ___  ___      _       _         _   _      _
         let passed = format!("{} passed", num_passed).green();
         let all = format!("{} total", num_failed + num_passed);
 
-        println!("Failed tests:");
+        println!("\nFailed tests:\n");
 
         for (suite, group) in failed_suites {
             for (_, tests) in group {
