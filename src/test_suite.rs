@@ -207,7 +207,7 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
                         suite
                             .groups
                             .get_mut(&parent_id)
-                            .unwrap()
+                            .unwrap_or_else(|| panic!("No group with id {} found", parent_id))
                             .before_all
                             .push(func.clone());
                     }
@@ -219,7 +219,7 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
                         suite
                             .groups
                             .get_mut(&parent_id)
-                            .unwrap()
+                            .unwrap_or_else(|| panic!("No group with id {} found", parent_id))
                             .after_all
                             .push(func.clone());
                     }
@@ -247,13 +247,17 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
                     }
                 }
                 "describe" => {
-                    suite.groups.get_mut(&id).unwrap().name = name.clone();
+                    suite
+                        .groups
+                        .get_mut(&id)
+                        .unwrap_or_else(|| panic!("No group with id {} found", parent_id))
+                        .name = name.clone();
                 }
                 _ => {
                     suite
                         .groups
                         .get_mut(&parent_id)
-                        .unwrap_or_else(|| panic!("Expected parent_id: {}", parent_id))
+                        .unwrap_or_else(|| panic!("No group with id {} found", parent_id))
                         .tests
                         .push(Test::new(name.to_string(), *should_fail, func.clone()));
                 }
@@ -261,13 +265,25 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
         }
 
         for (id, funcs) in before_each {
-            for test in suite.groups.get_mut(&id).unwrap().tests.iter_mut() {
+            for test in suite
+                .groups
+                .get_mut(&id)
+                .unwrap_or_else(|| panic!("No group with id {} found", id))
+                .tests
+                .iter_mut()
+            {
                 test.before_hooks = funcs.clone();
             }
         }
 
         for (id, funcs) in after_each {
-            for test in suite.groups.get_mut(&id).unwrap().tests.iter_mut() {
+            for test in suite
+                .groups
+                .get_mut(&id)
+                .unwrap_or_else(|| panic!("No group with id {} found", id))
+                .tests
+                .iter_mut()
+            {
                 test.after_hooks = funcs.clone();
             }
         }
