@@ -166,6 +166,9 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
             suite.groups.insert(*id, test_group);
         }
 
+        // Used to accumulate all before and after functions that should be ran for each test()
+        // in a specific describe group
+        // The key is the parent function id and the value is a vector of functions
         let mut before_each: BTreeMap<i32, Vec<Func>> = BTreeMap::new();
         let mut after_each: BTreeMap<i32, Vec<Func>> = BTreeMap::new();
 
@@ -197,6 +200,9 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
                 .to_owned();
 
             let id = *func_idx as i32;
+
+            // Checks if the current function is a parent or a descendent
+            // Returns the parent id
             let parent_id = get_parent_id(id, test_groups.clone());
 
             match role.as_str() {
@@ -264,6 +270,8 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
             };
         }
 
+        // Add the accumulated before and after functions to every test()
+        // in the corresponding describe group
         for (id, funcs) in before_each {
             for test in suite
                 .groups
@@ -288,6 +296,7 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
             }
         }
 
+        // Return the generates suite
         suite
     }
 }
@@ -365,11 +374,16 @@ fn parse_wasm(path: &str) -> Value {
     // Reads and parses the wasm file
     let mut wasm = twiggy_parser::read_and_parse(path, twiggy_traits::ParseMode::Auto).unwrap();
 
-    // Build the options for the paths parsing
+    // Initialise options with default values
     let mut opts = twiggy_opt::Paths::new();
+    // Add the name of the function to be looked up
     opts.add_function("anonymous".to_string());
+    // Use regex mode to catch all anonymous functions
     opts.set_using_regexps(true);
+    // Display paths in descending order
     opts.set_descending(true);
+    // Default max path is 10, which sometimes is not enough to show all child functions
+    // Set it to 100 just in case
     opts.set_max_paths(100);
 
     // Fetches all anonymous functions and which functions have been called from it
@@ -382,8 +396,7 @@ fn parse_wasm(path: &str) -> Value {
 }
 
 fn calculate_parent_id(path: &Value, prev_parent_id: i32, nested_children: i32) -> i32 {
-    // All anonymous functions that are invoked from inside another
-    // function are displayed as data[<integer>]
+    // All anonymous functions that are direct descendant are displayed as data[<integer>]
     let child_regex = Regex::new(r#"data\[\d+\]"#).expect("Incorrect regex");
 
     let mut children_num = 0;
