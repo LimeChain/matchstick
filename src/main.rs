@@ -265,32 +265,32 @@ ___  ___      _       _         _   _      _
     println!("{}", ("\nIgniting tests 🔥\n").to_string().bright_red());
 
     let (mut num_passed, mut num_failed) = (0, 0);
-    let failed_suites: HashMap<String, HashMap<i32, HashMap<String, TestResult>>> = test_suites
+    let failed_suites: HashMap<String, Vec<HashMap<String, TestResult>>> = test_suites
         .into_iter()
         .filter_map(|(name, suite)| {
-            println!("🧪 Running Test Suite: {}", name.bright_blue());
-            println!("{}", "=".repeat(50));
+            Log::Default(name.bright_blue().bold()).println();
             logging::add_indent();
+            // println!("🧪 Running Test Suite: {}", name.bright_blue());
+            // println!("{}", "=".repeat(50));
 
-            println!();
             Test::call_hooks(&suite.before_all);
 
-            let failed_gr: HashMap<i32, HashMap<String, TestResult>> = suite
+            let failed_tests: Vec<HashMap<String, TestResult>> = suite
                 .groups
                 .into_iter()
-                .filter_map(|(id, group)| {
+                .filter_map(|(_, group)| {
                     if group.tests.is_empty() {
                         None
                     } else {
-                        if group.name.is_empty() {
-                            logging::sub_indent();
-                        } else {
-                            println!("{}", group.name.cyan().bold());
+                        if !group.name.is_empty() {
+                            Log::Default(format!("{}", group.name.cyan().bold())).println();
                         }
+
+                        logging::add_indent();
 
                         Test::call_hooks(&group.before_all);
 
-                        let failed: HashMap<String, TestResult> = group
+                        let failed_test: HashMap<String, TestResult> = group
                             .tests
                             .into_iter()
                             .filter_map(|test| {
@@ -306,24 +306,25 @@ ___  ___      _       _         _   _      _
                             .collect();
 
                         Test::call_hooks(&group.after_all);
+                        logging::sub_indent();
 
-                        if group.name.is_empty() {
-                            logging::add_indent()
+                        if failed_test.is_empty() {
+                            None
+                        } else {
+                            Some(failed_test)
                         }
-                        println!();
-                        Some((id, failed))
                     }
                 })
                 .collect();
 
             Test::call_hooks(&suite.after_all);
-            println!();
             logging::clear_indent();
+            println!();
 
-            if failed_gr.is_empty() {
+            if failed_tests.is_empty() {
                 None
             } else {
-                Some((name, failed_gr))
+                Some((name, failed_tests))
             }
         })
         .collect();
@@ -336,15 +337,20 @@ ___  ___      _       _         _   _      _
         println!("\nFailed tests:\n");
 
         for (suite, group) in failed_suites {
-            for (_, tests) in group {
+            Log::Default(suite.bright_blue().bold()).println();
+            logging::add_indent();
+
+            for tests in group {
                 for (name, result) in tests {
-                    println!("{} {}", suite.bright_blue(), name.red());
+                    Log::Default(name.red().bold()).println();
 
                     if !result.logs.is_empty() {
-                        println!("{}", result.logs);
+                        Log::Default(result.logs).println();
                     }
                 }
             }
+
+            logging::sub_indent();
         }
 
         println!("\n{}, {}, {}", failed, passed, all);
