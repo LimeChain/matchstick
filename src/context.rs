@@ -84,7 +84,7 @@ pub struct MatchstickInstanceContext<C: Blockchain> {
     ///     signer: GraphAccount!
     /// }
     /// ```
-    derived: HashMap<String, (String, Vec<(String, String)>)>
+    derived: HashMap<String, (String, Vec<(String, String)>)>,
 }
 
 /// Implementation of non-external functions.
