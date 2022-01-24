@@ -5,6 +5,7 @@ use regex::Regex;
 use run_script::{run_or_exit, ScriptOptions};
 use std::collections::HashMap;
 use std::fs;
+use std::path::PathBuf;
 
 #[derive(Debug)]
 struct Mapping {
@@ -150,12 +151,14 @@ pub fn generate_coverage_report() {
     let wat_files: Vec<String> = files
         .iter()
         .map(|file| {
-            let destination: String = file.chars().take(file.len() - 2).collect::<String>() + "t";
+            let mut destination = PathBuf::from(&file);
+            destination.set_extension("wat");
 
             let mut convert_command = "".to_string();
+
             crate::LIBS_LOCATION.with(|path| {
                 convert_command = format!(
-                    "{}{} {} {} {}",
+                    "{}{} {} {} {:?}",
                     &*path.borrow(),
                     "wabt/bin/wasm2wat",
                     file,
@@ -169,7 +172,7 @@ pub fn generate_coverage_report() {
 
             run_or_exit(&convert_command, &args, &options);
 
-            destination
+            destination.to_str().unwrap().to_string()
         })
         .collect();
 
@@ -229,33 +232,29 @@ pub fn generate_coverage_report() {
             }
         }
 
-        let mut percentage = 0;
+        let mut percentage: f32 = 0.0;
 
         if all_handlers > 0 {
-            percentage = (called * 100) / all_handlers;
+            percentage = (called as f32 * 100.0) / all_handlers as f32;
         }
 
         println!(
-            "Test coverage: {}% ({}/{} handlers).\n",
-            (percentage as f32).ceil(),
-            called,
-            all_handlers
+            "Test coverage: {:.1}% ({}/{} handlers).\n",
+            percentage, called, all_handlers
         );
 
         global_handlers_count += all_handlers;
         global_handlers_called += called;
     }
 
-    let mut percentage = 0;
+    let mut percentage: f32 = 0.0;
 
     if global_handlers_count > 0 {
-        percentage = (global_handlers_called * 100) / global_handlers_count;
+        percentage = (global_handlers_called as f32 * 100.0) / global_handlers_count as f32;
     }
 
     println!(
-        "Global test coverage: {}% ({}/{} handlers).\n",
-        (percentage as f32).ceil(),
-        global_handlers_called,
-        global_handlers_count
+        "Global test coverage: {:.1}% ({}/{} handlers).\n",
+        percentage, global_handlers_called, global_handlers_count
     );
 }
