@@ -3,19 +3,19 @@ use graph::prelude::serde_yaml;
 use graph::prelude::serde_yaml::{Sequence, Value};
 use regex::Regex;
 use run_script::{run_or_exit, ScriptOptions};
+use std::collections::HashMap;
 use std::fs;
+use std::path::PathBuf;
 
 #[derive(Debug)]
 struct Mapping {
-    name: String,
     event_handlers: Vec<String>,
     call_handlers: Vec<String>,
 }
 
 impl Mapping {
-    pub fn new(name: String) -> Self {
+    pub fn new() -> Self {
         Mapping {
-            name,
             event_handlers: vec![],
             call_handlers: vec![],
         }
@@ -29,36 +29,24 @@ struct Datasource {
 }
 
 impl Datasource {
-    pub fn new(name: String, mapping: String) -> Self {
+    pub fn new(name: String) -> Self {
         Datasource {
             name,
-            mapping: Mapping::new(mapping),
+            mapping: Mapping::new(),
         }
     }
 }
 
-fn inspect_handlers(wat_contents: &str, handlers: &[String]) -> i32 {
-    let mut called = 0;
+/// Performs a check if a handler is called in a test suite
+fn is_called(wat_contents: &str, handler: &str) -> bool {
+    let pattern = format!(r#"call.+{}"#, handler);
+    let regex = Regex::new(&pattern).expect("Not a valid regex pattern.");
+    let captures = regex.captures(wat_contents);
 
-    for handler in handlers {
-        let pattern = format!(r#"call.+{}"#, handler);
-
-        let regex = Regex::new(&pattern).expect("Not a valid regex pattern.");
-
-        let captures = regex.captures(wat_contents);
-        if captures.is_some() {
-            called += 1;
-            let msg = format!("Handler '{}' is tested.", handler);
-            println!("{}", msg.green());
-        } else {
-            let msg = format!("Handler '{}' is not tested.", handler);
-            println!("{}", msg.red());
-        }
-    }
-
-    called
+    captures.is_some()
 }
 
+/// Extracts the handler name
 fn parse(v: &Value) -> String {
     serde_yaml::to_string(v)
         .expect("Could not convert serde_yaml value to string.")
@@ -79,36 +67,32 @@ pub fn generate_coverage_report() {
         .expect("Something went wrong reading the 'subgraph.yaml' file");
     let subgraph_yaml: Value = serde_yaml::from_str(&subgraph_yaml_contents)
         .expect("Something went wrong when parsing 'subgraph.yaml'. Please ensure that the file exists and is valid.");
-    let datasources_yml: Sequence = subgraph_yaml
+    let mut sources_yml: Sequence = subgraph_yaml
         .get("dataSources")
         .expect("No DataSources in subgraph_yaml.")
         .as_sequence()
         .expect("An unexpected error occurred when converting datasources to sequence.")
         .to_vec();
 
+    let mut templates_yml = match subgraph_yaml.get("templates") {
+        Some(templates) => templates
+            .as_sequence()
+            .expect("An unexpected error occurred when converting datasources to sequence.")
+            .to_vec(),
+        None => Vec::new(),
+    };
+
+    sources_yml.append(&mut templates_yml);
+
     let mut datasources = vec![];
 
-    for d in datasources_yml {
+    for d in sources_yml {
         let name = d.get("name").expect("No field 'name' in datasource.");
 
         let mapping = d.get("mapping").expect("No field 'mapping' in datasource.");
-        let file_path =
-            serde_yaml::to_string(mapping.get("file").expect("No field 'file' on mapping."))
-                .expect("Could not convert serde yaml value to string.");
-
-        let parts = file_path.split('/').collect::<Vec<&str>>();
-        let file = parts
-            .last()
-            .expect("Could not get last element of string Vec 'file'.")
-            .split('.')
-            .collect::<Vec<&str>>();
-        let mapping_name = *file
-            .first()
-            .expect("Could not get first element of string Vec 'mapping_name'.");
 
         let mut datasource = Datasource::new(
             serde_yaml::to_string(name).expect("Could not convert serde yaml value to string."),
-            mapping_name.to_string(),
         );
 
         let events = mapping.get("eventHandlers");
@@ -162,47 +146,40 @@ pub fn generate_coverage_report() {
     let mut global_handlers_count: i32 = 0;
     let mut global_handlers_called: i32 = 0;
 
-    for file in files {
-        let destination: String = file
-            .chars()
-            .take(file.len() - 2)
-            .collect::<String>()
-            .to_string()
-            + "t";
-        let temp1 = file
-            .chars()
-            .take(file.len() - 5)
-            .collect::<String>()
-            .to_string();
-        let temp2 = temp1.split('/').collect::<Vec<&str>>();
-        let f_name = temp2
-            .last()
-            .expect("Couldn't get last element of string Vec 'f_name'.");
+    // Converts each wasm file to wat
+    // Returns a collection of all .wat files paths
+    let wat_files: Vec<String> = files
+        .iter()
+        .map(|file| {
+            let mut destination = PathBuf::from(&file);
+            destination.set_extension("wat");
 
-        let mut convert_command = "".to_string();
-        crate::LIBS_LOCATION.with(|path| {
-            convert_command = format!(
-                "{}{} {} {} {}",
-                &*path.borrow(),
-                "wabt/bin/wasm2wat",
-                file,
-                "-o",
-                destination
-            );
-        });
+            let mut convert_command = "".to_string();
 
-        let options = ScriptOptions::new();
-        let args = vec![];
+            crate::LIBS_LOCATION.with(|path| {
+                convert_command = format!(
+                    "{}{} {} {} {:?}",
+                    &*path.borrow(),
+                    "wabt/bin/wasm2wat",
+                    file,
+                    "-o",
+                    destination
+                );
+            });
 
-        run_or_exit(&convert_command, &args, &options);
+            let options = ScriptOptions::new();
+            let args = vec![];
 
-        let wat_contents = fs::read_to_string(&destination).expect("Couldn't read wat file.");
+            run_or_exit(&convert_command, &args, &options);
 
-        for datasource in &datasources {
-            if *f_name != datasource.mapping.name {
-                continue;
-            }
+            destination.to_str().unwrap().to_string()
+        })
+        .collect();
 
+    // Maps every source name ot its handlers
+    let source_handlers: HashMap<String, Vec<String>> = datasources
+        .iter()
+        .map(|datasource| {
             let d_name = datasource
                 .name
                 .split('\n')
@@ -210,40 +187,74 @@ pub fn generate_coverage_report() {
                 .split("---")
                 .collect::<String>();
 
-            println!("Handlers for source '{}':", d_name);
-            let mut called: i32 = 0;
-            let mut all_handlers: i32 = 0;
+            let mut handlers = vec![];
 
-            all_handlers += datasource.mapping.event_handlers.len() as i32;
+            for handler in &datasource.mapping.event_handlers {
+                handlers.push(handler.clone());
+            }
 
-            let called_event_handlers =
-                inspect_handlers(&wat_contents, &datasource.mapping.event_handlers);
-            called += called_event_handlers;
+            for handler in &datasource.mapping.call_handlers {
+                handlers.push(handler.clone());
+            }
 
-            all_handlers += datasource.mapping.call_handlers.len() as i32;
+            (d_name, handlers)
+        })
+        .collect();
 
-            let called_function_handlers =
-                inspect_handlers(&wat_contents, &datasource.mapping.call_handlers);
-            called += called_function_handlers;
+    for (name, handlers) in source_handlers.into_iter() {
+        println!("Handlers for source '{}':", name);
 
-            global_handlers_count += all_handlers;
-            global_handlers_called += called;
+        let mut called: i32 = 0;
+        let all_handlers: i32 = handlers.len().try_into().unwrap();
 
-            let percentage = (called * 100) / all_handlers;
-            println!(
-                "Test coverage: {}% ({}/{} handlers).\n",
-                (percentage as f32).ceil(),
-                called,
-                all_handlers
-            );
+        // Iterates over every handler and checks if the handler has been called in any test suite
+        // If called, it'll set `is_tested` to true and break out of the loop
+        // called will be incremented by 1
+        for handler in handlers {
+            let mut is_tested = false;
+
+            for wat_file in &wat_files {
+                let wat_contents = fs::read_to_string(&wat_file).expect("Couldn't read wat file.");
+
+                if is_called(&wat_contents, &handler) {
+                    is_tested = true;
+                    break;
+                }
+            }
+
+            if is_tested {
+                called += 1;
+                let msg = format!("Handler '{}' is tested.", handler);
+                println!("{}", msg.green());
+            } else {
+                let msg = format!("Handler '{}' is not tested.", handler);
+                println!("{}", msg.red());
+            }
         }
+
+        let mut percentage: f32 = 0.0;
+
+        if all_handlers > 0 {
+            percentage = (called as f32 * 100.0) / all_handlers as f32;
+        }
+
+        println!(
+            "Test coverage: {:.1}% ({}/{} handlers).\n",
+            percentage, called, all_handlers
+        );
+
+        global_handlers_count += all_handlers;
+        global_handlers_called += called;
     }
 
-    let percentage = (global_handlers_called * 100) / global_handlers_count;
+    let mut percentage: f32 = 0.0;
+
+    if global_handlers_count > 0 {
+        percentage = (global_handlers_called as f32 * 100.0) / global_handlers_count as f32;
+    }
+
     println!(
-        "Global test coverage: {}% ({}/{} handlers).\n",
-        (percentage as f32).ceil(),
-        global_handlers_called,
-        global_handlers_count
+        "Global test coverage: {:.1}% ({}/{} handlers).\n",
+        percentage, global_handlers_called, global_handlers_count
     );
 }
