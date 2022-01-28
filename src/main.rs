@@ -19,6 +19,7 @@ use crate::test_suite::{TestResult, TestSuite};
 use crate::coverage::generate_coverage_report;
 
 mod compiler;
+mod config;
 mod context;
 mod coverage;
 mod instance;
@@ -92,14 +93,6 @@ fn main() {
         .author("Limechain <https://limechain.tech>")
         .about("Unit testing framework for Subgraph development on The Graph protocol.")
         .arg(
-            Arg::with_name("lib")
-                .help("Path to `node_modules`.")
-                .long("lib")
-                .short("l")
-                .takes_value(true)
-                .default_value("./node_modules/"),
-        )
-        .arg(
             Arg::with_name("coverage")
                 .help("Generate code coverage report.")
                 .long("coverage")
@@ -153,24 +146,11 @@ ___  ___      _       _         _   _      _
         .get("file")
         .expect("Couldn't get schema file location");
     SCHEMA_LOCATION.with(|path| *path.borrow_mut() = file_location.as_str().unwrap().to_string());
-    let default_tests_folder = &Value::String(String::from("./tests/"));
-    let tests_folder = subgraph_yaml.get("testsFolder").unwrap_or_else(|| {
-        println!("{}", ("If you want to change the default tests folder location (./tests) you can add 'testsFolder: ./example/path' to the outermost level of your subgraph.yaml").cyan());
-        default_tests_folder
-    });
-    TESTS_LOCATION.with(|path| {
-        let mut tests_path = tests_folder.as_str().unwrap().to_string();
-        if tests_path.ends_with('/') {
-            tests_path.pop();
-        }
 
-        *path.borrow_mut() = tests_path;
-    });
+    let config = config::parse_matchstick_config();
 
-    let libs_path = matches
-        .value_of("lib")
-        .expect("unexpected: lib should always have a value");
-    LIBS_LOCATION.with(|path| *path.borrow_mut() = libs_path.to_string());
+    TESTS_LOCATION.with(|path| *path.borrow_mut() = config.tests_path.clone());
+    LIBS_LOCATION.with(|path| *path.borrow_mut() = config.libs_path.clone());
 
     let test_sources = {
         let testable = get_testable();
@@ -206,7 +186,7 @@ ___  ___      _       _         _   _      _
     };
 
     println!("{}", ("Compiling...\n").to_string().bright_green());
-    let compiler = Compiler::new(PathBuf::from(libs_path))
+    let compiler = Compiler::new(PathBuf::from(config.libs_path))
         .export_table()
         .runtime("stub")
         .optimize()
