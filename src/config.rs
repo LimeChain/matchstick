@@ -44,7 +44,7 @@ pub fn parse_matchstick_config() -> MatchstickConfig {
         if libs_path.ends_with('/') {
             libs_path.pop();
         }
-        
+
         config.tests_path = tests_path;
         config.libs_path = libs_path;
     }
