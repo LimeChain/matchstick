@@ -25,7 +25,15 @@ pub fn parse() -> MatchstickConfig {
     let mut config = MatchstickConfig::default();
 
     if PathBuf::from(CONFIG).exists() {
-        let matchstick_config = std::fs::read_to_string(CONFIG).unwrap();
+        let matchstick_config = std::fs::read_to_string(CONFIG).unwrap_or_else(|err| {
+            panic!(
+                "{}",
+                Log::Critical(format!(
+                    "Something went wrong while trying to read `{}`: {}",
+                    CONFIG, err,
+                )),
+            )
+        });
 
         // If matchstick.yaml exists but is empty from_str will panic with `EndOfStream`
         let matchstick_yaml: Value =
