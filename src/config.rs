@@ -3,6 +3,8 @@ use std::path::PathBuf;
 
 use crate::logging::Log;
 
+const CONFIG: &str = "matchstick.yaml";
+
 pub struct MatchstickConfig {
     pub libs_path: String,
     pub tests_path: String,
@@ -20,15 +22,16 @@ impl Default for MatchstickConfig {
 pub fn parse_matchstick_config() -> MatchstickConfig {
     let mut config = MatchstickConfig::default();
 
-    if PathBuf::from("matchstick.yaml").exists() {
-        let matchstick_config = std::fs::read_to_string("matchstick.yaml").unwrap();
+    if PathBuf::from(CONFIG).exists() {
+        let matchstick_config = std::fs::read_to_string(CONFIG).unwrap();
 
         // If matchstick.yaml exists but is empty from_str will panic with `EndOfStream`
         let matchstick_yaml: Value =
             serde_yaml::from_str(&matchstick_config).unwrap_or_else(|_| {
-                Log::Warning(
-                    "matchstick.yaml is empty or contains invalid values! Using default configuration.",
-                )
+                Log::Warning(format!(
+                    "{} is empty or contains invalid values! Using default configuration.",
+                    CONFIG
+                ))
                 .println();
                 Value::String("".to_string())
             });
