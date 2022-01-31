@@ -19,7 +19,9 @@ impl Default for MatchstickConfig {
     }
 }
 
-pub fn parse_matchstick_config() -> MatchstickConfig {
+/// Reads and checks if libFolder and/or testsFolder are defined.
+/// Otherwise returns the default values.
+pub fn parse() -> MatchstickConfig {
     let mut config = MatchstickConfig::default();
 
     if PathBuf::from(CONFIG).exists() {
@@ -36,6 +38,8 @@ pub fn parse_matchstick_config() -> MatchstickConfig {
                 Value::String("".to_string())
             });
 
+        // Tries to get the tests or libs folder value from the config file.
+        // If the attribute doesn't exist returns the default value.
         let mut tests_path = matchstick_yaml
             .get("testsFolder")
             .unwrap_or(&Value::String(config.tests_path))
@@ -50,6 +54,7 @@ pub fn parse_matchstick_config() -> MatchstickConfig {
             .unwrap()
             .to_string();
 
+        // For consistency checks if the paths are defined with a trailng slash and removes it
         if tests_path.ends_with('/') {
             tests_path.pop();
         }
@@ -58,6 +63,7 @@ pub fn parse_matchstick_config() -> MatchstickConfig {
             libs_path.pop();
         }
 
+        // Updates the struct attributes
         config.tests_path = tests_path;
         config.libs_path = libs_path;
     }

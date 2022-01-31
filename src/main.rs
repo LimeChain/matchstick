@@ -147,7 +147,7 @@ ___  ___      _       _         _   _      _
         .expect("Couldn't get schema file location");
     SCHEMA_LOCATION.with(|path| *path.borrow_mut() = file_location.as_str().unwrap().to_string());
 
-    let config = config::parse_matchstick_config();
+    let config = config::parse();
 
     TESTS_LOCATION.with(|path| *path.borrow_mut() = config.tests_path.clone());
     LIBS_LOCATION.with(|path| *path.borrow_mut() = config.libs_path.clone());
