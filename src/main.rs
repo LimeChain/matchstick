@@ -296,7 +296,10 @@ ___  ___      _       _         _   _      _
         })
         .collect();
 
+    let mut exit_code = 0;
+
     if num_failed > 0 {
+        exit_code = 1;
         let failed = format!("{} failed", num_failed).red();
         let passed = format!("{} passed", num_passed).green();
         let all = format!("{} total", num_failed + num_passed);
@@ -325,4 +328,6 @@ ___  ___      _       _         _   _      _
         Local::now().to_rfc2822(),
         now.elapsed()
     );
+
+    std::process::exit(exit_code);
 }
