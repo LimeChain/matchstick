@@ -1,6 +1,8 @@
 use serde_yaml::Value;
 use std::path::PathBuf;
 
+use crate::logging::Log;
+
 pub struct MatchstickConfig {
     pub libs_path: String,
     pub tests_path: String,
@@ -20,8 +22,16 @@ pub fn parse_matchstick_config() -> MatchstickConfig {
 
     if PathBuf::from("matchstick.yaml").exists() {
         let matchstick_config = std::fs::read_to_string("matchstick.yaml").unwrap();
-        let matchstick_yaml: Value = serde_yaml::from_str(&matchstick_config)
-            .unwrap_or_else(|_| Value::String("".to_string()));
+
+        // If matchstick.yaml exists but is empty from_str will panic with `EndOfStream`
+        let matchstick_yaml: Value =
+            serde_yaml::from_str(&matchstick_config).unwrap_or_else(|_| {
+                Log::Warning(
+                    "matchstick.yaml is empty or contains invalid values! Using default configuration.",
+                )
+                .println();
+                Value::String("".to_string())
+            });
 
         let mut tests_path = matchstick_yaml
             .get("testsFolder")
