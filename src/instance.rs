@@ -420,9 +420,16 @@ impl<C: Blockchain> MatchstickInstance<C> {
             params,
             context
         );
-        link!("dataSource.address", wasm_ctx.data_source_address,);
-        link!("dataSource.network", wasm_ctx.data_source_network,);
-        link!("dataSource.context", wasm_ctx.data_source_context,);
+        link!("dataSource.address", mock_data_source_address,);
+        link!("dataSource.network", mock_data_source_network,);
+        link!("dataSource.context", mock_data_source_context,);
+        link!(
+            "dataSourceMock.setReturnValues",
+            set_data_source_return_values,
+            address_ptr,
+            network_ptr,
+            context_ptr
+        );
 
         link!("ens.nameByHash", wasm_ctx.ens_name_by_hash, ptr);
 

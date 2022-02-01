@@ -5,20 +5,18 @@ mod unit_tests {
 
     use graph::{
         data::store::Value,
-        prelude::ethabi::Token,
+        prelude::ethabi::{Address, Token},
         runtime::{asc_get, AscPtr, AscType},
-        semver::Version,
     };
     use graph_chain_ethereum::{runtime::abi::AscUnresolvedContractCall_0_0_4, Chain};
     use graph_runtime_wasm::asc_abi::class::{
-        Array, AscEnum, AscString, AscTypedMap, AscTypedMapEntry, EnumPayload, EthereumValueKind,
+        Array, AscEnum, AscTypedMap, AscTypedMapEntry, EnumPayload, EthereumValueKind,
         StoreValueKind, TypedArray,
     };
     use serial_test::serial;
-    use web3::types::H160;
 
-    use crate::context::MatchstickInstanceContext;
     use crate::context::REVERTS_IDENTIFIER;
+    use crate::context::{asc_string_from_str, MatchstickInstanceContext};
     use crate::logging::{accum, flush, LOGS};
     use crate::{MatchstickInstance, SCHEMA_LOCATION};
 
@@ -31,18 +29,6 @@ mod unit_tests {
             .take()
             .take()
             .expect("Couldn't get context from module.")
-    }
-
-    fn asc_string_from_str(initial_string: &str) -> AscString {
-        let utf_16_iterator = initial_string.encode_utf16();
-        let mut u16_vector = vec![];
-        utf_16_iterator.for_each(|element| u16_vector.push(element));
-        let version = get_version();
-        AscString::new(&u16_vector, version).expect("Couldn't create AscString.")
-    }
-
-    fn get_version() -> Version {
-        Version::new(0, 0, 6)
     }
 
     #[test]
@@ -543,9 +529,10 @@ mod unit_tests {
         );
 
         let contract_name = asc_string_from_str("contractName");
-        // Necessary step because H160 fits (hashes) the address into 20 bytes whereas otherwise it will be 42 and asc_get (in ethereum_call) will crash
-        let h160_address = H160::from_str("89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7")
-            .expect("Couldn't create H160.");
+        // Necessary step because Address fits (hashes) the address into 20 bytes
+        // whereas otherwise it will be 42 and asc_get (in ethereum_call) will crash
+        let h160_address = Address::from_str("89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7")
+            .expect("Couldn't create Address.");
         let address = TypedArray::new(h160_address.as_bytes(), &mut context.wasm_ctx)
             .expect("Coudln't create address.");
         let func_name = asc_string_from_str("funcName");
@@ -610,9 +597,10 @@ mod unit_tests {
         );
 
         let contract_name = asc_string_from_str("contractName");
-        // Necessary step because H160 fits (hashes) the address into 20 bytes whereas otherwise it will be 42 and asc_get (in ethereum_call) will crash
-        let h160_address = H160::from_str("89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7")
-            .expect("Couldn't create H160.");
+        // Necessary step because Address fits (hashes) the address into 20 bytes
+        // whereas otherwise it will be 42 and asc_get (in ethereum_call) will crash
+        let h160_address = Address::from_str("89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7")
+            .expect("Couldn't create Address.");
         let address = TypedArray::new(h160_address.as_bytes(), &mut context.wasm_ctx)
             .expect("Coudln't create address.");
         let func_name = asc_string_from_str("funcName");
@@ -666,9 +654,10 @@ mod unit_tests {
     fn mock_function_basic_test() {
         let mut context = get_context();
 
-        // Necessary step because H160 fits (hashes) the address into 20 bytes whereas otherwise it will be 42
-        let h160_address = H160::from_str("89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7")
-            .expect("Couldn't create H160.");
+        // Necessary step because Address fits (hashes) the
+        // address into 20 bytes whereas otherwise it will be 42
+        let h160_address = Address::from_str("89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7")
+            .expect("Couldn't create Address.");
         let address = TypedArray::new(h160_address.as_bytes(), &mut context.wasm_ctx)
             .expect("Coudln't create address.");
         let func_name = asc_string_from_str("funcName");
@@ -723,9 +712,10 @@ mod unit_tests {
     fn mock_function_reverts() {
         let mut context = get_context();
 
-        // Necessary step because H160 fits (hashes) the address into 20 bytes whereas otherwise it will be 42
-        let h160_address = H160::from_str("89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7")
-            .expect("Couldn't create H160.");
+        // Necessary step because Address fits (hashes) the
+        // address into 20 bytes whereas otherwise it will be 42
+        let h160_address = Address::from_str("89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7")
+            .expect("Couldn't create Address.");
         let address = TypedArray::new(h160_address.as_bytes(), &mut context.wasm_ctx)
             .expect("Coudln't create address.");
         let func_name = asc_string_from_str("funcName");
