@@ -2,12 +2,16 @@ use std::collections::HashMap;
 
 use graph::{
     blockchain::Blockchain,
-    data::{graphql::ext::DirectiveFinder, store::Value},
+    data::{
+        graphql::ext::DirectiveFinder,
+        store::{Attribute, Value},
+    },
     prelude::{
         ethabi::{Address, Token},
         Entity,
     },
     runtime::{asc_get, asc_new, try_asc_get, AscPtr, HostExportError},
+    semver::Version,
 };
 use graph_chain_ethereum::runtime::{
     abi::AscUnresolvedContractCall_0_0_4, runtime_adapter::UnresolvedContractCall,
@@ -16,6 +20,7 @@ use graph_graphql::graphql_parser::schema;
 use graph_runtime_wasm::{
     asc_abi::class::{
         Array, AscEntity, AscEnum, AscEnumArray, AscString, EnumPayload, EthereumValueKind,
+        Uint8Array,
     },
     module::WasmInstanceContext,
 };
@@ -85,6 +90,12 @@ pub struct MatchstickInstanceContext<C: Blockchain> {
     /// }
     /// ```
     derived: HashMap<String, (String, Vec<(String, String)>)>,
+    /// Holds the mocked return values of `dataSource.address()`, `dataSource.network()` and `dataSource.context()` in that order
+    data_source_return_value: (
+        Option<String>,
+        Option<String>,
+        Option<HashMap<Attribute, Value>>,
+    ),
 }
 
 /// Implementation of non-external functions.
@@ -97,6 +108,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             fn_ret_map: HashMap::new(),
             meta_tests: Vec::new(),
             derived: HashMap::new(),
+            data_source_return_value: (None, None, None),
         }
     }
 
@@ -661,7 +673,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         Ok(())
     }
 
-    /// function  dataSource.createWithContext(
+    /// function dataSource.createWithContext(
     ///     name: string, params: Array<string>,
     ///     context: DataSourceContext,
     /// ): void
@@ -673,4 +685,69 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     ) -> Result<(), HostExportError> {
         Ok(())
     }
+
+    /// function dataSource.address(): Address
+    pub fn mock_data_source_address(&mut self) -> Result<AscPtr<Uint8Array>, HostExportError> {
+        let default_address_val = "0x0000000000000000000000000000000000000000";
+        let result = match &self.data_source_return_value.0 {
+            Some(value) => {
+                asc_new(&mut self.wasm_ctx, value.as_bytes()).expect("Couldn't create pointer.")
+            }
+            None => asc_new(&mut self.wasm_ctx, default_address_val.as_bytes())
+                .expect("Couldn't create pointer."),
+        };
+
+        Ok(result)
+    }
+
+    /// function dataSource.network(): String
+    pub fn mock_data_source_network(&mut self) -> Result<AscPtr<AscString>, HostExportError> {
+        let default_network_val = "mainnet";
+        let result = match &self.data_source_return_value.1 {
+            Some(value) => {
+                AscPtr::alloc_obj(asc_string_from_str(&value.clone()), &mut self.wasm_ctx)
+                    .expect("Couldn't create pointer.")
+            }
+            None => AscPtr::alloc_obj(asc_string_from_str(default_network_val), &mut self.wasm_ctx)
+                .expect("Couldn't create pointer."),
+        };
+
+        Ok(result)
+    }
+
+    /// function dataSource.context(): DataSourceContext
+    pub fn mock_data_source_context(&mut self) -> Result<AscPtr<AscEntity>, HostExportError> {
+        let default_context_val = Entity::new();
+        let result = match &self.data_source_return_value.2 {
+            Some(value) => {
+                asc_new(&mut self.wasm_ctx, &Entity::from(value.clone()).sorted()).unwrap()
+            }
+            None => asc_new(&mut self.wasm_ctx, &default_context_val.sorted()).unwrap(),
+        };
+
+        Ok(result)
+    }
+
+    /// function dataSourceMock.setReturnValues(address: String, network: String, context: DataSourceContext): void
+    pub fn set_data_source_return_values(
+        &mut self,
+        address_ptr: AscPtr<AscString>,
+        network_ptr: AscPtr<AscString>,
+        context_ptr: AscPtr<AscEntity>,
+    ) -> Result<(), HostExportError> {
+        let address: String = asc_get(&self.wasm_ctx, address_ptr)?;
+        let network: String = asc_get(&self.wasm_ctx, network_ptr)?;
+        let context: HashMap<String, Value> = try_asc_get(&self.wasm_ctx, context_ptr)?;
+
+        self.data_source_return_value = (Some(address), Some(network), Some(context));
+        Ok(())
+    }
+}
+
+pub fn asc_string_from_str(initial_string: &str) -> AscString {
+    let utf_16_iterator = initial_string.encode_utf16();
+    let mut u16_vector = vec![];
+    utf_16_iterator.for_each(|element| u16_vector.push(element));
+    let version = Version::new(0, 0, 6);
+    AscString::new(&u16_vector, version).expect("Couldn't create AscString.")
 }
