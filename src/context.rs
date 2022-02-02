@@ -742,6 +742,23 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         self.data_source_return_value = (Some(address), Some(network), Some(context));
         Ok(())
     }
+
+    pub fn mock_ipfs_cat(
+        &self,
+        _hash_ptr: AscPtr<AscString>,
+    ) -> Result<AscPtr<Uint8Array>, HostExportError> {
+        Ok(AscPtr::null())
+    }
+
+    pub fn mock_ipfs_map(
+        &self,
+        _link_ptr: AscPtr<AscString>,
+        _callback: AscPtr<AscString>,
+        _user_data: AscPtr<Value>,
+        _flags: AscPtr<Array<String>>,
+    ) -> Result<(), HostExportError> {
+        Ok(())
+    }
 }
 
 pub fn asc_string_from_str(initial_string: &str) -> AscString {

@@ -318,13 +318,13 @@ impl<C: Blockchain> MatchstickInstance<C> {
 
         link!(
             "ipfs.cat",
-            wasm_ctx.ipfs_cat,
+            mock_ipfs_cat,
             "host_export_ipfs_cat",
             hash_ptr
         );
         link!(
             "ipfs.map",
-            wasm_ctx.ipfs_map,
+            mock_ipfs_map,
             "host_export_ipfs_map",
             link_ptr,
             callback,
