@@ -14,6 +14,7 @@ use crate::compiler::{CompileOutput, Compiler};
 use crate::instance::MatchstickInstance;
 use crate::logging::Log;
 use crate::test_suite::{TestResult, TestSuite};
+use crate::config::MatchstickConfig;
 
 use crate::coverage::generate_coverage_report;
 
@@ -41,7 +42,7 @@ fn main() {
 
     cli::print_logo();
     let schema_location = subgraph::get_schema_location();
-    let config = config::parse_yaml();
+    let config = MatchstickConfig::new();
 
     SCHEMA_LOCATION.with(|path| *path.borrow_mut() = schema_location);
     TESTS_LOCATION.with(|path| *path.borrow_mut() = config.tests_path.clone());
