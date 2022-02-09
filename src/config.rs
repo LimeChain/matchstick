@@ -21,7 +21,7 @@ impl Default for MatchstickConfig {
 
 /// Reads and checks if libFolder and/or testsFolder are defined.
 /// Otherwise returns the default values.
-pub fn parse() -> MatchstickConfig {
+pub fn parse_yaml() -> MatchstickConfig {
     let mut config = MatchstickConfig::default();
 
     if PathBuf::from(CONFIG).exists() {
