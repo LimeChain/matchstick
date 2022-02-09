@@ -35,6 +35,85 @@ thread_local!(pub(crate) static SCHEMA_LOCATION: RefCell<String> = RefCell::new(
 thread_local!(pub(crate) static TESTS_LOCATION: RefCell<String> = RefCell::new("".to_string()));
 thread_local!(pub(crate) static LIBS_LOCATION: RefCell<String> = RefCell::new("".to_string()));
 
+fn main() {
+    let matches = cli::initialize().get_matches();
+    let now = Instant::now();
+
+    cli::print_logo();
+    let schema_location = subgraph::get_schema_location();
+    let config = config::parse_yaml();
+
+    SCHEMA_LOCATION.with(|path| *path.borrow_mut() = schema_location);
+    TESTS_LOCATION.with(|path| *path.borrow_mut() = config.tests_path.clone());
+    LIBS_LOCATION.with(|path| *path.borrow_mut() = config.libs_path.clone());
+
+    let test_sources = get_test_sources(&matches);
+
+    println!("{}", ("Compiling...\n").to_string().bright_green());
+
+    let compiler = Compiler::new(PathBuf::from(config.libs_path))
+        .export_table()
+        .runtime("stub")
+        .optimize()
+        .debug();
+
+    let outputs: HashMap<String, CompileOutput> = test_sources
+        .into_iter()
+        .map(|(name, entry)| {
+            (
+                name.clone(),
+                compiler.execute(name, entry, matches.is_present("recompile")),
+            )
+        })
+        .collect();
+
+    if outputs.values().any(|output| !output.status.success()) {
+        outputs.values().for_each(|output| {
+            io::stderr()
+                .write_all(&output.stderr)
+                .unwrap_or_else(|err| {
+                    panic!(
+                        "{}",
+                        Log::Critical(format!("Could not write to `stderr`: {}", err)),
+                    );
+                });
+        });
+
+        panic!(
+            "{}",
+            Log::Critical("Please attend to the compilation errors above!"),
+        );
+    }
+
+    // Run in coverage mode if coverage flag is present
+    if matches.is_present("coverage") {
+        generate_coverage_report();
+        return;
+    }
+
+    // A matchstick instance for each test suite wasm (the compiled source).
+    let ms_instances: HashMap<String, MatchstickInstance<Chain>> = outputs
+        .into_iter()
+        .map(|(key, val)| (key, MatchstickInstance::<Chain>::new(&val.file)))
+        .collect();
+
+    // A test suite abstraction for each instance.
+    let test_suites: HashMap<String, TestSuite> = ms_instances
+        .iter()
+        .map(|(key, val)| (key.clone(), TestSuite::from(val)))
+        .collect();
+
+    let exit_code = run_test_suites(test_suites);
+
+    println!(
+        "\n[{}] Program executed in: {:.3?}.",
+        Local::now().to_rfc2822(),
+        now.elapsed()
+    );
+
+    std::process::exit(exit_code);
+}
+
 /// Returns the names and `fs::DirEntry`'s of the testable sources under the selected tests directory.
 fn get_testable() -> HashMap<String, fs::DirEntry> {
     let mut testable: HashMap<String, fs::DirEntry> = HashMap::new();
@@ -181,88 +260,4 @@ fn run_test_suites(test_suites: HashMap<String, TestSuite>) -> i32 {
         );
         0
     }
-}
-
-fn main() {
-    let matches = cli::initialize().get_matches();
-    let now = Instant::now();
-
-    cli::print_logo();
-    let schema_location = subgraph::get_schema_location();
-    let config = config::parse_yaml();
-
-    SCHEMA_LOCATION.with(|path| *path.borrow_mut() = schema_location);
-    TESTS_LOCATION.with(|path| *path.borrow_mut() = config.tests_path.clone());
-    LIBS_LOCATION.with(|path| *path.borrow_mut() = config.libs_path.clone());
-
-    let test_sources = get_test_sources(&matches);
-
-    println!("{}", ("Compiling...\n").to_string().bright_green());
-
-    let compiler = Compiler::new(PathBuf::from(config.libs_path))
-        .export_table()
-        .runtime("stub")
-        .optimize()
-        .debug();
-
-    let outputs: HashMap<String, CompileOutput> = test_sources
-        .into_iter()
-        .map(|(name, entry)| {
-            (
-                name.clone(),
-                compiler.execute(name, entry, matches.is_present("recompile")),
-            )
-        })
-        .collect();
-
-    if outputs.values().any(|output| !output.status.success()) {
-        outputs.values().for_each(|output| {
-            io::stderr()
-                .write_all(&output.stderr)
-                .unwrap_or_else(|err| {
-                    panic!(
-                        "{}",
-                        Log::Critical(format!("Could not write to `stderr`: {}", err)),
-                    );
-                });
-        });
-
-        panic!(
-            "{}",
-            Log::Critical("Please attend to the compilation errors above!"),
-        );
-    }
-
-    // Run in coverage mode if coverage flag is present
-    let coverage = matches.is_present("coverage");
-    if coverage {
-        println!(
-            "{}",
-            ("Running in coverage report mode.\n️").to_string().cyan()
-        );
-        generate_coverage_report();
-        return;
-    }
-
-    // A matchstick instance for each test suite wasm (the compiled source).
-    let ms_instances: HashMap<String, MatchstickInstance<Chain>> = outputs
-        .into_iter()
-        .map(|(key, val)| (key, MatchstickInstance::<Chain>::new(&val.file)))
-        .collect();
-
-    // A test suite abstraction for each instance.
-    let test_suites: HashMap<String, TestSuite> = ms_instances
-        .iter()
-        .map(|(key, val)| (key.clone(), TestSuite::from(val)))
-        .collect();
-
-    let exit_code = run_test_suites(test_suites);
-
-    println!(
-        "\n[{}] Program executed in: {:.3?}.",
-        Local::now().to_rfc2822(),
-        now.elapsed()
-    );
-
-    std::process::exit(exit_code);
 }

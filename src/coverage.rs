@@ -59,6 +59,11 @@ fn extract_handler(v: &Value) -> String {
 }
 
 pub fn generate_coverage_report() {
+    println!(
+        "{}",
+        ("Running in coverage report mode.\n️").to_string().cyan()
+    );
+
     let mut tests_location = "".to_string();
 
     crate::TESTS_LOCATION.with(|path| {
