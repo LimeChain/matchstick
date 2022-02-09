@@ -1,6 +1,4 @@
 use colored::Colorize;
-use graph::prelude::serde_yaml;
-use graph::prelude::serde_yaml::Value;
 use regex::Regex;
 use run_script::{run_or_exit, ScriptOptions};
 use std::collections::HashMap;
@@ -9,187 +7,25 @@ use std::path::PathBuf;
 
 use crate::subgraph;
 
-#[derive(Debug)]
-struct Mapping {
-    event_handlers: Vec<String>,
-    call_handlers: Vec<String>,
-}
-
-impl Mapping {
-    pub fn new() -> Self {
-        Mapping {
-            event_handlers: vec![],
-            call_handlers: vec![],
-        }
-    }
-}
-
-#[derive(Debug)]
-struct Datasource {
-    name: String,
-    mapping: Mapping,
-}
-
-impl Datasource {
-    pub fn new(name: String) -> Self {
-        Datasource {
-            name,
-            mapping: Mapping::new(),
-        }
-    }
-}
-
-/// Performs a check if a handler is called in a test suite
-fn is_called(wat_contents: &str, handler: &str) -> bool {
-    let pattern = format!(r#"call.+{}"#, handler);
-    let regex = Regex::new(&pattern).expect("Not a valid regex pattern.");
-    let captures = regex.captures(wat_contents);
-
-    captures.is_some()
-}
-
-/// Extracts the handler name
-fn extract_handler(v: &Value) -> String {
-    serde_yaml::to_string(v)
-        .expect("Could not convert serde_yaml value to string.")
-        .split('\n')
-        .collect::<String>()
-        .split("---")
-        .collect::<String>()
-}
-
 pub fn generate_coverage_report() {
     println!(
         "{}",
         ("Running in coverage report mode.\n️").to_string().cyan()
     );
 
-    let mut tests_location = "".to_string();
-
-    crate::TESTS_LOCATION.with(|path| {
-        tests_location = (&*path.borrow()).to_string();
-    });
-
-    let sources_yml = subgraph::get_sources();
-
-    let mut datasources = vec![];
-
-    for d in sources_yml {
-        let name = d.get("name").expect("No field 'name' in datasource.");
-
-        let mapping = d.get("mapping").expect("No field 'mapping' in datasource.");
-
-        let mut datasource = Datasource::new(
-            serde_yaml::to_string(name).expect("Could not convert serde yaml value to string."),
-        );
-
-        let events = mapping.get("eventHandlers");
-        let functions = mapping.get("callHandlers");
-
-        if let Some(events) = events {
-            for e in events
-                .as_sequence()
-                .expect("Could not convert events to sequence.")
-            {
-                let handler =
-                    extract_handler(e.get("handler").expect("No field 'handler' on event."));
-                datasource.mapping.event_handlers.push(handler);
-            }
-        }
-
-        if let Some(functions) = functions {
-            for f in functions
-                .as_sequence()
-                .expect("Could not convert to sequence.")
-            {
-                let handler =
-                    extract_handler(f.get("handler").expect("No field 'handler' on call."));
-                datasource.mapping.call_handlers.push(handler);
-            }
-        }
-        datasources.push(datasource);
-    }
-
-    let msg = format!("Couldn't find folder '{}/.bin'.", &tests_location);
-    let paths = fs::read_dir(format!("{}/.bin", &tests_location)).expect(&msg);
-
-    let mut files: Vec<String> = Vec::new();
-
-    for path in paths {
-        let file_name = path
-            .expect("Couldn't find generated test wasm binary.")
-            .path()
-            .display()
-            .to_string();
-        if file_name.ends_with(".wasm") {
-            files.push(file_name);
-        }
-    }
+    let source_handlers = collect_handlers();
 
     println!(
         "{}",
         ("Reading generated test modules... 🔎️").to_string().cyan()
     );
 
+    let wat_files = generate_wat_files();
+
     println!("{}", ("Generating coverage report 📝\n").to_string().cyan());
 
     let mut global_handlers_count: i32 = 0;
     let mut global_handlers_called: i32 = 0;
-
-    // Converts each wasm file to wat
-    // Returns a collection of all .wat files paths
-    let wat_files: Vec<String> = files
-        .iter()
-        .map(|file| {
-            let mut destination = PathBuf::from(&file);
-            destination.set_extension("wat");
-
-            let mut convert_command = "".to_string();
-
-            crate::LIBS_LOCATION.with(|path| {
-                convert_command = format!(
-                    "{}/{} {} {} {:?}",
-                    &*path.borrow(),
-                    "wabt/bin/wasm2wat",
-                    file,
-                    "-o",
-                    destination
-                );
-            });
-
-            let options = ScriptOptions::new();
-            let args = vec![];
-
-            run_or_exit(&convert_command, &args, &options);
-
-            destination.to_str().unwrap().to_string()
-        })
-        .collect();
-
-    // Maps every source name ot its handlers
-    let source_handlers: HashMap<String, Vec<String>> = datasources
-        .iter()
-        .map(|datasource| {
-            let d_name = datasource
-                .name
-                .split('\n')
-                .collect::<String>()
-                .split("---")
-                .collect::<String>();
-
-            let mut handlers = vec![];
-
-            for handler in &datasource.mapping.event_handlers {
-                handlers.push(handler.clone());
-            }
-
-            for handler in &datasource.mapping.call_handlers {
-                handlers.push(handler.clone());
-            }
-
-            (d_name, handlers)
-        })
-        .collect();
 
     for (name, handlers) in source_handlers.into_iter() {
         println!("Handlers for source '{}':", name);
@@ -247,4 +83,98 @@ pub fn generate_coverage_report() {
         "Global test coverage: {:.1}% ({}/{} handlers).\n",
         percentage, global_handlers_called, global_handlers_count
     );
+}
+
+/// Performs a check if a handler is called in a test suite
+fn is_called(wat_contents: &str, handler: &str) -> bool {
+    let pattern = format!(r#"call.+{}"#, handler);
+    let regex = Regex::new(&pattern).expect("Not a valid regex pattern.");
+    let captures = regex.captures(wat_contents);
+
+    captures.is_some()
+}
+
+fn collect_wasm_files() -> Vec<String> {
+    let mut tests_location = "".to_string();
+
+    crate::TESTS_LOCATION.with(|path| {
+        tests_location = (&*path.borrow()).to_string();
+    });
+
+    let msg = format!("Couldn't find folder '{}/.bin'.", &tests_location);
+    let paths = fs::read_dir(format!("{}/.bin", &tests_location)).expect(&msg);
+
+    let mut files: Vec<String> = Vec::new();
+
+    for path in paths {
+        let file_name = path
+            .expect("Couldn't find generated test wasm binary.")
+            .path()
+            .display()
+            .to_string();
+        if file_name.ends_with(".wasm") {
+            files.push(file_name);
+        }
+    }
+
+    files
+}
+
+/// Converts each wasm file to wat
+/// Returns a collection of all .wat files paths
+fn generate_wat_files() -> Vec<String> {
+    collect_wasm_files()
+        .iter()
+        .map(|file| {
+            let mut destination = PathBuf::from(&file);
+            destination.set_extension("wat");
+
+            let mut convert_command = "".to_string();
+
+            crate::LIBS_LOCATION.with(|path| {
+                convert_command = format!(
+                    "{}/{} {} {} {:?}",
+                    &*path.borrow(),
+                    "wabt/bin/wasm2wat",
+                    file,
+                    "-o",
+                    destination
+                );
+            });
+
+            let options = ScriptOptions::new();
+            let args = vec![];
+
+            run_or_exit(&convert_command, &args, &options);
+
+            destination.to_str().unwrap().to_string()
+        })
+        .collect()
+}
+
+/// Maps every source name ot its handlers
+fn collect_handlers() -> HashMap<String, Vec<String>> {
+    subgraph::get_datasources()
+        .iter()
+        .map(|datasource| {
+            let d_name = datasource
+                .name
+                .split('\n')
+                .collect::<String>()
+                .split("---")
+                .collect::<String>();
+
+            let mut handlers = vec![];
+
+            for handler in &datasource.mapping.event_handlers {
+                handlers.push(handler.clone());
+            }
+
+            for handler in &datasource.mapping.call_handlers {
+                handlers.push(handler.clone());
+            }
+
+            (d_name, handlers)
+        })
+        .collect()
 }
