@@ -44,6 +44,7 @@ pub enum Log<T: fmt::Display> {
     Info(T),
     Debug(T),
     Success(T),
+    Default(T),
 }
 
 impl<T: fmt::Display> Log<T> {
@@ -55,6 +56,7 @@ impl<T: fmt::Display> Log<T> {
             3 => Log::Info(s),
             4 => Log::Debug(s),
             5 => Log::Success(s),
+            6 => Log::Default(s),
 
             _ => panic!("Level is not supported!"),
         }
@@ -81,6 +83,7 @@ impl<T: fmt::Display> fmt::Display for Log<T> {
             Log::Info(s) => format!("💬 {}", s).italic(),
             Log::Debug(s) => format!("🛠 {}", s).italic().cyan(),
             Log::Success(s) => format!("✅ {}", s).bold().green(),
+            Log::Default(s) => format!("{}", s).normal(),
         };
         unsafe { write!(f, "{}{}", " ".repeat(INDENT), s) }
     }
