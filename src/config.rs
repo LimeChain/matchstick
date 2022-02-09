@@ -36,7 +36,7 @@ impl MatchstickConfig {
                 .get("libsFolder")
                 .unwrap_or(&Value::String(config.libs_path.clone()))
                 .as_str()
-                .unwrap_or(&config.tests_path)
+                .unwrap_or(&config.libs_path)
                 .to_string();
 
             // For consistency checks if the paths are defined with a trailng slash and removes it
