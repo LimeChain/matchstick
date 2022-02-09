@@ -11,10 +11,10 @@ use graph::prelude::chrono::prelude::*;
 use graph_chain_ethereum::Chain;
 
 use crate::compiler::{CompileOutput, Compiler};
+use crate::config::MatchstickConfig;
 use crate::instance::MatchstickInstance;
 use crate::logging::Log;
 use crate::test_suite::{TestResult, TestSuite};
-use crate::config::MatchstickConfig;
 
 use crate::coverage::generate_coverage_report;
 

@@ -22,35 +22,35 @@ impl MatchstickConfig {
     pub fn new() -> MatchstickConfig {
         let mut config = MatchstickConfig::default();
 
-            let matchstick_yaml = parse_yaml();
-            // Tries to get the tests or libs folder value from the config file.
-            // If the attribute doesn't exist returns the default value.
-            let mut tests_path = matchstick_yaml
-                .get("testsFolder")
-                .unwrap_or(&Value::String(config.tests_path.clone()))
-                .as_str()
-                .unwrap_or(&config.tests_path)
-                .to_string();
+        let matchstick_yaml = parse_yaml();
+        // Tries to get the tests or libs folder value from the config file.
+        // If the attribute doesn't exist returns the default value.
+        let mut tests_path = matchstick_yaml
+            .get("testsFolder")
+            .unwrap_or(&Value::String(config.tests_path.clone()))
+            .as_str()
+            .unwrap_or(&config.tests_path)
+            .to_string();
 
-            let mut libs_path = matchstick_yaml
-                .get("libsFolder")
-                .unwrap_or(&Value::String(config.libs_path.clone()))
-                .as_str()
-                .unwrap_or(&config.libs_path)
-                .to_string();
+        let mut libs_path = matchstick_yaml
+            .get("libsFolder")
+            .unwrap_or(&Value::String(config.libs_path.clone()))
+            .as_str()
+            .unwrap_or(&config.libs_path)
+            .to_string();
 
-            // For consistency checks if the paths are defined with a trailng slash and removes it
-            if tests_path.ends_with('/') {
-                tests_path.pop();
-            }
+        // For consistency checks if the paths are defined with a trailng slash and removes it
+        if tests_path.ends_with('/') {
+            tests_path.pop();
+        }
 
-            if libs_path.ends_with('/') {
-                libs_path.pop();
-            }
+        if libs_path.ends_with('/') {
+            libs_path.pop();
+        }
 
-            // Updates the struct attributes
-            config.tests_path = tests_path;
-            config.libs_path = libs_path;
+        // Updates the struct attributes
+        config.tests_path = tests_path;
+        config.libs_path = libs_path;
 
         config
     }
