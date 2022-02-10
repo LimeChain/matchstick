@@ -25,19 +25,8 @@ impl MatchstickConfig {
         let matchstick_yaml = parse_yaml();
         // Tries to get the tests or libs folder value from the config file.
         // If the attribute doesn't exist returns the default value.
-        let mut tests_path = matchstick_yaml
-            .get("testsFolder")
-            .unwrap_or(&Value::String(config.tests_path.clone()))
-            .as_str()
-            .unwrap_or(&config.tests_path)
-            .to_string();
-
-        let mut libs_path = matchstick_yaml
-            .get("libsFolder")
-            .unwrap_or(&Value::String(config.libs_path.clone()))
-            .as_str()
-            .unwrap_or(&config.libs_path)
-            .to_string();
+        let mut tests_path = extract_string(&matchstick_yaml, "testsFolder", config.tests_path);
+        let mut libs_path = extract_string(&matchstick_yaml, "libsFolder", config.libs_path);
 
         // For consistency checks if the paths are defined with a trailng slash and removes it
         if tests_path.ends_with('/') {
@@ -54,6 +43,15 @@ impl MatchstickConfig {
 
         config
     }
+}
+
+fn extract_string(value: &Value, key: &str, default: String) -> String {
+    value
+        .get(key)
+        .unwrap_or(&Value::String(default.clone()))
+        .as_str()
+        .unwrap_or(&default)
+        .to_string()
 }
 
 fn parse_yaml() -> Value {
