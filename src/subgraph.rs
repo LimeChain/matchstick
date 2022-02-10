@@ -8,7 +8,7 @@ fn extract_string(value: &Value, key: &str) -> String {
         .get(key)
         .unwrap_or_else(|| panic!("Couldn't find key `{}` in subgraph.yaml", key))
         .as_str()
-        .unwrap()
+        .unwrap_or_else(|| panic!("Couldn't parse `{}` as str", key))
         .to_string()
 }
 
@@ -17,7 +17,7 @@ fn extract_vec(value: &Value, key: &str) -> Sequence {
         .get(key)
         .unwrap_or(&Value::Sequence(vec![]))
         .as_sequence()
-        .unwrap_or_else(|| panic!("Couldn't find key `{}` in subgraph.yaml", key))
+        .unwrap_or_else(|| panic!("Couldn't parse `{}` as Sequence", key))
         .to_vec()
 }
 
@@ -41,9 +41,7 @@ fn parse_sources() -> Sequence {
 }
 
 pub fn collect_handlers() -> HashMap<String, Vec<String>> {
-    let sources_yml = parse_sources();
-
-    sources_yml
+    parse_sources()
         .iter()
         .map(|source| {
             let name = extract_string(source, "name");

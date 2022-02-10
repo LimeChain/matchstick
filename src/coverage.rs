@@ -112,7 +112,9 @@ fn collect_wasm_files() -> Vec<PathBuf> {
             .path();
 
         if let Some(ext) = file_name.extension() {
-            if ext == "wasm" { files.push(file_name) }
+            if ext == "wasm" {
+                files.push(file_name)
+            }
         }
     }
 
