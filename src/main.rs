@@ -32,9 +32,9 @@ mod test_suite;
 mod unit_tests;
 mod writable_store;
 
-thread_local!(pub(crate) static SCHEMA_LOCATION: RefCell<String> = RefCell::new("".to_string()));
-thread_local!(pub(crate) static TESTS_LOCATION: RefCell<String> = RefCell::new("".to_string()));
-thread_local!(pub(crate) static LIBS_LOCATION: RefCell<String> = RefCell::new("".to_string()));
+thread_local!(pub(crate) static SCHEMA_LOCATION: RefCell<PathBuf> = RefCell::new(PathBuf::new()));
+thread_local!(pub(crate) static TESTS_LOCATION: RefCell<PathBuf> = RefCell::new(PathBuf::new()));
+thread_local!(pub(crate) static LIBS_LOCATION: RefCell<PathBuf> = RefCell::new(PathBuf::new()));
 
 fn main() {
     let matches = cli::initialize().get_matches();
@@ -44,9 +44,9 @@ fn main() {
     let schema_location = subgraph::get_schema_location();
     let config = MatchstickConfig::new();
 
-    SCHEMA_LOCATION.with(|path| *path.borrow_mut() = schema_location);
-    TESTS_LOCATION.with(|path| *path.borrow_mut() = config.tests_path.clone());
-    LIBS_LOCATION.with(|path| *path.borrow_mut() = config.libs_path.clone());
+    SCHEMA_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&schema_location));
+    TESTS_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&config.tests_path));
+    LIBS_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&config.libs_path));
 
     let test_sources = get_test_sources(&matches);
 
@@ -95,7 +95,7 @@ fn main() {
     // A matchstick instance for each test suite wasm (the compiled source).
     let ms_instances: HashMap<String, MatchstickInstance<Chain>> = outputs
         .into_iter()
-        .map(|(key, val)| (key, MatchstickInstance::<Chain>::new(&val.file)))
+        .map(|(key, val)| (key, MatchstickInstance::<Chain>::new(val.file.to_str().unwrap())))
         .collect();
 
     // A test suite abstraction for each instance.
@@ -124,9 +124,8 @@ fn get_testable() -> HashMap<String, fs::DirEntry> {
                 panic!(
                     "{}",
                     Log::Critical(format!(
-                        "Something went wrong while trying to read `{}`: {}",
-                        &*path.borrow(),
-                        err,
+                        "Something went wrong while trying to read `{:?}`: {}",
+                        &*path, err,
                     )),
                 );
             })

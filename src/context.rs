@@ -43,7 +43,7 @@ lazy_static! {
                 panic!(
                     "{}",
                     Log::Critical(format!(
-                        "Something went wrong when trying to read `{}`: {}",
+                        "Something went wrong when trying to read `{:?}`: {}",
                         &*path.borrow(),
                         err,
                     )),

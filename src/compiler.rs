@@ -24,7 +24,7 @@ pub struct CompileOutput {
     pub status: ExitStatus,
     pub stdout: Vec<u8>,
     pub stderr: Vec<u8>,
-    pub file: String,
+    pub file: PathBuf,
 }
 
 #[allow(dead_code)]
@@ -80,46 +80,48 @@ impl Compiler {
         self
     }
 
-    fn get_paths_for(name: String, entry: fs::DirEntry) -> (Vec<String>, String) {
-        let mut bin_location = "".to_string();
+    fn get_paths_for(name: String, entry: fs::DirEntry) -> (Vec<String>, PathBuf) {
+        let mut out_file = PathBuf::new();
+        let mut in_files: Vec<String> = Vec::new();
 
         crate::TESTS_LOCATION.with(|path| {
-            bin_location = format!("{}/.bin", &*path.borrow());
-        });
+            let bin_location = path.borrow().join(".bin");
+            out_file = bin_location.join(name).with_extension("wasm");
 
-        let in_files = if entry
-            .file_type()
-            .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
-            .is_dir()
-        {
-            entry
-                .path()
-                .read_dir()
+            in_files = if entry
+                .file_type()
                 .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
-                .map(|file| {
-                    file.unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
-                        .path()
-                        .to_str()
-                        .unwrap()
-                        .to_string()
-                })
-                .filter(|path| path.ends_with(".test.ts"))
-                .collect()
-        } else {
-            vec![entry.path().to_str().unwrap().to_string()]
-        };
+                .is_dir()
+            {
+                entry
+                    .path()
+                    .read_dir()
+                    .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
+                    .map(|file| {
+                        file.unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
+                            .path()
+                            .to_str()
+                            .unwrap()
+                            .to_string()
+                    })
+                    .filter(|path| path.ends_with(".test.ts"))
+                    .collect()
+            } else {
+                vec![entry.path().to_str().unwrap().to_string()]
+            };
 
-        fs::create_dir_all(&bin_location).unwrap_or_else(|err| {
-            panic!(
-                "{}",
-                Log::Critical(format!(
-                    "Something went wrong when trying to create `{}`: {}",
-                    bin_location, err,
-                )),
-            );
+            fs::create_dir_all(&bin_location).unwrap_or_else(|err| {
+                panic!(
+                    "{}",
+                    Log::Critical(format!(
+                        "Something went wrong when trying to create `{:?}`: {}",
+                        bin_location, err,
+                    )),
+                );
+            });
         });
 
-        return (in_files, format!("{}/{}.wasm", bin_location, name));
+        (in_files, out_file)
     }
 
     pub fn execute(
@@ -144,7 +146,7 @@ impl Compiler {
         }
     }
 
-    fn compile(&self, in_files: Vec<String>, out_file: String) -> CompileOutput {
+    fn compile(&self, in_files: Vec<String>, out_file: PathBuf) -> CompileOutput {
         let output = Command::new(&self.exec)
             .args(in_files)
             .arg(&self.global)
@@ -169,7 +171,7 @@ impl Compiler {
         }
     }
 
-    fn skip_compile(&self, out_file: String) -> CompileOutput {
+    fn skip_compile(&self, out_file: PathBuf) -> CompileOutput {
         CompileOutput {
             status: ExitStatusExt::from_raw(0),
             stdout: vec![],
@@ -178,7 +180,7 @@ impl Compiler {
         }
     }
 
-    fn is_source_modified(in_files: &[String], out_file: &str) -> bool {
+    fn is_source_modified(in_files: &[String], out_file: &Path) -> bool {
         let mut is_modified = false;
 
         let wasm_modified = fs::metadata(out_file)

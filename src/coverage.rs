@@ -96,10 +96,10 @@ fn is_called(wat_content: &str, handler: &str) -> bool {
 fn collect_wasm_files() -> Vec<PathBuf> {
     let mut files: Vec<PathBuf> = Vec::new();
     crate::TESTS_LOCATION.with(|path| {
-        let tests_location = (&*path.borrow()).to_string();
+        let bin_location = path.borrow().join(".bin");
 
-        let msg = format!("Couldn't find folder '{}/.bin'.", &tests_location);
-        let entries = fs::read_dir(format!("{}/.bin", &tests_location)).expect(&msg);
+        let msg = format!("Couldn't find folder '{:?}.", &bin_location);
+        let entries = fs::read_dir(bin_location).expect(&msg);
 
         for entry in entries {
             let file_name = entry.unwrap().path();
@@ -125,9 +125,8 @@ fn generate_wat_files() -> Vec<String> {
 
             crate::LIBS_LOCATION.with(|path| {
                 let convert_command = format!(
-                    "{}/{} {:?} {} {:?}",
-                    &*path.borrow(),
-                    "wabt/bin/wasm2wat",
+                    "{:?} {:?} {} {:?}",
+                    path.borrow().join("wabt/bin/wasm2wat"),
                     file,
                     "-o",
                     destination
