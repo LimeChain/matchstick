@@ -39,9 +39,9 @@ pub fn generate_coverage_report() {
             let mut is_tested = false;
 
             for wat_file in &wat_files {
-                let wat_contents = fs::read_to_string(&wat_file).expect("Couldn't read wat file.");
+                let wat_content = fs::read_to_string(&wat_file).expect("Couldn't read wat file.");
 
-                if is_called(&wat_contents, &handler) {
+                if is_called(&wat_content, &handler) {
                     is_tested = true;
                     break;
                 }
@@ -85,38 +85,32 @@ pub fn generate_coverage_report() {
 }
 
 /// Performs a check if a handler is called in a test suite
-fn is_called(wat_contents: &str, handler: &str) -> bool {
+fn is_called(wat_content: &str, handler: &str) -> bool {
     let pattern = format!(r#"call.+{}"#, handler);
     let regex = Regex::new(&pattern).expect("Not a valid regex pattern.");
-    let captures = regex.captures(wat_contents);
 
-    captures.is_some()
+    regex.is_match(wat_content)
 }
 
 /// Collects the generated wasm files
 fn collect_wasm_files() -> Vec<PathBuf> {
-    let mut tests_location = "".to_string();
-
-    crate::TESTS_LOCATION.with(|path| {
-        tests_location = (&*path.borrow()).to_string();
-    });
-
-    let msg = format!("Couldn't find folder '{}/.bin'.", &tests_location);
-    let paths = fs::read_dir(format!("{}/.bin", &tests_location)).expect(&msg);
-
     let mut files: Vec<PathBuf> = Vec::new();
+    crate::TESTS_LOCATION.with(|path| {
+        let tests_location = (&*path.borrow()).to_string();
 
-    for path in paths {
-        let file_name = path
-            .expect("Couldn't find generated test wasm binary.")
-            .path();
+        let msg = format!("Couldn't find folder '{}/.bin'.", &tests_location);
+        let entries = fs::read_dir(format!("{}/.bin", &tests_location)).expect(&msg);
 
-        if let Some(ext) = file_name.extension() {
-            if ext == "wasm" {
-                files.push(file_name)
+        for entry in entries {
+            let file_name = entry.unwrap().path();
+
+            if let Some(ext) = file_name.extension() {
+                if ext == "wasm" {
+                    files.push(file_name)
+                }
             }
         }
-    }
+    });
 
     files
 }
@@ -129,10 +123,8 @@ fn generate_wat_files() -> Vec<String> {
         .map(|file| {
             let destination = file.with_extension("wat");
 
-            let mut convert_command = "".to_string();
-
             crate::LIBS_LOCATION.with(|path| {
-                convert_command = format!(
+                let convert_command = format!(
                     "{}/{} {:?} {} {:?}",
                     &*path.borrow(),
                     "wabt/bin/wasm2wat",
@@ -140,12 +132,12 @@ fn generate_wat_files() -> Vec<String> {
                     "-o",
                     destination
                 );
+
+                let options = ScriptOptions::new();
+                let args = vec![];
+
+                run_or_exit(&convert_command, &args, &options);
             });
-
-            let options = ScriptOptions::new();
-            let args = vec![];
-
-            run_or_exit(&convert_command, &args, &options);
 
             destination.to_str().unwrap().to_string()
         })
