@@ -1,7 +1,6 @@
 use colored::Colorize;
 use regex::Regex;
 use run_script::{run_or_exit, ScriptOptions};
-use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
@@ -13,7 +12,7 @@ pub fn generate_coverage_report() {
         ("Running in coverage report mode.\n️").to_string().cyan()
     );
 
-    let source_handlers = collect_handlers();
+    let source_handlers = subgraph::collect_handlers();
 
     println!(
         "{}",
@@ -94,7 +93,8 @@ fn is_called(wat_contents: &str, handler: &str) -> bool {
     captures.is_some()
 }
 
-fn collect_wasm_files() -> Vec<String> {
+/// Collects the generated wasm files
+fn collect_wasm_files() -> Vec<PathBuf> {
     let mut tests_location = "".to_string();
 
     crate::TESTS_LOCATION.with(|path| {
@@ -104,16 +104,15 @@ fn collect_wasm_files() -> Vec<String> {
     let msg = format!("Couldn't find folder '{}/.bin'.", &tests_location);
     let paths = fs::read_dir(format!("{}/.bin", &tests_location)).expect(&msg);
 
-    let mut files: Vec<String> = Vec::new();
+    let mut files: Vec<PathBuf> = Vec::new();
 
     for path in paths {
         let file_name = path
             .expect("Couldn't find generated test wasm binary.")
-            .path()
-            .display()
-            .to_string();
-        if file_name.ends_with(".wasm") {
-            files.push(file_name);
+            .path();
+
+        if let Some(ext) = file_name.extension() {
+            if ext == "wasm" { files.push(file_name) }
         }
     }
 
@@ -126,14 +125,13 @@ fn generate_wat_files() -> Vec<String> {
     collect_wasm_files()
         .iter()
         .map(|file| {
-            let mut destination = PathBuf::from(&file);
-            destination.set_extension("wat");
+            let destination = file.with_extension("wat");
 
             let mut convert_command = "".to_string();
 
             crate::LIBS_LOCATION.with(|path| {
                 convert_command = format!(
-                    "{}/{} {} {} {:?}",
+                    "{}/{} {:?} {} {:?}",
                     &*path.borrow(),
                     "wabt/bin/wasm2wat",
                     file,
@@ -148,33 +146,6 @@ fn generate_wat_files() -> Vec<String> {
             run_or_exit(&convert_command, &args, &options);
 
             destination.to_str().unwrap().to_string()
-        })
-        .collect()
-}
-
-/// Maps every source name ot its handlers
-fn collect_handlers() -> HashMap<String, Vec<String>> {
-    subgraph::get_datasources()
-        .iter()
-        .map(|datasource| {
-            let d_name = datasource
-                .name
-                .split('\n')
-                .collect::<String>()
-                .split("---")
-                .collect::<String>();
-
-            let mut handlers = vec![];
-
-            for handler in &datasource.mapping.event_handlers {
-                handlers.push(handler.clone());
-            }
-
-            for handler in &datasource.mapping.call_handlers {
-                handlers.push(handler.clone());
-            }
-
-            (d_name, handlers)
         })
         .collect()
 }
