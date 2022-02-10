@@ -1,44 +1,24 @@
 use serde_yaml::{Sequence, Value};
+use std::collections::HashMap;
 use std::fs;
 
-#[derive(Debug)]
-pub struct Mapping {
-    pub event_handlers: Vec<String>,
-    pub call_handlers: Vec<String>,
-}
-
-impl Mapping {
-    pub fn new() -> Self {
-        Mapping {
-            event_handlers: vec![],
-            call_handlers: vec![],
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct Datasource {
-    pub name: String,
-    pub mapping: Mapping,
-}
-
-impl Datasource {
-    pub fn new(name: String) -> Self {
-        Datasource {
-            name,
-            mapping: Mapping::new(),
-        }
-    }
-}
-
 /// Extracts the handler name
-fn extract_handler(v: &Value) -> String {
-    serde_yaml::to_string(v)
-        .expect("Could not convert serde_yaml value to string.")
-        .split('\n')
-        .collect::<String>()
-        .split("---")
-        .collect::<String>()
+fn extract_string(value: &Value, key: &str) -> String {
+    value
+        .get(key)
+        .unwrap_or_else(|| panic!("Couldn't find key `{}` in subgraph.yaml", key))
+        .as_str()
+        .unwrap()
+        .to_string()
+}
+
+fn extract_vec(value: &Value, key: &str) -> Sequence {
+    value
+        .get(key)
+        .unwrap_or(&Value::Sequence(vec![]))
+        .as_sequence()
+        .unwrap_or_else(|| panic!("Couldn't find key `{}` in subgraph.yaml", key))
+        .to_vec()
 }
 
 fn parse_yaml() -> Value {
@@ -53,70 +33,38 @@ fn parse_yaml() -> Value {
 fn parse_sources() -> Sequence {
     let subgraph_yaml = parse_yaml();
 
-    let mut sources_yml: Sequence = subgraph_yaml
-        .get("dataSources")
-        .expect("No DataSources in subgraph_yaml.")
-        .as_sequence()
-        .expect("An unexpected error occurred when converting datasources to sequence.")
-        .to_vec();
+    let mut sources = vec![];
+    sources.append(&mut extract_vec(&subgraph_yaml, "dataSources"));
+    sources.append(&mut extract_vec(&subgraph_yaml, "templates"));
 
-    let mut templates_yml = match subgraph_yaml.get("templates") {
-        Some(templates) => templates
-            .as_sequence()
-            .expect("An unexpected error occurred when converting datasources to sequence.")
-            .to_vec(),
-        None => Vec::new(),
-    };
-
-    sources_yml.append(&mut templates_yml);
-
-    sources_yml
+    sources
 }
 
-pub fn get_datasources() -> Vec<Datasource> {
+pub fn collect_handlers() -> HashMap<String, Vec<String>> {
     let sources_yml = parse_sources();
 
-    let mut datasources = vec![];
+    sources_yml
+        .iter()
+        .map(|source| {
+            let name = extract_string(source, "name");
 
-    for source in sources_yml {
-        let name = source.get("name").expect("No field 'name' in datasource.");
+            let mapping = source
+                .get("mapping")
+                .expect("No key 'mapping' in datasource.");
 
-        let mapping = source
-            .get("mapping")
-            .expect("No field 'mapping' in datasource.");
+            let mut functions = vec![];
 
-        let mut datasource = Datasource::new(
-            serde_yaml::to_string(name).expect("Could not convert serde yaml value to string."),
-        );
+            functions.append(&mut extract_vec(mapping, "eventHandlers"));
+            functions.append(&mut extract_vec(mapping, "callHandlers"));
 
-        let events = mapping.get("eventHandlers");
-        let functions = mapping.get("callHandlers");
+            let handlers = functions
+                .iter()
+                .map(|function| extract_string(function, "handler"))
+                .collect();
 
-        if let Some(events) = events {
-            for event in events
-                .as_sequence()
-                .expect("Could not convert events to sequence.")
-            {
-                let handler =
-                    extract_handler(event.get("handler").expect("No field 'handler' on event."));
-                datasource.mapping.event_handlers.push(handler);
-            }
-        }
-
-        if let Some(functions) = functions {
-            for f in functions
-                .as_sequence()
-                .expect("Could not convert to sequence.")
-            {
-                let handler =
-                    extract_handler(f.get("handler").expect("No field 'handler' on call."));
-                datasource.mapping.call_handlers.push(handler);
-            }
-        }
-        datasources.push(datasource);
-    }
-
-    datasources
+            (name, handlers)
+        })
+        .collect()
 }
 
 pub fn get_schema_location() -> String {
@@ -126,10 +74,5 @@ pub fn get_schema_location() -> String {
         .get("schema")
         .expect("Couldn't get schema from yaml file.");
 
-    schema
-        .get("file")
-        .expect("Couldn't get schema file location")
-        .as_str()
-        .unwrap()
-        .to_string()
+    extract_string(schema, "file")
 }
