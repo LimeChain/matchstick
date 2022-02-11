@@ -118,14 +118,17 @@ fn main() {
 /// Returns the names and `fs::DirEntry`'s of the testable sources under the selected tests directory.
 fn get_testable() -> HashMap<String, fs::DirEntry> {
     let mut testable: HashMap<String, fs::DirEntry> = HashMap::new();
+
     TESTS_LOCATION.with(|path| {
-        testable = fs::read_dir(&*path.borrow())
+        let tests_path = &*path.borrow();
+
+        testable = fs::read_dir(tests_path)
             .unwrap_or_else(|err| {
                 panic!(
                     "{}",
                     Log::Critical(format!(
-                        "Something went wrong while trying to read `{:?}`: {}",
-                        &*path, err,
+                        "Something went wrong while trying to read {:?}: {}",
+                        tests_path, err,
                     )),
                 );
             })

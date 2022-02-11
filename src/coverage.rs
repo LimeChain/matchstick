@@ -95,6 +95,7 @@ fn is_called(wat_content: &str, handler: &str) -> bool {
 /// Collects the generated wasm files
 fn collect_wasm_files() -> Vec<PathBuf> {
     let mut files: Vec<PathBuf> = Vec::new();
+
     crate::TESTS_LOCATION.with(|path| {
         let bin_location = path.borrow().join(".bin");
 
