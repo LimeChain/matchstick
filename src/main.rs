@@ -139,9 +139,18 @@ ___  ___      _       _         _   _      _
 
 fn collect_files(path: PathBuf) -> HashMap<String, Vec<PathBuf>> {
     let mut files: HashMap<String, Vec<PathBuf>> = HashMap::new();
+    let entries = path.read_dir().unwrap_or_else(|err| {
+        panic!(
+            "{}",
+            Log::Critical(format!(
+                "Something went wrong while trying to read {:?}: {}",
+                path, err,
+            ))
+        );
+    });
 
-    for entry in path.read_dir().unwrap() {
-        let entry = entry.unwrap();
+    for entry in entries {
+        let entry = entry.unwrap_or_else(|err| panic!("{}", Log::Critical(err)));
         let name = entry.file_name().to_str().unwrap().to_ascii_lowercase();
 
         if name.ends_with(".test.ts") {
