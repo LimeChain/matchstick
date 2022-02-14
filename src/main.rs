@@ -173,8 +173,6 @@ fn collect_files(path: PathBuf) -> HashMap<String, Vec<PathBuf>> {
 fn get_test_sources(matches: &ArgMatches) -> HashMap<String, Vec<PathBuf>> {
     let testable = collect_files(PathBuf::from("./tests"));
 
-    println!("{:?}", testable);
-
     if testable.is_empty() {
         panic!("{}", Log::Critical("No tests have been written yet."));
     }
