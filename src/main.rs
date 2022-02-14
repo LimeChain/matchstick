@@ -32,17 +32,19 @@ mod test_suite;
 mod unit_tests;
 mod writable_store;
 
-thread_local!(pub(crate) static SCHEMA_LOCATION: RefCell<PathBuf> = RefCell::new(PathBuf::new()));
-thread_local!(pub(crate) static TESTS_LOCATION: RefCell<PathBuf> = RefCell::new(PathBuf::new()));
-thread_local!(pub(crate) static LIBS_LOCATION: RefCell<PathBuf> = RefCell::new(PathBuf::new()));
+thread_local! {
+    pub(crate) static SCHEMA_LOCATION: RefCell<PathBuf> = RefCell::new(PathBuf::new());
+    pub(crate) static TESTS_LOCATION: RefCell<PathBuf> = RefCell::new(PathBuf::new());
+    pub(crate) static LIBS_LOCATION: RefCell<PathBuf> = RefCell::new(PathBuf::new());
+}
 
 fn main() {
     let matches = cli::initialize().get_matches();
     let now = Instant::now();
 
     cli::print_logo();
-    let schema_location = subgraph::get_schema_location();
-    let config = MatchstickConfig::new();
+    let schema_location = subgraph::get_schema_location("subgraph.yaml");
+    let config = MatchstickConfig::from("matchstick.yaml");
 
     SCHEMA_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&schema_location));
     TESTS_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&config.tests_path));
@@ -95,7 +97,12 @@ fn main() {
     // A matchstick instance for each test suite wasm (the compiled source).
     let ms_instances: HashMap<String, MatchstickInstance<Chain>> = outputs
         .into_iter()
-        .map(|(key, val)| (key, MatchstickInstance::<Chain>::new(val.file.to_str().unwrap())))
+        .map(|(key, val)| {
+            (
+                key,
+                MatchstickInstance::<Chain>::new(val.file.to_str().unwrap()),
+            )
+        })
         .collect();
 
     // A test suite abstraction for each instance.

@@ -12,7 +12,7 @@ pub fn generate_coverage_report() {
         ("Running in coverage report mode.\n️").to_string().cyan()
     );
 
-    let source_handlers = subgraph::collect_handlers();
+    let source_handlers = subgraph::collect_handlers("subgraph.yaml");
 
     println!(
         "{}",
