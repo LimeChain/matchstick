@@ -80,57 +80,18 @@ impl Compiler {
         self
     }
 
-    fn get_paths_for(name: String, entry: fs::DirEntry) -> (Vec<String>, PathBuf) {
-        let mut out_file = PathBuf::new();
-        let mut in_files: Vec<String> = Vec::new();
-
-        crate::TESTS_LOCATION.with(|path| {
-            let bin_location = path.borrow().join(".bin");
-            out_file = bin_location.join(name).with_extension("wasm");
-
-            in_files = if entry
-                .file_type()
-                .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
-                .is_dir()
-            {
-                entry
-                    .path()
-                    .read_dir()
-                    .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
-                    .map(|file| {
-                        file.unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
-                            .path()
-                            .to_str()
-                            .unwrap()
-                            .to_string()
-                    })
-                    .filter(|path| path.ends_with(".test.ts"))
-                    .collect()
-            } else {
-                vec![entry.path().to_str().unwrap().to_string()]
-            };
-
-            fs::create_dir_all(&bin_location).unwrap_or_else(|err| {
-                panic!(
-                    "{}",
-                    Log::Critical(format!(
-                        "Something went wrong when trying to create `{:?}`: {}",
-                        bin_location, err,
-                    )),
-                );
-            });
-        });
-
-        (in_files, out_file)
-    }
-
     pub fn execute(
         &self,
         name: String,
-        entry: fs::DirEntry,
+        in_files: Vec<PathBuf>,
         should_recompile: bool,
     ) -> CompileOutput {
-        let (in_files, out_file) = Compiler::get_paths_for(name.clone(), entry);
+        let mut out_file = PathBuf::new();
+
+        crate::TESTS_LOCATION.with(|path| {
+            let bin_location = path.borrow().join(".bin");
+            out_file = bin_location.join(&name).with_extension("wasm");
+        });
 
         if should_recompile
             || !Path::new(&out_file).exists()
@@ -146,7 +107,7 @@ impl Compiler {
         }
     }
 
-    fn compile(&self, in_files: Vec<String>, out_file: PathBuf) -> CompileOutput {
+    fn compile(&self, in_files: Vec<PathBuf>, out_file: PathBuf) -> CompileOutput {
         let output = Command::new(&self.exec)
             .args(in_files)
             .arg(&self.global)
@@ -180,7 +141,7 @@ impl Compiler {
         }
     }
 
-    fn is_source_modified(in_files: &[String], out_file: &Path) -> bool {
+    fn is_source_modified(in_files: &[PathBuf], out_file: &Path) -> bool {
         let mut is_modified = false;
 
         let wasm_modified = fs::metadata(out_file)
@@ -205,7 +166,7 @@ impl Compiler {
         is_modified
     }
 
-    fn are_imports_modified(in_file: &str, wasm_modified: SystemTime) -> bool {
+    fn are_imports_modified(in_file: &Path, wasm_modified: SystemTime) -> bool {
         let mut is_modified = false;
         let matches: Vec<String> = Compiler::get_imports_from_file(in_file);
 
@@ -226,7 +187,7 @@ impl Compiler {
         is_modified
     }
 
-    fn get_imports_from_file(in_file: &str) -> Vec<String> {
+    fn get_imports_from_file(in_file: &Path) -> Vec<String> {
         // Regex should match the file path of each import statement except for node_modules
         // e.g. should return `../generated/schema` from `import { Gravatar } from '../generated/schema'`
         // but it will ignore `import { test, log } from 'matchstick-as/assembly/index'`
@@ -242,7 +203,7 @@ impl Compiler {
             .collect()
     }
 
-    fn get_import_absolute_path(in_file: &str, imported_file: &str) -> PathBuf {
+    fn get_import_absolute_path(in_file: &Path, imported_file: &str) -> PathBuf {
         let mut combined_path = PathBuf::from(in_file);
         combined_path.pop();
         combined_path.push(format!("{}.ts", imported_file));
@@ -260,7 +221,7 @@ mod compiler_tests {
 
     #[test]
     fn it_gets_project_imports_test() {
-        let in_file = "mocks/as/mock-includes.test.ts";
+        let in_file = PathBuf::from("mocks/as/mock-includes.test.ts");
         let includes = Compiler::get_imports_from_file(&in_file);
 
         assert_eq!(
@@ -271,7 +232,7 @@ mod compiler_tests {
 
     #[test]
     fn it_get_absolute_path_of_imports_test() {
-        let in_file = "mocks/as/mock-includes.test.ts";
+        let in_file = PathBuf::from("mocks/as/mock-includes.test.ts");
         let root_path = fs::canonicalize("./").expect("Something went wrong!");
 
         let result = Compiler::get_import_absolute_path(&in_file, "./utils");
@@ -282,7 +243,7 @@ mod compiler_tests {
 
     #[test]
     fn it_should_panic_if_imports_does_not_exist_test() {
-        let in_file = "mocks/as/mock-includes.test.ts";
+        let in_file = PathBuf::from("mocks/as/mock-includes.test.ts");
         let result = std::panic::catch_unwind(|| {
             Compiler::get_import_absolute_path(&in_file, "../generated/schema")
         });

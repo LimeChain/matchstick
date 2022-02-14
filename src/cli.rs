@@ -1,7 +1,4 @@
 use clap::{App, Arg};
-use colored::Colorize;
-
-use crate::logging::Log;
 
 pub fn initialize() -> App<'static, 'static> {
     App::new("Matchstick 🔥")
@@ -30,19 +27,4 @@ pub fn initialize() -> App<'static, 'static> {
                 .index(1)
                 .multiple(true),
         )
-}
-
-pub fn print_logo() {
-    Log::Default(
-        r#"
-___  ___      _       _         _   _      _
-|  \/  |     | |     | |       | | (_)    | |
-| .  . | __ _| |_ ___| |__  ___| |_ _  ___| | __
-| |\/| |/ _` | __/ __| '_ \/ __| __| |/ __| |/ /
-| |  | | (_| | || (__| | | \__ \ |_| | (__|   <
-\_|  |_/\__,_|\__\___|_| |_|___/\__|_|\___|_|\_\
-    "#
-        .bright_red(),
-    )
-    .println()
 }

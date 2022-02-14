@@ -1,6 +1,5 @@
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
-use std::fs;
 use std::io::{self, Write};
 use std::path::PathBuf;
 use std::time::Instant;
@@ -42,7 +41,8 @@ fn main() {
     let matches = cli::initialize().get_matches();
     let now = Instant::now();
 
-    cli::print_logo();
+    print_logo();
+
     let schema_location = subgraph::get_schema_location("subgraph.yaml");
     let config = MatchstickConfig::from("matchstick.yaml");
 
@@ -62,10 +62,10 @@ fn main() {
 
     let outputs: HashMap<String, CompileOutput> = test_sources
         .into_iter()
-        .map(|(name, entry)| {
+        .map(|(name, in_files)| {
             (
                 name.clone(),
-                compiler.execute(name, entry, matches.is_present("recompile")),
+                compiler.execute(name, in_files, matches.is_present("recompile")),
             )
         })
         .collect();
@@ -122,63 +122,54 @@ fn main() {
     std::process::exit(exit_code);
 }
 
-/// Returns the names and `fs::DirEntry`'s of the testable sources under the selected tests directory.
-fn get_testable() -> HashMap<String, fs::DirEntry> {
-    let mut testable: HashMap<String, fs::DirEntry> = HashMap::new();
+fn print_logo() {
+    Log::Default(
+        r#"
+___  ___      _       _         _   _      _
+|  \/  |     | |     | |       | | (_)    | |
+| .  . | __ _| |_ ___| |__  ___| |_ _  ___| | __
+| |\/| |/ _` | __/ __| '_ \/ __| __| |/ __| |/ /
+| |  | | (_| | || (__| | | \__ \ |_| | (__|   <
+\_|  |_/\__,_|\__\___|_| |_|___/\__|_|\___|_|\_\
+    "#
+        .bright_red(),
+    )
+    .println()
+}
 
-    TESTS_LOCATION.with(|path| {
-        let tests_path = &*path.borrow();
+fn collect_files(path: PathBuf) -> HashMap<String, Vec<PathBuf>> {
+    let mut files: HashMap<String, Vec<PathBuf>> = HashMap::new();
 
-        testable = fs::read_dir(tests_path)
-            .unwrap_or_else(|err| {
-                panic!(
-                    "{}",
-                    Log::Critical(format!(
-                        "Something went wrong while trying to read {:?}: {}",
-                        tests_path, err,
-                    )),
-                );
-            })
-            .filter_map(|entry| {
-                let entry = entry.unwrap_or_else(|err| panic!("{}", Log::Critical(err)));
-                let name = entry.file_name().to_str().unwrap().to_ascii_lowercase();
+    for entry in path.read_dir().unwrap() {
+        let entry = entry.unwrap();
+        let name = entry.file_name().to_str().unwrap().to_ascii_lowercase();
 
-                if name.ends_with(".test.ts") {
-                    Some((name.replace(".test.ts", ""), entry))
-                } else if entry
-                    .file_type()
-                    .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
-                    .is_dir()
-                    && entry
-                        .path()
-                        .read_dir()
-                        .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
-                        .any(|entry| {
-                            entry
-                                .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
-                                .file_name()
-                                .to_str()
-                                .unwrap()
-                                .ends_with(".test.ts")
-                        })
-                {
-                    Some((name, entry))
-                } else {
-                    None
+        if name.ends_with(".test.ts") {
+            files.insert(name.replace(".test.ts", ""), vec![entry.path()]);
+        } else if entry.path().is_dir() {
+            let mut sub_files = collect_files(entry.path());
+
+            if !sub_files.is_empty() {
+                files.insert(name.clone(), vec![]);
+                for val in sub_files.values_mut() {
+                    files.get_mut(&name).unwrap().append(val);
                 }
-            })
-            .collect();
-    });
+            }
+        }
+    }
+
+    files
+}
+
+fn get_test_sources(matches: &ArgMatches) -> HashMap<String, Vec<PathBuf>> {
+    let testable = collect_files(PathBuf::from("./tests"));
+
+    println!("{:?}", testable);
 
     if testable.is_empty() {
         panic!("{}", Log::Critical("No tests have been written yet."));
     }
 
-    testable
-}
-
-fn get_test_sources(matches: &ArgMatches) -> HashMap<String, fs::DirEntry> {
-    let testable = get_testable();
     if let Some(vals) = matches.values_of("test_suites") {
         let sources: HashSet<String> = vals
             .collect::<Vec<&str>>()
