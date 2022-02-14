@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod unit_tests {
     use std::collections::HashMap;
+    use std::path::PathBuf;
     use std::str::FromStr;
 
     use graph::{
@@ -21,7 +22,7 @@ mod unit_tests {
     use crate::{MatchstickInstance, SCHEMA_LOCATION};
 
     fn get_context() -> MatchstickInstanceContext<Chain> {
-        SCHEMA_LOCATION.with(|path| *path.borrow_mut() = "./mocks/schema.graphql".to_string());
+        SCHEMA_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from("./mocks/schema.graphql"));
         let module = <MatchstickInstance<Chain>>::new("mocks/wasm/Gravity.wasm");
 
         module
