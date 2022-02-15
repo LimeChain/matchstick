@@ -47,23 +47,9 @@ fn extract_string(value: &Value, key: &str) -> String {
 pub fn extract_string_or(value: &Value, key: &str, default: String) -> String {
     value
         .get(key)
-        .unwrap_or({
-            Log::Warning(format!(
-                "Failed to get `{}` from matchstick.config! Using default config value.",
-                key
-            ))
-            .println();
-            &Value::String(default.clone())
-        })
+        .unwrap_or(&Value::String(default.clone()))
         .as_str()
-        .unwrap_or({
-            Log::Warning(format!(
-                "Failed to parse `{}` as str! Using default config value.",
-                key
-            ))
-            .println();
-            &default
-        })
+        .unwrap_or(&default)
         .to_string()
 }
 
