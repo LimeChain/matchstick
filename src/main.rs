@@ -1,15 +1,14 @@
 use std::cell::RefCell;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::io::{self, Write};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::time::Instant;
 
-use clap::ArgMatches;
 use colored::Colorize;
 use graph::prelude::chrono::prelude::*;
 use graph_chain_ethereum::Chain;
 
-use crate::compiler::{CompileOutput, Compiler};
+use crate::compiler::Compiler;
 use crate::config::MatchstickConfig;
 use crate::instance::MatchstickInstance;
 use crate::logging::Log;
@@ -50,8 +49,6 @@ fn main() {
     TESTS_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&config.tests_path));
     LIBS_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&config.libs_path));
 
-    let test_sources = get_test_sources(&matches);
-
     println!("{}", ("Compiling...\n").to_string().bright_green());
 
     let compiler = Compiler::new(PathBuf::from(config.libs_path))
@@ -60,15 +57,7 @@ fn main() {
         .optimize()
         .debug();
 
-    let outputs: HashMap<String, CompileOutput> = test_sources
-        .into_iter()
-        .map(|(name, in_files)| {
-            (
-                name.clone(),
-                compiler.execute(name, in_files, matches.is_present("recompile")),
-            )
-        })
-        .collect();
+    let outputs = compiler.execute(&matches);
 
     if outputs.values().any(|output| !output.status.success()) {
         outputs.values().for_each(|output| {
@@ -135,82 +124,6 @@ ___  ___      _       _         _   _      _
         .bright_red(),
     )
     .println()
-}
-
-fn collect_files(path: &Path) -> HashMap<String, Vec<PathBuf>> {
-    let mut files: HashMap<String, Vec<PathBuf>> = HashMap::new();
-
-    let entries = path.read_dir().unwrap_or_else(|err| {
-        panic!(
-            "{}",
-            Log::Critical(format!(
-                "Something went wrong while trying to read {:?}: {}",
-                path, err,
-            ))
-        );
-    });
-
-    for entry in entries {
-        let entry = entry.unwrap_or_else(|err| panic!("{}", Log::Critical(err)));
-        let name = entry.file_name().to_str().unwrap().to_ascii_lowercase();
-
-        if name.ends_with(".test.ts") {
-            files.insert(name.replace(".test.ts", ""), vec![entry.path()]);
-        } else if entry.path().is_dir() {
-            let mut sub_files = collect_files(&entry.path());
-
-            if !sub_files.is_empty() {
-                files.insert(name.clone(), vec![]);
-                for val in sub_files.values_mut() {
-                    files.get_mut(&name).unwrap().append(val);
-                }
-            }
-        }
-    }
-
-    files
-}
-
-fn get_test_sources(matches: &ArgMatches) -> HashMap<String, Vec<PathBuf>> {
-    let mut testable: HashMap<String, Vec<PathBuf>> = HashMap::new();
-
-    TESTS_LOCATION.with(|path| {
-        testable = collect_files(&*path.borrow());
-    });
-
-    if testable.is_empty() {
-        panic!("{}", Log::Critical("No tests have been written yet."));
-    }
-
-    if let Some(vals) = matches.values_of("test_suites") {
-        let sources: HashSet<String> = vals
-            .collect::<Vec<&str>>()
-            .iter()
-            .map(|&s| String::from(s).to_ascii_lowercase())
-            .collect();
-
-        let unrecog_sources: Vec<String> = sources
-            .difference(&testable.keys().cloned().collect())
-            .map(String::from)
-            .collect();
-
-        if !unrecog_sources.is_empty() {
-            panic!(
-                "{}",
-                Log::Critical(format!(
-                    "The following tests could not be found: {}",
-                    unrecog_sources.join(", "),
-                )),
-            );
-        }
-
-        testable
-            .into_iter()
-            .filter(|(name, _)| sources.contains(name))
-            .collect()
-    } else {
-        testable
-    }
 }
 
 fn run_test_suites(test_suites: HashMap<String, TestSuite>) -> i32 {
