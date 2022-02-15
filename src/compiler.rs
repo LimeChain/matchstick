@@ -1,5 +1,7 @@
+use clap::ArgMatches;
 use colored::Colorize;
 use regex::Regex;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus};
@@ -80,31 +82,33 @@ impl Compiler {
         self
     }
 
-    pub fn execute(
-        &self,
-        name: String,
-        in_files: Vec<PathBuf>,
-        should_recompile: bool,
-    ) -> CompileOutput {
-        let mut out_file = PathBuf::new();
+    pub fn execute(&self, matches: &ArgMatches) -> HashMap<String, CompileOutput> {
+        get_test_sources(matches)
+            .into_iter()
+            .map(|(name, in_files)| {
+                let mut out_file = PathBuf::new();
 
-        crate::TESTS_LOCATION.with(|path| {
-            let bin_location = path.borrow().join(".bin");
-            out_file = bin_location.join(&name).with_extension("wasm");
-        });
+                crate::TESTS_LOCATION.with(|path| {
+                    let bin_location = path.borrow().join(".bin");
+                    out_file = bin_location.join(&name).with_extension("wasm");
+                });
 
-        if should_recompile
-            || !Path::new(&out_file).exists()
-            || Compiler::is_source_modified(&in_files, &out_file)
-        {
-            Log::Info(format!("Compiling {}...", name.bright_blue())).println();
+                let output = if matches.is_present("recompile")
+                    || !Path::new(&out_file).exists()
+                    || Compiler::is_source_modified(&in_files, &out_file)
+                {
+                    Log::Info(format!("Compiling {}...", name.bright_blue())).println();
 
-            self.compile(in_files, out_file)
-        } else {
-            Log::Info(format!("{} skipped!", name.bright_blue())).println();
+                    self.compile(in_files, out_file)
+                } else {
+                    Log::Info(format!("{} skipped!", name.bright_blue())).println();
 
-            self.skip_compile(out_file)
-        }
+                    self.skip_compile(out_file)
+                };
+
+                (name, output)
+            })
+            .collect()
     }
 
     fn compile(&self, in_files: Vec<PathBuf>, out_file: PathBuf) -> CompileOutput {
@@ -211,6 +215,82 @@ impl Compiler {
             .canonicalize()
             .unwrap_or_else(|_| panic!("{} does not exists!", &imported_file))
     }
+}
+
+fn get_test_sources(matches: &ArgMatches) -> HashMap<String, Vec<PathBuf>> {
+    let mut testable: HashMap<String, Vec<PathBuf>> = HashMap::new();
+
+    crate::TESTS_LOCATION.with(|path| {
+        testable = collect_files(&*path.borrow());
+    });
+
+    if testable.is_empty() {
+        panic!("{}", Log::Critical("No tests have been written yet."));
+    }
+
+    if let Some(vals) = matches.values_of("test_suites") {
+        let sources: HashSet<String> = vals
+            .collect::<Vec<&str>>()
+            .iter()
+            .map(|&s| String::from(s).to_ascii_lowercase())
+            .collect();
+
+        let unrecog_sources: Vec<String> = sources
+            .difference(&testable.keys().cloned().collect())
+            .map(String::from)
+            .collect();
+
+        if !unrecog_sources.is_empty() {
+            panic!(
+                "{}",
+                Log::Critical(format!(
+                    "The following tests could not be found: {}",
+                    unrecog_sources.join(", "),
+                )),
+            );
+        }
+
+        testable
+            .into_iter()
+            .filter(|(name, _)| sources.contains(name))
+            .collect()
+    } else {
+        testable
+    }
+}
+
+fn collect_files(path: &Path) -> HashMap<String, Vec<PathBuf>> {
+    let mut files: HashMap<String, Vec<PathBuf>> = HashMap::new();
+
+    let entries = path.read_dir().unwrap_or_else(|err| {
+        panic!(
+            "{}",
+            Log::Critical(format!(
+                "Something went wrong while trying to read {:?}: {}",
+                path, err,
+            ))
+        );
+    });
+
+    for entry in entries {
+        let entry = entry.unwrap_or_else(|err| panic!("{}", Log::Critical(err)));
+        let name = entry.file_name().to_str().unwrap().to_ascii_lowercase();
+
+        if name.ends_with(".test.ts") {
+            files.insert(name.replace(".test.ts", ""), vec![entry.path()]);
+        } else if entry.path().is_dir() {
+            let mut sub_files = collect_files(&entry.path());
+
+            if !sub_files.is_empty() {
+                files.insert(name.clone(), vec![]);
+                for val in sub_files.values_mut() {
+                    files.get_mut(&name).unwrap().append(val);
+                }
+            }
+        }
+    }
+
+    files
 }
 
 #[cfg(test)]
