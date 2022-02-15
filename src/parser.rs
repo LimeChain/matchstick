@@ -1,14 +1,13 @@
 use serde_yaml::{Sequence, Value};
 use std::collections::HashMap;
-use std::fs;
 
 use crate::Log;
 
 /// fn parse_yaml(path: &str) -> Value
-/// Parses the yaml file from the passed path
-/// Will panic if the file does not exist or can't be parsed
-fn parse_yaml(path: &str) -> Value {
-    let subgraph_yaml_contents = fs::read_to_string(path).unwrap_or_else(|err| {
+/// Parses the matchstick.yaml file
+/// If the parsing fails returns an empty Value::String()
+pub fn parse_yaml(path: &str) -> Value {
+    let yaml_content = std::fs::read_to_string(path).unwrap_or_else(|err| {
         panic!(
             "{}",
             Log::Critical(format!(
@@ -18,18 +17,16 @@ fn parse_yaml(path: &str) -> Value {
         )
     });
 
-    let subgraph_yaml: Value =
-        serde_yaml::from_str(&subgraph_yaml_contents).unwrap_or_else(|err| {
-            panic!(
-                "{}",
-                Log::Critical(format!(
-                    "Something went wrong when parsing `{}`: {}",
-                    path, err,
-                )),
-            )
-        });
-
-    subgraph_yaml
+    // If yaml exists but is empty from_str will panic with `EndOfStream`
+    // Instead it will print a warning and return an empty Value
+    serde_yaml::from_str(&yaml_content).unwrap_or_else(|_| {
+        Log::Warning(format!(
+            "{} is empty or contains invalid values! Using default configuration.",
+            path
+        ))
+        .println();
+        Value::String("".to_string())
+    })
 }
 
 /// fn extract_string(value: &Value, key: &str) -> String
@@ -41,6 +38,32 @@ fn extract_string(value: &Value, key: &str) -> String {
         .unwrap_or_else(|| panic!("Couldn't find key `{}` in subgraph.yaml", key))
         .as_str()
         .unwrap_or_else(|| panic!("Couldn't parse `{}` as str", key))
+        .to_string()
+}
+
+/// fn extract_string_or(value: &Value, key: &str, default: String) -> String
+/// Extracts the string value of the passed key from the parsed yaml
+/// Fallbacks to the default value if it fails to extract the string for some reason
+pub fn extract_string_or(value: &Value, key: &str, default: String) -> String {
+    value
+        .get(key)
+        .unwrap_or({
+            Log::Warning(format!(
+                "Failed to get `{}` from matchstick.config! Using default config value.",
+                key
+            ))
+            .println();
+            &Value::String(default.clone())
+        })
+        .as_str()
+        .unwrap_or({
+            Log::Warning(format!(
+                "Failed to parse `{}` as str! Using default config value.",
+                key
+            ))
+            .println();
+            &default
+        })
         .to_string()
 }
 
@@ -111,24 +134,24 @@ pub fn get_schema_location(path: &str) -> String {
 }
 
 #[cfg(test)]
-mod schema_tests {
+mod parser_tests {
     use super::*;
     use std::collections::HashMap;
 
     #[test]
     #[should_panic(
-        expected = "🆘 Something went wrong while trying to read `mocks/subgraphs/no_subgraph.yaml`: No such file or directory (os error 2)"
+        expected = "🆘 Something went wrong while trying to read `mocks/configs/no_config.yaml`: No such file or directory (os error 2)"
     )]
     fn parse_yaml_should_panic_when_file_is_missing() {
-        parse_yaml("mocks/subgraphs/no_subgraph.yaml");
+        parse_yaml("mocks/configs/no_config.yaml");
     }
 
     #[test]
-    #[should_panic(
-        expected = "🆘 Something went wrong when parsing `mocks/subgraphs/subgraph_invalid.yaml`: while parsing a block mapping, did not find expected key at line 6 column 1"
-    )]
-    fn parse_yaml_should_panic_when_file_is_invalid() {
-        parse_yaml("mocks/subgraphs/subgraph_invalid.yaml");
+
+    fn parse_yaml_returns_empty_string_value_if_config_is_empty() {
+        let yaml = parse_yaml("mocks/configs/matchstick_empty.yaml");
+
+        assert_eq!(yaml, Value::String("".to_string()))
     }
 
     #[test]
@@ -143,6 +166,22 @@ mod schema_tests {
     fn parse_string_should_panic_if_key_missing() {
         let yaml = parse_yaml("mocks/subgraphs/subgraph_no_name.yaml");
         extract_string(&yaml, "name");
+    }
+
+    #[test]
+    fn extract_string_or_returns_value_as_string() {
+        let config_yaml = parse_yaml("mocks/configs/matchstick.yaml");
+        let test_folder = extract_string_or(&config_yaml, "testsFolder", "./tests".to_string());
+
+        assert_eq!(test_folder, "./specs".to_string())
+    }
+
+    #[test]
+    fn extract_string_or_returns_default_when_key_is_missing() {
+        let config_yaml = parse_yaml("mocks/configs/matchstick.yaml");
+        let test_folder = extract_string_or(&config_yaml, "libsFolder", "./node_modules".to_string());
+
+        assert_eq!(test_folder, "./node_modules".to_string())
     }
 
     #[test]

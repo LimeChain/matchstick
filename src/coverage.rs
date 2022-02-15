@@ -4,7 +4,7 @@ use run_script::{run_or_exit, ScriptOptions};
 use std::fs;
 use std::path::PathBuf;
 
-use crate::subgraph;
+use crate::parser;
 
 pub fn generate_coverage_report() {
     println!(
@@ -12,7 +12,7 @@ pub fn generate_coverage_report() {
         ("Running in coverage report mode.\n️").to_string().cyan()
     );
 
-    let source_handlers = subgraph::collect_handlers("subgraph.yaml");
+    let source_handlers = parser::collect_handlers("subgraph.yaml");
 
     println!(
         "{}",

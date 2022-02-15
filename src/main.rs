@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::io::{self, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::Instant;
 
 use clap::ArgMatches;
@@ -25,7 +25,7 @@ mod coverage;
 mod instance;
 mod integration_tests;
 mod logging;
-mod subgraph;
+mod parser;
 mod subgraph_store;
 mod test_suite;
 mod unit_tests;
@@ -43,7 +43,7 @@ fn main() {
 
     print_logo();
 
-    let schema_location = subgraph::get_schema_location("subgraph.yaml");
+    let schema_location = parser::get_schema_location("subgraph.yaml");
     let config = MatchstickConfig::from("matchstick.yaml");
 
     SCHEMA_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&schema_location));
@@ -137,8 +137,9 @@ ___  ___      _       _         _   _      _
     .println()
 }
 
-fn collect_files(path: PathBuf) -> HashMap<String, Vec<PathBuf>> {
+fn collect_files(path: &Path) -> HashMap<String, Vec<PathBuf>> {
     let mut files: HashMap<String, Vec<PathBuf>> = HashMap::new();
+
     let entries = path.read_dir().unwrap_or_else(|err| {
         panic!(
             "{}",
@@ -156,7 +157,7 @@ fn collect_files(path: PathBuf) -> HashMap<String, Vec<PathBuf>> {
         if name.ends_with(".test.ts") {
             files.insert(name.replace(".test.ts", ""), vec![entry.path()]);
         } else if entry.path().is_dir() {
-            let mut sub_files = collect_files(entry.path());
+            let mut sub_files = collect_files(&entry.path());
 
             if !sub_files.is_empty() {
                 files.insert(name.clone(), vec![]);
@@ -171,7 +172,11 @@ fn collect_files(path: PathBuf) -> HashMap<String, Vec<PathBuf>> {
 }
 
 fn get_test_sources(matches: &ArgMatches) -> HashMap<String, Vec<PathBuf>> {
-    let testable = collect_files(PathBuf::from("./tests"));
+    let mut testable: HashMap<String, Vec<PathBuf>> = HashMap::new();
+
+    TESTS_LOCATION.with(|path| {
+        testable = collect_files(&*path.borrow());
+    });
 
     if testable.is_empty() {
         panic!("{}", Log::Critical("No tests have been written yet."));
