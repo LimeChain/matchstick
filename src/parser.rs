@@ -179,7 +179,8 @@ mod parser_tests {
     #[test]
     fn extract_string_or_returns_default_when_key_is_missing() {
         let config_yaml = parse_yaml("mocks/configs/matchstick.yaml");
-        let test_folder = extract_string_or(&config_yaml, "libsFolder", "./node_modules".to_string());
+        let test_folder =
+            extract_string_or(&config_yaml, "libsFolder", "./node_modules".to_string());
 
         assert_eq!(test_folder, "./node_modules".to_string())
     }
