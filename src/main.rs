@@ -1,6 +1,5 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::io::{self, Write};
 use std::path::PathBuf;
 use std::time::Instant;
 
@@ -58,24 +57,6 @@ fn main() {
         .debug();
 
     let outputs = compiler.execute(&matches);
-
-    if outputs.values().any(|output| !output.status.success()) {
-        outputs.values().for_each(|output| {
-            io::stderr()
-                .write_all(&output.stderr)
-                .unwrap_or_else(|err| {
-                    panic!(
-                        "{}",
-                        Log::Critical(format!("Could not write to `stderr`: {}", err)),
-                    );
-                });
-        });
-
-        panic!(
-            "{}",
-            Log::Critical("Please attend to the compilation errors above!"),
-        );
-    }
 
     // Run in coverage mode if coverage flag is present
     if matches.is_present("coverage") {

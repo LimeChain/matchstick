@@ -3,6 +3,7 @@ use colored::Colorize;
 use regex::Regex;
 use std::collections::{HashMap, HashSet};
 use std::fs;
+use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus};
 use std::time::SystemTime;
@@ -83,7 +84,7 @@ impl Compiler {
     }
 
     pub fn execute(&self, matches: &ArgMatches) -> HashMap<String, CompileOutput> {
-        get_test_sources(matches)
+        let outputs = get_test_sources(matches)
             .into_iter()
             .map(|(name, in_files)| {
                 let mut out_file = PathBuf::new();
@@ -108,7 +109,11 @@ impl Compiler {
 
                 (name, output)
             })
-            .collect()
+            .collect();
+
+        verify_outputs(&outputs);
+
+        outputs
     }
 
     fn compile(&self, in_files: Vec<PathBuf>, out_file: PathBuf) -> CompileOutput {
@@ -217,6 +222,26 @@ impl Compiler {
     }
 }
 
+fn verify_outputs(outputs: &HashMap<String, CompileOutput>) {
+    if outputs.values().any(|output| !output.status.success()) {
+        outputs.values().for_each(|output| {
+            io::stderr()
+                .write_all(&output.stderr)
+                .unwrap_or_else(|err| {
+                    panic!(
+                        "{}",
+                        Log::Critical(format!("Could not write to `stderr`: {}", err)),
+                    );
+                });
+        });
+
+        panic!(
+            "{}",
+            Log::Critical("Please attend to the compilation errors above!"),
+        );
+    }
+}
+
 fn get_test_sources(matches: &ArgMatches) -> HashMap<String, Vec<PathBuf>> {
     let mut testable: HashMap<String, Vec<PathBuf>> = HashMap::new();
 
@@ -266,7 +291,7 @@ fn collect_files(path: &Path) -> HashMap<String, Vec<PathBuf>> {
         panic!(
             "{}",
             Log::Critical(format!(
-                "Something went wrong while trying to read {:?}: {}",
+                "Could not get tests from {:?}: {}",
                 path, err,
             ))
         );
