@@ -1,0 +1,208 @@
+use clap::ArgMatches;
+use regex::Regex;
+use std::collections::{HashMap, HashSet};
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::time::SystemTime;
+
+use crate::logging::Log;
+
+/// pub fn get_test_sources(matches: &ArgMatches) -> HashMap<String, Vec<PathBuf>>
+/// Collects all tests sources from the current TESTS_LOCATION
+/// Filters the sources if suite name[s] are passed to the `matchstick` command
+pub fn get_test_sources(matches: &ArgMatches) -> HashMap<String, Vec<PathBuf>> {
+    let mut testable: HashMap<String, Vec<PathBuf>> = HashMap::new();
+
+    crate::TESTS_LOCATION.with(|path| {
+        testable = collect_files(&*path.borrow());
+    });
+
+    if testable.is_empty() {
+        panic!("{}", Log::Critical("No tests have been written yet."));
+    }
+
+    if let Some(vals) = matches.values_of("test_suites") {
+        let sources: HashSet<String> = vals
+            .collect::<Vec<&str>>()
+            .iter()
+            .map(|&s| String::from(s).to_ascii_lowercase())
+            .collect();
+
+        let unrecog_sources: Vec<String> = sources
+            .difference(&testable.keys().cloned().collect())
+            .map(String::from)
+            .collect();
+
+        if !unrecog_sources.is_empty() {
+            panic!(
+                "{}",
+                Log::Critical(format!(
+                    "The following tests could not be found: {}",
+                    unrecog_sources.join(", "),
+                )),
+            );
+        }
+
+        testable
+            .into_iter()
+            .filter(|(name, _)| sources.contains(name))
+            .collect()
+    } else {
+        testable
+    }
+}
+
+/// fn collect_files(path: &Path) -> HashMap<String, Vec<PathBuf>>
+/// Collects all tests sources from the current TESTS_LOCATION
+fn collect_files(path: &Path) -> HashMap<String, Vec<PathBuf>> {
+    let mut files: HashMap<String, Vec<PathBuf>> = HashMap::new();
+
+    let entries = path.read_dir().unwrap_or_else(|err| {
+        panic!(
+            "{}",
+            Log::Critical(format!("Could not get tests from {:?}: {}", path, err,))
+        );
+    });
+
+    for entry in entries {
+        let entry = entry.unwrap_or_else(|err| panic!("{}", Log::Critical(err)));
+        let name = entry.file_name().to_str().unwrap().to_ascii_lowercase();
+
+        if name.ends_with(".test.ts") {
+            files.insert(name.replace(".test.ts", ""), vec![entry.path()]);
+        } else if entry.path().is_dir() {
+            let mut sub_files = collect_files(&entry.path());
+
+            if !sub_files.is_empty() {
+                files.insert(name.clone(), vec![]);
+                for val in sub_files.values_mut() {
+                    files.get_mut(&name).unwrap().append(val);
+                }
+            }
+        }
+    }
+
+    files
+}
+
+/// pub fn is_source_modified(in_files: &[PathBuf], out_file: &Path) -> bool
+/// Checks if any test files or imported files (except node_modules) have been modified
+/// since the last time the wasm files have been compiled
+pub fn is_source_modified(in_files: &[PathBuf], out_file: &Path) -> bool {
+    let mut is_modified = false;
+
+    let wasm_modified = fs::metadata(out_file)
+        .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
+        .modified()
+        .unwrap();
+
+    for file in in_files {
+        let in_file_modified = fs::metadata(file)
+            .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
+            .modified()
+            .unwrap();
+
+        if in_file_modified > wasm_modified {
+            is_modified = true;
+            break;
+        }
+
+        is_modified = are_imports_modified(file, wasm_modified);
+    }
+
+    is_modified
+}
+
+/// fn are_imports_modified(in_file: &Path, wasm_modified: SystemTime) -> bool
+/// Checks if any imported files (except node_modules) have been modified
+/// since the last time the wasm files have been compiled
+fn are_imports_modified(in_file: &Path, wasm_modified: SystemTime) -> bool {
+    let mut is_modified = false;
+    let matches: Vec<String> = get_imports_from_file(in_file);
+
+    for m in matches {
+        let absolute_path = get_import_absolute_path(in_file, &m);
+
+        let import_modified = fs::metadata(absolute_path)
+            .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
+            .modified()
+            .unwrap();
+
+        if import_modified > wasm_modified {
+            is_modified = true;
+            break;
+        }
+    }
+
+    is_modified
+}
+
+/// fn get_import_absolute_path(in_file: &Path, imported_file: &str) -> PathBuf
+/// Collects all imported file paths froma test.ts file an returns their absolute path
+fn get_import_absolute_path(in_file: &Path, imported_file: &str) -> PathBuf {
+    let mut combined_path = PathBuf::from(in_file);
+    combined_path.pop();
+    combined_path.push(format!("{}.ts", imported_file));
+    combined_path
+        .canonicalize()
+        .unwrap_or_else(|_| panic!("{} does not exists!", &imported_file))
+}
+
+/// fn get_imports_from_file(in_file: &Path) -> Vec<String>
+/// Using regex collects all imported file paths (except node_modules) from a test.ts file
+fn get_imports_from_file(in_file: &Path) -> Vec<String> {
+    // Regex should match the file path of each import statement except for node_modules
+    // e.g. should return `../generated/schema` from `import { Gravatar } from '../generated/schema'`
+    // but it will ignore `import { test, log } from 'matchstick-as/assembly/index'`
+    // Handles single and double quotes
+    let imports_regex = Regex::new(r#"[import.*from]\s*["|']\s*([../+|./].*)\s*["|']"#).unwrap();
+    let file_as_str =
+        fs::read_to_string(in_file).unwrap_or_else(|err| panic!("{}", Log::Critical(err)));
+
+    imports_regex
+        .captures_iter(&file_as_str)
+        .map(|m| m[1].to_string())
+        .collect()
+}
+
+#[cfg(test)]
+mod compiler_tests {
+    use crate::compiler::Compiler;
+    use std::fs;
+    use std::path::PathBuf;
+
+    #[test]
+    fn it_gets_project_imports_test() {
+        let in_file = PathBuf::from("mocks/as/mock-includes.test.ts");
+        let includes = get_imports_from_file(&in_file);
+
+        assert_eq!(
+            includes,
+            ["./utils", "../generated/schema", "../../src/gravity"]
+        )
+    }
+
+    #[test]
+    fn it_get_absolute_path_of_imports_test() {
+        let in_file = PathBuf::from("mocks/as/mock-includes.test.ts");
+        let root_path = fs::canonicalize("./").expect("Something went wrong!");
+
+        let result = get_import_absolute_path(&in_file, "./utils");
+        let abs_path = PathBuf::from(format!("{}/mocks/as/utils.ts", root_path.to_str().unwrap()));
+
+        assert_eq!(result, abs_path);
+    }
+
+    #[test]
+    fn it_should_panic_if_imports_does_not_exist_test() {
+        let in_file = PathBuf::from("mocks/as/mock-includes.test.ts");
+        let result =
+            std::panic::catch_unwind(|| get_import_absolute_path(&in_file, "../generated/schema"));
+
+        assert!(result.is_err());
+
+        let err = *(result.unwrap_err().downcast::<String>().unwrap());
+
+        assert!(err.contains("../generated/schema does not exists!"));
+    }
+}
