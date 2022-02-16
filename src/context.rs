@@ -639,6 +639,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     ///     contractAddress: Address, fnName: string, fnSignature: string,
     ///     fnArgs: ethereum.Value[], returnValue: ethereum.Value[], reverts: bool,
     /// ): void
+    #[allow(clippy::too_many_arguments)]
     pub fn mock_function(
         &mut self,
         _gas: &GasCounter,

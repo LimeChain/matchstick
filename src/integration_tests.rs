@@ -10,7 +10,7 @@ mod integration_tests {
     #[serial]
     fn run_all_gravity_demo_subgraph_tests() {
         SCHEMA_LOCATION.with(|path| *path.borrow_mut() = "./mocks/schema.graphql".to_owned());
-        let module = <MatchstickInstance<Chain>>::new("mocks/wasm/gravity.wasm");
+        let module = <MatchstickInstance<Chain>>::new("mocks/wasm/Gravity.wasm");
         let test_suite = TestSuite::from(&module);
 
         let mut failed_tests = 0;
