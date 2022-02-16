@@ -158,7 +158,7 @@ pub fn generate_coverage_report() {
 
             crate::LIBS_LOCATION.with(|path| {
                 convert_command = format!(
-                    "{}{} {} {} {:?}",
+                    "{}/{} {} {} {:?}",
                     &*path.borrow(),
                     "wabt/bin/wasm2wat",
                     file,
