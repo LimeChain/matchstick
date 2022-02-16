@@ -10,7 +10,7 @@ use graph::{
         ethabi::{Address, Token},
         Entity,
     },
-    runtime::{asc_get, asc_new, try_asc_get, AscPtr, HostExportError, gas::GasCounter},
+    runtime::{asc_get, asc_new, gas::GasCounter, try_asc_get, AscPtr, HostExportError},
     semver::Version,
 };
 use graph_chain_ethereum::runtime::{
@@ -131,7 +131,12 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 #[allow(dead_code)]
 impl<C: Blockchain> MatchstickInstanceContext<C> {
     /// function log(level: enum Level (u32), msg: string): void
-    pub fn log(&mut self, _gas: &GasCounter, level: u32, msg: AscPtr<AscString>) -> Result<(), HostExportError> {
+    pub fn log(
+        &mut self,
+        _gas: &GasCounter,
+        level: u32,
+        msg: AscPtr<AscString>,
+    ) -> Result<(), HostExportError> {
         let msg: String = asc_get(&self.wasm_ctx, msg)?;
         let log = Log::new(level, msg);
 
@@ -161,7 +166,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
     /// function _registerTest(name: string, shouldFail: bool, funcIdx: u32): void
     pub fn register_test(
-        &mut self, _gas: &GasCounter,
+        &mut self,
+        _gas: &GasCounter,
         name: AscPtr<AscString>,
         should_fail: AscPtr<bool>,
         func_idx: u32,
@@ -177,7 +183,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     ///     fieldName: string, expectedVal: string,
     /// ): bool
     pub fn assert_field_equals(
-        &mut self, _gas: &GasCounter,
+        &mut self,
+        _gas: &GasCounter,
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
         field_name_ptr: AscPtr<AscString>,
@@ -232,7 +239,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
     /// function _assert.equals(expected: ethereum.Value, actual: ethereum.Value): bool
     pub fn assert_equals(
-        &mut self, _gas: &GasCounter,
+        &mut self,
+        _gas: &GasCounter,
         expected_ptr: u32,
         actual_ptr: u32,
     ) -> Result<bool, HostExportError> {
@@ -254,7 +262,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
     /// function _assert.notInStore(entityType: string, id: string): bool
     pub fn assert_not_in_store(
-        &mut self, _gas: &GasCounter,
+        &mut self,
+        _gas: &GasCounter,
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
     ) -> Result<bool, HostExportError> {
@@ -277,7 +286,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
     /// function store.get(entityType: string, id: string): Entity
     pub fn mock_store_get(
-        &mut self, _gas: &GasCounter,
+        &mut self,
+        _gas: &GasCounter,
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
     ) -> Result<AscPtr<AscEntity>, HostExportError> {
@@ -300,7 +310,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
     /// function store.set(entityType: string, id: string, data: map): void
     pub fn mock_store_set(
-        &mut self, _gas: &GasCounter,
+        &mut self,
+        _gas: &GasCounter,
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
         data_ptr: AscPtr<AscEntity>,
@@ -547,7 +558,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
     /// function store.remove(entityType: string, id: string): void
     pub fn mock_store_remove(
-        &mut self, _gas: &GasCounter,
+        &mut self,
+        _gas: &GasCounter,
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
     ) -> Result<(), HostExportError> {
@@ -574,7 +586,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
     /// function ethereum.call(call: SmartContractCall): Array<Value> | null
     pub fn ethereum_call(
-        &mut self, _gas: &GasCounter,
+        &mut self,
+        _gas: &GasCounter,
         contract_call_ptr: u32,
     ) -> Result<AscEnumArray<EthereumValueKind>, HostExportError> {
         let call: UnresolvedContractCall = asc_get::<_, AscUnresolvedContractCall_0_0_4, _>(
@@ -627,7 +640,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     ///     fnArgs: ethereum.Value[], returnValue: ethereum.Value[], reverts: bool,
     /// ): void
     pub fn mock_function(
-        &mut self, _gas: &GasCounter,
+        &mut self,
+        _gas: &GasCounter,
         contract_address_ptr: u32,
         fn_name_ptr: AscPtr<AscString>,
         fn_signature_ptr: AscPtr<AscString>,
@@ -666,7 +680,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
     /// function dataSource.create(name: string, params: Array<string>): void
     pub fn mock_data_source_create(
-        &mut self, _gas: &GasCounter,
+        &mut self,
+        _gas: &GasCounter,
         _name_ptr: AscPtr<AscString>,
         _params_ptr: AscPtr<Array<AscPtr<AscString>>>,
     ) -> Result<(), HostExportError> {
@@ -678,7 +693,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     ///     context: DataSourceContext,
     /// ): void
     pub fn mock_data_source_create_with_context(
-        &mut self, _gas: &GasCounter,
+        &mut self,
+        _gas: &GasCounter,
         _name_ptr: AscPtr<AscString>,
         _params_ptr: AscPtr<Array<AscPtr<AscString>>>,
         _context_ptr: AscPtr<AscEntity>,
@@ -687,21 +703,27 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     }
 
     /// function dataSource.address(): Address
-    pub fn mock_data_source_address(&mut self, _gas: &GasCounter) -> Result<AscPtr<Uint8Array>, HostExportError> {
+    pub fn mock_data_source_address(
+        &mut self,
+        _gas: &GasCounter,
+    ) -> Result<AscPtr<Uint8Array>, HostExportError> {
         let default_address_val = "0x0000000000000000000000000000000000000000";
         let result = match &self.data_source_return_value.0 {
             Some(value) => {
                 asc_new(&mut self.wasm_ctx, value.as_bytes()).expect("Couldn't create pointer.")
             }
             None => asc_new(&mut self.wasm_ctx, default_address_val.as_bytes())
-                .expect("Couldn't create pointer.")
+                .expect("Couldn't create pointer."),
         };
 
         Ok(result)
     }
 
     /// function dataSource.network(): String
-    pub fn mock_data_source_network(&mut self, _gas: &GasCounter) -> Result<AscPtr<AscString>, HostExportError> {
+    pub fn mock_data_source_network(
+        &mut self,
+        _gas: &GasCounter,
+    ) -> Result<AscPtr<AscString>, HostExportError> {
         let default_network_val = "mainnet";
         let result = match &self.data_source_return_value.1 {
             Some(value) => {
@@ -709,20 +731,23 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                     .expect("Couldn't create pointer.")
             }
             None => AscPtr::alloc_obj(asc_string_from_str(default_network_val), &mut self.wasm_ctx)
-                .expect("Couldn't create pointer.")
+                .expect("Couldn't create pointer."),
         };
 
         Ok(result)
     }
 
     /// function dataSource.context(): DataSourceContext
-    pub fn mock_data_source_context(&mut self, _gas: &GasCounter) -> Result<AscPtr<AscEntity>, HostExportError> {
+    pub fn mock_data_source_context(
+        &mut self,
+        _gas: &GasCounter,
+    ) -> Result<AscPtr<AscEntity>, HostExportError> {
         let default_context_val = Entity::new();
         let result = match &self.data_source_return_value.2 {
             Some(value) => {
                 asc_new(&mut self.wasm_ctx, &Entity::from(value.clone()).sorted()).unwrap()
             }
-            None => asc_new(&mut self.wasm_ctx, &default_context_val.sorted()).unwrap()
+            None => asc_new(&mut self.wasm_ctx, &default_context_val.sorted()).unwrap(),
         };
 
         Ok(result)
@@ -730,7 +755,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
     /// function dataSourceMock.setReturnValues(address: String, network: String, context: DataSourceContext): void
     pub fn set_data_source_return_values(
-        &mut self, _gas: &GasCounter,
+        &mut self,
+        _gas: &GasCounter,
         address_ptr: AscPtr<AscString>,
         network_ptr: AscPtr<AscString>,
         context_ptr: AscPtr<AscEntity>,

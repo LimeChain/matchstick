@@ -1161,7 +1161,7 @@ dependencies = [
  "tonic-build",
  "url",
  "wasmparser",
- "web3 0.15.0-graph (git+https://github.com/graphprotocol/rust-web3?branch=lutter/graph-0.15.0)",
+ "web3",
 ]
 
 [[package]]
@@ -1757,7 +1757,7 @@ dependencies = [
  "serial_test",
  "tokio",
  "wasmtime",
- "web3 0.15.0-graph (git+https://github.com/graphprotocol/rust-web3?rev=8310cf686cbe6c3e7585cb5f755810dbf5e8dc91)",
+ "web3",
 ]
 
 [[package]]
@@ -4022,40 +4022,6 @@ dependencies = [
 name = "web3"
 version = "0.15.0-graph"
 source = "git+https://github.com/graphprotocol/rust-web3?branch=lutter/graph-0.15.0#8310cf686cbe6c3e7585cb5f755810dbf5e8dc91"
-dependencies = [
- "arrayvec 0.5.2",
- "async-native-tls",
- "base64 0.13.0",
- "derive_more",
- "ethabi",
- "ethereum-types",
- "futures 0.3.21",
- "futures-timer",
- "headers",
- "hex",
- "hyper",
- "hyper-proxy",
- "hyper-tls",
- "jsonrpc-core",
- "log",
- "parking_lot",
- "pin-project",
- "rlp",
- "secp256k1",
- "serde",
- "serde_json",
- "soketto",
- "tiny-keccak 2.0.2",
- "tokio",
- "tokio-stream",
- "tokio-util",
- "url",
-]
-
-[[package]]
-name = "web3"
-version = "0.15.0-graph"
-source = "git+https://github.com/graphprotocol/rust-web3?rev=8310cf686cbe6c3e7585cb5f755810dbf5e8dc91#8310cf686cbe6c3e7585cb5f755810dbf5e8dc91"
 dependencies = [
  "arrayvec 0.5.2",
  "async-native-tls",

@@ -24,7 +24,11 @@ impl WritableStore for MockWritableStore {
         unreachable!()
     }
 
-    fn revert_block_operations(&self, _block_ptr_to: BlockPtr, _firehose_cursor: Option<&str>) -> Result<(), StoreError> {
+    fn revert_block_operations(
+        &self,
+        _block_ptr_to: BlockPtr,
+        _firehose_cursor: Option<&str>,
+    ) -> Result<(), StoreError> {
         unreachable!()
     }
 

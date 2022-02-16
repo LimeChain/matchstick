@@ -1,16 +1,13 @@
-
 use std::result::Result;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use graph::components::store::DeploymentId;
-use graph::data::subgraph::*;
-use graph::prelude::StoreError;
-use graph::slog::Logger;
 use graph::{
     blockchain::BlockPtr,
-    components::store::{DeploymentLocator, EnsLookup, SubgraphFork},
-    prelude::{DeploymentHash, SubgraphStore},
+    components::store::{DeploymentId, DeploymentLocator, EnsLookup, SubgraphFork},
+    data::subgraph::*,
+    prelude::{DeploymentHash, StoreError, SubgraphStore},
+    slog::Logger,
 };
 
 use crate::writable_store::MockWritableStore;

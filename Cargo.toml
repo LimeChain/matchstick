@@ -27,4 +27,4 @@ graphql-parser = "0.4.0"
 
 [dev-dependencies]
 serial_test = "0.5.1"
-web3 = { git = "https://github.com/graphprotocol/rust-web3", rev = "8310cf686cbe6c3e7585cb5f755810dbf5e8dc91" }
+web3 = { git = "https://github.com/graphprotocol/rust-web3", branch = "lutter/graph-0.15.0" }

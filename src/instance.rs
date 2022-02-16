@@ -6,7 +6,10 @@ use graph::{
     cheap_clone::CheapClone,
     components::store::{DeploymentId, DeploymentLocator},
     prelude::{DeploymentHash, Duration, HostMetrics, StopwatchMetrics},
-    runtime::{HostExportError, gas::{GasCounter, SaturatingInto}},
+    runtime::{
+        gas::{GasCounter, SaturatingInto},
+        HostExportError,
+    },
     semver::Version,
 };
 use graph_chain_ethereum::Chain;
@@ -245,11 +248,12 @@ impl<C: Blockchain> MatchstickInstance<C> {
                     let stopwatch = &instance.wasm_ctx.host_metrics.stopwatch;
                     let _section =
                         stopwatch.start_section(&format!("host_export_{}", name_for_metrics));
+
                     let ctx = HostFnCtx {
                         logger: instance.wasm_ctx.ctx.logger.cheap_clone(),
                         block_ptr: instance.wasm_ctx.ctx.block_ptr.cheap_clone(),
                         heap: &mut instance.wasm_ctx,
-                        gas: GasCounter::new()
+                        gas: GasCounter::new(),
                     };
                     let ret = (host_fn.func)(ctx, call_ptr).map_err(|e| match e {
                         HostExportError::Deterministic(e) => {

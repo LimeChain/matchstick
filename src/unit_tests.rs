@@ -6,7 +6,7 @@ mod unit_tests {
     use graph::{
         data::store::Value,
         prelude::ethabi::{Address, Token},
-        runtime::{asc_get, AscPtr, AscType, gas::GasCounter},
+        runtime::{asc_get, gas::GasCounter, AscPtr, AscType},
     };
     use graph_chain_ethereum::{runtime::abi::AscUnresolvedContractCall_0_0_4, Chain};
     use graph_runtime_wasm::asc_abi::class::{
@@ -15,9 +15,11 @@ mod unit_tests {
     };
     use serial_test::serial;
 
-    use crate::context::{asc_string_from_str, MatchstickInstanceContext, REVERTS_IDENTIFIER};
-    use crate::logging::{accum, flush, LOGS};
-    use crate::{MatchstickInstance, SCHEMA_LOCATION};
+    use crate::{
+        context::{asc_string_from_str, MatchstickInstanceContext, REVERTS_IDENTIFIER},
+        logging::{accum, flush, LOGS},
+        {MatchstickInstance, SCHEMA_LOCATION},
+    };
 
     fn get_context() -> MatchstickInstanceContext<Chain> {
         SCHEMA_LOCATION.with(|path| *path.borrow_mut() = "./mocks/schema.graphql".to_owned());
@@ -40,7 +42,9 @@ mod unit_tests {
             AscPtr::alloc_obj(message, &mut context.wasm_ctx).expect("Couldn't create pointer.");
 
         accum();
-        context.log(&GasCounter::new(), 3, pointer).expect("Couldn't call log.");
+        context
+            .log(&GasCounter::new(), 3, pointer)
+            .expect("Couldn't call log.");
 
         unsafe {
             assert_eq!(LOGS.len(), 1);
@@ -59,7 +63,9 @@ mod unit_tests {
         let pointer =
             AscPtr::alloc_obj(message, &mut context.wasm_ctx).expect("Couldn't create pointer.");
 
-        context.log(&GasCounter::new(), 0, pointer).expect("Couldn't call log.");
+        context
+            .log(&GasCounter::new(), 0, pointer)
+            .expect("Couldn't call log.");
     }
 
     #[test]
@@ -69,7 +75,9 @@ mod unit_tests {
 
         context.store.insert("type".to_owned(), HashMap::new());
 
-        context.clear_store(&GasCounter::new()).expect("Couldn't call clear_store");
+        context
+            .clear_store(&GasCounter::new())
+            .expect("Couldn't call clear_store");
 
         assert_eq!(context.store.len(), 0);
     }
@@ -129,7 +137,13 @@ mod unit_tests {
         context.store.insert("entity".to_owned(), inner_map);
 
         let result = context
-            .assert_field_equals(&GasCounter::new(), entity_ptr, id_ptr, field_name_ptr, expected_val_ptr)
+            .assert_field_equals(
+                &GasCounter::new(),
+                entity_ptr,
+                id_ptr,
+                field_name_ptr,
+                expected_val_ptr,
+            )
             .expect("Couldn't call assert_field_equals.");
 
         assert!(result);
@@ -154,7 +168,13 @@ mod unit_tests {
             .expect("Couldn't create pointer.");
 
         let mut result = context
-            .assert_field_equals(&GasCounter::new(), entity_ptr, id_ptr, field_name_ptr, expected_val_ptr)
+            .assert_field_equals(
+                &GasCounter::new(),
+                entity_ptr,
+                id_ptr,
+                field_name_ptr,
+                expected_val_ptr,
+            )
             .expect("Couldn't call assert_field_equals.");
 
         assert!(!result);
@@ -162,7 +182,13 @@ mod unit_tests {
         context.store.insert("entity".to_owned(), HashMap::new());
 
         result = context
-            .assert_field_equals(&GasCounter::new(), entity_ptr, id_ptr, field_name_ptr, expected_val_ptr)
+            .assert_field_equals(
+                &GasCounter::new(),
+                entity_ptr,
+                id_ptr,
+                field_name_ptr,
+                expected_val_ptr,
+            )
             .expect("Couldn't call assert_field_equals.");
 
         assert!(!result);
@@ -176,7 +202,13 @@ mod unit_tests {
         context.store.insert("entity".to_owned(), inner_map);
 
         result = context
-            .assert_field_equals(&GasCounter::new(), entity_ptr, id_ptr, field_name_ptr, expected_val_ptr)
+            .assert_field_equals(
+                &GasCounter::new(),
+                entity_ptr,
+                id_ptr,
+                field_name_ptr,
+                expected_val_ptr,
+            )
             .expect("Couldn't call assert_field_equals.");
 
         assert!(!result);
@@ -195,7 +227,13 @@ mod unit_tests {
         context.store.insert("entity".to_owned(), inner_map);
 
         result = context
-            .assert_field_equals(&GasCounter::new(), entity_ptr, id_ptr, field_name_ptr, expected_val_ptr)
+            .assert_field_equals(
+                &GasCounter::new(),
+                entity_ptr,
+                id_ptr,
+                field_name_ptr,
+                expected_val_ptr,
+            )
             .expect("Couldn't call assert_field_equals.");
 
         assert!(!result);
@@ -417,7 +455,12 @@ mod unit_tests {
             AscPtr::alloc_obj(asc_map, &mut context.wasm_ctx).expect("Couldn't create pointer.");
 
         context
-            .mock_store_set(&GasCounter::new(), entity_pointer, id_pointer, asc_map_pointer)
+            .mock_store_set(
+                &GasCounter::new(),
+                entity_pointer,
+                id_pointer,
+                asc_map_pointer,
+            )
             .expect("Couldn't call mock_store_get.");
 
         let inner_map = context
@@ -479,7 +522,12 @@ mod unit_tests {
             AscPtr::alloc_obj(asc_map, &mut context.wasm_ctx).expect("Couldn't create pointer.");
 
         context
-            .mock_store_set(&GasCounter::new(), entity_pointer, id_pointer, asc_map_pointer)
+            .mock_store_set(
+                &GasCounter::new(),
+                entity_pointer,
+                id_pointer,
+                asc_map_pointer,
+            )
             .expect("Couldn't call mock_store_get.");
 
         let inner_map = context
@@ -507,7 +555,9 @@ mod unit_tests {
         let data_pointer =
             AscPtr::alloc_obj(data, &mut context.wasm_ctx).expect("Couldn't create pointer.");
 
-        context.store.insert("GraphAccount".to_owned(), HashMap::new());
+        context
+            .store
+            .insert("GraphAccount".to_owned(), HashMap::new());
         let mut inner_map = context
             .store
             .get("GraphAccount")
@@ -515,7 +565,13 @@ mod unit_tests {
             .clone();
         inner_map.insert("graphAccountId".to_owned(), HashMap::new());
         context.store.insert("GraphAccount".to_owned(), inner_map);
-        context.derived.insert("NameSignalTransaction".to_owned(), ("GraphAccount".to_owned(), vec![("nameSignalTransactions".to_owned(), "signer".to_owned())]));
+        context.derived.insert(
+            "NameSignalTransaction".to_owned(),
+            (
+                "GraphAccount".to_owned(),
+                vec![("nameSignalTransactions".to_owned(), "signer".to_owned())],
+            ),
+        );
 
         let payload = AscEnum::<StoreValueKind> {
             kind: StoreValueKind::String,
@@ -542,7 +598,12 @@ mod unit_tests {
             AscPtr::alloc_obj(asc_map, &mut context.wasm_ctx).expect("Couldn't create pointer.");
 
         context
-            .mock_store_set(&GasCounter::new(), entity_pointer, id_pointer, asc_map_pointer)
+            .mock_store_set(
+                &GasCounter::new(),
+                entity_pointer,
+                id_pointer,
+                asc_map_pointer,
+            )
             .expect("Couldn't call mock_store_get.");
 
         let inner_map = context
@@ -551,7 +612,16 @@ mod unit_tests {
             .expect("Couldn't get inner map.")
             .get("graphAccountId")
             .unwrap();
-        assert_eq!(inner_map.get("nameSignalTransactions").unwrap().clone().as_list().unwrap().len(), 1);
+        assert_eq!(
+            inner_map
+                .get("nameSignalTransactions")
+                .unwrap()
+                .clone()
+                .as_list()
+                .unwrap()
+                .len(),
+            1
+        );
     }
 
     #[test]
@@ -753,7 +823,8 @@ mod unit_tests {
         .expect("Couldn't create pointer.");
 
         context
-            .mock_function(&GasCounter::new(), 
+            .mock_function(
+                &GasCounter::new(),
                 address_pointer.wasm_ptr(),
                 func_name_pointer,
                 func_signature_pointer,
@@ -811,7 +882,8 @@ mod unit_tests {
         .expect("Couldn't create pointer.");
 
         context
-            .mock_function(&GasCounter::new(), 
+            .mock_function(
+                &GasCounter::new(),
                 address_pointer.wasm_ptr(),
                 func_name_pointer,
                 func_signature_pointer,
