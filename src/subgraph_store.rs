@@ -9,7 +9,7 @@ use graph::prelude::StoreError;
 use graph::slog::Logger;
 use graph::{
     blockchain::BlockPtr,
-    components::store::{DeploymentLocator, EnsLookup},
+    components::store::{DeploymentLocator, EnsLookup, SubgraphFork},
     prelude::{DeploymentHash, SubgraphStore},
 };
 
@@ -48,6 +48,14 @@ impl SubgraphStore for MockSubgraphStore {
     }
 
     fn create_subgraph(&self, _name: SubgraphName) -> Result<String, graph::prelude::StoreError> {
+        unreachable!()
+    }
+
+    fn debug_fork(
+        &self,
+        _subgraph_id: &DeploymentHash,
+        _logger: Logger,
+    ) -> Result<Option<Arc<dyn SubgraphFork>>, StoreError> {
         unreachable!()
     }
 

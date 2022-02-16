@@ -1106,7 +1106,7 @@ checksum = "78cc372d058dcf6d5ecd98510e7fbc9e5aec4d21de70f65fea8fecebcd881bd4"
 [[package]]
 name = "graph"
 version = "0.25.0"
-source = "git+https://github.com/georg-getz/graph-node?rev=2551c673a2ee83feb29894010bff87bdfda20691#2551c673a2ee83feb29894010bff87bdfda20691"
+source = "git+https://github.com/graphprotocol/graph-node?rev=9ebd32fd4d16a0ea3d5d3cc9b2c20274499cce0e#9ebd32fd4d16a0ea3d5d3cc9b2c20274499cce0e"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -1167,7 +1167,7 @@ dependencies = [
 [[package]]
 name = "graph-chain-ethereum"
 version = "0.25.0"
-source = "git+https://github.com/georg-getz/graph-node?rev=2551c673a2ee83feb29894010bff87bdfda20691#2551c673a2ee83feb29894010bff87bdfda20691"
+source = "git+https://github.com/graphprotocol/graph-node?rev=9ebd32fd4d16a0ea3d5d3cc9b2c20274499cce0e#9ebd32fd4d16a0ea3d5d3cc9b2c20274499cce0e"
 dependencies = [
  "anyhow",
  "dirs-next",
@@ -1192,7 +1192,7 @@ dependencies = [
 [[package]]
 name = "graph-chain-near"
 version = "0.25.0"
-source = "git+https://github.com/georg-getz/graph-node?rev=2551c673a2ee83feb29894010bff87bdfda20691#2551c673a2ee83feb29894010bff87bdfda20691"
+source = "git+https://github.com/graphprotocol/graph-node?rev=9ebd32fd4d16a0ea3d5d3cc9b2c20274499cce0e#9ebd32fd4d16a0ea3d5d3cc9b2c20274499cce0e"
 dependencies = [
  "base64 0.13.0",
  "graph",
@@ -1207,7 +1207,7 @@ dependencies = [
 [[package]]
 name = "graph-core"
 version = "0.25.0"
-source = "git+https://github.com/georg-getz/graph-node?rev=2551c673a2ee83feb29894010bff87bdfda20691#2551c673a2ee83feb29894010bff87bdfda20691"
+source = "git+https://github.com/graphprotocol/graph-node?rev=9ebd32fd4d16a0ea3d5d3cc9b2c20274499cce0e#9ebd32fd4d16a0ea3d5d3cc9b2c20274499cce0e"
 dependencies = [
  "async-stream",
  "async-trait",
@@ -1231,7 +1231,7 @@ dependencies = [
 [[package]]
 name = "graph-graphql"
 version = "0.25.0"
-source = "git+https://github.com/georg-getz/graph-node?rev=2551c673a2ee83feb29894010bff87bdfda20691#2551c673a2ee83feb29894010bff87bdfda20691"
+source = "git+https://github.com/graphprotocol/graph-node?rev=9ebd32fd4d16a0ea3d5d3cc9b2c20274499cce0e#9ebd32fd4d16a0ea3d5d3cc9b2c20274499cce0e"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -1251,7 +1251,7 @@ dependencies = [
 [[package]]
 name = "graph-mock"
 version = "0.25.0"
-source = "git+https://github.com/georg-getz/graph-node?rev=2551c673a2ee83feb29894010bff87bdfda20691#2551c673a2ee83feb29894010bff87bdfda20691"
+source = "git+https://github.com/graphprotocol/graph-node?rev=9ebd32fd4d16a0ea3d5d3cc9b2c20274499cce0e#9ebd32fd4d16a0ea3d5d3cc9b2c20274499cce0e"
 dependencies = [
  "graph",
 ]
@@ -1259,7 +1259,7 @@ dependencies = [
 [[package]]
 name = "graph-runtime-derive"
 version = "0.25.0"
-source = "git+https://github.com/georg-getz/graph-node?rev=2551c673a2ee83feb29894010bff87bdfda20691#2551c673a2ee83feb29894010bff87bdfda20691"
+source = "git+https://github.com/graphprotocol/graph-node?rev=9ebd32fd4d16a0ea3d5d3cc9b2c20274499cce0e#9ebd32fd4d16a0ea3d5d3cc9b2c20274499cce0e"
 dependencies = [
  "anyhow",
  "quote",
@@ -1269,7 +1269,7 @@ dependencies = [
 [[package]]
 name = "graph-runtime-test"
 version = "0.25.0"
-source = "git+https://github.com/georg-getz/graph-node?rev=2551c673a2ee83feb29894010bff87bdfda20691#2551c673a2ee83feb29894010bff87bdfda20691"
+source = "git+https://github.com/graphprotocol/graph-node?rev=9ebd32fd4d16a0ea3d5d3cc9b2c20274499cce0e#9ebd32fd4d16a0ea3d5d3cc9b2c20274499cce0e"
 dependencies = [
  "graph",
  "graph-chain-ethereum",
@@ -1283,7 +1283,7 @@ dependencies = [
 [[package]]
 name = "graph-runtime-wasm"
 version = "0.25.0"
-source = "git+https://github.com/georg-getz/graph-node?rev=2551c673a2ee83feb29894010bff87bdfda20691#2551c673a2ee83feb29894010bff87bdfda20691"
+source = "git+https://github.com/graphprotocol/graph-node?rev=9ebd32fd4d16a0ea3d5d3cc9b2c20274499cce0e#9ebd32fd4d16a0ea3d5d3cc9b2c20274499cce0e"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1320,11 +1320,13 @@ dependencies = [
 
 [[package]]
 name = "graphql-tools"
-version = "0.0.15"
+version = "0.0.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f47ccdd42a537f86a915d9ca4c5880005183d6eb544b86d9e924511942a00647"
+checksum = "0d254a7bcdefe7c9f111ff1c149272f5db0da2dbd142783db45e402bb79731a0"
 dependencies = [
  "graphql-parser",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
