@@ -23,6 +23,7 @@ pub(crate) static mut LOGS: Vec<String> = vec![];
 pub fn accum() {
     unsafe { ACCUM = true };
 }
+
 /// Flush the accumulated logs by producing a resulting string
 /// and exit the accumulation mode of logging.
 pub fn flush() -> String {
@@ -78,11 +79,11 @@ impl<T: fmt::Display> fmt::Display for Log<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
             Log::Critical(s) => format!("🆘 {}", s).bold().red(),
-            Log::Error(s) => format!("❌ {}", s).bold().red(),
-            Log::Warning(s) => format!("🚧 {}", s).yellow(),
+            Log::Error(s) => format!("𝖷 {}", s).bold().red(),
+            Log::Warning(s) => format!("⚠️  {}", s).yellow(),
             Log::Info(s) => format!("💬 {}", s).italic(),
             Log::Debug(s) => format!("🛠 {}", s).italic().cyan(),
-            Log::Success(s) => format!("✅ {}", s).bold().green(),
+            Log::Success(s) => format!("√ {}", s).bold().green(),
             Log::Default(s) => format!("{}", s).normal(),
         };
         unsafe { write!(f, "{}{}", " ".repeat(INDENT), s) }

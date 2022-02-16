@@ -5,31 +5,26 @@ use std::fs;
 use std::path::PathBuf;
 
 use crate::parser;
+use crate::logging::Log;
 
 /// pub fn generate_coverage_report() -> void
 /// Generates the coverage report
 pub fn generate_coverage_report() {
-    println!(
-        "{}",
-        ("Running in coverage report mode.\n️").to_string().cyan()
-    );
+    Log::Default("\nRunning in coverage report mode.\n️".to_string().cyan()).println();
 
     let source_handlers = parser::collect_handlers("subgraph.yaml");
 
-    println!(
-        "{}",
-        ("Reading generated test modules... 🔎️").to_string().cyan()
-    );
+    Log::Default("Reading generated test modules... 🔎️\n".to_string().cyan()).println();
 
     let wat_files = generate_wat_files();
 
-    println!("{}", ("Generating coverage report 📝\n").to_string().cyan());
+    Log::Default("Generating coverage report 📝\n".to_string().cyan()).println();
 
     let mut global_handlers_count: i32 = 0;
     let mut global_handlers_called: i32 = 0;
 
     for (name, handlers) in source_handlers.into_iter() {
-        println!("Handlers for source '{}':", name);
+        Log::Default(format!("Handlers for source '{}':", name)).println();
 
         let mut called: i32 = 0;
         let all_handlers: i32 = handlers.len().try_into().unwrap();
@@ -52,10 +47,10 @@ pub fn generate_coverage_report() {
             if is_tested {
                 called += 1;
                 let msg = format!("Handler '{}' is tested.", handler);
-                println!("{}", msg.green());
+                Log::Default(msg.green()).println();
             } else {
                 let msg = format!("Handler '{}' is not tested.", handler);
-                println!("{}", msg.red());
+                Log::Default(msg.red()).println();
             }
         }
 
@@ -65,10 +60,10 @@ pub fn generate_coverage_report() {
             percentage = (called as f32 * 100.0) / all_handlers as f32;
         }
 
-        println!(
+        Log::Default(format!(
             "Test coverage: {:.1}% ({}/{} handlers).\n",
             percentage, called, all_handlers
-        );
+        )).println();
 
         global_handlers_count += all_handlers;
         global_handlers_called += called;
@@ -80,10 +75,10 @@ pub fn generate_coverage_report() {
         percentage = (global_handlers_called as f32 * 100.0) / global_handlers_count as f32;
     }
 
-    println!(
+    Log::Default(format!(
         "Global test coverage: {:.1}% ({}/{} handlers).\n",
         percentage, global_handlers_called, global_handlers_count
-    );
+    )).println();
 }
 
 /// fn is_called(wat_content: &str, handler: &str) -> bool

@@ -1,7 +1,7 @@
 use serde_yaml::{Sequence, Value};
 use std::collections::HashMap;
 
-use crate::Log;
+use crate::logging::Log;
 
 /// fn parse_yaml(path: &str) -> Value
 /// Parses the matchstick.yaml file
@@ -21,7 +21,7 @@ pub fn parse_yaml(path: &str) -> Value {
     // Instead it will print a warning and return an empty Value
     serde_yaml::from_str(&yaml_content).unwrap_or_else(|_| {
         Log::Warning(format!(
-            "{} is empty or contains invalid values! Using default configuration.",
+            "{} is empty or contains invalid values!",
             path
         ))
         .println();

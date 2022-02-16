@@ -48,7 +48,7 @@ fn main() {
     TESTS_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&config.tests_path));
     LIBS_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&config.libs_path));
 
-    println!("{}", ("Compiling...\n").to_string().bright_green());
+    Log::Default("Compiling...\n".to_string().bright_green()).println();
 
     let compiler = Compiler::new(PathBuf::from(config.libs_path))
         .export_table()
@@ -83,11 +83,11 @@ fn main() {
 
     let exit_code = run_test_suites(test_suites);
 
-    println!(
+    Log::Default(format!(
         "\n[{}] Program executed in: {:.3?}.",
         Local::now().to_rfc2822(),
         now.elapsed()
-    );
+    )).println();
 
     std::process::exit(exit_code);
 }
@@ -108,14 +108,15 @@ ___  ___      _       _         _   _      _
 }
 
 fn run_test_suites(test_suites: HashMap<String, TestSuite>) -> i32 {
-    println!("{}", ("\nIgniting tests 🔥\n").to_string().bright_red());
+    Log::Default("\nIgniting tests 🔥".bright_red()).println();
 
     let (mut num_passed, mut num_failed) = (0, 0);
     let failed_suites: HashMap<String, HashMap<String, TestResult>> = test_suites
         .into_iter()
         .filter_map(|(name, suite)| {
-            println!("🧪 Running Test Suite: {}", name.bright_blue());
-            println!("{}\n", "=".repeat(50));
+            Log::Default(format!("\n{}",name).bold().bright_blue()).println();
+            Log::Default("-".repeat(50)).println();
+
             logging::add_indent();
             let failed: HashMap<String, TestResult> = suite
                 .tests
@@ -132,7 +133,6 @@ fn run_test_suites(test_suites: HashMap<String, TestSuite>) -> i32 {
                 })
                 .collect();
             logging::clear_indent();
-            println!();
 
             if failed.is_empty() {
                 None
@@ -145,26 +145,23 @@ fn run_test_suites(test_suites: HashMap<String, TestSuite>) -> i32 {
     if num_failed > 0 {
         let failed = format!("{} failed", num_failed).red();
         let passed = format!("{} passed", num_passed).green();
-        let all = format!("{} total", num_failed + num_passed);
+        let total = format!("{} total", num_failed + num_passed);
 
-        println!("Failed tests: \n");
+        Log::Default("\nFailed tests:\n".red()).println();
         for (suite, tests) in failed_suites {
             for (name, result) in tests {
-                println!("{} {}", suite.bright_blue(), name.red());
+                Log::Default(format!("{} {}", suite.bright_blue(), name.red())).println();
 
                 if !result.logs.is_empty() {
-                    println!("{}", result.logs);
+                    Log::Default(result.logs).println();
                 }
             }
         }
 
-        println!("\n{}, {}, {}", failed, passed, all);
+        Log::Default(format!("{}, {}, {}", failed, passed, total)).println();
         1
     } else {
-        println!(
-            "\n{}",
-            format!("All {} tests passed! 😎", num_passed).green()
-        );
+        Log::Default(format!("All {} tests passed! 😎", num_passed).green()).println();
         0
     }
 }
