@@ -52,34 +52,34 @@ impl Compiler {
     }
 
     pub fn export_table(mut self) -> Self {
-        self.options.push("--exportTable".to_string());
+        self.options.push("--exportTable".to_owned());
         self
     }
 
     pub fn optimize(mut self) -> Self {
-        self.options.push("--optimize".to_string());
+        self.options.push("--optimize".to_owned());
         self
     }
 
     pub fn debug(mut self) -> Self {
-        self.options.push("--debug".to_string());
+        self.options.push("--debug".to_owned());
         self
     }
 
     pub fn export_runtime(mut self) -> Self {
-        self.options.push("--exportRuntime".to_string());
+        self.options.push("--exportRuntime".to_owned());
         self
     }
 
     pub fn runtime(mut self, s: &str) -> Self {
-        self.options.push("--runtime".to_string());
-        self.options.push(s.to_string());
+        self.options.push("--runtime".to_owned());
+        self.options.push(s.to_owned());
         self
     }
 
     pub fn enable(mut self, s: &str) -> Self {
-        self.options.push("--enable".to_string());
-        self.options.push(s.to_string());
+        self.options.push("--enable".to_owned());
+        self.options.push(s.to_owned());
         self
     }
 
