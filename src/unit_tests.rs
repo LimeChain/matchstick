@@ -23,7 +23,7 @@ mod unit_tests {
 
     fn get_context() -> MatchstickInstanceContext<Chain> {
         SCHEMA_LOCATION.with(|path| *path.borrow_mut() = "./mocks/schema.graphql".to_owned());
-        let module = <MatchstickInstance<Chain>>::new("./mocks/wasm/gravity.wasm");
+        let module = <MatchstickInstance<Chain>>::new("./mocks/wasm/Gravity.wasm");
 
         module
             .instance_ctx
