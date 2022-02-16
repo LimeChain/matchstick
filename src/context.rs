@@ -10,7 +10,7 @@ use graph::{
         ethabi::{Address, Token},
         Entity,
     },
-    runtime::{asc_get, asc_new, try_asc_get, AscPtr, HostExportError},
+    runtime::{asc_get, asc_new, gas::GasCounter, try_asc_get, AscPtr, HostExportError},
     semver::Version,
 };
 use graph_chain_ethereum::runtime::{
@@ -37,7 +37,7 @@ lazy_static! {
 
     /// The global GraphQL Schema from `schema.graphql`.
     static ref SCHEMA: schema::Document<'static, String> = {
-        let mut s = "".to_string();
+        let mut s = "".to_owned();
         SCHEMA_LOCATION.with(|path| {
             s = std::fs::read_to_string(&*path.borrow()).unwrap_or_else(|err| {
                 panic!(
@@ -89,7 +89,7 @@ pub struct MatchstickInstanceContext<C: Blockchain> {
     ///     signer: GraphAccount!
     /// }
     /// ```
-    derived: HashMap<String, (String, Vec<(String, String)>)>,
+    pub(crate) derived: HashMap<String, (String, Vec<(String, String)>)>,
     /// Holds the mocked return values of `dataSource.address()`, `dataSource.network()` and `dataSource.context()` in that order
     data_source_return_value: (
         Option<String>,
@@ -131,7 +131,12 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 #[allow(dead_code)]
 impl<C: Blockchain> MatchstickInstanceContext<C> {
     /// function log(level: enum Level (u32), msg: string): void
-    pub fn log(&mut self, level: u32, msg: AscPtr<AscString>) -> Result<(), HostExportError> {
+    pub fn log(
+        &mut self,
+        _gas: &GasCounter,
+        level: u32,
+        msg: AscPtr<AscString>,
+    ) -> Result<(), HostExportError> {
         let msg: String = asc_get(&self.wasm_ctx, msg)?;
         let log = Log::new(level, msg);
 
@@ -145,7 +150,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     }
 
     /// function logStore(): void
-    pub fn log_store(&mut self) -> Result<(), HostExportError> {
+    pub fn log_store(&mut self, _gas: &GasCounter) -> Result<(), HostExportError> {
         Log::Debug(
             to_string_pretty(&self.store).unwrap_or_else(|err| panic!("{}", Log::Critical(err))),
         )
@@ -154,7 +159,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     }
 
     /// function clearStore(): void
-    pub fn clear_store(&mut self) -> Result<(), HostExportError> {
+    pub fn clear_store(&mut self, _gas: &GasCounter) -> Result<(), HostExportError> {
         self.store.clear();
         Ok(())
     }
@@ -162,6 +167,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     /// function _registerTest(name: string, shouldFail: bool, funcIdx: u32): void
     pub fn register_test(
         &mut self,
+        _gas: &GasCounter,
         name: AscPtr<AscString>,
         should_fail: AscPtr<bool>,
         func_idx: u32,
@@ -178,6 +184,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     /// ): bool
     pub fn assert_field_equals(
         &mut self,
+        _gas: &GasCounter,
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
         field_name_ptr: AscPtr<AscString>,
@@ -233,6 +240,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     /// function _assert.equals(expected: ethereum.Value, actual: ethereum.Value): bool
     pub fn assert_equals(
         &mut self,
+        _gas: &GasCounter,
         expected_ptr: u32,
         actual_ptr: u32,
     ) -> Result<bool, HostExportError> {
@@ -255,6 +263,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     /// function _assert.notInStore(entityType: string, id: string): bool
     pub fn assert_not_in_store(
         &mut self,
+        _gas: &GasCounter,
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
     ) -> Result<bool, HostExportError> {
@@ -278,6 +287,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     /// function store.get(entityType: string, id: string): Entity
     pub fn mock_store_get(
         &mut self,
+        _gas: &GasCounter,
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
     ) -> Result<AscPtr<AscEntity>, HostExportError> {
@@ -301,6 +311,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     /// function store.set(entityType: string, id: string, data: map): void
     pub fn mock_store_set(
         &mut self,
+        _gas: &GasCounter,
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
         data_ptr: AscPtr<AscEntity>,
@@ -548,6 +559,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     /// function store.remove(entityType: string, id: string): void
     pub fn mock_store_remove(
         &mut self,
+        _gas: &GasCounter,
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
     ) -> Result<(), HostExportError> {
@@ -567,14 +579,15 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 &entity_type, &id,
             );
             Log::Error(msg).println();
-            return Ok(());
         }
+
         Ok(())
     }
 
     /// function ethereum.call(call: SmartContractCall): Array<Value> | null
     pub fn ethereum_call(
         &mut self,
+        _gas: &GasCounter,
         contract_call_ptr: u32,
     ) -> Result<AscEnumArray<EthereumValueKind>, HostExportError> {
         let call: UnresolvedContractCall = asc_get::<_, AscUnresolvedContractCall_0_0_4, _>(
@@ -626,8 +639,10 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     ///     contractAddress: Address, fnName: string, fnSignature: string,
     ///     fnArgs: ethereum.Value[], returnValue: ethereum.Value[], reverts: bool,
     /// ): void
+    #[allow(clippy::too_many_arguments)]
     pub fn mock_function(
         &mut self,
+        _gas: &GasCounter,
         contract_address_ptr: u32,
         fn_name_ptr: AscPtr<AscString>,
         fn_signature_ptr: AscPtr<AscString>,
@@ -667,6 +682,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     /// function dataSource.create(name: string, params: Array<string>): void
     pub fn mock_data_source_create(
         &mut self,
+        _gas: &GasCounter,
         _name_ptr: AscPtr<AscString>,
         _params_ptr: AscPtr<Array<AscPtr<AscString>>>,
     ) -> Result<(), HostExportError> {
@@ -679,6 +695,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     /// ): void
     pub fn mock_data_source_create_with_context(
         &mut self,
+        _gas: &GasCounter,
         _name_ptr: AscPtr<AscString>,
         _params_ptr: AscPtr<Array<AscPtr<AscString>>>,
         _context_ptr: AscPtr<AscEntity>,
@@ -687,7 +704,10 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     }
 
     /// function dataSource.address(): Address
-    pub fn mock_data_source_address(&mut self) -> Result<AscPtr<Uint8Array>, HostExportError> {
+    pub fn mock_data_source_address(
+        &mut self,
+        _gas: &GasCounter,
+    ) -> Result<AscPtr<Uint8Array>, HostExportError> {
         let default_address_val = "0x0000000000000000000000000000000000000000";
         let result = match &self.data_source_return_value.0 {
             Some(value) => {
@@ -701,7 +721,10 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     }
 
     /// function dataSource.network(): String
-    pub fn mock_data_source_network(&mut self) -> Result<AscPtr<AscString>, HostExportError> {
+    pub fn mock_data_source_network(
+        &mut self,
+        _gas: &GasCounter,
+    ) -> Result<AscPtr<AscString>, HostExportError> {
         let default_network_val = "mainnet";
         let result = match &self.data_source_return_value.1 {
             Some(value) => {
@@ -716,7 +739,10 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     }
 
     /// function dataSource.context(): DataSourceContext
-    pub fn mock_data_source_context(&mut self) -> Result<AscPtr<AscEntity>, HostExportError> {
+    pub fn mock_data_source_context(
+        &mut self,
+        _gas: &GasCounter,
+    ) -> Result<AscPtr<AscEntity>, HostExportError> {
         let default_context_val = Entity::new();
         let result = match &self.data_source_return_value.2 {
             Some(value) => {
@@ -731,6 +757,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     /// function dataSourceMock.setReturnValues(address: String, network: String, context: DataSourceContext): void
     pub fn set_data_source_return_values(
         &mut self,
+        _gas: &GasCounter,
         address_ptr: AscPtr<AscString>,
         network_ptr: AscPtr<AscString>,
         context_ptr: AscPtr<AscEntity>,

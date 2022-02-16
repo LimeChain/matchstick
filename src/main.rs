@@ -30,9 +30,9 @@ mod test_suite;
 mod unit_tests;
 mod writable_store;
 
-thread_local!(pub(crate) static SCHEMA_LOCATION: RefCell<String> = RefCell::new("".to_string()));
-thread_local!(pub(crate) static TESTS_LOCATION: RefCell<String> = RefCell::new("".to_string()));
-thread_local!(pub(crate) static LIBS_LOCATION: RefCell<String> = RefCell::new("".to_string()));
+thread_local!(pub(crate) static SCHEMA_LOCATION: RefCell<String> = RefCell::new("".to_owned()));
+thread_local!(pub(crate) static TESTS_LOCATION: RefCell<String> = RefCell::new("".to_owned()));
+thread_local!(pub(crate) static LIBS_LOCATION: RefCell<String> = RefCell::new("".to_owned()));
 
 /// Returns the names and `fs::DirEntry`'s of the testable sources under the selected tests directory.
 fn get_testable() -> HashMap<String, fs::DirEntry> {
@@ -126,7 +126,7 @@ ___  ___      _       _         _   _      _
 | |  | | (_| | || (__| | | \__ \ |_| | (__|   <
 \_|  |_/\__,_|\__\___|_| |_|___/\__|_|\___|_|\_\
                                                 "#)
-        .to_string()
+        .to_owned()
         .bright_red()
     );
 
@@ -145,7 +145,7 @@ ___  ___      _       _         _   _      _
     let file_location = schema
         .get("file")
         .expect("Couldn't get schema file location");
-    SCHEMA_LOCATION.with(|path| *path.borrow_mut() = file_location.as_str().unwrap().to_string());
+    SCHEMA_LOCATION.with(|path| *path.borrow_mut() = file_location.as_str().unwrap().to_owned());
 
     let config = config::parse();
 
@@ -185,7 +185,7 @@ ___  ___      _       _         _   _      _
         }
     };
 
-    println!("{}", ("Compiling...\n").to_string().bright_green());
+    println!("{}", ("Compiling...\n").to_owned().bright_green());
     let compiler = Compiler::new(PathBuf::from(config.libs_path))
         .export_table()
         .runtime("stub")
@@ -224,7 +224,7 @@ ___  ___      _       _         _   _      _
     if coverage {
         println!(
             "{}",
-            ("Running in coverage report mode.\n️").to_string().cyan()
+            ("Running in coverage report mode.\n️").to_owned().cyan()
         );
         generate_coverage_report();
         return;
@@ -242,7 +242,7 @@ ___  ___      _       _         _   _      _
         .map(|(key, val)| (key.clone(), TestSuite::from(val)))
         .collect();
 
-    println!("{}", ("\nIgniting tests 🔥\n").to_string().bright_red());
+    println!("{}", ("\nIgniting tests 🔥\n").to_owned().bright_red());
 
     let (mut num_passed, mut num_failed) = (0, 0);
     let failed_suites: HashMap<String, HashMap<String, TestResult>> = test_suites

@@ -49,39 +49,39 @@ impl Compiler {
     }
 
     pub fn export_table(mut self) -> Self {
-        self.options.push("--exportTable".to_string());
+        self.options.push("--exportTable".to_owned());
         self
     }
 
     pub fn optimize(mut self) -> Self {
-        self.options.push("--optimize".to_string());
+        self.options.push("--optimize".to_owned());
         self
     }
 
     pub fn debug(mut self) -> Self {
-        self.options.push("--debug".to_string());
+        self.options.push("--debug".to_owned());
         self
     }
 
     pub fn export_runtime(mut self) -> Self {
-        self.options.push("--exportRuntime".to_string());
+        self.options.push("--exportRuntime".to_owned());
         self
     }
 
     pub fn runtime(mut self, s: &str) -> Self {
-        self.options.push("--runtime".to_string());
-        self.options.push(s.to_string());
+        self.options.push("--runtime".to_owned());
+        self.options.push(s.to_owned());
         self
     }
 
     pub fn enable(mut self, s: &str) -> Self {
-        self.options.push("--enable".to_string());
-        self.options.push(s.to_string());
+        self.options.push("--enable".to_owned());
+        self.options.push(s.to_owned());
         self
     }
 
     fn get_paths_for(name: String, entry: fs::DirEntry) -> (Vec<String>, String) {
-        let mut bin_location = "".to_string();
+        let mut bin_location = "".to_owned();
 
         crate::TESTS_LOCATION.with(|path| {
             bin_location = format!("{}/.bin", &*path.borrow());
@@ -101,12 +101,12 @@ impl Compiler {
                         .path()
                         .to_str()
                         .unwrap()
-                        .to_string()
+                        .to_owned()
                 })
                 .filter(|path| path.ends_with(".test.ts"))
                 .collect()
         } else {
-            vec![entry.path().to_str().unwrap().to_string()]
+            vec![entry.path().to_str().unwrap().to_owned()]
         };
 
         fs::create_dir_all(&bin_location).unwrap_or_else(|err| {
@@ -236,7 +236,7 @@ impl Compiler {
 
         imports_regex
             .captures_iter(&file_as_str)
-            .map(|m| m[1].to_string())
+            .map(|m| m[1].to_owned())
             .collect()
     }
 
