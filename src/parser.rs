@@ -20,11 +20,7 @@ pub fn parse_yaml(path: &str) -> Value {
     // If yaml exists but is empty from_str will panic with `EndOfStream`
     // Instead it will print a warning and return an empty Value
     serde_yaml::from_str(&yaml_content).unwrap_or_else(|_| {
-        Log::Warning(format!(
-            "{} is empty or contains invalid values!",
-            path
-        ))
-        .println();
+        Log::Warning(format!("{} is empty or contains invalid values!", path)).println();
         Value::String("".to_string())
     })
 }

@@ -87,7 +87,8 @@ fn main() {
         "\n[{}] Program executed in: {:.3?}.",
         Local::now().to_rfc2822(),
         now.elapsed()
-    )).println();
+    ))
+    .println();
 
     std::process::exit(exit_code);
 }
@@ -114,7 +115,7 @@ fn run_test_suites(test_suites: HashMap<String, TestSuite>) -> i32 {
     let failed_suites: HashMap<String, HashMap<String, TestResult>> = test_suites
         .into_iter()
         .filter_map(|(name, suite)| {
-            Log::Default(format!("\n{}",name).bold().bright_blue()).println();
+            Log::Default(format!("\n{}", name).bold().bright_blue()).println();
             Log::Default("-".repeat(50)).println();
 
             logging::add_indent();

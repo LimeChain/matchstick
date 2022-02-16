@@ -4,8 +4,8 @@ use run_script::{run_or_exit, ScriptOptions};
 use std::fs;
 use std::path::PathBuf;
 
-use crate::parser;
 use crate::logging::Log;
+use crate::parser;
 
 /// pub fn generate_coverage_report() -> void
 /// Generates the coverage report
@@ -63,7 +63,8 @@ pub fn generate_coverage_report() {
         Log::Default(format!(
             "Test coverage: {:.1}% ({}/{} handlers).\n",
             percentage, called, all_handlers
-        )).println();
+        ))
+        .println();
 
         global_handlers_count += all_handlers;
         global_handlers_called += called;
@@ -78,7 +79,8 @@ pub fn generate_coverage_report() {
     Log::Default(format!(
         "Global test coverage: {:.1}% ({}/{} handlers).\n",
         percentage, global_handlers_called, global_handlers_count
-    )).println();
+    ))
+    .println();
 }
 
 /// fn is_called(wat_content: &str, handler: &str) -> bool
