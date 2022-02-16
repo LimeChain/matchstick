@@ -48,7 +48,7 @@ fn main() {
     TESTS_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&config.tests_path));
     LIBS_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&config.libs_path));
 
-    Log::Default("Compiling...\n".to_string().bright_green()).println();
+    Log::Default("Compiling...\n".to_owned().bright_green()).println();
 
     let compiler = Compiler::new(PathBuf::from(config.libs_path))
         .export_table()

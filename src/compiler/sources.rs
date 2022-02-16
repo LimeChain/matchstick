@@ -161,13 +161,13 @@ fn get_imports_from_file(in_file: &Path) -> Vec<String> {
 
     imports_regex
         .captures_iter(&file_as_str)
-        .map(|m| m[1].to_string())
+        .map(|m| m[1].to_owned())
         .collect()
 }
 
 #[cfg(test)]
 mod compiler_tests {
-    use crate::compiler::Compiler;
+    use super::*;
     use std::fs;
     use std::path::PathBuf;
 

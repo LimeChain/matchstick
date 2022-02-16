@@ -10,15 +10,15 @@ use crate::parser;
 /// pub fn generate_coverage_report() -> void
 /// Generates the coverage report
 pub fn generate_coverage_report() {
-    Log::Default("\nRunning in coverage report mode.\n️".to_string().cyan()).println();
+    Log::Default("\nRunning in coverage report mode.\n️".to_owned().cyan()).println();
 
     let source_handlers = parser::collect_handlers("subgraph.yaml");
 
-    Log::Default("Reading generated test modules... 🔎️\n".to_string().cyan()).println();
+    Log::Default("Reading generated test modules... 🔎️\n".to_owned().cyan()).println();
 
     let wat_files = generate_wat_files();
 
-    Log::Default("Generating coverage report 📝\n".to_string().cyan()).println();
+    Log::Default("Generating coverage report 📝\n".to_owned().cyan()).println();
 
     let mut global_handlers_count: i32 = 0;
     let mut global_handlers_called: i32 = 0;
@@ -141,7 +141,7 @@ fn generate_wat_files() -> Vec<String> {
                 run_or_exit(&convert_command, &args, &options);
             });
 
-            destination.to_str().unwrap().to_string()
+            destination.to_str().unwrap().to_owned()
         })
         .collect()
 }

@@ -21,7 +21,7 @@ pub fn parse_yaml(path: &str) -> Value {
     // Instead it will print a warning and return an empty Value
     serde_yaml::from_str(&yaml_content).unwrap_or_else(|_| {
         Log::Warning(format!("{} is empty or contains invalid values!", path)).println();
-        Value::String("".to_string())
+        Value::String("".to_owned())
     })
 }
 
@@ -34,7 +34,7 @@ fn extract_string(value: &Value, key: &str) -> String {
         .unwrap_or_else(|| panic!("Couldn't find key `{}` in subgraph.yaml", key))
         .as_str()
         .unwrap_or_else(|| panic!("Couldn't parse `{}` as str", key))
-        .to_string()
+        .to_owned()
 }
 
 /// fn extract_string_or(value: &Value, key: &str, default: String) -> String
@@ -46,7 +46,7 @@ pub fn extract_string_or(value: &Value, key: &str, default: String) -> String {
         .unwrap_or(&Value::String(default.clone()))
         .as_str()
         .unwrap_or(&default)
-        .to_string()
+        .to_owned()
 }
 
 /// fn extract_vec(value &Value, key: &str) -> Sequence
@@ -133,14 +133,14 @@ mod parser_tests {
     fn parse_yaml_returns_empty_string_value_if_config_is_empty() {
         let yaml = parse_yaml("mocks/configs/matchstick_empty.yaml");
 
-        assert_eq!(yaml, Value::String("".to_string()))
+        assert_eq!(yaml, Value::String("".to_owned()))
     }
 
     #[test]
     fn get_schema_location_returns_schema_location() {
         let schema_location = get_schema_location("mocks/subgraphs/subgraph.yaml");
 
-        assert_eq!(schema_location, "./schema.graphql".to_string())
+        assert_eq!(schema_location, "./schema.graphql".to_owned())
     }
 
     #[test]
@@ -153,18 +153,18 @@ mod parser_tests {
     #[test]
     fn extract_string_or_returns_value_as_string() {
         let config_yaml = parse_yaml("mocks/configs/matchstick.yaml");
-        let test_folder = extract_string_or(&config_yaml, "testsFolder", "./tests".to_string());
+        let test_folder = extract_string_or(&config_yaml, "testsFolder", "./tests".to_owned());
 
-        assert_eq!(test_folder, "./specs".to_string())
+        assert_eq!(test_folder, "./specs".to_owned())
     }
 
     #[test]
     fn extract_string_or_returns_default_when_key_is_missing() {
         let config_yaml = parse_yaml("mocks/configs/matchstick.yaml");
         let test_folder =
-            extract_string_or(&config_yaml, "libsFolder", "./node_modules".to_string());
+            extract_string_or(&config_yaml, "libsFolder", "./node_modules".to_owned());
 
-        assert_eq!(test_folder, "./node_modules".to_string())
+        assert_eq!(test_folder, "./node_modules".to_owned())
     }
 
     #[test]
@@ -172,15 +172,15 @@ mod parser_tests {
         let handlers = collect_handlers("mocks/subgraphs/subgraph.yaml");
         let mut expected: HashMap<String, Vec<String>> = HashMap::new();
         expected.insert(
-            "Gravity".to_string(),
+            "Gravity".to_owned(),
             vec![
-                "handleNewGravatar".to_string(),
-                "handleCreateGravatar".to_string(),
+                "handleNewGravatar".to_owned(),
+                "handleCreateGravatar".to_owned(),
             ],
         );
         expected.insert(
-            "GraphTokenLockWallet".to_string(),
-            vec!["handleTokensReleased".to_string()],
+            "GraphTokenLockWallet".to_owned(),
+            vec!["handleTokensReleased".to_owned()],
         );
 
         assert_eq!(handlers, expected)
@@ -190,7 +190,7 @@ mod parser_tests {
     fn collect_handlers_returns_empty_vec_if_no_handlers() {
         let handlers = collect_handlers("mocks/subgraphs/subgraph_no_handlers.yaml");
         let mut expected: HashMap<String, Vec<String>> = HashMap::new();
-        expected.insert("Gravity".to_string(), vec![]);
+        expected.insert("Gravity".to_owned(), vec![]);
 
         assert_eq!(handlers, expected)
     }

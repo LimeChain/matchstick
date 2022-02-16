@@ -27,7 +27,7 @@ mod integration_tests {
     #[test]
     #[serial]
     fn run_all_token_lock_wallet_demo_subgraph_tests() {
-        SCHEMA_LOCATION.with(|path| *path.borrow_mut() = "./mocks/schema.graphql".to_owned());
+        SCHEMA_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from("./mocks/schema.graphql"));
         let module = <MatchstickInstance<Chain>>::new("mocks/wasm/token-lock-wallet.wasm");
         let test_suite = TestSuite::from(&module);
 

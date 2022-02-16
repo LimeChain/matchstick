@@ -12,8 +12,8 @@ impl MatchstickConfig {
     /// Creates a MatchstickConfig with default values
     fn new() -> MatchstickConfig {
         MatchstickConfig {
-            libs_path: "./node_modules".to_string(),
-            tests_path: "./tests".to_string(),
+            libs_path: "./node_modules".to_owned(),
+            tests_path: "./tests".to_owned(),
         }
     }
 
@@ -45,14 +45,14 @@ mod config_tests {
     fn config_from_returns_default_values_if_no_config() {
         let config = MatchstickConfig::from("mocks/configs/no_config.yaml");
 
-        assert_eq!(config.libs_path, "./node_modules".to_string());
-        assert_eq!(config.tests_path, "./tests".to_string());
+        assert_eq!(config.libs_path, "./node_modules".to_owned());
+        assert_eq!(config.tests_path, "./tests".to_owned());
     }
 
     #[test]
     fn config_from_returns_custom_folder_from_config() {
         let config = MatchstickConfig::from("mocks/configs/matchstick.yaml");
 
-        assert_eq!(config.tests_path, "./specs".to_string());
+        assert_eq!(config.tests_path, "./specs".to_owned());
     }
 }
