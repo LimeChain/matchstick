@@ -5,13 +5,13 @@ authors = ["LimeChain <limechain.tech>"]
 edition = "2021"
 
 [dependencies]
-graph = { git = "https://github.com/graphprotocol/graph-node", rev = "4d4947e2e0a4a662c2001fa49662c8d0078d4585" }
-graph-core = { git = "https://github.com/graphprotocol/graph-node", rev = "4d4947e2e0a4a662c2001fa49662c8d0078d4585" }
-graph-chain-ethereum = { git = "https://github.com/graphprotocol/graph-node", rev = "4d4947e2e0a4a662c2001fa49662c8d0078d4585" }
-graph-graphql = { git = "https://github.com/graphprotocol/graph-node", rev = "4d4947e2e0a4a662c2001fa49662c8d0078d4585" }
-graph-mock = { git = "https://github.com/graphprotocol/graph-node", rev = "4d4947e2e0a4a662c2001fa49662c8d0078d4585" }
-graph-runtime-test = { git = "https://github.com/graphprotocol/graph-node", rev = "4d4947e2e0a4a662c2001fa49662c8d0078d4585" }
-graph-runtime-wasm = { git = "https://github.com/graphprotocol/graph-node", rev = "4d4947e2e0a4a662c2001fa49662c8d0078d4585" }
+graph = { git = "https://github.com/georg-getz/graph-node", rev = "2551c673a2ee83feb29894010bff87bdfda20691" }
+graph-core = { git = "https://github.com/georg-getz/graph-node", rev = "2551c673a2ee83feb29894010bff87bdfda20691" }
+graph-chain-ethereum = { git = "https://github.com/georg-getz/graph-node", rev = "2551c673a2ee83feb29894010bff87bdfda20691" }
+graph-graphql = { git = "https://github.com/georg-getz/graph-node", rev = "2551c673a2ee83feb29894010bff87bdfda20691" }
+graph-mock = { git = "https://github.com/georg-getz/graph-node", rev = "2551c673a2ee83feb29894010bff87bdfda20691" }
+graph-runtime-test = { git = "https://github.com/georg-getz/graph-node", rev = "2551c673a2ee83feb29894010bff87bdfda20691" }
+graph-runtime-wasm = { git = "https://github.com/georg-getz/graph-node", rev = "2551c673a2ee83feb29894010bff87bdfda20691" }
 wasmtime = "0.27.0"
 tokio = "1.15.0"
 anyhow = "1.0"
@@ -27,4 +27,4 @@ graphql-parser = "0.4.0"
 
 [dev-dependencies]
 serial_test = "0.5.1"
-web3 = { git = "https://github.com/graphprotocol/rust-web3", branch = "lutter/graph-0.15.0" }
+web3 = { git = "https://github.com/graphprotocol/rust-web3", rev = "8310cf686cbe6c3e7585cb5f755810dbf5e8dc91" }

@@ -9,12 +9,29 @@ mod integration_tests {
     #[test]
     #[serial]
     fn run_all_gravity_demo_subgraph_tests() {
-        SCHEMA_LOCATION.with(|path| *path.borrow_mut() = "./mocks/schema.graphql".to_string());
-        let module = <MatchstickInstance<Chain>>::new("mocks/wasm/Gravity.wasm");
+        SCHEMA_LOCATION.with(|path| *path.borrow_mut() = "./mocks/schema.graphql".to_owned());
+        let module = <MatchstickInstance<Chain>>::new("mocks/wasm/gravity.wasm");
         let test_suite = TestSuite::from(&module);
 
         let mut failed_tests = 0;
-        for test in &test_suite.tests {
+        for test in test_suite.tests {
+            if !test.run().passed {
+                failed_tests += 1;
+            }
+        }
+
+        assert_eq!(failed_tests, 0);
+    }
+
+    #[test]
+    #[serial]
+    fn run_all_token_lock_wallet_demo_subgraph_tests() {
+        SCHEMA_LOCATION.with(|path| *path.borrow_mut() = "./mocks/schema.graphql".to_owned());
+        let module = <MatchstickInstance<Chain>>::new("mocks/wasm/token-lock-wallet.wasm");
+        let test_suite = TestSuite::from(&module);
+
+        let mut failed_tests = 0;
+        for test in test_suite.tests {
             if !test.run().passed {
                 failed_tests += 1;
             }

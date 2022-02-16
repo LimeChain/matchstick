@@ -144,7 +144,7 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
             .meta_tests
         {
             suite.tests.push(Test::new(
-                name.to_string(),
+                name.to_owned(),
                 *should_fail,
                 table
                     .get(*func_idx)

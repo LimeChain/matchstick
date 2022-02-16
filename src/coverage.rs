@@ -57,10 +57,10 @@ fn parse(v: &Value) -> String {
 }
 
 pub fn generate_coverage_report() {
-    let mut tests_location = "".to_string();
+    let mut tests_location = "".to_owned();
 
     crate::TESTS_LOCATION.with(|path| {
-        tests_location = (&*path.borrow()).to_string();
+        tests_location = (&*path.borrow()).to_owned();
     });
 
     let subgraph_yaml_contents = fs::read_to_string("subgraph.yaml")
@@ -138,10 +138,10 @@ pub fn generate_coverage_report() {
 
     println!(
         "{}",
-        ("Reading generated test modules... 🔎️").to_string().cyan()
+        ("Reading generated test modules... 🔎️").to_owned().cyan()
     );
 
-    println!("{}", ("Generating coverage report 📝\n").to_string().cyan());
+    println!("{}", ("Generating coverage report 📝\n").to_owned().cyan());
 
     let mut global_handlers_count: i32 = 0;
     let mut global_handlers_called: i32 = 0;
@@ -154,7 +154,7 @@ pub fn generate_coverage_report() {
             let mut destination = PathBuf::from(&file);
             destination.set_extension("wat");
 
-            let mut convert_command = "".to_string();
+            let mut convert_command = "".to_owned();
 
             crate::LIBS_LOCATION.with(|path| {
                 convert_command = format!(
@@ -172,7 +172,7 @@ pub fn generate_coverage_report() {
 
             run_or_exit(&convert_command, &args, &options);
 
-            destination.to_str().unwrap().to_string()
+            destination.to_str().unwrap().to_owned()
         })
         .collect();
 
