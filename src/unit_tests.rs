@@ -2,6 +2,7 @@
 mod unit_tests {
     use std::collections::HashMap;
     use std::str::FromStr;
+    use std::sync::Once;
 
     use graph::{
         data::store::Value,
@@ -21,8 +22,13 @@ mod unit_tests {
         {MatchstickInstance, SCHEMA_LOCATION},
     };
 
+    static GET_SCHEMA: Once = Once::new();
+    // static MODULE: 
+
     fn get_context() -> MatchstickInstanceContext<Chain> {
-        SCHEMA_LOCATION.with(|path| *path.borrow_mut() = "./mocks/schema.graphql".to_owned());
+        GET_SCHEMA.call_once(|| {
+            SCHEMA_LOCATION.with(|path| *path.borrow_mut() = "./mocks/schema.graphql".to_owned());
+        });        
         let module = <MatchstickInstance<Chain>>::new("./mocks/wasm/gravity.wasm");
 
         module
