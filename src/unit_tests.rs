@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod unit_tests {
     use std::collections::HashMap;
+    use std::path::PathBuf;
     use std::str::FromStr;
     use std::sync::Once;
 
@@ -23,11 +24,10 @@ mod unit_tests {
     };
 
     static GET_SCHEMA: Once = Once::new();
-    // static MODULE: 
 
     fn get_context() -> MatchstickInstanceContext<Chain> {
         GET_SCHEMA.call_once(|| {
-            SCHEMA_LOCATION.with(|path| *path.borrow_mut() = "./mocks/schema.graphql".to_owned());
+            SCHEMA_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from("./mocks/schema.graphql"));
         });        
         let module = <MatchstickInstance<Chain>>::new("./mocks/wasm/gravity.wasm");
 

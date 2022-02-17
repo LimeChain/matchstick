@@ -2,6 +2,7 @@
 mod integration_tests {
     use graph_chain_ethereum::Chain;
     use serial_test::serial;
+    use std::path::PathBuf;
 
     use crate::test_suite::TestSuite;
     use crate::{MatchstickInstance, SCHEMA_LOCATION};
@@ -9,7 +10,7 @@ mod integration_tests {
     #[test]
     #[serial]
     fn run_all_gravity_demo_subgraph_tests() {
-        SCHEMA_LOCATION.with(|path| *path.borrow_mut() = "./mocks/schema.graphql".to_owned());
+        SCHEMA_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from("./mocks/schema.graphql"));
         let module = <MatchstickInstance<Chain>>::new("mocks/wasm/gravity.wasm");
         let test_suite = TestSuite::from(&module);
 
@@ -26,7 +27,7 @@ mod integration_tests {
     #[test]
     #[serial]
     fn run_all_token_lock_wallet_demo_subgraph_tests() {
-        SCHEMA_LOCATION.with(|path| *path.borrow_mut() = "./mocks/schema.graphql".to_owned());
+        SCHEMA_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from("./mocks/schema.graphql"));
         let module = <MatchstickInstance<Chain>>::new("mocks/wasm/token-lock-wallet.wasm");
         let test_suite = TestSuite::from(&module);
 
