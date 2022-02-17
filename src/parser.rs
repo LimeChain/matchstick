@@ -114,7 +114,7 @@ mod parser_tests {
 
     #[test]
     #[should_panic(
-        expected = "🆘 Something went wrong while trying to read `subgraph.yaml`: No such file or directory (os error 2)"
+        expected = "🆘 Something went wrong while trying to read `mocks/yamls/no_config.yaml`: No such file or directory (os error 2)"
     )]
     fn parse_yaml_should_panic_when_file_is_missing() {
         parse_yaml("mocks/yamls/no_config.yaml");
