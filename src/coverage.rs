@@ -7,8 +7,6 @@ use std::path::PathBuf;
 use crate::logging::Log;
 use crate::parser;
 
-/// pub fn generate_coverage_report() -> void
-/// Generates the coverage report
 pub fn generate_coverage_report() {
     Log::Default("\nRunning in coverage report mode.\n️".to_owned().cyan()).println();
 
@@ -83,8 +81,6 @@ pub fn generate_coverage_report() {
     .println();
 }
 
-/// fn is_called(wat_content: &str, handler: &str) -> bool
-/// Performs a check if a handler is called in a test suite
 fn is_called(wat_content: &str, handler: &str) -> bool {
     let pattern = format!(r#"call.+{}"#, handler);
     let regex = Regex::new(&pattern).expect("Not a valid regex pattern.");
@@ -92,8 +88,6 @@ fn is_called(wat_content: &str, handler: &str) -> bool {
     regex.is_match(wat_content)
 }
 
-/// fn collect_wasm_files() -> Vec<PathBuf>
-/// Collects the generated wasm files
 fn collect_wasm_files() -> Vec<PathBuf> {
     let mut files: Vec<PathBuf> = Vec::new();
 
@@ -117,7 +111,6 @@ fn collect_wasm_files() -> Vec<PathBuf> {
     files
 }
 
-/// fn generate_wat_files() -> Vec<String>
 /// Converts each wasm file to wat
 /// Returns a collection of all .wat files paths
 fn generate_wat_files() -> Vec<String> {

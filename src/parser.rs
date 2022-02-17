@@ -3,9 +3,8 @@ use std::collections::HashMap;
 
 use crate::logging::Log;
 
-/// fn parse_yaml(path: &str) -> Value
-/// Parses the matchstick.yaml file
-/// If the parsing fails returns an empty Value::String()
+/// Parses the yaml file
+/// If the parsing fails returns a serde Value containing an empty String
 pub fn parse_yaml(path: &str) -> Value {
     let yaml_content = std::fs::read_to_string(path).unwrap_or_else(|err| {
         panic!(
@@ -17,15 +16,13 @@ pub fn parse_yaml(path: &str) -> Value {
         )
     });
 
-    // If yaml exists but is empty from_str will panic with `EndOfStream`
-    // Instead it will print a warning and return an empty Value
+    // Print warning and return empty string Value if parsing fails
     serde_yaml::from_str(&yaml_content).unwrap_or_else(|_| {
         Log::Warning(format!("{} is empty or contains invalid values!", path)).println();
         Value::String("".to_owned())
     })
 }
 
-/// fn extract_string(value: &Value, key: &str) -> String
 /// Extracts the String value of the passed key
 /// Panics if the key is missing or can't convert the value to string
 fn extract_string(value: &Value, key: &str) -> String {
@@ -37,7 +34,6 @@ fn extract_string(value: &Value, key: &str) -> String {
         .to_owned()
 }
 
-/// fn extract_string_or(value: &Value, key: &str, default: String) -> String
 /// Extracts the string value of the passed key from the parsed yaml
 /// Fallbacks to the default value if it fails to extract the string for some reason
 pub fn extract_string_or(value: &Value, key: &str, default: String) -> String {
@@ -49,7 +45,6 @@ pub fn extract_string_or(value: &Value, key: &str, default: String) -> String {
         .to_owned()
 }
 
-/// fn extract_vec(value &Value, key: &str) -> Sequence
 /// Extracts the value of the passed key as Sequence
 /// Will return an empty Vec if the key is missing
 /// Will panic if the value can't be parsed as Sequence
@@ -62,7 +57,6 @@ fn extract_vec(value: &Value, key: &str) -> Sequence {
         .to_vec()
 }
 
-/// fn parse_sources(path: &str) -> Sequence
 /// Extracts the sources declared under dataSources or templates in the subraph.yaml
 fn parse_sources(path: &str) -> Sequence {
     let subgraph_yaml = parse_yaml(path);
@@ -74,7 +68,6 @@ fn parse_sources(path: &str) -> Sequence {
     sources
 }
 
-/// fn collect_handlers(path: &str) -> HashMap<String, Vec<String>>
 /// collects the event and call handlers for each source
 /// declared under dataSources or templates
 pub fn collect_handlers(path: &str) -> HashMap<String, Vec<String>> {
@@ -102,7 +95,6 @@ pub fn collect_handlers(path: &str) -> HashMap<String, Vec<String>> {
         .collect()
 }
 
-/// fn get_schema_location(path: &str) -> String
 /// Extracts the schema location from subraph.yaml
 /// Will panic if the `schema` or `file` key is missing
 pub fn get_schema_location(path: &str) -> String {
@@ -122,23 +114,23 @@ mod parser_tests {
 
     #[test]
     #[should_panic(
-        expected = "🆘 Something went wrong while trying to read `mocks/configs/no_config.yaml`: No such file or directory (os error 2)"
+        expected = "🆘 Something went wrong while trying to read `subgraph.yaml`: No such file or directory (os error 2)"
     )]
     fn parse_yaml_should_panic_when_file_is_missing() {
-        parse_yaml("mocks/configs/no_config.yaml");
+        parse_yaml("mocks/yamls/no_config.yaml");
     }
 
     #[test]
 
     fn parse_yaml_returns_empty_string_value_if_config_is_empty() {
-        let yaml = parse_yaml("mocks/configs/matchstick_empty.yaml");
+        let yaml = parse_yaml("mocks/yamls/matchstick_empty.yaml");
 
         assert_eq!(yaml, Value::String("".to_owned()))
     }
 
     #[test]
     fn get_schema_location_returns_schema_location() {
-        let schema_location = get_schema_location("mocks/subgraphs/subgraph.yaml");
+        let schema_location = get_schema_location("mocks/yamls/subgraph.yaml");
 
         assert_eq!(schema_location, "./schema.graphql".to_owned())
     }
@@ -146,13 +138,13 @@ mod parser_tests {
     #[test]
     #[should_panic(expected = "Couldn't find key `name` in subgraph.yaml")]
     fn parse_string_should_panic_if_key_missing() {
-        let yaml = parse_yaml("mocks/subgraphs/subgraph_no_name.yaml");
+        let yaml = parse_yaml("mocks/yamls/subgraph_no_name.yaml");
         extract_string(&yaml, "name");
     }
 
     #[test]
     fn extract_string_or_returns_value_as_string() {
-        let config_yaml = parse_yaml("mocks/configs/matchstick.yaml");
+        let config_yaml = parse_yaml("mocks/yamls/matchstick.yaml");
         let test_folder = extract_string_or(&config_yaml, "testsFolder", "./tests".to_owned());
 
         assert_eq!(test_folder, "./specs".to_owned())
@@ -160,7 +152,7 @@ mod parser_tests {
 
     #[test]
     fn extract_string_or_returns_default_when_key_is_missing() {
-        let config_yaml = parse_yaml("mocks/configs/matchstick.yaml");
+        let config_yaml = parse_yaml("mocks/yamls/matchstick.yaml");
         let test_folder =
             extract_string_or(&config_yaml, "libsFolder", "./node_modules".to_owned());
 
@@ -169,7 +161,7 @@ mod parser_tests {
 
     #[test]
     fn collect_handlers_returns_all_handlers() {
-        let handlers = collect_handlers("mocks/subgraphs/subgraph.yaml");
+        let handlers = collect_handlers("mocks/yamls/subgraph.yaml");
         let mut expected: HashMap<String, Vec<String>> = HashMap::new();
         expected.insert(
             "Gravity".to_owned(),
@@ -188,7 +180,7 @@ mod parser_tests {
 
     #[test]
     fn collect_handlers_returns_empty_vec_if_no_handlers() {
-        let handlers = collect_handlers("mocks/subgraphs/subgraph_no_handlers.yaml");
+        let handlers = collect_handlers("mocks/yamls/subgraph_no_handlers.yaml");
         let mut expected: HashMap<String, Vec<String>> = HashMap::new();
         expected.insert("Gravity".to_owned(), vec![]);
 

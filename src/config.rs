@@ -8,7 +8,6 @@ pub struct MatchstickConfig {
 }
 
 impl MatchstickConfig {
-    /// fn new() - > MatchstickConfig
     /// Creates a MatchstickConfig with default values
     fn new() -> MatchstickConfig {
         MatchstickConfig {
@@ -17,7 +16,6 @@ impl MatchstickConfig {
         }
     }
 
-    /// pub fn from(path: &str) -> MatchstickConfig
     /// Creates a new MatchstickConfig from the passed matchstcik config.
     /// If the config does not exist or keys are missing, returns the default values
     pub fn from(path: &str) -> MatchstickConfig {
@@ -43,7 +41,7 @@ mod config_tests {
 
     #[test]
     fn config_from_returns_default_values_if_no_config() {
-        let config = MatchstickConfig::from("mocks/configs/no_config.yaml");
+        let config = MatchstickConfig::from("mocks/yamls/no_config.yaml");
 
         assert_eq!(config.libs_path, "./node_modules".to_owned());
         assert_eq!(config.tests_path, "./tests".to_owned());
@@ -51,7 +49,7 @@ mod config_tests {
 
     #[test]
     fn config_from_returns_custom_folder_from_config() {
-        let config = MatchstickConfig::from("mocks/configs/matchstick.yaml");
+        let config = MatchstickConfig::from("mocks/yamls/matchstick.yaml");
 
         assert_eq!(config.tests_path, "./specs".to_owned());
     }

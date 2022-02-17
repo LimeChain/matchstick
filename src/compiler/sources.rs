@@ -7,7 +7,6 @@ use std::time::SystemTime;
 
 use crate::logging::Log;
 
-/// pub fn get_test_sources(matches: &ArgMatches) -> HashMap<String, Vec<PathBuf>>
 /// Collects all tests sources from the current TESTS_LOCATION
 /// Filters the sources if suite name[s] are passed to the `matchstick` command
 pub fn get_test_sources(matches: &ArgMatches) -> HashMap<String, Vec<PathBuf>> {
@@ -52,7 +51,6 @@ pub fn get_test_sources(matches: &ArgMatches) -> HashMap<String, Vec<PathBuf>> {
     }
 }
 
-/// fn collect_files(path: &Path) -> HashMap<String, Vec<PathBuf>>
 /// Collects all tests sources from the current TESTS_LOCATION
 fn collect_files(path: &Path) -> HashMap<String, Vec<PathBuf>> {
     let mut files: HashMap<String, Vec<PathBuf>> = HashMap::new();
@@ -85,20 +83,31 @@ fn collect_files(path: &Path) -> HashMap<String, Vec<PathBuf>> {
     files
 }
 
-/// pub fn is_source_modified(in_files: &[PathBuf], out_file: &Path) -> bool
 /// Checks if any test files or imported files (except node_modules) have been modified
 /// since the last time the wasm files have been compiled
 pub fn is_source_modified(in_files: &[PathBuf], out_file: &Path) -> bool {
     let mut is_modified = false;
 
     let wasm_modified = fs::metadata(out_file)
-        .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
+        .unwrap_or_else(|err| {
+            panic!(
+                "Failed to extract metadata from {:?} with error: {}",
+                out_file,
+                Log::Critical(err)
+            )
+        })
         .modified()
         .unwrap();
 
     for file in in_files {
         let in_file_modified = fs::metadata(file)
-            .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
+            .unwrap_or_else(|err| {
+                panic!(
+                    "Failed to extract metadata from {:?} with error: {}",
+                    file,
+                    Log::Critical(err)
+                )
+            })
             .modified()
             .unwrap();
 
@@ -113,7 +122,6 @@ pub fn is_source_modified(in_files: &[PathBuf], out_file: &Path) -> bool {
     is_modified
 }
 
-/// fn are_imports_modified(in_file: &Path, wasm_modified: SystemTime) -> bool
 /// Checks if any imported files (except node_modules) have been modified
 /// since the last time the wasm files have been compiled
 fn are_imports_modified(in_file: &Path, wasm_modified: SystemTime) -> bool {
@@ -123,8 +131,14 @@ fn are_imports_modified(in_file: &Path, wasm_modified: SystemTime) -> bool {
     for m in matches {
         let absolute_path = get_import_absolute_path(in_file, &m);
 
-        let import_modified = fs::metadata(absolute_path)
-            .unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
+        let import_modified = fs::metadata(&absolute_path)
+            .unwrap_or_else(|err| {
+                panic!(
+                    "Failed to extract metadata from {:?} with error: {}",
+                    absolute_path,
+                    Log::Critical(err)
+                )
+            })
             .modified()
             .unwrap();
 
@@ -137,7 +151,6 @@ fn are_imports_modified(in_file: &Path, wasm_modified: SystemTime) -> bool {
     is_modified
 }
 
-/// fn get_import_absolute_path(in_file: &Path, imported_file: &str) -> PathBuf
 /// Collects all imported file paths froma test.ts file an returns their absolute path
 fn get_import_absolute_path(in_file: &Path, imported_file: &str) -> PathBuf {
     let mut combined_path = PathBuf::from(in_file);
@@ -148,16 +161,20 @@ fn get_import_absolute_path(in_file: &Path, imported_file: &str) -> PathBuf {
         .unwrap_or_else(|_| panic!("{} does not exists!", &imported_file))
 }
 
-/// fn get_imports_from_file(in_file: &Path) -> Vec<String>
-/// Using regex collects all imported file paths (except node_modules) from a test.ts file
+/// Collects all imported file paths (except node_modules) from a test.ts file using regex
 fn get_imports_from_file(in_file: &Path) -> Vec<String> {
     // Regex should match the file path of each import statement except for node_modules
     // e.g. should return `../generated/schema` from `import { Gravatar } from '../generated/schema'`
     // but it will ignore `import { test, log } from 'matchstick-as/assembly/index'`
     // Handles single and double quotes
     let imports_regex = Regex::new(r#"[import.*from]\s*["|']\s*([../+|./].*)\s*["|']"#).unwrap();
-    let file_as_str =
-        fs::read_to_string(in_file).unwrap_or_else(|err| panic!("{}", Log::Critical(err)));
+    let file_as_str = fs::read_to_string(in_file).unwrap_or_else(|err| {
+        panic!(
+            "Failed to read {:?} with error: {}",
+            in_file,
+            Log::Critical(err)
+        )
+    });
 
     imports_regex
         .captures_iter(&file_as_str)
