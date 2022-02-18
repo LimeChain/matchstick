@@ -13,7 +13,7 @@ use std::os::windows::process::ExitStatusExt;
 
 mod sources;
 
-use crate::logging::Log;
+use crate::logging::{self, Log};
 use sources::*;
 
 pub struct Compiler {
@@ -98,11 +98,11 @@ impl Compiler {
                     || !Path::new(&out_file).exists()
                     || is_source_modified(&in_files, &out_file)
                 {
-                    Log::Info(format!("Compiling {}...", name.bright_blue())).println();
+                    logging::info!("Compiling {}...", name.bright_blue());
 
                     self.compile(in_files, out_file)
                 } else {
-                    Log::Info(format!("{} skipped!", name.bright_blue())).println();
+                    logging::info!("{} skipped!", name.bright_blue());
 
                     self.skip_compile(out_file)
                 };

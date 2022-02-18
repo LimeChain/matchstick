@@ -66,7 +66,7 @@ impl Test {
                 // Log error and mark test as failed if should_fail is `true`, but test passes
                 // Otherwise mark test as passed
                 if self.should_fail {
-                    Log::Error("Expected test to fail but it passed successfully!").println();
+                    logging::error!("Expected test to fail but it passed successfully!");
                     false
                 } else {
                     true
@@ -79,7 +79,7 @@ impl Test {
                     true
                 } else {
                     logging::add_indent();
-                    Log::Debug(err).println();
+                    logging::debug!(err);
                     logging::sub_indent();
                     false
                 }
@@ -99,17 +99,18 @@ impl Test {
             format!("{:.3?}ms", elapsed_in_ms).bright_blue()
         );
         if passed {
-            Log::Success(msg).println();
+            logging::success!(msg);
         } else {
-            Log::Error(msg).println();
+            logging::error!(msg);
         }
 
         // Print the logs after the test result.
         if passed && !logs.is_empty() {
-            Log::Default(&logs).println();
+            logging::default!(&logs);
         }
 
         self.after();
+
         TestResult { passed, logs }
     }
 }

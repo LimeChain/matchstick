@@ -1,7 +1,7 @@
 use serde_yaml::{Sequence, Value};
 use std::collections::HashMap;
 
-use crate::logging::Log;
+use crate::logging::{self, Log};
 
 /// Parses the yaml file
 /// If the parsing fails returns a serde Value containing an empty String
@@ -18,7 +18,7 @@ pub fn parse_yaml(path: &str) -> Value {
 
     // Print warning and return empty string Value if parsing fails
     serde_yaml::from_str(&yaml_content).unwrap_or_else(|_| {
-        Log::Warning(format!("{} is empty or contains invalid values!", path)).println();
+        logging::warning!("{} is empty or contains invalid values!", path);
         Value::String("".to_owned())
     })
 }

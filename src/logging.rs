@@ -19,6 +19,7 @@ pub fn clear_indent() {
 /// Whether to accumulate the logs or print them as they come.
 static mut ACCUM: bool = false;
 pub(crate) static mut LOGS: Vec<String> = vec![];
+
 /// Start accumulating the logs instead of printing them directly.
 pub fn accum() {
     unsafe { ACCUM = true };
@@ -82,10 +83,82 @@ impl<T: fmt::Display> fmt::Display for Log<T> {
             Log::Error(s) => format!("𝖷 {}", s).bold().red(),
             Log::Warning(s) => format!("⚠️  {}", s).yellow(),
             Log::Info(s) => format!("💬 {}", s).italic(),
-            Log::Debug(s) => format!("🛠 {}", s).italic().cyan(),
+            Log::Debug(s) => format!("🛠  {}", s).italic().cyan(),
             Log::Success(s) => format!("√ {}", s).bold().green(),
             Log::Default(s) => format!("{}", s).normal(),
         };
         unsafe { write!(f, "{}{}", " ".repeat(INDENT), s) }
     }
 }
+
+#[macro_export]
+macro_rules! log {
+    ($log_level:literal, $log_string:expr) => ({
+        logging::Log::new($log_level, $log_string).println();
+    });
+
+    ($log_level:literal, $log_string:expr, $($arg:tt)*) => ({
+        logging::Log::new($log_level, format!($log_string, $($arg)*)).println();
+    });
+}
+
+macro_rules! log_with_color {
+    ($log_color:ident, $log_string:expr) => ({
+        $crate::log!(6, $log_string.$log_color())
+    });
+
+    ($log_color:ident, $log_string:literal, $($arg:tt)*) => ({
+        $crate::log!(6, format!($log_string, $($arg)*).$log_color())
+    });
+}
+
+// macro_rules! critical {
+//     ($($arg:tt)*) => ({
+//         $crate::log!(0, $($arg)*);
+//     });
+// }
+
+macro_rules! error {
+    ($($arg:tt)*) => ({
+        $crate::log!(1, $($arg)*);
+    });
+}
+
+macro_rules! warning {
+    ($($arg:tt)*) => ({
+        $crate::log!(2, $($arg)*);
+    });
+}
+
+macro_rules! info {
+    ($($arg:tt)*) => ({
+        $crate::log!(3, $($arg)*);
+    });
+}
+
+macro_rules! debug {
+    ($($arg:tt)*) => ({
+        $crate::log!(4, $($arg)*);
+    });
+}
+
+macro_rules! success {
+    ($($arg:tt)*) => ({
+        $crate::log!(5, $($arg)*);
+    });
+}
+
+macro_rules! default {
+    ($($arg:tt)*) => ({
+        $crate::log!(6, $($arg)*);
+    });
+}
+
+pub(crate) use log_with_color;
+// pub(crate) use critical;
+pub(crate) use debug;
+pub(crate) use default;
+pub(crate) use error;
+pub(crate) use info;
+pub(crate) use success;
+pub(crate) use warning;

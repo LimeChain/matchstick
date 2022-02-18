@@ -27,7 +27,7 @@ use graph_runtime_wasm::{
 use lazy_static::lazy_static;
 use serde_json::to_string_pretty;
 
-use crate::logging::Log;
+use crate::logging::{self, Log};
 use crate::SCHEMA_LOCATION;
 
 lazy_static! {
@@ -151,10 +151,10 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
     /// function logStore(): void
     pub fn log_store(&mut self, _gas: &GasCounter) -> Result<(), HostExportError> {
-        Log::Debug(
+        logging::debug!(
+            "{}",
             to_string_pretty(&self.store).unwrap_or_else(|err| panic!("{}", Log::Critical(err))),
-        )
-        .println();
+        );
         Ok(())
     }
 
@@ -196,41 +196,45 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let expected_val: String = asc_get(&self.wasm_ctx, expected_val_ptr)?;
 
         if !self.store.contains_key(&entity_type) {
-            let msg = format!(
+            logging::error!(
                 "(assert.fieldEquals) No entities with type '{}' found.",
-                &entity_type,
+                &entity_type
             );
-            Log::Error(msg).println();
+
             return Ok(false);
         }
 
         let entities = self.store.get(&entity_type).unwrap();
         if !entities.contains_key(&id) {
-            let msg = format!(
+            logging::error!(
                 "(assert.fieldEquals) No entity with type '{}' and id '{}' found.",
-                &entity_type, &id,
+                &entity_type,
+                &id
             );
-            Log::Error(msg).println();
+
             return Ok(false);
         }
 
         let entity = entities.get(&id).unwrap();
         if !entity.contains_key(&field_name) {
-            let msg = format!(
+            logging::error!(
                 "(assert.fieldEquals) No field named '{}' on entity with type '{}' and id '{}' found.",
-                &field_name, &entity_type, &id,
+                &field_name,
+                &entity_type,
+                &id
             );
-            Log::Error(msg).println();
+
             return Ok(false);
         }
 
         let val = entity.get(&field_name).unwrap();
         if val.to_string() != expected_val {
-            let msg = format!(
+            logging::error!(
                 "(assert.fieldEquals) Expected field '{}' to equal '{}', but was '{}' instead.",
-                &field_name, &expected_val, val,
+                &field_name,
+                &expected_val,
+                val
             );
-            Log::Error(msg).println();
             return Ok(false);
         };
 
@@ -250,11 +254,11 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             asc_get::<_, AscEnum<EthereumValueKind>, _>(&self.wasm_ctx, actual_ptr.into())?;
 
         if expected != actual {
-            let msg = format!(
+            logging::error!(
                 "(assert.equals) Expected value was '{:?}' but actual value was '{:?}'",
-                expected, actual,
+                expected,
+                actual
             );
-            Log::Error(msg).println();
             return Ok(false);
         }
         Ok(true)
@@ -273,11 +277,11 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         if self.store.contains_key(&entity_type)
             && self.store.get(&entity_type).unwrap().contains_key(&id)
         {
-            let msg = format!(
+            logging::error!(
                 "(assert.notInStore) Value for entity type: '{}' and id: '{}' was found in store.",
-                entity_type, id,
+                entity_type,
+                id
             );
-            Log::Error(msg).println();
             return Ok(false);
         }
 
@@ -348,18 +352,20 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             .filter(|&f| matches!(f.field_type, schema::Type::NonNullType(..)) && !f.is_derived());
 
         for f in required_fields {
-            let warn = |s: String| Log::Warning(s).println();
+            // let warn = |s: String| Log::Warning(s).println();
 
             if !data.contains_key(&f.name) {
-                warn(format!(
+                logging::warning!(
                     "Missing a required field '{}' for an entity of type '{}'.",
-                    f.name, entity_type,
-                ));
+                    f.name,
+                    entity_type,
+                );
             } else if let Value::Null = data.get(&f.name).unwrap() {
-                warn(format!(
+                logging::warning!(
                     "The required field '{}' for an entity of type '{}' is null.",
-                    f.name, entity_type,
-                ));
+                    f.name,
+                    entity_type,
+                );
             }
         }
 
@@ -574,11 +580,11 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
             self.store.insert(entity_type, entity_type_store);
         } else {
-            let msg = format!(
+            logging::error!(
                 "(store.remove) Entity with type '{}' and id '{}' does not exist.",
-                &entity_type, &id,
+                &entity_type,
+                &id
             );
-            Log::Error(msg).println();
         }
 
         Ok(())
