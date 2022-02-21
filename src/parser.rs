@@ -1,18 +1,16 @@
 use serde_yaml::{Sequence, Value};
 use std::collections::HashMap;
 
-use crate::logging::{self, Log};
+use crate::logging;
 
 /// Parses the yaml file
 /// If the parsing fails returns a serde Value containing an empty String
 pub fn parse_yaml(path: &str) -> Value {
     let yaml_content = std::fs::read_to_string(path).unwrap_or_else(|err| {
-        panic!(
-            "{}",
-            Log::Critical(format!(
-                "Something went wrong while trying to read `{}`: {}",
-                path, err,
-            )),
+        logging::critical!(
+            "Something went wrong while trying to read `{}`: {}",
+            path,
+            err,
         )
     });
 

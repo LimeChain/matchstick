@@ -3,10 +3,7 @@ use graph::blockchain::Blockchain;
 use std::time::Instant;
 use wasmtime::Func;
 
-use crate::{
-    instance::MatchstickInstance,
-    logging::{self, Log},
-};
+use crate::{instance::MatchstickInstance, logging};
 
 pub struct Test {
     pub name: String,
@@ -35,10 +32,7 @@ impl Test {
     fn call_hooks(hooks: &[Func]) {
         hooks.iter().for_each(|h| {
             h.call(&[]).unwrap_or_else(|err| {
-                panic!(
-                    "{}",
-                    Log::Critical(format!("Unexpected error upon calling hook: {}", err)),
-                );
+                logging::critical!("Unexpected error upon calling hook: {}", err)
             });
         });
     }
@@ -122,13 +116,10 @@ pub struct TestSuite {
 impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
     fn from(matchstick: &MatchstickInstance<C>) -> Self {
         let table = matchstick.instance.get_table("table").unwrap_or_else(|| {
-            panic!(
-                "{}",
-                Log::Critical(
-                    "WebAssembly.Table was not exported from the AssemblyScript sources.
+            logging::critical!(
+                "WebAssembly.Table was not exported from the AssemblyScript sources.
                     (Please compile with the `--exportTable` option.)"
-                ),
-            );
+            )
         });
 
         let mut suite = TestSuite { tests: vec![] };
@@ -137,10 +128,7 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
             .borrow()
             .as_ref()
             .unwrap_or_else(|| {
-                panic!(
-                    "{}",
-                    Log::Critical("Unexpected: MatchstickInstanceContext is 'None'."),
-                );
+                logging::critical!("Unexpected: MatchstickInstanceContext is 'None'.")
             })
             .meta_tests
         {
@@ -150,13 +138,10 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
                 table
                     .get(*func_idx)
                     .unwrap_or_else(|| {
-                        panic!(
-                            "{}",
-                            Log::Critical(format!(
-                                "Could not get WebAssembly.Table entry with index '{}'.",
-                                func_idx,
-                            )),
-                        );
+                        logging::critical!(
+                            "Could not get WebAssembly.Table entry with index '{}'.",
+                            func_idx,
+                        )
                     })
                     .unwrap_funcref()
                     .unwrap()

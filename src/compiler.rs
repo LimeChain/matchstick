@@ -13,7 +13,7 @@ use std::os::windows::process::ExitStatusExt;
 
 mod sources;
 
-use crate::logging::{self, Log};
+use crate::logging;
 use sources::*;
 
 pub struct Compiler {
@@ -34,14 +34,7 @@ pub struct CompileOutput {
 impl Compiler {
     pub fn new(lib: PathBuf) -> Self {
         if !lib.exists() {
-            panic!(
-                "{}",
-                Log::Critical(format!(
-                    "Path to lib `{}` does not exist!",
-                    lib.to_str()
-                        .expect("unexpected: lib should always have a value"),
-                )),
-            );
+            logging::critical!("Path to lib {:?} does not exist!", lib);
         }
         Compiler {
             exec: lib.join("assemblyscript/bin/asc"),
@@ -126,12 +119,7 @@ impl Compiler {
             .arg("--outFile")
             .arg(out_file.clone())
             .output()
-            .unwrap_or_else(|err| {
-                panic!(
-                    "{}",
-                    Log::Critical(format!("Internal error during compilation: {}", err)),
-                );
-            });
+            .unwrap_or_else(|err| logging::critical!("Internal error during compilation: {}", err));
 
         CompileOutput {
             status: output.status,
@@ -157,16 +145,10 @@ fn verify_outputs(outputs: &HashMap<String, CompileOutput>) {
             io::stderr()
                 .write_all(&output.stderr)
                 .unwrap_or_else(|err| {
-                    panic!(
-                        "{}",
-                        Log::Critical(format!("Could not write to `stderr`: {}", err)),
-                    );
+                    logging::critical!("Could not write to `stderr`: {}", err);
                 });
         });
 
-        panic!(
-            "{}",
-            Log::Critical("Please attend to the compilation errors above!"),
-        );
+        logging::critical!("Please attend to the compilation errors above!");
     }
 }

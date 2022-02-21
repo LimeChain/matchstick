@@ -5,7 +5,7 @@ use colored::Colorize;
 /// Controls the amount of indentation added and substracted.
 static MARGIN: usize = 2;
 /// Current indentation when logging.
-static mut INDENT: usize = 0;
+pub static mut INDENT: usize = 0;
 pub fn add_indent() {
     unsafe { INDENT += MARGIN };
 }
@@ -91,74 +91,78 @@ impl<T: fmt::Display> fmt::Display for Log<T> {
     }
 }
 
-#[macro_export]
 macro_rules! log {
-    ($log_level:literal, $log_string:expr) => ({
-        logging::Log::new($log_level, $log_string).println();
+    ($log_level:expr, $log_string:expr) => ({
+        $crate::logging::Log::new($log_level, $log_string).println();
     });
 
-    ($log_level:literal, $log_string:expr, $($arg:tt)*) => ({
-        logging::Log::new($log_level, format!($log_string, $($arg)*)).println();
+    ($log_level:expr, $log_string:expr, $($arg:tt)*) => ({
+        $crate::logging::Log::new($log_level, format!($log_string, $($arg)*)).println();
     });
 }
 
 macro_rules! log_with_color {
     ($log_color:ident, $log_string:expr) => ({
-        $crate::log!(6, $log_string.$log_color())
+        $crate::logging::log!(6, $log_string.$log_color())
     });
 
     ($log_color:ident, $log_string:literal, $($arg:tt)*) => ({
-        $crate::log!(6, format!($log_string, $($arg)*).$log_color())
+        $crate::logging::log!(6, format!($log_string, $($arg)*).$log_color())
     });
 }
 
-// macro_rules! critical {
-//     ($($arg:tt)*) => ({
-//         $crate::log!(0, $($arg)*);
-//     });
-// }
+macro_rules! critical {
+    ($log_string:expr) => ({
+        panic!("{}", $crate::logging::Log::new(0, $log_string));
+    });
+
+    ($log_string:expr, $($arg:tt)*) => ({
+        panic!("{}", $crate::logging::Log::new(0, format!($log_string, $($arg)*)));
+    });
+}
 
 macro_rules! error {
     ($($arg:tt)*) => ({
-        $crate::log!(1, $($arg)*);
+        $crate::logging::log!(1, $($arg)*);
     });
 }
 
 macro_rules! warning {
     ($($arg:tt)*) => ({
-        $crate::log!(2, $($arg)*);
+        $crate::logging::log!(2, $($arg)*);
     });
 }
 
 macro_rules! info {
     ($($arg:tt)*) => ({
-        $crate::log!(3, $($arg)*);
+        $crate::logging::log!(3, $($arg)*);
     });
 }
 
 macro_rules! debug {
     ($($arg:tt)*) => ({
-        $crate::log!(4, $($arg)*);
+        $crate::logging::log!(4, $($arg)*);
     });
 }
 
 macro_rules! success {
     ($($arg:tt)*) => ({
-        $crate::log!(5, $($arg)*);
+        $crate::logging::log!(5, $($arg)*);
     });
 }
 
 macro_rules! default {
     ($($arg:tt)*) => ({
-        $crate::log!(6, $($arg)*);
+        $crate::logging::log!(6, $($arg)*);
     });
 }
 
-pub(crate) use log_with_color;
-// pub(crate) use critical;
+pub(crate) use critical;
 pub(crate) use debug;
 pub(crate) use default;
 pub(crate) use error;
 pub(crate) use info;
+pub(crate) use log;
+pub(crate) use log_with_color;
 pub(crate) use success;
 pub(crate) use warning;

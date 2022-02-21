@@ -34,7 +34,8 @@ pub fn generate_coverage_report() {
             let mut is_tested = false;
 
             for wat_file in &wat_files {
-                let wat_content = fs::read_to_string(&wat_file).expect("Couldn't read wat file.");
+                let wat_content = fs::read_to_string(&wat_file)
+                    .unwrap_or_else(|_| logging::critical!("Couldn't read wat file."));
 
                 if is_called(&wat_content, &handler) {
                     is_tested = true;
@@ -95,8 +96,8 @@ fn collect_wasm_files() -> Vec<PathBuf> {
     crate::TESTS_LOCATION.with(|path| {
         let bin_location = path.borrow().join(".bin");
 
-        let msg = format!("Couldn't find folder '{:?}.", &bin_location);
-        let entries = fs::read_dir(bin_location).expect(&msg);
+        let entries = fs::read_dir(&bin_location)
+            .unwrap_or_else(|_| logging::critical!("Couldn't find folder '{:?}.", bin_location));
 
         for entry in entries {
             let file_name = entry.unwrap().path();
