@@ -36,7 +36,7 @@ mod integration_tests {
 
         let mut failed_tests = 0;
         for (_, group) in &test_suite.groups {
-            for test in test_suite.tests {
+            for test in &group.tests {
                 if !test.run().passed {
                     failed_tests += 1;
                 }
