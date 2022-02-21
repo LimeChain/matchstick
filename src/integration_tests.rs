@@ -21,6 +21,7 @@ mod integration_tests {
                 if !test.run().passed {
                     failed_tests += 1;
                 }
+            }
         }
 
         assert_eq!(failed_tests, 0);

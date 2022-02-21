@@ -182,6 +182,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     /// function _registerDescribe(name: string, funcIdx: u32): void
     pub fn register_describe(
         &mut self,
+        _gas: &GasCounter,
         name: AscPtr<AscString>,
         func_idx: u32,
     ) -> Result<(), HostExportError> {
@@ -194,6 +195,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     /// function _registerHook(funcIdx: u32, role: string): void
     pub fn register_hook(
         &mut self,
+        _gas: &GasCounter,
         func_idx: u32,
         role: AscPtr<AscString>,
     ) -> Result<(), HostExportError> {
