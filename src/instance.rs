@@ -6,7 +6,10 @@ use graph::{
     cheap_clone::CheapClone,
     components::store::{DeploymentId, DeploymentLocator},
     prelude::{DeploymentHash, Duration, HostMetrics, StopwatchMetrics},
-    runtime::HostExportError,
+    runtime::{
+        gas::{GasCounter, SaturatingInto},
+        HostExportError,
+    },
     semver::Version,
 };
 use graph_chain_ethereum::Chain;
@@ -17,6 +20,7 @@ use graph_runtime_wasm::{
     module::{IntoTrap, IntoWasmRet, TimeoutStopwatch, WasmInstanceContext},
     ExperimentalFeatures, MappingContext, ValidModule,
 };
+use wasmtime::Trap;
 
 use crate::subgraph_store::MockSubgraphStore;
 use crate::{context::MatchstickInstanceContext, logging::Log};
@@ -147,6 +151,8 @@ impl<C: Blockchain> MatchstickInstance<C> {
             });
         }
 
+        let gas = GasCounter::new();
+
         macro_rules! link {
             ($wasm_name:expr, $($rust_name:ident).*, $($param:ident),*) => {
                 link!($wasm_name, $($rust_name).*, "host_export_other", $($param),*)
@@ -165,6 +171,7 @@ impl<C: Blockchain> MatchstickInstance<C> {
                     let host_metrics = host_metrics.cheap_clone();
                     let timeout_stopwatch = timeout_stopwatch.cheap_clone();
                     let ctx = ctx.cheap_clone();
+                    let gas = gas.cheap_clone();
                     linker.func(
                         module,
                         $wasm_name,
@@ -190,6 +197,7 @@ impl<C: Blockchain> MatchstickInstance<C> {
                             let _section = instance.wasm_ctx.host_metrics.stopwatch.start_section($section);
 
                             let result = instance.$($rust_name).*(
+                                &gas,
                                 $($param.into()),*
                             );
                             match result {
@@ -250,6 +258,7 @@ impl<C: Blockchain> MatchstickInstance<C> {
                         logger: instance.wasm_ctx.ctx.logger.cheap_clone(),
                         block_ptr: instance.wasm_ctx.ctx.block_ptr.cheap_clone(),
                         heap: &mut instance.wasm_ctx,
+                        gas: GasCounter::new(),
                     };
                     let ret = (host_fn.func)(ctx, call_ptr).map_err(|e| match e {
                         HostExportError::Deterministic(e) => {
@@ -320,6 +329,7 @@ impl<C: Blockchain> MatchstickInstance<C> {
             id,
             data
         );
+        link!("store.remove", mock_store_remove, entity_ptr, id_ptr);
 
         link!(
             "ipfs.cat",
@@ -336,8 +346,6 @@ impl<C: Blockchain> MatchstickInstance<C> {
             user_data,
             flags
         );
-
-        link!("store.remove", mock_store_remove, entity_ptr, id_ptr);
 
         link!(
             "typeConversion.bytesToString",
@@ -425,9 +433,16 @@ impl<C: Blockchain> MatchstickInstance<C> {
             params,
             context
         );
-        link!("dataSource.address", wasm_ctx.data_source_address,);
-        link!("dataSource.network", wasm_ctx.data_source_network,);
-        link!("dataSource.context", wasm_ctx.data_source_context,);
+        link!("dataSource.address", mock_data_source_address,);
+        link!("dataSource.network", mock_data_source_network,);
+        link!("dataSource.context", mock_data_source_context,);
+        link!(
+            "dataSourceMock.setReturnValues",
+            set_data_source_return_values,
+            address_ptr,
+            network_ptr,
+            context_ptr
+        );
 
         link!("ens.nameByHash", wasm_ctx.ens_name_by_hash, ptr);
 
@@ -471,6 +486,19 @@ impl<C: Blockchain> MatchstickInstance<C> {
             entity_type_ptr,
             id_ptr
         );
+
+        // Linking gas function
+        let gas = gas.cheap_clone();
+        linker.func("gas", "gas", move |gas_used: u32| -> Result<(), Trap> {
+            if let Err(e) = gas.consume_host_fn(gas_used.saturating_into()) {
+                panic!(
+                    "{}",
+                    Log::Critical(format!("Could not link gas function: {}", e)),
+                );
+            }
+
+            Ok(())
+        })?;
 
         let instance = linker.instantiate(&valid_module.module)?;
 

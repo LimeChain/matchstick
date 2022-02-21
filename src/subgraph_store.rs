@@ -1,26 +1,31 @@
-use crate::writable_store::MockWritableStore;
-use async_trait::async_trait;
-use graph::components::store::DeploymentId;
-use graph::data::subgraph::*;
-use graph::prelude::StoreError;
-use graph::slog::Logger;
-use graph::{
-    blockchain::BlockPtr,
-    components::store::DeploymentLocator,
-    prelude::{DeploymentHash, SubgraphStore},
-};
 use std::result::Result;
 use std::sync::Arc;
 
+use async_trait::async_trait;
+use graph::{
+    blockchain::BlockPtr,
+    components::store::{DeploymentId, DeploymentLocator, EnsLookup, SubgraphFork},
+    data::subgraph::*,
+    prelude::{DeploymentHash, StoreError, SubgraphStore},
+    slog::Logger,
+};
+
+use crate::writable_store::MockWritableStore;
+
 pub struct MockSubgraphStore {}
+
+struct DummyStruct {}
+
+impl EnsLookup for DummyStruct {
+    fn find_name(&self, _hash: &str) -> Result<Option<String>, StoreError> {
+        Ok(Option::from("default".to_owned()))
+    }
+}
 
 #[async_trait]
 impl SubgraphStore for MockSubgraphStore {
-    fn find_ens_name(
-        &self,
-        _hash: &str,
-    ) -> std::result::Result<Option<String>, graph::prelude::StoreError> {
-        Ok(Some(String::from("ds")))
+    fn ens_lookup(&self) -> Arc<(dyn EnsLookup + 'static)> {
+        Arc::new(DummyStruct {})
     }
 
     fn is_deployed(&self, _id: &DeploymentHash) -> Result<bool, StoreError> {
@@ -40,6 +45,14 @@ impl SubgraphStore for MockSubgraphStore {
     }
 
     fn create_subgraph(&self, _name: SubgraphName) -> Result<String, graph::prelude::StoreError> {
+        unreachable!()
+    }
+
+    fn debug_fork(
+        &self,
+        _subgraph_id: &DeploymentHash,
+        _logger: Logger,
+    ) -> Result<Option<Arc<dyn SubgraphFork>>, StoreError> {
         unreachable!()
     }
 

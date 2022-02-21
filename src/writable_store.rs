@@ -12,11 +12,11 @@ pub struct MockWritableStore {}
 
 #[async_trait]
 impl WritableStore for MockWritableStore {
-    fn block_ptr(&self) -> Result<Option<BlockPtr>, StoreError> {
+    fn block_ptr(&self) -> Option<BlockPtr> {
         unreachable!()
     }
 
-    fn block_cursor(&self) -> Result<Option<String>, StoreError> {
+    fn block_cursor(&self) -> Option<String> {
         unreachable!()
     }
 
@@ -24,7 +24,15 @@ impl WritableStore for MockWritableStore {
         unreachable!()
     }
 
-    fn revert_block_operations(&self, _block_ptr_to: BlockPtr) -> Result<(), StoreError> {
+    fn revert_block_operations(
+        &self,
+        _block_ptr_to: BlockPtr,
+        _firehose_cursor: Option<&str>,
+    ) -> Result<(), StoreError> {
+        unreachable!()
+    }
+
+    fn input_schema(&self) -> Arc<Schema> {
         unreachable!()
     }
 

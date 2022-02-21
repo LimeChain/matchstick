@@ -1,17 +1,17 @@
 [package]
 name = "matchstick"
-version = "0.2.3"
+version = "0.3.0"
 authors = ["LimeChain <limechain.tech>"]
 edition = "2021"
 
 [dependencies]
-graph = { git = "https://github.com/graphprotocol/graph-node", rev = "4d4947e2e0a4a662c2001fa49662c8d0078d4585" }
-graph-core = { git = "https://github.com/graphprotocol/graph-node", rev = "4d4947e2e0a4a662c2001fa49662c8d0078d4585" }
-graph-chain-ethereum = { git = "https://github.com/graphprotocol/graph-node", rev = "4d4947e2e0a4a662c2001fa49662c8d0078d4585" }
-graph-graphql = { git = "https://github.com/graphprotocol/graph-node", rev = "4d4947e2e0a4a662c2001fa49662c8d0078d4585" }
-graph-mock = { git = "https://github.com/graphprotocol/graph-node", rev = "4d4947e2e0a4a662c2001fa49662c8d0078d4585" }
-graph-runtime-test = { git = "https://github.com/graphprotocol/graph-node", rev = "4d4947e2e0a4a662c2001fa49662c8d0078d4585" }
-graph-runtime-wasm = { git = "https://github.com/graphprotocol/graph-node", rev = "4d4947e2e0a4a662c2001fa49662c8d0078d4585" }
+graph = { git = "https://github.com/graphprotocol/graph-node", rev = "9ebd32fd4d16a0ea3d5d3cc9b2c20274499cce0e" }
+graph-core = { git = "https://github.com/graphprotocol/graph-node", rev = "9ebd32fd4d16a0ea3d5d3cc9b2c20274499cce0e" }
+graph-chain-ethereum = { git = "https://github.com/graphprotocol/graph-node", rev = "9ebd32fd4d16a0ea3d5d3cc9b2c20274499cce0e" }
+graph-graphql = { git = "https://github.com/graphprotocol/graph-node", rev = "9ebd32fd4d16a0ea3d5d3cc9b2c20274499cce0e" }
+graph-mock = { git = "https://github.com/graphprotocol/graph-node", rev = "9ebd32fd4d16a0ea3d5d3cc9b2c20274499cce0e" }
+graph-runtime-test = { git = "https://github.com/graphprotocol/graph-node", rev = "9ebd32fd4d16a0ea3d5d3cc9b2c20274499cce0e" }
+graph-runtime-wasm = { git = "https://github.com/graphprotocol/graph-node", rev = "9ebd32fd4d16a0ea3d5d3cc9b2c20274499cce0e" }
 wasmtime = "0.27.0"
 tokio = "1.15.0"
 anyhow = "1.0"

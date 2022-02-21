@@ -111,7 +111,7 @@ impl Test {
 
         // Print the logs after the test result.
         if passed && !logs.is_empty() {
-            println!("{}", logs);
+            Log::Default(&logs).println();
         }
 
         self.after();

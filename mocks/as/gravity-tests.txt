@@ -1,10 +1,13 @@
-import { assert, createMockedFunction, clearStore, test, newMockEvent, newMockCall } from "matchstick-as/assembly/index"
-import { Address, BigInt, Bytes, ethereum, store, Value } from "@graphprotocol/graph-ts"
+import { assert, createMockedFunction, clearStore, test, newMockEvent, newMockCall, log } from "matchstick-as/assembly/index"
+import { Address, BigInt, Bytes, ethereum, store, Value, typeConversion } from "@graphprotocol/graph-ts"
 
-import { createNewGravatarEvent } from "./utils"
+import { handleNewGravatars, createNewGravatarEvent, trySaveGravatarFromContract, saveGravatarFromContract } from "./utils"
 import { Gravatar } from "../../generated/schema"
 import { Gravity, NewGravatar, CreateGravatarCall } from "../../generated/Gravity/Gravity"
-import { handleNewGravatars, saveGravatarFromContract, trySaveGravatarFromContract, handleCreateGravatar } from "../../src/gravity"
+import { handleCreateGravatar, handleNewGravatar } from "../../src/gravity"
+
+// Coverage
+export { handleCreateGravatar, handleNewGravatar };
 
 let GRAVATAR_ENTITY_TYPE = "Gravatar"
 let TRANSACTION_ENTITY_TYPE = "Transaction"
@@ -29,7 +32,7 @@ test("Can test if mocked function reverts", () => {
   createMockedFunction(Address.fromString("0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7"), "revert", "").reverts()
   let val = ethereum.call(new ethereum.SmartContractCall("conName", Address.fromString("0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7"), "revert", "", []))
 
-  assert.equals(ethereum.Value.fromBoolean(true), ethereum.Value.fromBoolean(val == null))
+  assert.assertNull(val)
 })
 
 test("Can mock gravity function correctly", () => {
@@ -43,7 +46,7 @@ test("Can mock gravity function correctly", () => {
   let gravity = Gravity.bind(contractAddress)
   let result = gravity.gravatarToOwner(bigIntParam)
 
-  assert.equals(ethereum.Value.fromAddress(expectedResult), ethereum.Value.fromAddress(result))
+  assert.addressEquals(expectedResult, result)
 })
 
 test("Should throw an error", () => {
@@ -66,14 +69,14 @@ test("Can call mappings with custom events", () => {
 
   // Call mappings
   let newGravatarEvent = createNewGravatarEvent(
-      12345,
+      0xdead,
       "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7",
       "cap",
       "pac",
   )
 
   let anotherGravatarEvent = createNewGravatarEvent(
-      3546,
+      0xbeef,
       "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7",
       "cap",
       "pac",
@@ -87,8 +90,8 @@ test("Can call mappings with custom events", () => {
       "id",
       "gravatarId0",
   )
-  assert.fieldEquals(GRAVATAR_ENTITY_TYPE, "12345", "id", "12345")
-  assert.fieldEquals(GRAVATAR_ENTITY_TYPE, "3546", "id", "3546")
+  assert.fieldEquals(GRAVATAR_ENTITY_TYPE, "0xdead", "id", "0xdead")
+  assert.fieldEquals(GRAVATAR_ENTITY_TYPE, "0xbeef", "id", "0xbeef")
   clearStore()
 })
 
@@ -97,12 +100,12 @@ test("Can use entity.load() to retrieve entity from store", () => {
   gravatar.save()
 
   let retrievedGravatar = Gravatar.load("gravatarId0")
-  assert.equals(ethereum.Value.fromString("gravatarId0"), ethereum.Value.fromString(retrievedGravatar!.get("id")!.toString()))
+  assert.stringEquals("gravatarId0", retrievedGravatar!.get("id")!.toString())
 })
 
 test("Returns null when calling entity.load() if an entity doesn't exist", () => {
   let retrievedGravatar = Gravatar.load("IDoNotExist")
-  assert.equals(ethereum.Value.fromBoolean(true), ethereum.Value.fromBoolean(retrievedGravatar == null))
+  assert.assertNull(retrievedGravatar)
 })
 
 test("Can update entity that already exists using Entity.save()", () => {
@@ -148,14 +151,10 @@ test("Can initialise event with default metadata", () => {
   let DEFAULT_BLOCK_HASH = "0xA16081F360e3847006dB660bae1c6d1b2e17eC2A"
   let DEFAULT_LOG_INDEX = 1
 
-  // String
-  assert.equals(ethereum.Value.fromString(DEFAULT_LOG_TYPE), ethereum.Value.fromString(newGravatarEvent.logType!))
-  // Address
-  assert.equals(ethereum.Value.fromAddress(Address.fromString(DEFAULT_ADDRESS)), ethereum.Value.fromAddress(newGravatarEvent.address))
-  // BigInt
-  assert.equals(ethereum.Value.fromSignedBigInt(BigInt.fromI32(DEFAULT_LOG_INDEX)), ethereum.Value.fromSignedBigInt(newGravatarEvent.logIndex))
-  // Bytes & nested objects
-  assert.equals(ethereum.Value.fromBytes(Bytes.fromHexString(DEFAULT_BLOCK_HASH) as Bytes), ethereum.Value.fromBytes(newGravatarEvent.block.hash))
+  assert.stringEquals(DEFAULT_LOG_TYPE, newGravatarEvent.logType!)
+  assert.addressEquals(Address.fromString(DEFAULT_ADDRESS), newGravatarEvent.address)
+  assert.bigIntEquals(BigInt.fromI32(DEFAULT_LOG_INDEX), newGravatarEvent.logIndex)
+  assert.bytesEquals(Bytes.fromHexString(DEFAULT_BLOCK_HASH) as Bytes, newGravatarEvent.block.hash)
 })
 
 test("Can update event metadata", () => {
@@ -173,14 +172,10 @@ test("Can update event metadata", () => {
   ) as Bytes
   newGravatarEvent.logIndex = BigInt.fromI32(UPDATED_LOG_INDEX)
 
-  // String
-  assert.equals(ethereum.Value.fromString(UPDATED_LOG_TYPE), ethereum.Value.fromString(newGravatarEvent.logType!))
-  // Address
-  assert.equals(ethereum.Value.fromAddress(Address.fromString(UPDATED_ADDRESS)), ethereum.Value.fromAddress(newGravatarEvent.address))
-  // BigInts
-  assert.equals(ethereum.Value.fromSignedBigInt(BigInt.fromI32(UPDATED_LOG_INDEX)), ethereum.Value.fromSignedBigInt(newGravatarEvent.logIndex))
-  // Bytes & nested objects
-  assert.equals(ethereum.Value.fromBytes(Bytes.fromHexString(UPDATED_BLOCK_HASH) as Bytes), ethereum.Value.fromBytes(newGravatarEvent.block.hash))
+  assert.stringEquals(UPDATED_LOG_TYPE, newGravatarEvent.logType!)
+  assert.addressEquals(Address.fromString(UPDATED_ADDRESS), newGravatarEvent.address)
+  assert.bigIntEquals(BigInt.fromI32(UPDATED_LOG_INDEX), newGravatarEvent.logIndex)
+  assert.bytesEquals(Bytes.fromHexString(UPDATED_BLOCK_HASH) as Bytes, newGravatarEvent.block.hash)
 })
 
 test("Can save gravatar from contract", () => {
