@@ -477,7 +477,7 @@ impl<C: Blockchain> MatchstickInstance<C> {
             id_ptr
         );
 
-        link!("countEntites", count_entities, entity_type);
+        link!("countEntities", count_entities, entity_type);
 
         // Linking gas function
         let gas = gas.cheap_clone();
