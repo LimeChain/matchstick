@@ -484,6 +484,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         self.store.insert(entity_type, entity_type_store);
         Ok(())
     }
+
     /// This function checks whether all the necessary data is present in the store to avoid linking
     /// entities to other non existent entities which may cause serious collision problems later
     fn insert_derived_field_in_store(

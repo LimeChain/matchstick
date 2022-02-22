@@ -8,12 +8,12 @@ mod unit_tests {
     use graph::{
         data::store::Value,
         prelude::ethabi::{Address, Token},
-        runtime::{asc_get, gas::GasCounter, AscPtr, AscType},
+        runtime::{asc_get, gas::GasCounter, AscPtr, AscType, try_asc_get},
     };
     use graph_chain_ethereum::{runtime::abi::AscUnresolvedContractCall_0_0_4, Chain};
     use graph_runtime_wasm::asc_abi::class::{
         Array, AscEnum, AscTypedMap, AscTypedMapEntry, EnumPayload, EthereumValueKind,
-        StoreValueKind, TypedArray,
+        StoreValueKind, TypedArray
     };
     use serial_test::serial;
 
@@ -905,5 +905,71 @@ mod unit_tests {
             .unwrap()[0]
             .clone();
         assert_eq!(token, REVERTS_IDENTIFIER[0]);
+    }
+
+    #[test]
+    #[serial]
+    fn test_datasource_mocking_and_getting_address_network_context() {
+        let mut context = get_context();
+
+        let key = asc_string_from_str("key");
+        let data = asc_string_from_str("data");
+        let key_pointer =
+            AscPtr::alloc_obj(key, &mut context.wasm_ctx).expect("Couldn't create pointer.");
+        let data_pointer =
+            AscPtr::alloc_obj(data, &mut context.wasm_ctx).expect("Couldn't create pointer.");
+
+        let payload = AscEnum::<StoreValueKind> {
+            kind: StoreValueKind::String,
+            _padding: 0,
+            payload: EnumPayload::from(data_pointer),
+        };
+        let payload_pointer =
+            AscPtr::alloc_obj(payload, &mut context.wasm_ctx).expect("Couldn't create pointer.");
+        let map_entry = AscTypedMapEntry {
+            key: key_pointer,
+            value: payload_pointer,
+        };
+        let map_entry_pointer =
+            AscPtr::alloc_obj(map_entry, &mut context.wasm_ctx).expect("Couldn't create pointer.");
+        let asc_map = AscTypedMap {
+            entries: AscPtr::alloc_obj(
+                Array::new(&[map_entry_pointer], &mut context.wasm_ctx)
+                    .expect("Couldn't create Array."),
+                &mut context.wasm_ctx,
+            )
+            .expect("Couldn't create pointer."),
+        };
+        let asc_entity =
+            AscPtr::alloc_obj(asc_map, &mut context.wasm_ctx).expect("Couldn't create pointer.");
+
+        let mut result_tuple = get_address_network_context(&mut context);
+
+        assert_eq!("0x0000000000000000000000000000000000000000", result_tuple.0);
+        assert_eq!("mainnet", result_tuple.1);
+        assert_eq!(0, result_tuple.2.len());
+
+        let new_address = AscPtr::alloc_obj(asc_string_from_str("0x90cBa2Bbb19ecc291A12066Fd8329D65FA1f1947"), &mut context.wasm_ctx).unwrap();
+        let new_network = AscPtr::alloc_obj(asc_string_from_str("sidenet"), &mut context.wasm_ctx).unwrap();
+        context.set_data_source_return_values(&GasCounter::new(), new_address, new_network, asc_entity).unwrap();
+
+        result_tuple = get_address_network_context(&mut context);
+
+        assert_eq!("0x90cBa2Bbb19ecc291A12066Fd8329D65FA1f1947", result_tuple.0);
+        assert_eq!("sidenet", result_tuple.1);
+        assert_eq!(1, result_tuple.2.len());
+        assert_eq!(&Value::String("data".to_owned()), result_tuple.2.get("key").unwrap());
+    }
+
+    fn get_address_network_context(context: &mut MatchstickInstanceContext<Chain>) -> (String, String, HashMap<String, Value>) {
+        let address_ptr = context.mock_data_source_address(&GasCounter::new()).unwrap().read_ptr(&context.wasm_ctx).unwrap().to_vec(&context.wasm_ctx).unwrap();
+        let network_ptr = context.mock_data_source_network(&GasCounter::new()).unwrap();
+        let context_ptr = context.mock_data_source_context(&GasCounter::new()).unwrap().wasm_ptr();
+
+        let address: String = String::from_utf8_lossy(address_ptr.as_slice()).to_string();
+        let network: String = asc_get(&context.wasm_ctx, network_ptr).unwrap();
+        let context: HashMap<String, Value> = try_asc_get(&context.wasm_ctx, AscPtr::new(context_ptr)).unwrap();
+
+        (address, network, context)
     }
 }
