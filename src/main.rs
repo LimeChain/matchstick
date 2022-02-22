@@ -47,7 +47,7 @@ fn main() {
     TESTS_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&config.tests_path));
     LIBS_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&config.libs_path));
 
-    logging::log_with_color!(bright_green, "Compiling...\n");
+    logging::log_with_style!(bright_green, "Compiling...\n");
 
     let compiler = Compiler::new(PathBuf::from(config.libs_path))
         .export_table()
@@ -92,7 +92,7 @@ fn main() {
 }
 
 fn print_logo() {
-    logging::log_with_color!(
+    logging::log_with_style!(
         bright_red,
         r#"
 ___  ___      _       _         _   _      _
@@ -106,13 +106,13 @@ ___  ___      _       _         _   _      _
 }
 
 fn run_test_suites(test_suites: HashMap<String, TestSuite>) -> i32 {
-    logging::log_with_color!(bright_red, "\nIgniting tests 🔥");
+    logging::log_with_style!(bright_red, "\nIgniting tests 🔥");
 
     let (mut num_passed, mut num_failed) = (0, 0);
     let failed_suites: HashMap<String, HashMap<String, TestResult>> = test_suites
         .into_iter()
         .filter_map(|(name, suite)| {
-            logging::log_with_color!(bright_blue, "\n{}", name);
+            logging::log_with_style!(bright_blue, "\n{}", name);
             logging::default!("-".repeat(50));
 
             logging::add_indent();
@@ -145,7 +145,7 @@ fn run_test_suites(test_suites: HashMap<String, TestSuite>) -> i32 {
         let passed = format!("{} passed", num_passed).green();
         let total = format!("{} total", num_failed + num_passed);
 
-        logging::log_with_color!(red, "\nFailed tests:\n");
+        logging::log_with_style!(red, "\nFailed tests:\n");
 
         for (suite, tests) in failed_suites {
             for (name, result) in tests {
@@ -160,7 +160,7 @@ fn run_test_suites(test_suites: HashMap<String, TestSuite>) -> i32 {
         logging::default!("{}, {}, {}", failed, passed, total);
         1
     } else {
-        logging::log_with_color!(green, format!("\nAll {} tests passed! 😎", num_passed));
+        logging::log_with_style!(green, "\nAll {} tests passed! 😎", num_passed);
         0
     }
 }

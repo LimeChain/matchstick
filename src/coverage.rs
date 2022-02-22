@@ -8,15 +8,15 @@ use crate::logging;
 use crate::parser;
 
 pub fn generate_coverage_report() {
-    logging::log_with_color!(cyan, "\nRunning in coverage report mode.\n️");
+    logging::log_with_style!(cyan, "\nRunning in coverage report mode.\n️");
 
     let source_handlers = parser::collect_handlers("subgraph.yaml");
 
-    logging::log_with_color!(cyan, "Reading generated test modules... 🔎️\n");
+    logging::log_with_style!(cyan, "Reading generated test modules... 🔎️\n");
 
     let wat_files = generate_wat_files();
 
-    logging::log_with_color!(cyan, "Generating coverage report 📝\n");
+    logging::log_with_style!(cyan, "Generating coverage report 📝\n");
 
     let mut global_handlers_count: i32 = 0;
     let mut global_handlers_called: i32 = 0;
@@ -46,9 +46,9 @@ pub fn generate_coverage_report() {
             if is_tested {
                 called += 1;
 
-                logging::log_with_color!(green, "Handler '{}' is tested.", handler);
+                logging::log_with_style!(green, "Handler '{}' is tested.", handler);
             } else {
-                logging::log_with_color!(red, "Handler '{}' is not tested.", handler);
+                logging::log_with_style!(red, "Handler '{}' is not tested.", handler);
             }
         }
 
