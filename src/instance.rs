@@ -23,7 +23,7 @@ use graph_runtime_wasm::{
 use wasmtime::Trap;
 
 use crate::subgraph_store::MockSubgraphStore;
-use crate::{context::MatchstickInstanceContext, logging::Log};
+use crate::{context::MatchstickInstanceContext, logging};
 
 /// The Matchstick Instance is simply a wrapper around WASM Instance and
 pub struct MatchstickInstance<C: Blockchain> {
@@ -37,12 +37,8 @@ pub struct MatchstickInstance<C: Blockchain> {
 impl<C: Blockchain> MatchstickInstance<C> {
     pub fn new(path_to_wasm: &str) -> MatchstickInstance<Chain> {
         let subgraph_id = "ipfsMap";
-        let deployment_id = &DeploymentHash::new(subgraph_id).unwrap_or_else(|err| {
-            panic!(
-                "{}",
-                Log::Critical(format!("Could not create deployment id: {}", err)),
-            );
-        });
+        let deployment_id = &DeploymentHash::new(subgraph_id)
+            .unwrap_or_else(|err| logging::critical!("Could not create deployment id: {}", err));
         let deployment = DeploymentLocator::new(DeploymentId::new(42), deployment_id.clone());
         let data_source = mock_data_source(path_to_wasm, Version::new(0, 0, 6));
 
@@ -69,22 +65,15 @@ impl<C: Blockchain> MatchstickInstance<C> {
         let valid_module = Arc::new(
             ValidModule::new(
                 Arc::new(std::fs::read(path_to_wasm).unwrap_or_else(|err| {
-                    panic!(
-                        "{}",
-                        Log::Critical(format!(
-                            "Something went wrong while trying to read `{}`: {}",
-                            path_to_wasm, err,
-                        )),
-                    );
+                    logging::critical!(
+                        "Something went wrong while trying to read `{}`: {}",
+                        path_to_wasm,
+                        err,
+                    )
                 }))
                 .as_ref(),
             )
-            .unwrap_or_else(|err| {
-                panic!(
-                    "{}",
-                    Log::Critical(format!("Could not create ValidModule: {}", err)),
-                );
-            }),
+            .unwrap_or_else(|err| logging::critical!("Could not create ValidModule: {}", err)),
         );
 
         MatchstickInstance::<Chain>::from_valid_module_with_ctx(
@@ -100,13 +89,10 @@ impl<C: Blockchain> MatchstickInstance<C> {
             experimental_features,
         )
         .unwrap_or_else(|err| {
-            panic!(
-                "{}",
-                Log::Critical(format!(
-                    "Could not create WasmInstance from valid module with context: {}",
-                    err,
-                )),
-            );
+            logging::critical!(
+                "Could not create WasmInstance from valid module with context: {}",
+                err
+            )
         })
     }
 
@@ -483,10 +469,7 @@ impl<C: Blockchain> MatchstickInstance<C> {
         let gas = gas.cheap_clone();
         linker.func("gas", "gas", move |gas_used: u32| -> Result<(), Trap> {
             if let Err(e) = gas.consume_host_fn(gas_used.saturating_into()) {
-                panic!(
-                    "{}",
-                    Log::Critical(format!("Could not link gas function: {}", e)),
-                );
+                logging::critical!("Could not link gas function: {}", e)
             }
 
             Ok(())
