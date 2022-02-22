@@ -778,7 +778,10 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr)?;
 
         match self.store.get(&entity_type) {
-            Some(inner_map) => Ok(inner_map.len().try_into().unwrap()),
+            Some(inner_map) => Ok(inner_map.len().try_into().expect(&format!(
+                "Couldn't cast usize value: {} into i32",
+                inner_map.len()
+            ))),
             None => Ok(0),
         }
     }
