@@ -23,6 +23,7 @@ pub(crate) static mut LOGS: Vec<String> = vec![];
 pub fn accum() {
     unsafe { ACCUM = true };
 }
+
 /// Flush the accumulated logs by producing a resulting string
 /// and exit the accumulation mode of logging.
 pub fn flush() -> String {
@@ -44,6 +45,7 @@ pub enum Log<T: fmt::Display> {
     Info(T),
     Debug(T),
     Success(T),
+    Default(T),
 }
 
 impl<T: fmt::Display> Log<T> {
@@ -55,6 +57,7 @@ impl<T: fmt::Display> Log<T> {
             3 => Log::Info(s),
             4 => Log::Debug(s),
             5 => Log::Success(s),
+            6 => Log::Default(s),
 
             _ => panic!("Level is not supported!"),
         }
@@ -76,11 +79,12 @@ impl<T: fmt::Display> fmt::Display for Log<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
             Log::Critical(s) => format!("🆘 {}", s).bold().red(),
-            Log::Error(s) => format!("❌ {}", s).bold().red(),
-            Log::Warning(s) => format!("🚧 {}", s).yellow(),
+            Log::Error(s) => format!("𝖷 {}", s).bold().red(),
+            Log::Warning(s) => format!("⚠️  {}", s).yellow(),
             Log::Info(s) => format!("💬 {}", s).italic(),
             Log::Debug(s) => format!("🛠 {}", s).italic().cyan(),
-            Log::Success(s) => format!("✅ {}", s).bold().green(),
+            Log::Success(s) => format!("√ {}", s).bold().green(),
+            Log::Default(s) => format!("{}", s).normal(),
         };
         unsafe { write!(f, "{}{}", " ".repeat(INDENT), s) }
     }

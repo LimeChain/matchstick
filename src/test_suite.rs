@@ -106,7 +106,7 @@ impl Test {
 
         // Print the logs after the test result.
         if passed && !logs.is_empty() {
-            println!("{}", logs);
+            Log::Default(&logs).println();
         }
 
         self.after();
@@ -144,7 +144,7 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
             .meta_tests
         {
             suite.tests.push(Test::new(
-                name.to_string(),
+                name.to_owned(),
                 *should_fail,
                 table
                     .get(*func_idx)
