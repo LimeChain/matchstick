@@ -113,11 +113,11 @@ macro_rules! log_with_color {
 
 macro_rules! critical {
     ($log_string:expr) => ({
-        panic!("{}", $crate::logging::Log::new(0, $log_string));
+        panic!("{}", $crate::logging::Log::Critical($log_string));
     });
 
     ($log_string:expr, $($arg:tt)*) => ({
-        panic!("{}", $crate::logging::Log::new(0, format!($log_string, $($arg)*)));
+        panic!("{}", $crate::logging::Log::Critical(format!($log_string, $($arg)*)));
     });
 }
 
