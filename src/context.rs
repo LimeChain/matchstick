@@ -137,8 +137,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             0 => {
                 logging::clear_indent();
                 logging::critical!(msg)
-            },
-            _ => logging::log!(level, msg)
+            }
+            _ => logging::log!(level, msg),
         }
 
         Ok(())

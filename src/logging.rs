@@ -101,6 +101,10 @@ macro_rules! log {
     });
 }
 
+/// Prints the message formatted with the passed color identifier
+/// Accepts all colors available in the `colored` crate, e.g blue, bright_blue, red, bright_red, etc.
+/// log_with_color!(bright_red, "Some string")
+/// log_with_color!(green, "Some string {} {}", "with", "arguments")
 macro_rules! log_with_color {
     ($log_color:ident, $log_string:expr) => ({
         $crate::logging::log!(6, $log_string.$log_color())
@@ -111,6 +115,7 @@ macro_rules! log_with_color {
     });
 }
 
+/// This macro will panic instead of just printing the message
 macro_rules! critical {
     ($log_string:expr) => ({
         panic!("{}", $crate::logging::Log::Critical($log_string));
@@ -157,12 +162,4 @@ macro_rules! default {
     });
 }
 
-pub(crate) use critical;
-pub(crate) use debug;
-pub(crate) use default;
-pub(crate) use error;
-pub(crate) use info;
-pub(crate) use log;
-pub(crate) use log_with_color;
-pub(crate) use success;
-pub(crate) use warning;
+pub(crate) use {critical, debug, default, error, info, log, log_with_color, success, warning};
