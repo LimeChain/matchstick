@@ -769,6 +769,25 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         self.data_source_return_value = (Some(address), Some(network), Some(context));
         Ok(())
     }
+
+    pub fn count_entities(
+        &mut self,
+        _gas: &GasCounter,
+        entity_type_ptr: AscPtr<AscString>,
+    ) -> Result<i32, HostExportError> {
+        let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr)?;
+
+        match self.store.get(&entity_type) {
+            Some(inner_map) => Ok(inner_map.len().try_into().unwrap_or_else(|err| {
+                panic!(
+                    "Couldn't cast usize value: {} into i32.\n{}",
+                    inner_map.len(),
+                    err
+                )
+            })),
+            None => Ok(0),
+        }
+    }
 }
 
 pub fn asc_string_from_str(initial_string: &str) -> AscString {

@@ -469,7 +469,6 @@ impl<C: Blockchain> MatchstickInstance<C> {
             field_name_ptr,
             expected_val_ptr
         );
-
         link!("_assert.equals", assert_equals, expected_ptr, actual_ptr);
         link!(
             "_assert.notInStore",
@@ -477,6 +476,8 @@ impl<C: Blockchain> MatchstickInstance<C> {
             entity_type_ptr,
             id_ptr
         );
+
+        link!("countEntities", count_entities, entity_type);
 
         // Linking gas function
         let gas = gas.cheap_clone();
