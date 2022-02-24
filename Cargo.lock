@@ -56,9 +56,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.53"
+version = "1.0.55"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94a45b455c14666b85fc40a019e8ab9eb75e3a124e05494f5397122bc9eb06e0"
+checksum = "159bb86af3a200e19a068f4224eae4c8bb2d0fa054c7e5d1cacd5cef95e684cd"
 
 [[package]]
 name = "arc-swap"
@@ -337,7 +337,7 @@ dependencies = [
  "libc",
  "num-integer",
  "num-traits",
- "time",
+ "time 0.1.44",
  "winapi",
 ]
 
@@ -1106,9 +1106,9 @@ dependencies = [
 
 [[package]]
 name = "getrandom"
-version = "0.2.4"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "418d37c8b1d42553c93648be529cb70f920d3baf8ef469b74b9638df426e0b4c"
+checksum = "d39cd93900197114fa1fcb7ae84ca742095eed9442088988ae74fa744e930e77"
 dependencies = [
  "cfg-if 1.0.0",
  "libc",
@@ -1134,8 +1134,8 @@ checksum = "78cc372d058dcf6d5ecd98510e7fbc9e5aec4d21de70f65fea8fecebcd881bd4"
 
 [[package]]
 name = "graph"
-version = "0.25.0"
-source = "git+https://github.com/georg-getz/graph-node?rev=ed7b4a0aca80a231431872aceb4379de5c82feb5#ed7b4a0aca80a231431872aceb4379de5c82feb5"
+version = "0.25.1"
+source = "git+https://github.com/graphprotocol/graph-node?rev=432844b67552f7981d733031e14cfaeffbba7c73#432844b67552f7981d733031e14cfaeffbba7c73"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -1195,8 +1195,8 @@ dependencies = [
 
 [[package]]
 name = "graph-chain-ethereum"
-version = "0.25.0"
-source = "git+https://github.com/georg-getz/graph-node?rev=ed7b4a0aca80a231431872aceb4379de5c82feb5#ed7b4a0aca80a231431872aceb4379de5c82feb5"
+version = "0.25.1"
+source = "git+https://github.com/graphprotocol/graph-node?rev=432844b67552f7981d733031e14cfaeffbba7c73#432844b67552f7981d733031e14cfaeffbba7c73"
 dependencies = [
  "anyhow",
  "dirs-next",
@@ -1220,8 +1220,8 @@ dependencies = [
 
 [[package]]
 name = "graph-chain-near"
-version = "0.25.0"
-source = "git+https://github.com/georg-getz/graph-node?rev=ed7b4a0aca80a231431872aceb4379de5c82feb5#ed7b4a0aca80a231431872aceb4379de5c82feb5"
+version = "0.25.1"
+source = "git+https://github.com/graphprotocol/graph-node?rev=432844b67552f7981d733031e14cfaeffbba7c73#432844b67552f7981d733031e14cfaeffbba7c73"
 dependencies = [
  "base64 0.13.0",
  "graph",
@@ -1235,8 +1235,8 @@ dependencies = [
 
 [[package]]
 name = "graph-core"
-version = "0.25.0"
-source = "git+https://github.com/georg-getz/graph-node?rev=ed7b4a0aca80a231431872aceb4379de5c82feb5#ed7b4a0aca80a231431872aceb4379de5c82feb5"
+version = "0.25.1"
+source = "git+https://github.com/graphprotocol/graph-node?rev=432844b67552f7981d733031e14cfaeffbba7c73#432844b67552f7981d733031e14cfaeffbba7c73"
 dependencies = [
  "async-stream",
  "async-trait",
@@ -1259,8 +1259,8 @@ dependencies = [
 
 [[package]]
 name = "graph-graphql"
-version = "0.25.0"
-source = "git+https://github.com/georg-getz/graph-node?rev=ed7b4a0aca80a231431872aceb4379de5c82feb5#ed7b4a0aca80a231431872aceb4379de5c82feb5"
+version = "0.25.1"
+source = "git+https://github.com/graphprotocol/graph-node?rev=432844b67552f7981d733031e14cfaeffbba7c73#432844b67552f7981d733031e14cfaeffbba7c73"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -1279,16 +1279,16 @@ dependencies = [
 
 [[package]]
 name = "graph-mock"
-version = "0.25.0"
-source = "git+https://github.com/georg-getz/graph-node?rev=ed7b4a0aca80a231431872aceb4379de5c82feb5#ed7b4a0aca80a231431872aceb4379de5c82feb5"
+version = "0.25.1"
+source = "git+https://github.com/graphprotocol/graph-node?rev=432844b67552f7981d733031e14cfaeffbba7c73#432844b67552f7981d733031e14cfaeffbba7c73"
 dependencies = [
  "graph",
 ]
 
 [[package]]
 name = "graph-runtime-derive"
-version = "0.25.0"
-source = "git+https://github.com/georg-getz/graph-node?rev=ed7b4a0aca80a231431872aceb4379de5c82feb5#ed7b4a0aca80a231431872aceb4379de5c82feb5"
+version = "0.25.1"
+source = "git+https://github.com/graphprotocol/graph-node?rev=432844b67552f7981d733031e14cfaeffbba7c73#432844b67552f7981d733031e14cfaeffbba7c73"
 dependencies = [
  "anyhow",
  "quote",
@@ -1297,8 +1297,8 @@ dependencies = [
 
 [[package]]
 name = "graph-runtime-test"
-version = "0.25.0"
-source = "git+https://github.com/georg-getz/graph-node?rev=ed7b4a0aca80a231431872aceb4379de5c82feb5#ed7b4a0aca80a231431872aceb4379de5c82feb5"
+version = "0.25.1"
+source = "git+https://github.com/graphprotocol/graph-node?rev=432844b67552f7981d733031e14cfaeffbba7c73#432844b67552f7981d733031e14cfaeffbba7c73"
 dependencies = [
  "graph",
  "graph-chain-ethereum",
@@ -1311,8 +1311,8 @@ dependencies = [
 
 [[package]]
 name = "graph-runtime-wasm"
-version = "0.25.0"
-source = "git+https://github.com/georg-getz/graph-node?rev=ed7b4a0aca80a231431872aceb4379de5c82feb5#ed7b4a0aca80a231431872aceb4379de5c82feb5"
+version = "0.25.1"
+source = "git+https://github.com/graphprotocol/graph-node?rev=432844b67552f7981d733031e14cfaeffbba7c73#432844b67552f7981d733031e14cfaeffbba7c73"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1707,9 +1707,9 @@ checksum = "884e2677b40cc8c339eaefcb701c32ef1fd2493d71118dc0ca4b6a736c93bd67"
 
 [[package]]
 name = "libc"
-version = "0.2.118"
+version = "0.2.119"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "06e509672465a0504304aa87f9f176f2b2b716ed8fb105ebe5c02dc6dce96a94"
+checksum = "1bf2e165bb3457c8e098ea76f3e3bc9db55f87aa90d52d0e6be741470916aaa4"
 
 [[package]]
 name = "linked-hash-map"
@@ -1962,6 +1962,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19e64526ebdee182341572e50e9ad03965aa510cd94427a4549448f285e957a1"
 dependencies = [
  "hermit-abi",
+ "libc",
+]
+
+[[package]]
+name = "num_threads"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "97ba99ba6393e2c3734791401b66902d981cb03bf190af674ca69949b6d5fb15"
+dependencies = [
  "libc",
 ]
 
@@ -2248,9 +2257,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro-crate"
-version = "1.1.2"
+version = "1.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9dada8c9981fcf32929c3c0f0cd796a9284aca335565227ed88c83babb1d43dc"
+checksum = "e17d47ce914bf4de440332250b0edd23ce48c005f59fab39d3335866b114f11a"
 dependencies = [
  "thiserror",
  "toml",
@@ -2485,7 +2494,7 @@ version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d34f1408f55294453790c48b2f1ebbb1c5b4b7563eb1f418bcfcfdbb06ebb4e7"
 dependencies = [
- "getrandom 0.2.4",
+ "getrandom 0.2.5",
 ]
 
 [[package]]
@@ -2614,7 +2623,7 @@ version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "528532f3d801c87aec9def2add9ca802fe569e44a544afe633765267840abe64"
 dependencies = [
- "getrandom 0.2.4",
+ "getrandom 0.2.5",
  "redox_syscall 0.2.10",
 ]
 
@@ -2902,9 +2911,9 @@ dependencies = [
 
 [[package]]
 name = "semver"
-version = "1.0.5"
+version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0486718e92ec9a68fbed73bb5ef687d71103b142595b406835649bebd33f72c7"
+checksum = "a4a3381e03edd24287172047536f20cabde766e2cd3e65e6b00fb3af51c4f38d"
 dependencies = [
  "serde",
 ]
@@ -3116,15 +3125,15 @@ dependencies = [
 
 [[package]]
 name = "slog-term"
-version = "2.8.1"
+version = "2.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f3668dd2252f4381d64de0c79e6c8dc6bd509d1cab3535b35a3fc9bafd1241d5"
+checksum = "87d29185c55b7b258b4f120eab00f48557d4d9bc814f41713f449d35b0f8977c"
 dependencies = [
  "atty",
- "chrono",
  "slog",
  "term",
  "thread_local",
+ "time 0.3.7",
 ]
 
 [[package]]
@@ -3336,6 +3345,24 @@ dependencies = [
  "wasi 0.10.0+wasi-snapshot-preview1",
  "winapi",
 ]
+
+[[package]]
+name = "time"
+version = "0.3.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "004cbc98f30fa233c61a38bc77e96a9106e65c88f2d3bef182ae952027e5753d"
+dependencies = [
+ "itoa",
+ "libc",
+ "num_threads",
+ "time-macros",
+]
+
+[[package]]
+name = "time-macros"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "25eb0ca3468fc0acc11828786797f6ef9aa1555e4a211a60d64cc8e4d1be47d6"
 
 [[package]]
 name = "tiny-keccak"
@@ -3572,9 +3599,9 @@ checksum = "360dfd1d6d30e05fda32ace2c8c70e9c0a9da713275777f5a4dbb8a1893930c6"
 
 [[package]]
 name = "tracing"
-version = "0.1.30"
+version = "0.1.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d8d93354fe2a8e50d5953f5ae2e47a3fc2ef03292e7ea46e3cc38f549525fb9"
+checksum = "f6c650a8ef0cd2dd93736f033d21cbd1224c5a967aa0c258d00fcf7dafef9b9f"
 dependencies = [
  "cfg-if 1.0.0",
  "log",
@@ -3722,7 +3749,7 @@ version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bc5cf98d8186244414c848017f0e2676b3fcb46807f6668a97dfe67359a3c4b7"
 dependencies = [
- "getrandom 0.2.4",
+ "getrandom 0.2.5",
 ]
 
 [[package]]

@@ -4,25 +4,25 @@ use run_script::{run_or_exit, ScriptOptions};
 use std::fs;
 use std::path::PathBuf;
 
-use crate::logging::Log;
+use crate::logging;
 use crate::parser;
 
 pub fn generate_coverage_report() {
-    Log::Default("\nRunning in coverage report mode.\n️".to_owned().cyan()).println();
+    logging::log_with_style!(cyan, "\nRunning in coverage report mode.\n️");
 
     let source_handlers = parser::collect_handlers("subgraph.yaml");
 
-    Log::Default("Reading generated test modules... 🔎️\n".to_owned().cyan()).println();
+    logging::log_with_style!(cyan, "Reading generated test modules... 🔎️\n");
 
     let wat_files = generate_wat_files();
 
-    Log::Default("Generating coverage report 📝\n".to_owned().cyan()).println();
+    logging::log_with_style!(cyan, "Generating coverage report 📝\n");
 
     let mut global_handlers_count: i32 = 0;
     let mut global_handlers_called: i32 = 0;
 
     for (name, handlers) in source_handlers.into_iter() {
-        Log::Default(format!("Handlers for source '{}':", name)).println();
+        logging::default!("Handlers for source '{}':", name);
 
         let mut called: i32 = 0;
         let all_handlers: i32 = handlers.len().try_into().unwrap();
@@ -34,7 +34,8 @@ pub fn generate_coverage_report() {
             let mut is_tested = false;
 
             for wat_file in &wat_files {
-                let wat_content = fs::read_to_string(&wat_file).expect("Couldn't read wat file.");
+                let wat_content = fs::read_to_string(&wat_file)
+                    .unwrap_or_else(|_| logging::critical!("Couldn't read wat file."));
 
                 if is_called(&wat_content, &handler) {
                     is_tested = true;
@@ -44,11 +45,10 @@ pub fn generate_coverage_report() {
 
             if is_tested {
                 called += 1;
-                let msg = format!("Handler '{}' is tested.", handler);
-                Log::Default(msg.green()).println();
+
+                logging::log_with_style!(green, "Handler '{}' is tested.", handler);
             } else {
-                let msg = format!("Handler '{}' is not tested.", handler);
-                Log::Default(msg.red()).println();
+                logging::log_with_style!(red, "Handler '{}' is not tested.", handler);
             }
         }
 
@@ -58,11 +58,12 @@ pub fn generate_coverage_report() {
             percentage = (called as f32 * 100.0) / all_handlers as f32;
         }
 
-        Log::Default(format!(
+        logging::default!(
             "Test coverage: {:.1}% ({}/{} handlers).\n",
-            percentage, called, all_handlers
-        ))
-        .println();
+            percentage,
+            called,
+            all_handlers
+        );
 
         global_handlers_count += all_handlers;
         global_handlers_called += called;
@@ -74,11 +75,12 @@ pub fn generate_coverage_report() {
         percentage = (global_handlers_called as f32 * 100.0) / global_handlers_count as f32;
     }
 
-    Log::Default(format!(
+    logging::default!(
         "Global test coverage: {:.1}% ({}/{} handlers).\n",
-        percentage, global_handlers_called, global_handlers_count
-    ))
-    .println();
+        percentage,
+        global_handlers_called,
+        global_handlers_count
+    );
 }
 
 fn is_called(wat_content: &str, handler: &str) -> bool {
@@ -94,8 +96,8 @@ fn collect_wasm_files() -> Vec<PathBuf> {
     crate::TESTS_LOCATION.with(|path| {
         let bin_location = path.borrow().join(".bin");
 
-        let msg = format!("Couldn't find folder '{:?}.", &bin_location);
-        let entries = fs::read_dir(bin_location).expect(&msg);
+        let entries = fs::read_dir(&bin_location)
+            .unwrap_or_else(|_| logging::critical!("Couldn't find folder '{:?}.", bin_location));
 
         for entry in entries {
             let file_name = entry.unwrap().path();
