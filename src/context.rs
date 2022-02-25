@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-
 use graph::{
     blockchain::Blockchain,
     data::{
@@ -96,6 +95,8 @@ pub struct MatchstickInstanceContext<C: Blockchain> {
         Option<String>,
         Option<HashMap<Attribute, Value>>,
     ),
+
+    ipfs: HashMap<String, String>,
 }
 
 /// Implementation of non-external functions.
@@ -109,6 +110,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             meta_tests: Vec::new(),
             derived: HashMap::new(),
             data_source_return_value: (None, None, None),
+            ipfs: HashMap::new(),
         }
     }
 
@@ -770,23 +772,44 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         Ok(())
     }
 
+    pub fn mock_ipfs_file(
+        &mut self,
+        _gas: &GasCounter,
+        hash_ptr: AscPtr<AscString>,
+        file_path_ptr: AscPtr<AscString>,
+    ) -> Result<(), HostExportError> {
+        let hash: String = asc_get(&self.wasm_ctx, hash_ptr)?;
+        let file_path: String = asc_get(&self.wasm_ctx, file_path_ptr)?;
+
+        self.ipfs.insert(hash, file_path);
+        Ok(())
+    }
+
     pub fn mock_ipfs_cat(
-        &self,
-        _hash_ptr: AscPtr<AscString>,
+        &mut self,
+        _gas: &GasCounter,
+        hash_ptr: AscPtr<AscString>,
     ) -> Result<AscPtr<Uint8Array>, HostExportError> {
-        Ok(AscPtr::null())
+        let hash: String = asc_get(&self.wasm_ctx, hash_ptr)?;
+        let file_path = &self.ipfs.get(&hash).expect("Hash not found");
+        let string = std::fs::read_to_string(file_path).expect("File not found!");
+        let result = asc_new(&mut self.wasm_ctx, string.as_bytes()).unwrap();
+
+        Ok(result)
     }
 
     pub fn mock_ipfs_map(
-        &self,
-        _link_ptr: AscPtr<AscString>,
-        _callback: AscPtr<AscString>,
-        _user_data: AscPtr<Value>,
-        _flags: AscPtr<Array<String>>,
+        &mut self,
+        _gas: &GasCounter,
+        link_ptr: AscPtr<AscString>,
+        callback_ptr: AscPtr<AscString>,
+        user_data_ptr: AscPtr<AscEnum<EthereumValueKind>>,
+        _flags_ptr: AscPtr<Array<AscPtr<String>>>,
     ) -> Result<(), HostExportError> {
         Ok(())
     }
 }
+
 
 pub fn asc_string_from_str(initial_string: &str) -> AscString {
     let utf_16_iterator = initial_string.encode_utf16();

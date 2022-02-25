@@ -327,6 +327,13 @@ impl<C: Blockchain> MatchstickInstance<C> {
         link!("store.remove", mock_store_remove, entity_ptr, id_ptr);
 
         link!(
+            "mockIpfsFile",
+            mock_ipfs_file,
+            hash,
+            file_path
+        );
+
+        link!(
             "ipfs.cat",
             mock_ipfs_cat,
             "host_export_ipfs_cat",
