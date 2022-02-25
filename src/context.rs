@@ -797,7 +797,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
         let file_path = &self.ipfs.get(&link).expect("Hash not found");
         let data = std::fs::read_to_string(&file_path).expect("File not found!");
-        let values: Vec<serde_json::Value> = serde_json::from_str(&data).expect("Could not parse JSON");
+        let stream: Vec<serde_json::Value> = serde_json::from_str(&data).unwrap();
 
         let host_metrics = &self.wasm_ctx.host_metrics.clone();
         let valid_module = &self.wasm_ctx.valid_module.clone();
@@ -815,35 +815,40 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                     experimental_features,
                 )?;
 
-        let mut ctx = std::cell::RefMut::map(module.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap());
-        ctx.store = self.store.clone();
+        std::cell::RefMut::map(module.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap()).store = self.store.clone();
+        // instance_ctx_mut.store = self.store.clone();
 
-        for v in values {
-            let v_ptr = asc_new(&mut self.wasm_ctx, &v)?;
+        for sv in stream {
+            println!("{:?}", sv);
+            let v_ptr = asc_new(&mut self.wasm_ctx, &sv).unwrap();
 
-            module.instance
-            .get_func(&callback)
-            .with_context(|| format!("function {} not found", &callback))?
-            .typed()?
-            .call(())
-            .with_context(|| format!("Failed to handle callback '{}'", &callback))?;
+            std::cell::RefMut::map(module.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap()).wasm_ctx.ctx.state.enter_handler();
 
-            let store = module.instance_ctx.borrow().as_ref().unwrap_or_else(|| panic!("Error")).store.clone();
+           module.instance
+           .get_func(&callback)
+           .with_context(|| format!("function {} not found", &callback))?
+           .typed()?
+           .call((v_ptr.wasm_ptr(), user_data_ptr.wasm_ptr()))
+           .with_context(|| format!("Failed to handle callback '{}'", &callback))?;
 
-            for (entity, mut val) in store {
-                match self.store.get_mut(&entity) {
-                    Some(vals) => {
-                        for (id, data) in val.clone() {
-                            vals.insert(id, data);
-                        }
-                    },
-                    None => {
-                        println!("None");
-                        self.store.insert(entity, val.clone());
-                    }
-                }
-            }
-        }
+           std::cell::RefMut::map(module.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap()).wasm_ctx.ctx.state.exit_handler();
+
+           let store = std::cell::Ref::map(module.instance_ctx.borrow(), |i| i.as_ref().unwrap()).store.clone();
+
+           for (entity, val) in store {
+               match self.store.get_mut(&entity) {
+                   Some(vals) => {
+                       for (id, data) in val.clone() {
+                           vals.insert(id, data);
+                       }
+                   },
+                   None => {
+                       println!("None");
+                       self.store.insert(entity, val.clone());
+                   }
+               }
+           }
+       }
 
         Ok(())
     }
