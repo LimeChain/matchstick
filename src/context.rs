@@ -243,10 +243,16 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         expected_ptr: u32,
         actual_ptr: u32,
     ) -> Result<bool, HostExportError> {
-        let expected: Token =
-            asc_get::<_, AscEnum<EthereumValueKind>, _>(&self.wasm_ctx, expected_ptr.into(), &GasCounter::new())?;
-        let actual: Token =
-            asc_get::<_, AscEnum<EthereumValueKind>, _>(&self.wasm_ctx, actual_ptr.into(), &GasCounter::new())?;
+        let expected: Token = asc_get::<_, AscEnum<EthereumValueKind>, _>(
+            &self.wasm_ctx,
+            expected_ptr.into(),
+            &GasCounter::new(),
+        )?;
+        let actual: Token = asc_get::<_, AscEnum<EthereumValueKind>, _>(
+            &self.wasm_ctx,
+            actual_ptr.into(),
+            &GasCounter::new(),
+        )?;
 
         if expected != actual {
             logging::error!(
@@ -317,7 +323,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     ) -> Result<(), HostExportError> {
         let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new())?;
         let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new())?;
-        let data: HashMap<String, Value> = try_asc_get(&self.wasm_ctx, data_ptr, &GasCounter::new())?;
+        let data: HashMap<String, Value> =
+            try_asc_get(&self.wasm_ctx, data_ptr, &GasCounter::new())?;
 
         let schema_fields_iter = SCHEMA
             .definitions
@@ -565,7 +572,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     ) -> Result<AscEnumArray<EthereumValueKind>, HostExportError> {
         let call: UnresolvedContractCall = asc_get::<_, AscUnresolvedContractCall_0_0_4, _>(
             &self.wasm_ctx,
-            contract_call_ptr.into(), &GasCounter::new()
+            contract_call_ptr.into(),
+            &GasCounter::new(),
         )?;
 
         let fn_id = MatchstickInstanceContext::<C>::fn_id(
@@ -588,7 +596,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 self.fn_ret_map
                     .get(&fn_id)
                     .unwrap_or_else(|| logging::critical!("Could not get value from function map."))
-                    .as_slice(), &GasCounter::new()
+                    .as_slice(),
+                &GasCounter::new(),
             )?;
 
             Ok(return_val)
@@ -615,16 +624,22 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         return_value_ptr: u32,
         reverts_ptr: AscPtr<bool>,
     ) -> Result<(), HostExportError> {
-        let contract_address: Address = asc_get(&self.wasm_ctx, contract_address_ptr.into(), &GasCounter::new())?;
+        let contract_address: Address = asc_get(
+            &self.wasm_ctx,
+            contract_address_ptr.into(),
+            &GasCounter::new(),
+        )?;
         let fn_name: String = asc_get(&self.wasm_ctx, fn_name_ptr, &GasCounter::new())?;
         let fn_signature: String = asc_get(&self.wasm_ctx, fn_signature_ptr, &GasCounter::new())?;
         let fn_args: Vec<Token> = asc_get::<_, Array<AscPtr<AscEnum<EthereumValueKind>>>, _>(
             &self.wasm_ctx,
-            fn_args_ptr.into(), &GasCounter::new()
+            fn_args_ptr.into(),
+            &GasCounter::new(),
         )?;
         let return_value: Vec<Token> = asc_get::<_, Array<AscPtr<AscEnum<EthereumValueKind>>>, _>(
             &self.wasm_ctx,
-            return_value_ptr.into(), &GasCounter::new()
+            return_value_ptr.into(),
+            &GasCounter::new(),
         )?;
         let reverts = bool::from(EnumPayload(reverts_ptr.to_payload()));
 
@@ -675,11 +690,14 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     ) -> Result<AscPtr<Uint8Array>, HostExportError> {
         let default_address_val = "0x0000000000000000000000000000000000000000";
         let result = match &self.data_source_return_value.0 {
-            Some(value) => {
-                asc_new(&mut self.wasm_ctx, value.as_bytes(), &GasCounter::new()).expect("Couldn't create pointer.")
-            }
-            None => asc_new(&mut self.wasm_ctx, default_address_val.as_bytes(), &GasCounter::new())
+            Some(value) => asc_new(&mut self.wasm_ctx, value.as_bytes(), &GasCounter::new())
                 .expect("Couldn't create pointer."),
+            None => asc_new(
+                &mut self.wasm_ctx,
+                default_address_val.as_bytes(),
+                &GasCounter::new(),
+            )
+            .expect("Couldn't create pointer."),
         };
 
         Ok(result)
@@ -692,12 +710,18 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     ) -> Result<AscPtr<AscString>, HostExportError> {
         let default_network_val = "mainnet";
         let result = match &self.data_source_return_value.1 {
-            Some(value) => {
-                AscPtr::alloc_obj(asc_string_from_str(&value.clone()), &mut self.wasm_ctx, &GasCounter::new())
-                    .expect("Couldn't create pointer.")
-            }
-            None => AscPtr::alloc_obj(asc_string_from_str(default_network_val), &mut self.wasm_ctx, &GasCounter::new())
-                .expect("Couldn't create pointer."),
+            Some(value) => AscPtr::alloc_obj(
+                asc_string_from_str(&value.clone()),
+                &mut self.wasm_ctx,
+                &GasCounter::new(),
+            )
+            .expect("Couldn't create pointer."),
+            None => AscPtr::alloc_obj(
+                asc_string_from_str(default_network_val),
+                &mut self.wasm_ctx,
+                &GasCounter::new(),
+            )
+            .expect("Couldn't create pointer."),
         };
 
         Ok(result)
@@ -710,10 +734,18 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     ) -> Result<AscPtr<AscEntity>, HostExportError> {
         let default_context_val = Entity::new();
         let result = match &self.data_source_return_value.2 {
-            Some(value) => {
-                asc_new(&mut self.wasm_ctx, &Entity::from(value.clone()).sorted(), &GasCounter::new()).unwrap()
-            }
-            None => asc_new(&mut self.wasm_ctx, &default_context_val.sorted(), &GasCounter::new()).unwrap(),
+            Some(value) => asc_new(
+                &mut self.wasm_ctx,
+                &Entity::from(value.clone()).sorted(),
+                &GasCounter::new(),
+            )
+            .unwrap(),
+            None => asc_new(
+                &mut self.wasm_ctx,
+                &default_context_val.sorted(),
+                &GasCounter::new(),
+            )
+            .unwrap(),
         };
 
         Ok(result)
@@ -729,7 +761,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     ) -> Result<(), HostExportError> {
         let address: String = asc_get(&self.wasm_ctx, address_ptr, &GasCounter::new())?;
         let network: String = asc_get(&self.wasm_ctx, network_ptr, &GasCounter::new())?;
-        let context: HashMap<String, Value> = try_asc_get(&self.wasm_ctx, context_ptr, &GasCounter::new())?;
+        let context: HashMap<String, Value> =
+            try_asc_get(&self.wasm_ctx, context_ptr, &GasCounter::new())?;
 
         self.data_source_return_value = (Some(address), Some(network), Some(context));
         Ok(())

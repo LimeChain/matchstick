@@ -8,12 +8,12 @@ mod unit_tests {
     use graph::{
         data::store::Value,
         prelude::ethabi::{Address, Token},
-        runtime::{asc_get, gas::GasCounter, AscPtr, AscType, try_asc_get},
+        runtime::{asc_get, gas::GasCounter, try_asc_get, AscPtr, AscType},
     };
     use graph_chain_ethereum::{runtime::abi::AscUnresolvedContractCall_0_0_4, Chain};
     use graph_runtime_wasm::asc_abi::class::{
         Array, AscEnum, AscTypedMap, AscTypedMapEntry, EnumPayload, EthereumValueKind,
-        StoreValueKind, TypedArray
+        StoreValueKind, TypedArray,
     };
     use serial_test::serial;
 
@@ -27,8 +27,9 @@ mod unit_tests {
 
     fn get_context() -> MatchstickInstanceContext<Chain> {
         GET_SCHEMA.call_once(|| {
-            SCHEMA_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from("./mocks/schema.graphql"));
-        });        
+            SCHEMA_LOCATION
+                .with(|path| *path.borrow_mut() = PathBuf::from("./mocks/schema.graphql"));
+        });
         let module = <MatchstickInstance<Chain>>::new("./mocks/wasm/gravity.wasm");
 
         module
@@ -44,8 +45,8 @@ mod unit_tests {
         let mut context = get_context();
 
         let message = asc_string_from_str("log message");
-        let pointer =
-            AscPtr::alloc_obj(message, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+        let pointer = AscPtr::alloc_obj(message, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
 
         accum();
         context
@@ -66,8 +67,8 @@ mod unit_tests {
         let mut context = get_context();
 
         let message = asc_string_from_str("log message");
-        let pointer =
-            AscPtr::alloc_obj(message, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+        let pointer = AscPtr::alloc_obj(message, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
 
         context
             .log(&GasCounter::new(), 0, pointer)
@@ -95,8 +96,12 @@ mod unit_tests {
 
         context.meta_tests = vec![];
         let initial_asc_string = asc_string_from_str("test");
-        let name_ptr = AscPtr::alloc_obj(initial_asc_string, &mut context.wasm_ctx, &GasCounter::new())
-            .expect("Couldn't unwrap pointer.");
+        let name_ptr = AscPtr::alloc_obj(
+            initial_asc_string,
+            &mut context.wasm_ctx,
+            &GasCounter::new(),
+        )
+        .expect("Couldn't unwrap pointer.");
         let should_throw_ptr = AscPtr::new(0);
 
         context
@@ -118,14 +123,20 @@ mod unit_tests {
         let id_string = asc_string_from_str("id");
         let field_name_string = asc_string_from_str("field_name");
         let expected_val_string = asc_string_from_str("val");
-        let entity_ptr = AscPtr::alloc_obj(entity_string, &mut context.wasm_ctx, &GasCounter::new())
+        let entity_ptr =
+            AscPtr::alloc_obj(entity_string, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
+        let id_ptr = AscPtr::alloc_obj(id_string, &mut context.wasm_ctx, &GasCounter::new())
             .expect("Couldn't create pointer.");
-        let id_ptr =
-            AscPtr::alloc_obj(id_string, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
-        let field_name_ptr = AscPtr::alloc_obj(field_name_string, &mut context.wasm_ctx, &GasCounter::new())
-            .expect("Couldn't create pointer.");
-        let expected_val_ptr = AscPtr::alloc_obj(expected_val_string, &mut context.wasm_ctx, &GasCounter::new())
-            .expect("Couldn't create pointer.");
+        let field_name_ptr =
+            AscPtr::alloc_obj(field_name_string, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
+        let expected_val_ptr = AscPtr::alloc_obj(
+            expected_val_string,
+            &mut context.wasm_ctx,
+            &GasCounter::new(),
+        )
+        .expect("Couldn't create pointer.");
 
         context.store.insert("entity".to_owned(), HashMap::new());
         let mut inner_map = context
@@ -164,14 +175,20 @@ mod unit_tests {
         let id_string = asc_string_from_str("id");
         let field_name_string = asc_string_from_str("field_name");
         let expected_val_string = asc_string_from_str("val");
-        let entity_ptr = AscPtr::alloc_obj(entity_string, &mut context.wasm_ctx, &GasCounter::new())
+        let entity_ptr =
+            AscPtr::alloc_obj(entity_string, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
+        let id_ptr = AscPtr::alloc_obj(id_string, &mut context.wasm_ctx, &GasCounter::new())
             .expect("Couldn't create pointer.");
-        let id_ptr =
-            AscPtr::alloc_obj(id_string, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
-        let field_name_ptr = AscPtr::alloc_obj(field_name_string, &mut context.wasm_ctx, &GasCounter::new())
-            .expect("Couldn't create pointer.");
-        let expected_val_ptr = AscPtr::alloc_obj(expected_val_string, &mut context.wasm_ctx, &GasCounter::new())
-            .expect("Couldn't create pointer.");
+        let field_name_ptr =
+            AscPtr::alloc_obj(field_name_string, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
+        let expected_val_ptr = AscPtr::alloc_obj(
+            expected_val_string,
+            &mut context.wasm_ctx,
+            &GasCounter::new(),
+        )
+        .expect("Couldn't create pointer.");
 
         let mut result = context
             .assert_field_equals(
@@ -251,16 +268,16 @@ mod unit_tests {
         let mut context = get_context();
 
         let val = asc_string_from_str("val");
-        let val_ptr =
-            AscPtr::alloc_obj(val, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+        let val_ptr = AscPtr::alloc_obj(val, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
 
         let asc_enum = AscEnum::<EthereumValueKind> {
             kind: EthereumValueKind::String,
             _padding: 0,
             payload: EnumPayload::from(val_ptr),
         };
-        let pointer =
-            AscPtr::alloc_obj(asc_enum, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+        let pointer = AscPtr::alloc_obj(asc_enum, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
 
         let result = context
             .assert_equals(&GasCounter::new(), pointer.wasm_ptr(), pointer.wasm_ptr())
@@ -277,10 +294,10 @@ mod unit_tests {
         let val = asc_string_from_str("val");
         let val1 = asc_string_from_str("val1");
 
-        let val_ptr =
-            AscPtr::alloc_obj(val, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
-        let val1_ptr =
-            AscPtr::alloc_obj(val1, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+        let val_ptr = AscPtr::alloc_obj(val, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
+        let val1_ptr = AscPtr::alloc_obj(val1, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
 
         let asc_enum = AscEnum::<EthereumValueKind> {
             kind: EthereumValueKind::String,
@@ -293,10 +310,10 @@ mod unit_tests {
             payload: EnumPayload::from(val1_ptr),
         };
 
-        let pointer =
-            AscPtr::alloc_obj(asc_enum, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
-        let pointer1 =
-            AscPtr::alloc_obj(asc_enum1, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+        let pointer = AscPtr::alloc_obj(asc_enum, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
+        let pointer1 = AscPtr::alloc_obj(asc_enum1, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
 
         let result = context
             .assert_equals(&GasCounter::new(), pointer.wasm_ptr(), pointer1.wasm_ptr())
@@ -313,10 +330,11 @@ mod unit_tests {
         let entity_type = asc_string_from_str("entity_type");
         let id = asc_string_from_str("id");
 
-        let entity_type_ptr = AscPtr::alloc_obj(entity_type, &mut context.wasm_ctx, &GasCounter::new())
+        let entity_type_ptr =
+            AscPtr::alloc_obj(entity_type, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
+        let id_ptr = AscPtr::alloc_obj(id, &mut context.wasm_ctx, &GasCounter::new())
             .expect("Couldn't create pointer.");
-        let id_ptr =
-            AscPtr::alloc_obj(id, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
 
         let result = context
             .assert_not_in_store(&GasCounter::new(), entity_type_ptr, id_ptr)
@@ -344,10 +362,11 @@ mod unit_tests {
         let entity_type = asc_string_from_str("entity_type");
         let id = asc_string_from_str("id");
 
-        let entity_type_ptr = AscPtr::alloc_obj(entity_type, &mut context.wasm_ctx, &GasCounter::new())
+        let entity_type_ptr =
+            AscPtr::alloc_obj(entity_type, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
+        let id_ptr = AscPtr::alloc_obj(id, &mut context.wasm_ctx, &GasCounter::new())
             .expect("Couldn't create pointer.");
-        let id_ptr =
-            AscPtr::alloc_obj(id, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
 
         let result = context
             .assert_not_in_store(&GasCounter::new(), entity_type_ptr, id_ptr)
@@ -378,23 +397,26 @@ mod unit_tests {
 
         let entity = asc_string_from_str("entity");
         let id = asc_string_from_str("id");
-        let entity_pointer =
-            AscPtr::alloc_obj(entity, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
-        let id_pointer =
-            AscPtr::alloc_obj(id, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+        let entity_pointer = AscPtr::alloc_obj(entity, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
+        let id_pointer = AscPtr::alloc_obj(id, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
 
         let value = context
             .mock_store_get(&GasCounter::new(), entity_pointer, id_pointer)
             .expect("Couldn't call mock_store_get.");
 
         assert_eq!(
-            value.read_ptr(&context.wasm_ctx, &GasCounter::new()).unwrap().content_len(
-                &value
-                    .read_ptr(&context.wasm_ctx, &GasCounter::new())
-                    .unwrap()
-                    .to_asc_bytes()
-                    .expect("Couldn't get entity bytes.")
-            ),
+            value
+                .read_ptr(&context.wasm_ctx, &GasCounter::new())
+                .unwrap()
+                .content_len(
+                    &value
+                        .read_ptr(&context.wasm_ctx, &GasCounter::new())
+                        .unwrap()
+                        .to_asc_bytes()
+                        .expect("Couldn't get entity bytes.")
+                ),
             4
         );
     }
@@ -406,10 +428,10 @@ mod unit_tests {
 
         let entity = asc_string_from_str("entity");
         let id = asc_string_from_str("id");
-        let entity_pointer =
-            AscPtr::alloc_obj(entity, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
-        let id_pointer =
-            AscPtr::alloc_obj(id, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+        let entity_pointer = AscPtr::alloc_obj(entity, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
+        let id_pointer = AscPtr::alloc_obj(id, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
 
         let value = context
             .mock_store_get(&GasCounter::new(), entity_pointer, id_pointer)
@@ -427,38 +449,44 @@ mod unit_tests {
         let id = asc_string_from_str("id");
         let key = asc_string_from_str("key");
         let data = asc_string_from_str("data");
-        let entity_pointer =
-            AscPtr::alloc_obj(entity, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
-        let id_pointer =
-            AscPtr::alloc_obj(id, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
-        let key_pointer =
-            AscPtr::alloc_obj(key, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
-        let data_pointer =
-            AscPtr::alloc_obj(data, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+        let entity_pointer = AscPtr::alloc_obj(entity, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
+        let id_pointer = AscPtr::alloc_obj(id, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
+        let key_pointer = AscPtr::alloc_obj(key, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
+        let data_pointer = AscPtr::alloc_obj(data, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
 
         let payload = AscEnum::<StoreValueKind> {
             kind: StoreValueKind::String,
             _padding: 0,
             payload: EnumPayload::from(data_pointer),
         };
-        let payload_pointer =
-            AscPtr::alloc_obj(payload, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+        let payload_pointer = AscPtr::alloc_obj(payload, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
         let map_entry = AscTypedMapEntry {
             key: key_pointer,
             value: payload_pointer,
         };
         let map_entry_pointer =
-            AscPtr::alloc_obj(map_entry, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+            AscPtr::alloc_obj(map_entry, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
         let asc_map = AscTypedMap {
             entries: AscPtr::alloc_obj(
-                Array::new(&[map_entry_pointer], &mut context.wasm_ctx, &GasCounter::new())
-                    .expect("Couldn't create Array."),
-                &mut context.wasm_ctx, &GasCounter::new()
+                Array::new(
+                    &[map_entry_pointer],
+                    &mut context.wasm_ctx,
+                    &GasCounter::new(),
+                )
+                .expect("Couldn't create Array."),
+                &mut context.wasm_ctx,
+                &GasCounter::new(),
             )
             .expect("Couldn't create pointer."),
         };
-        let asc_map_pointer =
-            AscPtr::alloc_obj(asc_map, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+        let asc_map_pointer = AscPtr::alloc_obj(asc_map, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
 
         context
             .mock_store_set(
@@ -485,14 +513,14 @@ mod unit_tests {
         let id = asc_string_from_str("id");
         let key = asc_string_from_str("key");
         let data = asc_string_from_str("data");
-        let entity_pointer =
-            AscPtr::alloc_obj(entity, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
-        let id_pointer =
-            AscPtr::alloc_obj(id, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
-        let key_pointer =
-            AscPtr::alloc_obj(key, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
-        let data_pointer =
-            AscPtr::alloc_obj(data, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+        let entity_pointer = AscPtr::alloc_obj(entity, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
+        let id_pointer = AscPtr::alloc_obj(id, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
+        let key_pointer = AscPtr::alloc_obj(key, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
+        let data_pointer = AscPtr::alloc_obj(data, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
 
         context.store.insert("entity".to_owned(), HashMap::new());
         let mut inner_map = context
@@ -508,24 +536,30 @@ mod unit_tests {
             _padding: 0,
             payload: EnumPayload::from(data_pointer),
         };
-        let payload_pointer =
-            AscPtr::alloc_obj(payload, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+        let payload_pointer = AscPtr::alloc_obj(payload, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
         let map_entry = AscTypedMapEntry {
             key: key_pointer,
             value: payload_pointer,
         };
         let map_entry_pointer =
-            AscPtr::alloc_obj(map_entry, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+            AscPtr::alloc_obj(map_entry, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
         let asc_map = AscTypedMap {
             entries: AscPtr::alloc_obj(
-                Array::new(&[map_entry_pointer], &mut context.wasm_ctx, &GasCounter::new())
-                    .expect("Couldn't create Array."),
-                &mut context.wasm_ctx, &GasCounter::new()
+                Array::new(
+                    &[map_entry_pointer],
+                    &mut context.wasm_ctx,
+                    &GasCounter::new(),
+                )
+                .expect("Couldn't create Array."),
+                &mut context.wasm_ctx,
+                &GasCounter::new(),
             )
             .expect("Couldn't create pointer."),
         };
-        let asc_map_pointer =
-            AscPtr::alloc_obj(asc_map, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+        let asc_map_pointer = AscPtr::alloc_obj(asc_map, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
 
         context
             .mock_store_set(
@@ -552,14 +586,14 @@ mod unit_tests {
         let id = asc_string_from_str("nstid");
         let key = asc_string_from_str("signer");
         let data = asc_string_from_str("graphAccountId");
-        let entity_pointer =
-            AscPtr::alloc_obj(nst, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
-        let id_pointer =
-            AscPtr::alloc_obj(id, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
-        let key_pointer =
-            AscPtr::alloc_obj(key, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
-        let data_pointer =
-            AscPtr::alloc_obj(data, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+        let entity_pointer = AscPtr::alloc_obj(nst, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
+        let id_pointer = AscPtr::alloc_obj(id, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
+        let key_pointer = AscPtr::alloc_obj(key, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
+        let data_pointer = AscPtr::alloc_obj(data, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
 
         context
             .store
@@ -584,24 +618,30 @@ mod unit_tests {
             _padding: 0,
             payload: EnumPayload::from(data_pointer),
         };
-        let payload_pointer =
-            AscPtr::alloc_obj(payload, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+        let payload_pointer = AscPtr::alloc_obj(payload, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
         let map_entry = AscTypedMapEntry {
             key: key_pointer,
             value: payload_pointer,
         };
         let map_entry_pointer =
-            AscPtr::alloc_obj(map_entry, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+            AscPtr::alloc_obj(map_entry, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
         let asc_map = AscTypedMap {
             entries: AscPtr::alloc_obj(
-                Array::new(&[map_entry_pointer], &mut context.wasm_ctx, &GasCounter::new())
-                    .expect("Couldn't create Array."),
-                &mut context.wasm_ctx, &GasCounter::new()
+                Array::new(
+                    &[map_entry_pointer],
+                    &mut context.wasm_ctx,
+                    &GasCounter::new(),
+                )
+                .expect("Couldn't create Array."),
+                &mut context.wasm_ctx,
+                &GasCounter::new(),
             )
             .expect("Couldn't create pointer."),
         };
-        let asc_map_pointer =
-            AscPtr::alloc_obj(asc_map, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+        let asc_map_pointer = AscPtr::alloc_obj(asc_map, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
 
         context
             .mock_store_set(
@@ -646,10 +686,10 @@ mod unit_tests {
 
         let entity = asc_string_from_str("entity");
         let id = asc_string_from_str("id");
-        let entity_pointer =
-            AscPtr::alloc_obj(entity, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
-        let id_pointer =
-            AscPtr::alloc_obj(id, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+        let entity_pointer = AscPtr::alloc_obj(entity, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
+        let id_pointer = AscPtr::alloc_obj(id, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
 
         context
             .mock_store_remove(&GasCounter::new(), entity_pointer, id_pointer)
@@ -673,22 +713,29 @@ mod unit_tests {
         // whereas otherwise it will be 42 and asc_get (in ethereum_call) will crash
         let h160_address = Address::from_str("89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7")
             .expect("Couldn't create Address.");
-        let address = TypedArray::new(h160_address.as_bytes(), &mut context.wasm_ctx, &GasCounter::new())
-            .expect("Coudln't create address.");
+        let address = TypedArray::new(
+            h160_address.as_bytes(),
+            &mut context.wasm_ctx,
+            &GasCounter::new(),
+        )
+        .expect("Coudln't create address.");
         let func_name = asc_string_from_str("funcName");
         let func_signature = asc_string_from_str("funcName(address):(string,string)");
         let val = asc_string_from_str("val");
 
-        let contract_name_pointer = AscPtr::alloc_obj(contract_name, &mut context.wasm_ctx, &GasCounter::new())
+        let contract_name_pointer =
+            AscPtr::alloc_obj(contract_name, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
+        let address_pointer = AscPtr::alloc_obj(address, &mut context.wasm_ctx, &GasCounter::new())
             .expect("Couldn't create pointer.");
-        let address_pointer =
-            AscPtr::alloc_obj(address, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
         let func_name_pointer =
-            AscPtr::alloc_obj(func_name, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
-        let func_signature_pointer = AscPtr::alloc_obj(func_signature, &mut context.wasm_ctx, &GasCounter::new())
+            AscPtr::alloc_obj(func_name, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
+        let func_signature_pointer =
+            AscPtr::alloc_obj(func_signature, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
+        let val_ptr = AscPtr::alloc_obj(val, &mut context.wasm_ctx, &GasCounter::new())
             .expect("Couldn't create pointer.");
-        let val_ptr =
-            AscPtr::alloc_obj(val, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
 
         let asc_enum = AscEnum::<EthereumValueKind> {
             kind: EthereumValueKind::String,
@@ -696,11 +743,17 @@ mod unit_tests {
             payload: EnumPayload::from(val_ptr),
         };
         let func_args_pointer =
-            AscPtr::alloc_obj(asc_enum, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+            AscPtr::alloc_obj(asc_enum, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
         let func_args_array_pointer = AscPtr::alloc_obj(
-            Array::new(&[func_args_pointer], &mut context.wasm_ctx, &GasCounter::new())
-                .expect("Couldn't create array."),
-            &mut context.wasm_ctx, &GasCounter::new()
+            Array::new(
+                &[func_args_pointer],
+                &mut context.wasm_ctx,
+                &GasCounter::new(),
+            )
+            .expect("Couldn't create array."),
+            &mut context.wasm_ctx,
+            &GasCounter::new(),
         )
         .expect("Couldn't create pointer.");
 
@@ -711,8 +764,9 @@ mod unit_tests {
             function_signature: func_signature_pointer,
             function_args: func_args_array_pointer,
         };
-        let call_pointer = AscPtr::alloc_obj(unresolved_call, &mut context.wasm_ctx, &GasCounter::new())
-            .expect("Couldn't create pointer.");
+        let call_pointer =
+            AscPtr::alloc_obj(unresolved_call, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
 
         let result = context
             .ethereum_call(&GasCounter::new(), call_pointer.wasm_ptr())
@@ -720,7 +774,8 @@ mod unit_tests {
 
         let fn_args: Vec<Token> = asc_get::<_, Array<AscPtr<AscEnum<EthereumValueKind>>>, _>(
             &mut context.wasm_ctx,
-            result, &GasCounter::new()
+            result,
+            &GasCounter::new(),
         )
         .expect("Couldn't unwrap result.");
         assert_eq!(fn_args[0], Token::Bool(false));
@@ -741,22 +796,29 @@ mod unit_tests {
         // whereas otherwise it will be 42 and asc_get (in ethereum_call) will crash
         let h160_address = Address::from_str("89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7")
             .expect("Couldn't create Address.");
-        let address = TypedArray::new(h160_address.as_bytes(), &mut context.wasm_ctx, &GasCounter::new())
-            .expect("Coudln't create address.");
+        let address = TypedArray::new(
+            h160_address.as_bytes(),
+            &mut context.wasm_ctx,
+            &GasCounter::new(),
+        )
+        .expect("Coudln't create address.");
         let func_name = asc_string_from_str("funcName");
         let func_signature = asc_string_from_str("funcName(address):(string,string)");
         let val = asc_string_from_str("val");
 
-        let contract_name_pointer = AscPtr::alloc_obj(contract_name, &mut context.wasm_ctx, &GasCounter::new())
+        let contract_name_pointer =
+            AscPtr::alloc_obj(contract_name, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
+        let address_pointer = AscPtr::alloc_obj(address, &mut context.wasm_ctx, &GasCounter::new())
             .expect("Couldn't create pointer.");
-        let address_pointer =
-            AscPtr::alloc_obj(address, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
         let func_name_pointer =
-            AscPtr::alloc_obj(func_name, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
-        let func_signature_pointer = AscPtr::alloc_obj(func_signature, &mut context.wasm_ctx, &GasCounter::new())
+            AscPtr::alloc_obj(func_name, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
+        let func_signature_pointer =
+            AscPtr::alloc_obj(func_signature, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
+        let val_ptr = AscPtr::alloc_obj(val, &mut context.wasm_ctx, &GasCounter::new())
             .expect("Couldn't create pointer.");
-        let val_ptr =
-            AscPtr::alloc_obj(val, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
 
         let asc_enum = AscEnum::<EthereumValueKind> {
             kind: EthereumValueKind::String,
@@ -764,11 +826,17 @@ mod unit_tests {
             payload: EnumPayload::from(val_ptr),
         };
         let func_args_pointer =
-            AscPtr::alloc_obj(asc_enum, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+            AscPtr::alloc_obj(asc_enum, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
         let func_args_array_pointer = AscPtr::alloc_obj(
-            Array::new(&[func_args_pointer], &mut context.wasm_ctx, &GasCounter::new())
-                .expect("Couldn't create array."),
-            &mut context.wasm_ctx, &GasCounter::new()
+            Array::new(
+                &[func_args_pointer],
+                &mut context.wasm_ctx,
+                &GasCounter::new(),
+            )
+            .expect("Couldn't create array."),
+            &mut context.wasm_ctx,
+            &GasCounter::new(),
         )
         .expect("Couldn't create pointer.");
 
@@ -779,8 +847,9 @@ mod unit_tests {
             function_signature: func_signature_pointer,
             function_args: func_args_array_pointer,
         };
-        let call_pointer = AscPtr::alloc_obj(unresolved_call, &mut context.wasm_ctx, &GasCounter::new())
-            .expect("Couldn't create pointer.");
+        let call_pointer =
+            AscPtr::alloc_obj(unresolved_call, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
 
         let result = context
             .ethereum_call(&GasCounter::new(), call_pointer.wasm_ptr())
@@ -798,20 +867,26 @@ mod unit_tests {
         // address into 20 bytes whereas otherwise it will be 42
         let h160_address = Address::from_str("89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7")
             .expect("Couldn't create Address.");
-        let address = TypedArray::new(h160_address.as_bytes(), &mut context.wasm_ctx, &GasCounter::new())
-            .expect("Coudln't create address.");
+        let address = TypedArray::new(
+            h160_address.as_bytes(),
+            &mut context.wasm_ctx,
+            &GasCounter::new(),
+        )
+        .expect("Coudln't create address.");
         let func_name = asc_string_from_str("funcName");
         let func_signature = asc_string_from_str("funcName(address):(string,string)");
         let val = asc_string_from_str("val");
 
-        let address_pointer =
-            AscPtr::alloc_obj(address, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
-        let func_name_pointer =
-            AscPtr::alloc_obj(func_name, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
-        let func_signature_pointer = AscPtr::alloc_obj(func_signature, &mut context.wasm_ctx, &GasCounter::new())
+        let address_pointer = AscPtr::alloc_obj(address, &mut context.wasm_ctx, &GasCounter::new())
             .expect("Couldn't create pointer.");
-        let val_pointer =
-            AscPtr::alloc_obj(val, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+        let func_name_pointer =
+            AscPtr::alloc_obj(func_name, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
+        let func_signature_pointer =
+            AscPtr::alloc_obj(func_signature, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
+        let val_pointer = AscPtr::alloc_obj(val, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
         let reverts_pointer = AscPtr::new(0);
 
         let asc_enum = AscEnum::<EthereumValueKind> {
@@ -820,11 +895,17 @@ mod unit_tests {
             payload: EnumPayload::from(val_pointer),
         };
         let func_args_pointer =
-            AscPtr::alloc_obj(asc_enum, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+            AscPtr::alloc_obj(asc_enum, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
         let func_args_array_pointer = AscPtr::alloc_obj(
-            Array::new(&[func_args_pointer], &mut context.wasm_ctx, &GasCounter::new())
-                .expect("Couldn't create array."),
-            &mut context.wasm_ctx, &GasCounter::new()
+            Array::new(
+                &[func_args_pointer],
+                &mut context.wasm_ctx,
+                &GasCounter::new(),
+            )
+            .expect("Couldn't create array."),
+            &mut context.wasm_ctx,
+            &GasCounter::new(),
         )
         .expect("Couldn't create pointer.");
 
@@ -857,20 +938,26 @@ mod unit_tests {
         // address into 20 bytes whereas otherwise it will be 42
         let h160_address = Address::from_str("89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7")
             .expect("Couldn't create Address.");
-        let address = TypedArray::new(h160_address.as_bytes(), &mut context.wasm_ctx, &GasCounter::new())
-            .expect("Coudln't create address.");
+        let address = TypedArray::new(
+            h160_address.as_bytes(),
+            &mut context.wasm_ctx,
+            &GasCounter::new(),
+        )
+        .expect("Coudln't create address.");
         let func_name = asc_string_from_str("funcName");
         let func_signature = asc_string_from_str("funcName(address):(string,string)");
         let val = asc_string_from_str("val");
 
-        let address_pointer =
-            AscPtr::alloc_obj(address, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
-        let func_name_pointer =
-            AscPtr::alloc_obj(func_name, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
-        let func_signature_pointer = AscPtr::alloc_obj(func_signature, &mut context.wasm_ctx, &GasCounter::new())
+        let address_pointer = AscPtr::alloc_obj(address, &mut context.wasm_ctx, &GasCounter::new())
             .expect("Couldn't create pointer.");
-        let val_pointer =
-            AscPtr::alloc_obj(val, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+        let func_name_pointer =
+            AscPtr::alloc_obj(func_name, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
+        let func_signature_pointer =
+            AscPtr::alloc_obj(func_signature, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
+        let val_pointer = AscPtr::alloc_obj(val, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
         let reverts_pointer = AscPtr::new(1);
 
         let asc_enum = AscEnum::<EthereumValueKind> {
@@ -879,11 +966,17 @@ mod unit_tests {
             payload: EnumPayload::from(val_pointer),
         };
         let func_args_pointer =
-            AscPtr::alloc_obj(asc_enum, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+            AscPtr::alloc_obj(asc_enum, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
         let func_args_array_pointer = AscPtr::alloc_obj(
-            Array::new(&[func_args_pointer], &mut context.wasm_ctx, &GasCounter::new())
-                .expect("Couldn't create array."),
-            &mut context.wasm_ctx, &GasCounter::new()
+            Array::new(
+                &[func_args_pointer],
+                &mut context.wasm_ctx,
+                &GasCounter::new(),
+            )
+            .expect("Couldn't create array."),
+            &mut context.wasm_ctx,
+            &GasCounter::new(),
         )
         .expect("Couldn't create pointer.");
 
@@ -914,34 +1007,40 @@ mod unit_tests {
 
         let key = asc_string_from_str("key");
         let data = asc_string_from_str("data");
-        let key_pointer =
-            AscPtr::alloc_obj(key, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
-        let data_pointer =
-            AscPtr::alloc_obj(data, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+        let key_pointer = AscPtr::alloc_obj(key, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
+        let data_pointer = AscPtr::alloc_obj(data, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
 
         let payload = AscEnum::<StoreValueKind> {
             kind: StoreValueKind::String,
             _padding: 0,
             payload: EnumPayload::from(data_pointer),
         };
-        let payload_pointer =
-            AscPtr::alloc_obj(payload, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+        let payload_pointer = AscPtr::alloc_obj(payload, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
         let map_entry = AscTypedMapEntry {
             key: key_pointer,
             value: payload_pointer,
         };
         let map_entry_pointer =
-            AscPtr::alloc_obj(map_entry, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+            AscPtr::alloc_obj(map_entry, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
         let asc_map = AscTypedMap {
             entries: AscPtr::alloc_obj(
-                Array::new(&[map_entry_pointer], &mut context.wasm_ctx, &GasCounter::new())
-                    .expect("Couldn't create Array."),
-                &mut context.wasm_ctx, &GasCounter::new()
+                Array::new(
+                    &[map_entry_pointer],
+                    &mut context.wasm_ctx,
+                    &GasCounter::new(),
+                )
+                .expect("Couldn't create Array."),
+                &mut context.wasm_ctx,
+                &GasCounter::new(),
             )
             .expect("Couldn't create pointer."),
         };
-        let asc_entity =
-            AscPtr::alloc_obj(asc_map, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+        let asc_entity = AscPtr::alloc_obj(asc_map, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
 
         let mut result_tuple = get_address_network_context(&mut context);
 
@@ -949,26 +1048,59 @@ mod unit_tests {
         assert_eq!("mainnet", result_tuple.1);
         assert_eq!(0, result_tuple.2.len());
 
-        let new_address = AscPtr::alloc_obj(asc_string_from_str("0x90cBa2Bbb19ecc291A12066Fd8329D65FA1f1947"), &mut context.wasm_ctx, &GasCounter::new()).unwrap();
-        let new_network = AscPtr::alloc_obj(asc_string_from_str("sidenet"), &mut context.wasm_ctx, &GasCounter::new()).unwrap();
-        context.set_data_source_return_values(&GasCounter::new(), new_address, new_network, asc_entity).unwrap();
+        let new_address = AscPtr::alloc_obj(
+            asc_string_from_str("0x90cBa2Bbb19ecc291A12066Fd8329D65FA1f1947"),
+            &mut context.wasm_ctx,
+            &GasCounter::new(),
+        )
+        .unwrap();
+        let new_network = AscPtr::alloc_obj(
+            asc_string_from_str("sidenet"),
+            &mut context.wasm_ctx,
+            &GasCounter::new(),
+        )
+        .unwrap();
+        context
+            .set_data_source_return_values(&GasCounter::new(), new_address, new_network, asc_entity)
+            .unwrap();
 
         result_tuple = get_address_network_context(&mut context);
 
         assert_eq!("0x90cBa2Bbb19ecc291A12066Fd8329D65FA1f1947", result_tuple.0);
         assert_eq!("sidenet", result_tuple.1);
         assert_eq!(1, result_tuple.2.len());
-        assert_eq!(&Value::String("data".to_owned()), result_tuple.2.get("key").unwrap());
+        assert_eq!(
+            &Value::String("data".to_owned()),
+            result_tuple.2.get("key").unwrap()
+        );
     }
 
-    fn get_address_network_context(context: &mut MatchstickInstanceContext<Chain>) -> (String, String, HashMap<String, Value>) {
-        let address_ptr = context.mock_data_source_address(&GasCounter::new()).unwrap().read_ptr(&context.wasm_ctx, &GasCounter::new()).unwrap().to_vec(&context.wasm_ctx, &GasCounter::new()).unwrap();
-        let network_ptr = context.mock_data_source_network(&GasCounter::new()).unwrap();
-        let context_ptr = context.mock_data_source_context(&GasCounter::new()).unwrap().wasm_ptr();
+    fn get_address_network_context(
+        context: &mut MatchstickInstanceContext<Chain>,
+    ) -> (String, String, HashMap<String, Value>) {
+        let address_ptr = context
+            .mock_data_source_address(&GasCounter::new())
+            .unwrap()
+            .read_ptr(&context.wasm_ctx, &GasCounter::new())
+            .unwrap()
+            .to_vec(&context.wasm_ctx, &GasCounter::new())
+            .unwrap();
+        let network_ptr = context
+            .mock_data_source_network(&GasCounter::new())
+            .unwrap();
+        let context_ptr = context
+            .mock_data_source_context(&GasCounter::new())
+            .unwrap()
+            .wasm_ptr();
 
         let address: String = String::from_utf8_lossy(address_ptr.as_slice()).to_string();
         let network: String = asc_get(&context.wasm_ctx, network_ptr, &GasCounter::new()).unwrap();
-        let context: HashMap<String, Value> = try_asc_get(&context.wasm_ctx, AscPtr::new(context_ptr), &GasCounter::new()).unwrap();
+        let context: HashMap<String, Value> = try_asc_get(
+            &context.wasm_ctx,
+            AscPtr::new(context_ptr),
+            &GasCounter::new(),
+        )
+        .unwrap();
 
         (address, network, context)
     }
@@ -979,8 +1111,8 @@ mod unit_tests {
         let mut context = get_context();
 
         let gravatar = asc_string_from_str("gravatar");
-        let gravatar_ptr =
-            AscPtr::alloc_obj(gravatar, &mut context.wasm_ctx, &GasCounter::new()).expect("Couldn't create pointer.");
+        let gravatar_ptr = AscPtr::alloc_obj(gravatar, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
 
         let mut result = context
             .count_entities(&GasCounter::new(), gravatar_ptr)
