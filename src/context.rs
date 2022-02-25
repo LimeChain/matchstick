@@ -28,7 +28,7 @@ use graph_runtime_wasm::{
 use lazy_static::lazy_static;
 use serde_json::to_string_pretty;
 
-use crate::logging::Log;
+use crate::logging;
 use crate::SCHEMA_LOCATION;
 
 lazy_static! {
@@ -41,25 +41,19 @@ lazy_static! {
         let mut s = "".to_owned();
         SCHEMA_LOCATION.with(|path| {
             s = std::fs::read_to_string(&*path.borrow()).unwrap_or_else(|err| {
-                panic!(
-                    "{}",
-                    Log::Critical(format!(
-                        "Something went wrong when trying to read `{:?}`: {}",
-                        &*path.borrow(),
-                        err,
-                    )),
-                );
+                logging::critical!(
+                    "Something went wrong when trying to read `{:?}`: {}",
+                    &*path.borrow(),
+                    err,
+                )
             });
         });
 
         schema::parse_schema::<String>(&s).unwrap_or_else(|err| {
-            panic!(
-                "{}",
-                Log::Critical(format!(
-                    "Something went wrong when trying to parse `schema.graphql`: {}",
-                    err,
-                )),
-            );
+            logging::critical!(
+                "Something went wrong when trying to parse `schema.graphql`: {}",
+                err
+            )
         }).into_static()
     };
 }
@@ -142,12 +136,13 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         msg: AscPtr<AscString>,
     ) -> Result<(), HostExportError> {
         let msg: String = asc_get(&self.wasm_ctx, msg)?;
-        let log = Log::new(level, msg);
 
-        if let Log::Critical(_) = log {
-            panic!("{}", log);
-        } else {
-            log.println();
+        match level {
+            0 => {
+                logging::clear_indent();
+                logging::critical!(msg)
+            }
+            _ => logging::log!(level, msg),
         }
 
         Ok(())
@@ -155,10 +150,10 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
     /// function logStore(): void
     pub fn log_store(&mut self, _gas: &GasCounter) -> Result<(), HostExportError> {
-        Log::Debug(
-            to_string_pretty(&self.store).unwrap_or_else(|err| panic!("{}", Log::Critical(err))),
-        )
-        .println();
+        logging::debug!(
+            "{}",
+            to_string_pretty(&self.store).unwrap_or_else(|err| logging::critical!(err)),
+        );
         Ok(())
     }
 
@@ -200,41 +195,45 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let expected_val: String = asc_get(&self.wasm_ctx, expected_val_ptr)?;
 
         if !self.store.contains_key(&entity_type) {
-            let msg = format!(
+            logging::error!(
                 "(assert.fieldEquals) No entities with type '{}' found.",
-                &entity_type,
+                &entity_type
             );
-            Log::Error(msg).println();
+
             return Ok(false);
         }
 
         let entities = self.store.get(&entity_type).unwrap();
         if !entities.contains_key(&id) {
-            let msg = format!(
+            logging::error!(
                 "(assert.fieldEquals) No entity with type '{}' and id '{}' found.",
-                &entity_type, &id,
+                &entity_type,
+                &id
             );
-            Log::Error(msg).println();
+
             return Ok(false);
         }
 
         let entity = entities.get(&id).unwrap();
         if !entity.contains_key(&field_name) {
-            let msg = format!(
+            logging::error!(
                 "(assert.fieldEquals) No field named '{}' on entity with type '{}' and id '{}' found.",
-                &field_name, &entity_type, &id,
+                &field_name,
+                &entity_type,
+                &id
             );
-            Log::Error(msg).println();
+
             return Ok(false);
         }
 
         let val = entity.get(&field_name).unwrap();
         if val.to_string() != expected_val {
-            let msg = format!(
+            logging::error!(
                 "(assert.fieldEquals) Expected field '{}' to equal '{}', but was '{}' instead.",
-                &field_name, &expected_val, val,
+                &field_name,
+                &expected_val,
+                val
             );
-            Log::Error(msg).println();
             return Ok(false);
         };
 
@@ -254,11 +253,11 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             asc_get::<_, AscEnum<EthereumValueKind>, _>(&self.wasm_ctx, actual_ptr.into())?;
 
         if expected != actual {
-            let msg = format!(
+            logging::error!(
                 "(assert.equals) Expected value was '{:?}' but actual value was '{:?}'",
-                expected, actual,
+                expected,
+                actual
             );
-            Log::Error(msg).println();
             return Ok(false);
         }
         Ok(true)
@@ -277,11 +276,11 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         if self.store.contains_key(&entity_type)
             && self.store.get(&entity_type).unwrap().contains_key(&id)
         {
-            let msg = format!(
+            logging::error!(
                 "(assert.notInStore) Value for entity type: '{}' and id: '{}' was found in store.",
-                entity_type, id,
+                entity_type,
+                id
             );
-            Log::Error(msg).println();
             return Ok(false);
         }
 
@@ -339,10 +338,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 }
             })
             .unwrap_or_else(|| {
-                panic!(
-                    "{}",
-                    Log::Critical("Something went wrong! Could not find the entity defined in the GraphQL schema.")
-                );
+                logging::critical!("Something went wrong! Could not find the entity defined in the GraphQL schema.")
             })
             .fields
             .iter();
@@ -352,18 +348,18 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             .filter(|&f| matches!(f.field_type, schema::Type::NonNullType(..)) && !f.is_derived());
 
         for f in required_fields {
-            let warn = |s: String| Log::Warning(s).println();
-
             if !data.contains_key(&f.name) {
-                warn(format!(
+                logging::warning!(
                     "Missing a required field '{}' for an entity of type '{}'.",
-                    f.name, entity_type,
-                ));
+                    f.name,
+                    entity_type,
+                );
             } else if let Value::Null = data.get(&f.name).unwrap() {
-                warn(format!(
+                logging::warning!(
                     "The required field '{}' for an entity of type '{}' is null.",
-                    f.name, entity_type,
-                ));
+                    f.name,
+                    entity_type,
+                );
             }
         }
 
@@ -385,12 +381,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                     .derived
                     .get(&clean_field_type)
                     .unwrap_or_else(|| {
-                        panic!(
-                            "{}",
-                            Log::Critical(format!(
-                                "Failed to get field names vector for type {}",
-                                clean_field_type
-                            ))
+                        logging::critical!(
+                            "Failed to get field names vector for type {}",
+                            clean_field_type
                         )
                     })
                     .1
@@ -432,13 +425,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 .derived
                 .get(&entity_type)
                 .unwrap_or_else(|| {
-                    panic!(
-                        "{}",
-                        Log::Critical(format!(
-                            "Couldn't find value for key {} in derived map",
-                            entity_type
-                        ))
-                    )
+                    logging::critical!("Couldn't find value for key {} in derived map", entity_type)
                 })
                 .1
                 .clone();
@@ -448,12 +435,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                     let derived_field_value = data
                         .get(&linking_field.1)
                         .unwrap_or_else(|| {
-                            panic!(
-                                "{}",
-                                Log::Critical(format!(
-                                    "Couldn't find value for {} in submitted data",
-                                    linking_field.1
-                                ))
+                            logging::critical!(
+                                "Couldn't find value for {} in submitted data",
+                                linking_field.1
                             )
                         })
                         .clone();
@@ -504,25 +488,16 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                     .store
                     .get(&original_entity)
                     .unwrap_or_else(|| {
-                        panic!(
-                            "{}",
-                            Log::Critical(format!(
-                                "Couldn't find value for {} in store",
-                                original_entity
-                            ))
-                        )
+                        logging::critical!("Couldn't find value for {} in store", original_entity)
                     })
                     .clone();
                 if inner_store.contains_key(&derived_field_string_value) {
                     let mut innermost_store = inner_store
                         .get(&derived_field_string_value)
                         .unwrap_or_else(|| {
-                            panic!(
-                                "{}",
-                                Log::Critical(format!(
-                                    "Couldn't find value for {} in inner store",
-                                    derived_field_string_value
-                                ))
+                            logging::critical!(
+                                "Couldn't find value for {} in inner store",
+                                derived_field_string_value
                             )
                         })
                         .clone();
@@ -530,12 +505,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                         let innermost_value = innermost_store
                             .get(&linking_field.0)
                             .unwrap_or_else(|| {
-                                panic!(
-                                    "{}",
-                                    Log::Critical(format!(
-                                        "Couldn't find value for {} in innermost store",
-                                        linking_field.0
-                                    ))
+                                logging::critical!(
+                                    "Couldn't find value for {} in innermost store",
+                                    linking_field.0
                                 )
                             })
                             .clone();
@@ -578,11 +550,11 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
             self.store.insert(entity_type, entity_type_store);
         } else {
-            let msg = format!(
+            logging::error!(
                 "(store.remove) Entity with type '{}' and id '{}' does not exist.",
-                &entity_type, &id,
+                &entity_type,
+                &id
             );
-            Log::Error(msg).println();
         }
 
         Ok(())
@@ -602,9 +574,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let fn_id = MatchstickInstanceContext::<C>::fn_id(
             &call.contract_address.to_string(),
             &call.function_name,
-            &call.function_signature.unwrap_or_else(|| {
-                panic!("{}", Log::Critical("Could not get function signature."));
-            }),
+            &call
+                .function_signature
+                .unwrap_or_else(|| logging::critical!("Could not get function signature.")),
             call.function_args,
         );
 
@@ -618,23 +590,15 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 &mut self.wasm_ctx,
                 self.fn_ret_map
                     .get(&fn_id)
-                    .unwrap_or_else(|| {
-                        panic!(
-                            "{}",
-                            Log::Critical("Could not get value from function map."),
-                        );
-                    })
+                    .unwrap_or_else(|| logging::critical!("Could not get value from function map."))
                     .as_slice(),
             )?;
 
             Ok(return_val)
         } else {
-            panic!(
-                "{}",
-                Log::Critical(format!(
-                    "Key: '{}' not found in map. Please mock the function before calling it.",
-                    &fn_id,
-                )),
+            logging::critical!(
+                "Key: '{}' not found in map. Please mock the function before calling it.",
+                &fn_id,
             );
         }
     }
@@ -772,6 +736,26 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
         self.data_source_return_value = (Some(address), Some(network), Some(context));
         Ok(())
+    }
+
+    pub fn count_entities(
+        &mut self,
+        _gas: &GasCounter,
+        entity_type_ptr: AscPtr<AscString>,
+    ) -> Result<i32, HostExportError> {
+        let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr)?;
+
+        match self.store.get(&entity_type) {
+            Some(inner_map) => Ok(inner_map.len().try_into().unwrap_or_else(|err| {
+                panic!(
+                    "Couldn't cast usize value: {} into i32.\n{}",
+                    inner_map.len(),
+                    err
+                )
+            })),
+            None => Ok(0),
+        }
+
     }
 
     pub fn mock_ipfs_file(

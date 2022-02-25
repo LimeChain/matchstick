@@ -5,7 +5,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
-use crate::logging::Log;
+use crate::logging;
 
 /// Collects all tests sources from the current TESTS_LOCATION
 /// Filters the sources if suite name[s] are passed to the `matchstick` command
@@ -17,7 +17,7 @@ pub fn get_test_sources(matches: &ArgMatches) -> HashMap<String, Vec<PathBuf>> {
     });
 
     if testable.is_empty() {
-        panic!("{}", Log::Critical("No tests have been written yet."));
+        logging::critical!("No tests have been written yet.");
     }
 
     if let Some(vals) = matches.values_of("test_suites") {
@@ -33,12 +33,9 @@ pub fn get_test_sources(matches: &ArgMatches) -> HashMap<String, Vec<PathBuf>> {
             .collect();
 
         if !unrecog_sources.is_empty() {
-            panic!(
-                "{}",
-                Log::Critical(format!(
-                    "The following tests could not be found: {}",
-                    unrecog_sources.join(", "),
-                )),
+            logging::critical!(
+                "The following tests could not be found: {}",
+                unrecog_sources.join(", ")
             );
         }
 
@@ -55,15 +52,12 @@ pub fn get_test_sources(matches: &ArgMatches) -> HashMap<String, Vec<PathBuf>> {
 fn collect_files(path: &Path) -> HashMap<String, Vec<PathBuf>> {
     let mut files: HashMap<String, Vec<PathBuf>> = HashMap::new();
 
-    let entries = path.read_dir().unwrap_or_else(|err| {
-        panic!(
-            "{}",
-            Log::Critical(format!("Could not get tests from {:?}: {}", path, err,))
-        );
-    });
+    let entries = path
+        .read_dir()
+        .unwrap_or_else(|err| logging::critical!("Could not get tests from {:?}: {}", path, err));
 
     for entry in entries {
-        let entry = entry.unwrap_or_else(|err| panic!("{}", Log::Critical(err)));
+        let entry = entry.unwrap_or_else(|err| logging::critical!(err));
         let name = entry.file_name().to_str().unwrap().to_ascii_lowercase();
 
         if name.ends_with(".test.ts") {
@@ -90,10 +84,10 @@ pub fn is_source_modified(in_files: &[PathBuf], out_file: &Path) -> bool {
 
     let wasm_modified = fs::metadata(out_file)
         .unwrap_or_else(|err| {
-            panic!(
+            logging::critical!(
                 "Failed to extract metadata from {:?} with error: {}",
                 out_file,
-                Log::Critical(err)
+                err
             )
         })
         .modified()
@@ -102,10 +96,10 @@ pub fn is_source_modified(in_files: &[PathBuf], out_file: &Path) -> bool {
     for file in in_files {
         let in_file_modified = fs::metadata(file)
             .unwrap_or_else(|err| {
-                panic!(
+                logging::critical!(
                     "Failed to extract metadata from {:?} with error: {}",
                     file,
-                    Log::Critical(err)
+                    err
                 )
             })
             .modified()
@@ -133,10 +127,10 @@ fn are_imports_modified(in_file: &Path, wasm_modified: SystemTime) -> bool {
 
         let import_modified = fs::metadata(&absolute_path)
             .unwrap_or_else(|err| {
-                panic!(
+                logging::critical!(
                     "Failed to extract metadata from {:?} with error: {}",
                     absolute_path,
-                    Log::Critical(err)
+                    err
                 )
             })
             .modified()
@@ -158,7 +152,7 @@ fn get_import_absolute_path(in_file: &Path, imported_file: &str) -> PathBuf {
     combined_path.push(format!("{}.ts", imported_file));
     combined_path
         .canonicalize()
-        .unwrap_or_else(|_| panic!("{} does not exists!", &imported_file))
+        .unwrap_or_else(|_| logging::critical!("{} does not exists!", &imported_file))
 }
 
 /// Collects all imported file paths (except node_modules) from a test.ts file using regex
@@ -169,11 +163,7 @@ fn get_imports_from_file(in_file: &Path) -> Vec<String> {
     // Handles single and double quotes
     let imports_regex = Regex::new(r#"[import.*from]\s*["|']\s*([../+|./].*)\s*["|']"#).unwrap();
     let file_as_str = fs::read_to_string(in_file).unwrap_or_else(|err| {
-        panic!(
-            "Failed to read {:?} with error: {}",
-            in_file,
-            Log::Critical(err)
-        )
+        logging::critical!("Failed to read {:?} with error: {}", in_file, err)
     });
 
     imports_regex

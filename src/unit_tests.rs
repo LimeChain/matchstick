@@ -901,4 +901,31 @@ mod unit_tests {
             .clone();
         assert_eq!(token, REVERTS_IDENTIFIER[0]);
     }
+
+    #[test]
+    #[serial]
+    fn count_entities_basic_test() {
+        let mut context = get_context();
+
+        let gravatar = asc_string_from_str("gravatar");
+        let gravatar_ptr =
+            AscPtr::alloc_obj(gravatar, &mut context.wasm_ctx).expect("Couldn't create pointer.");
+
+        let mut result = context
+            .count_entities(&GasCounter::new(), gravatar_ptr)
+            .unwrap();
+
+        assert_eq!(0, result);
+
+        let mut gravatar_map = HashMap::new();
+        gravatar_map.insert("gravatar1".to_owned(), HashMap::new());
+        gravatar_map.insert("gravatar2".to_owned(), HashMap::new());
+        context.store.insert("gravatar".to_owned(), gravatar_map);
+
+        result = context
+            .count_entities(&GasCounter::new(), gravatar_ptr)
+            .unwrap();
+
+        assert_eq!(2, result);
+    }
 }

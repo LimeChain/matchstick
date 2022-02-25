@@ -10,7 +10,6 @@ use graph_chain_ethereum::Chain;
 use crate::compiler::Compiler;
 use crate::config::MatchstickConfig;
 use crate::instance::MatchstickInstance;
-use crate::logging::Log;
 use crate::test_suite::{TestResult, TestSuite};
 
 use crate::coverage::generate_coverage_report;
@@ -48,7 +47,7 @@ fn main() {
     TESTS_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&config.tests_path));
     LIBS_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&config.libs_path));
 
-    Log::Default("Compiling...\n".to_owned().bright_green()).println();
+    logging::log_with_style!(bright_green, "Compiling...\n");
 
     let compiler = Compiler::new(PathBuf::from(config.libs_path))
         .export_table()
@@ -83,18 +82,18 @@ fn main() {
 
     let exit_code = run_test_suites(test_suites);
 
-    Log::Default(format!(
+    logging::default!(
         "\n[{}] Program executed in: {:.3?}.",
         Local::now().to_rfc2822(),
         now.elapsed()
-    ))
-    .println();
+    );
 
     std::process::exit(exit_code);
 }
 
 fn print_logo() {
-    Log::Default(
+    logging::log_with_style!(
+        bright_red,
         r#"
 ___  ___      _       _         _   _      _
 |  \/  |     | |     | |       | | (_)    | |
@@ -103,20 +102,18 @@ ___  ___      _       _         _   _      _
 | |  | | (_| | || (__| | | \__ \ |_| | (__|   <
 \_|  |_/\__,_|\__\___|_| |_|___/\__|_|\___|_|\_\
     "#
-        .bright_red(),
     )
-    .println()
 }
 
 fn run_test_suites(test_suites: HashMap<String, TestSuite>) -> i32 {
-    Log::Default("\nIgniting tests 🔥".bright_red()).println();
+    logging::log_with_style!(bright_red, "\nIgniting tests 🔥");
 
     let (mut num_passed, mut num_failed) = (0, 0);
     let failed_suites: HashMap<String, HashMap<String, TestResult>> = test_suites
         .into_iter()
         .filter_map(|(name, suite)| {
-            Log::Default(format!("\n{}", name).bold().bright_blue()).println();
-            Log::Default("-".repeat(50)).println();
+            logging::log_with_style!(bright_blue, "\n{}", name);
+            logging::default!("-".repeat(50));
 
             logging::add_indent();
             let failed: HashMap<String, TestResult> = suite
@@ -148,21 +145,22 @@ fn run_test_suites(test_suites: HashMap<String, TestSuite>) -> i32 {
         let passed = format!("{} passed", num_passed).green();
         let total = format!("{} total", num_failed + num_passed);
 
-        Log::Default("\nFailed tests:\n".red()).println();
+        logging::log_with_style!(red, "\nFailed tests:\n");
+
         for (suite, tests) in failed_suites {
             for (name, result) in tests {
-                Log::Default(format!("{} {}", suite.bright_blue(), name.red())).println();
+                logging::default!("{} {}", suite.bright_blue(), name.red());
 
                 if !result.logs.is_empty() {
-                    Log::Default(result.logs).println();
+                    logging::default!(result.logs);
                 }
             }
         }
 
-        Log::Default(format!("{}, {}, {}", failed, passed, total)).println();
+        logging::default!("{}, {}, {}", failed, passed, total);
         1
     } else {
-        Log::Default(format!("All {} tests passed! 😎", num_passed).green()).println();
+        logging::log_with_style!(green, "\nAll {} tests passed! 😎", num_passed);
         0
     }
 }
