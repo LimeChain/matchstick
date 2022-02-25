@@ -374,9 +374,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             let clean_field_type = f
                 .field_type
                 .to_string()
-                .replace("!", "")
-                .replace("[", "")
-                .replace("]", "");
+                .replace('!', "")
+                .replace('[', "")
+                .replace(']', "");
             let mut directive = f.find_directive("derivedFrom").unwrap().clone();
 
             if self.derived.contains_key(&clean_field_type) {
@@ -399,7 +399,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                         .unwrap()
                         .1
                         .to_string()
-                        .replace("\"", ""),
+                        .replace('\"', ""),
                 ));
                 self.derived
                     .insert(clean_field_type, (entity_type.clone(), field_names_vec));
@@ -416,7 +416,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                                 .unwrap()
                                 .1
                                 .to_string()
-                                .replace("\"", ""),
+                                .replace('\"', ""),
                         )],
                     ),
                 );
