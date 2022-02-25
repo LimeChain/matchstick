@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use anyhow::Context;
 use graph::{
     blockchain::Blockchain,
     data::{
@@ -17,6 +18,7 @@ use graph_chain_ethereum::runtime::{
 };
 use graph_graphql::graphql_parser::schema;
 use graph_runtime_wasm::{
+    ExperimentalFeatures,
     asc_abi::class::{
         Array, AscEntity, AscEnum, AscEnumArray, AscString, EnumPayload, EthereumValueKind,
         Uint8Array,
@@ -806,6 +808,59 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         user_data_ptr: AscPtr<AscEnum<EthereumValueKind>>,
         _flags_ptr: AscPtr<Array<AscPtr<String>>>,
     ) -> Result<(), HostExportError> {
+        let link: String = asc_get(&self.wasm_ctx, link_ptr)?;
+        let callback: String = asc_get(&self.wasm_ctx, callback_ptr)?;
+
+        let file_path = &self.ipfs.get(&link).expect("Hash not found");
+        let data = std::fs::read_to_string(&file_path).expect("File not found!");
+        let values: Vec<serde_json::Value> = serde_json::from_str(&data).expect("Could not parse JSON");
+
+        let host_metrics = &self.wasm_ctx.host_metrics.clone();
+        let valid_module = &self.wasm_ctx.valid_module.clone();
+        let ctx = &self.wasm_ctx.ctx.derive_with_empty_block_state();
+
+        let experimental_features = ExperimentalFeatures {
+            allow_non_deterministic_ipfs: true,
+        };
+
+        let module = crate::MatchstickInstance::<C>::from_valid_module_with_ctx(
+                    valid_module.clone(),
+                    ctx.derive_with_empty_block_state(),
+                    host_metrics.clone(),
+                    None,
+                    experimental_features,
+                )?;
+
+        let mut ctx = std::cell::RefMut::map(module.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap());
+        ctx.store = self.store.clone();
+
+        for v in values {
+            let v_ptr = asc_new(&mut self.wasm_ctx, &v)?;
+
+            module.instance
+            .get_func(&callback)
+            .with_context(|| format!("function {} not found", &callback))?
+            .typed()?
+            .call(())
+            .with_context(|| format!("Failed to handle callback '{}'", &callback))?;
+
+            let store = module.instance_ctx.borrow().as_ref().unwrap_or_else(|| panic!("Error")).store.clone();
+
+            for (entity, mut val) in store {
+                match self.store.get_mut(&entity) {
+                    Some(vals) => {
+                        for (id, data) in val.clone() {
+                            vals.insert(id, data);
+                        }
+                    },
+                    None => {
+                        println!("None");
+                        self.store.insert(entity, val.clone());
+                    }
+                }
+            }
+        }
+
         Ok(())
     }
 }

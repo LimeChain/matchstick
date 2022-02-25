@@ -110,7 +110,7 @@ impl<C: Blockchain> MatchstickInstance<C> {
         })
     }
 
-    fn from_valid_module_with_ctx(
+    pub fn from_valid_module_with_ctx(
         valid_module: Arc<ValidModule>,
         ctx: MappingContext<C>,
         host_metrics: Arc<HostMetrics>,
