@@ -96,6 +96,14 @@ impl<C: Blockchain> MatchstickInstance<C> {
         })
     }
 
+    pub(crate) fn instance_ctx(&self) -> std::cell::Ref<'_, MatchstickInstanceContext<C>> {
+        std::cell::Ref::map(self.instance_ctx.borrow(), |i| i.as_ref().unwrap())
+    }
+
+    pub(crate) fn instance_ctx_mut(&self) -> std::cell::RefMut<'_, MatchstickInstanceContext<C>> {
+        std::cell::RefMut::map(self.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap())
+    }
+
     pub fn from_valid_module_with_ctx(
         valid_module: Arc<ValidModule>,
         ctx: MappingContext<C>,

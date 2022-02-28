@@ -3,7 +3,7 @@ use graph::{
     blockchain::Blockchain,
     data::{
         graphql::ext::DirectiveFinder,
-        store::{self, Attribute, Value},
+        store::{Attribute, Value},
     },
     prelude::{
         ethabi::{Address, Token},
@@ -841,26 +841,36 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             allow_non_deterministic_ipfs: true,
         };
 
+        let module = crate::MatchstickInstance::<C>::from_valid_module_with_ctx(
+            valid_module.clone(),
+            ctx.derive_with_empty_block_state(),
+            host_metrics.clone(),
+            None,
+            experimental_features,
+        )
+        .unwrap();
+
+        let data_ptr = asc_new(
+            &mut module.instance_ctx_mut().wasm_ctx,
+            &user_data,
+            &GasCounter::new(),
+        )?;
+
         for sv in stream {
-            let module = crate::MatchstickInstance::<C>::from_valid_module_with_ctx(
-                valid_module.clone(),
-                ctx.derive_with_empty_block_state(),
-                host_metrics.clone(),
-                None,
-                experimental_features,
-            ).unwrap();
+            let v_ptr = asc_new(
+                &mut module.instance_ctx_mut().wasm_ctx,
+                &sv,
+                &GasCounter::new(),
+            )?;
 
-            let data_ptr = asc_new(&mut std::cell::RefMut::map(module.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap()).wasm_ctx, &user_data, &GasCounter::new())?;
-            let v_ptr = asc_new(&mut std::cell::RefMut::map(module.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap()).wasm_ctx, &sv, &GasCounter::new())?;
+            module.instance_ctx_mut().store = self.store.clone();
+            module.instance_ctx_mut().fn_ret_map = self.fn_ret_map.clone();
+            module.instance_ctx_mut().derived = self.derived.clone();
+            module.instance_ctx_mut().data_source_return_value =
+                self.data_source_return_value.clone();
+            module.instance_ctx_mut().ipfs = self.ipfs.clone();
 
-            std::cell::RefMut::map(module.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap()).store =
-                self.store.clone();
-
-            std::cell::RefMut::map(module.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap())
-                .wasm_ctx
-                .ctx
-                .state
-                .enter_handler();
+            module.instance_ctx_mut().wasm_ctx.ctx.state.enter_handler();
 
             module
                 .instance
@@ -870,29 +880,13 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 .call((v_ptr.wasm_ptr(), data_ptr.wasm_ptr()))
                 .with_context(|| format!("Failed to handle callback '{}'", &callback))?;
 
-            std::cell::RefMut::map(module.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap())
-                .wasm_ctx
-                .ctx
-                .state
-                .exit_handler();
+            module.instance_ctx_mut().wasm_ctx.ctx.state.exit_handler();
 
-            let store = std::cell::Ref::map(module.instance_ctx.borrow(), |i| i.as_ref().unwrap())
-                .store
-                .clone();
-
-            for (entity, val) in store {
-                match self.store.get_mut(&entity) {
-                    Some(vals) => {
-                        for (id, data) in val.clone() {
-                            vals.insert(id, data);
-                        }
-                    }
-                    None => {
-                        println!("None");
-                        self.store.insert(entity, val.clone());
-                    }
-                }
-            }
+            self.store = module.instance_ctx().store.clone();
+            self.fn_ret_map = module.instance_ctx().fn_ret_map.clone();
+            self.derived = module.instance_ctx().derived.clone();
+            self.data_source_return_value = module.instance_ctx().data_source_return_value.clone();
+            self.ipfs = module.instance_ctx().ipfs.clone();
         }
 
         Ok(())
