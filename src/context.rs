@@ -1,10 +1,9 @@
-use std::collections::HashMap;
 use anyhow::Context;
 use graph::{
     blockchain::Blockchain,
     data::{
         graphql::ext::DirectiveFinder,
-        store::{Attribute, Value},
+        store::{self, Attribute, Value},
     },
     prelude::{
         ethabi::{Address, Token},
@@ -18,15 +17,16 @@ use graph_chain_ethereum::runtime::{
 };
 use graph_graphql::graphql_parser::schema;
 use graph_runtime_wasm::{
-    ExperimentalFeatures,
     asc_abi::class::{
         Array, AscEntity, AscEnum, AscEnumArray, AscString, EnumPayload, EthereumValueKind,
-        Uint8Array,
+        StoreValueKind, Uint8Array,
     },
     module::WasmInstanceContext,
+    ExperimentalFeatures,
 };
 use lazy_static::lazy_static;
 use serde_json::to_string_pretty;
+use std::collections::HashMap;
 
 use crate::logging;
 use crate::SCHEMA_LOCATION;
@@ -789,7 +789,6 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             })),
             None => Ok(0),
         }
-
     }
 
     pub fn mock_ipfs_file(
@@ -798,8 +797,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         hash_ptr: AscPtr<AscString>,
         file_path_ptr: AscPtr<AscString>,
     ) -> Result<(), HostExportError> {
-        let hash: String = asc_get(&self.wasm_ctx, hash_ptr)?;
-        let file_path: String = asc_get(&self.wasm_ctx, file_path_ptr)?;
+        let hash: String = asc_get(&self.wasm_ctx, hash_ptr, &GasCounter::new())?;
+        let file_path: String = asc_get(&self.wasm_ctx, file_path_ptr, &GasCounter::new())?;
 
         self.ipfs.insert(hash, file_path);
         Ok(())
@@ -810,10 +809,10 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         _gas: &GasCounter,
         hash_ptr: AscPtr<AscString>,
     ) -> Result<AscPtr<Uint8Array>, HostExportError> {
-        let hash: String = asc_get(&self.wasm_ctx, hash_ptr)?;
+        let hash: String = asc_get(&self.wasm_ctx, hash_ptr, &GasCounter::new())?;
         let file_path = &self.ipfs.get(&hash).expect("Hash not found");
         let string = std::fs::read_to_string(file_path).expect("File not found!");
-        let result = asc_new(&mut self.wasm_ctx, string.as_bytes()).unwrap();
+        let result = asc_new(&mut self.wasm_ctx, string.as_bytes(), &GasCounter::new())?;
 
         Ok(result)
     }
@@ -823,11 +822,12 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         _gas: &GasCounter,
         link_ptr: AscPtr<AscString>,
         callback_ptr: AscPtr<AscString>,
-        user_data_ptr: AscPtr<AscEnum<EthereumValueKind>>,
+        user_data_ptr: AscPtr<AscEnum<StoreValueKind>>,
         _flags_ptr: AscPtr<Array<AscPtr<String>>>,
     ) -> Result<(), HostExportError> {
-        let link: String = asc_get(&self.wasm_ctx, link_ptr)?;
-        let callback: String = asc_get(&self.wasm_ctx, callback_ptr)?;
+        let link: String = asc_get(&self.wasm_ctx, link_ptr, &GasCounter::new())?;
+        let callback: String = asc_get(&self.wasm_ctx, callback_ptr, &GasCounter::new())?;
+        let user_data: Value = try_asc_get(&self.wasm_ctx, user_data_ptr, &GasCounter::new())?;
 
         let file_path = &self.ipfs.get(&link).expect("Hash not found");
         let data = std::fs::read_to_string(&file_path).expect("File not found!");
@@ -841,53 +841,63 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             allow_non_deterministic_ipfs: true,
         };
 
-        let module = crate::MatchstickInstance::<C>::from_valid_module_with_ctx(
-                    valid_module.clone(),
-                    ctx.derive_with_empty_block_state(),
-                    host_metrics.clone(),
-                    None,
-                    experimental_features,
-                )?;
-
-        std::cell::RefMut::map(module.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap()).store = self.store.clone();
-        // instance_ctx_mut.store = self.store.clone();
-
         for sv in stream {
-            println!("{:?}", sv);
-            let v_ptr = asc_new(&mut self.wasm_ctx, &sv).unwrap();
+            let module = crate::MatchstickInstance::<C>::from_valid_module_with_ctx(
+                valid_module.clone(),
+                ctx.derive_with_empty_block_state(),
+                host_metrics.clone(),
+                None,
+                experimental_features,
+            ).unwrap();
 
-            std::cell::RefMut::map(module.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap()).wasm_ctx.ctx.state.enter_handler();
+            let data_ptr = asc_new(&mut std::cell::RefMut::map(module.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap()).wasm_ctx, &user_data, &GasCounter::new())?;
+            let v_ptr = asc_new(&mut std::cell::RefMut::map(module.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap()).wasm_ctx, &sv, &GasCounter::new())?;
 
-           module.instance
-           .get_func(&callback)
-           .with_context(|| format!("function {} not found", &callback))?
-           .typed()?
-           .call((v_ptr.wasm_ptr(), user_data_ptr.wasm_ptr()))
-           .with_context(|| format!("Failed to handle callback '{}'", &callback))?;
+            std::cell::RefMut::map(module.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap()).store =
+                self.store.clone();
 
-           std::cell::RefMut::map(module.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap()).wasm_ctx.ctx.state.exit_handler();
+            std::cell::RefMut::map(module.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap())
+                .wasm_ctx
+                .ctx
+                .state
+                .enter_handler();
 
-           let store = std::cell::Ref::map(module.instance_ctx.borrow(), |i| i.as_ref().unwrap()).store.clone();
+            module
+                .instance
+                .get_func(&callback)
+                .with_context(|| format!("function {} not found", &callback))?
+                .typed()?
+                .call((v_ptr.wasm_ptr(), data_ptr.wasm_ptr()))
+                .with_context(|| format!("Failed to handle callback '{}'", &callback))?;
 
-           for (entity, val) in store {
-               match self.store.get_mut(&entity) {
-                   Some(vals) => {
-                       for (id, data) in val.clone() {
-                           vals.insert(id, data);
-                       }
-                   },
-                   None => {
-                       println!("None");
-                       self.store.insert(entity, val.clone());
-                   }
-               }
-           }
-       }
+            std::cell::RefMut::map(module.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap())
+                .wasm_ctx
+                .ctx
+                .state
+                .exit_handler();
+
+            let store = std::cell::Ref::map(module.instance_ctx.borrow(), |i| i.as_ref().unwrap())
+                .store
+                .clone();
+
+            for (entity, val) in store {
+                match self.store.get_mut(&entity) {
+                    Some(vals) => {
+                        for (id, data) in val.clone() {
+                            vals.insert(id, data);
+                        }
+                    }
+                    None => {
+                        println!("None");
+                        self.store.insert(entity, val.clone());
+                    }
+                }
+            }
+        }
 
         Ok(())
     }
 }
-
 
 pub fn asc_string_from_str(initial_string: &str) -> AscString {
     let utf_16_iterator = initial_string.encode_utf16();
