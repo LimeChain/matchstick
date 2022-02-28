@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use anyhow::Context;
 use graph::{
     blockchain::Blockchain,
@@ -26,7 +28,6 @@ use graph_runtime_wasm::{
 };
 use lazy_static::lazy_static;
 use serde_json::to_string_pretty;
-use std::collections::HashMap;
 
 use crate::logging;
 use crate::SCHEMA_LOCATION;
@@ -773,6 +774,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         Ok(())
     }
 
+    /// function countEntities(entityType: string): i32
     pub fn count_entities(
         &mut self,
         _gas: &GasCounter,
@@ -792,6 +794,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         }
     }
 
+    /// function mockIpfsFile(hash: string, file_path: string): void
     pub fn mock_ipfs_file(
         &mut self,
         _gas: &GasCounter,
@@ -805,19 +808,26 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         Ok(())
     }
 
+    /// function ipfs.cat(hash: string): Bytes | null
     pub fn mock_ipfs_cat(
         &mut self,
         _gas: &GasCounter,
         hash_ptr: AscPtr<AscString>,
     ) -> Result<AscPtr<Uint8Array>, HostExportError> {
         let hash: String = asc_get(&self.wasm_ctx, hash_ptr, &GasCounter::new())?;
-        let file_path = &self.ipfs.get(&hash).expect("Hash not found");
-        let string = std::fs::read_to_string(file_path).expect("File not found!");
+        let file_path = &self
+            .ipfs
+            .get(&hash)
+            .unwrap_or_else(|| logging::critical!("IPFS file `{}` not found", hash));
+        let string = std::fs::read_to_string(file_path).unwrap_or_else(|err| {
+            logging::critical!("Failed to read file `{}` with error: {}", &file_path, err)
+        });
         let result = asc_new(&mut self.wasm_ctx, string.as_bytes(), &GasCounter::new())?;
 
         Ok(result)
     }
 
+    /// function ipfs.map(link: string, callback: string, user_data: Value, flags: Array<string>): void
     pub fn mock_ipfs_map(
         &mut self,
         _gas: &GasCounter,
@@ -830,8 +840,13 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let callback: String = asc_get(&self.wasm_ctx, callback_ptr, &GasCounter::new())?;
         let user_data: Value = try_asc_get(&self.wasm_ctx, user_data_ptr, &GasCounter::new())?;
 
-        let file_path = &self.ipfs.get(&link).expect("Hash not found");
-        let data = std::fs::read_to_string(&file_path).expect("File not found!");
+        let file_path = &self
+            .ipfs
+            .get(&link)
+            .unwrap_or_else(|| logging::critical!("IPFS file `{}` not found", link));
+        let data = std::fs::read_to_string(&file_path).unwrap_or_else(|err| {
+            logging::critical!("Failed to read file `{}` with error: {}", file_path, err)
+        });
         let json_values: Vec<serde_json::Value> = serde_json::from_str(&data).unwrap();
 
         let host_metrics = &self.wasm_ctx.host_metrics.clone();
