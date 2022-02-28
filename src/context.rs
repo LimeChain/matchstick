@@ -91,8 +91,9 @@ pub struct MatchstickInstanceContext<C: Blockchain> {
         Option<String>,
         Option<HashMap<Attribute, Value>>,
     ),
-
-    ipfs: HashMap<String, String>,
+    /// Holds the mocked ipfs files in a HashMap, where key is the file hash, and the value is the
+    /// path to the file that matchstick should read and parse
+    pub(crate) ipfs: HashMap<String, String>,
 }
 
 /// Implementation of non-external functions.
@@ -823,7 +824,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         link_ptr: AscPtr<AscString>,
         callback_ptr: AscPtr<AscString>,
         user_data_ptr: AscPtr<AscEnum<StoreValueKind>>,
-        _flags_ptr: AscPtr<Array<AscPtr<String>>>,
+        _flags_ptr: AscPtr<Array<AscPtr<AscString>>>,
     ) -> Result<(), HostExportError> {
         let link: String = asc_get(&self.wasm_ctx, link_ptr, &GasCounter::new())?;
         let callback: String = asc_get(&self.wasm_ctx, callback_ptr, &GasCounter::new())?;
@@ -831,17 +832,16 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
         let file_path = &self.ipfs.get(&link).expect("Hash not found");
         let data = std::fs::read_to_string(&file_path).expect("File not found!");
-        let stream: Vec<serde_json::Value> = serde_json::from_str(&data).unwrap();
+        let json_values: Vec<serde_json::Value> = serde_json::from_str(&data).unwrap();
 
         let host_metrics = &self.wasm_ctx.host_metrics.clone();
         let valid_module = &self.wasm_ctx.valid_module.clone();
         let ctx = &self.wasm_ctx.ctx.derive_with_empty_block_state();
-
         let experimental_features = ExperimentalFeatures {
             allow_non_deterministic_ipfs: true,
         };
 
-        let module = crate::MatchstickInstance::<C>::from_valid_module_with_ctx(
+        let instance = crate::MatchstickInstance::<C>::from_valid_module_with_ctx(
             valid_module.clone(),
             ctx.derive_with_empty_block_state(),
             host_metrics.clone(),
@@ -851,42 +851,37 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         .unwrap();
 
         let data_ptr = asc_new(
-            &mut module.instance_ctx_mut().wasm_ctx,
+            &mut instance.instance_ctx_mut().wasm_ctx,
             &user_data,
             &GasCounter::new(),
         )?;
 
-        for sv in stream {
-            let v_ptr = asc_new(
-                &mut module.instance_ctx_mut().wasm_ctx,
-                &sv,
+        for value in json_values {
+            let value_ptr = asc_new(
+                &mut instance.instance_ctx_mut().wasm_ctx,
+                &value,
                 &GasCounter::new(),
             )?;
 
-            module.instance_ctx_mut().store = self.store.clone();
-            module.instance_ctx_mut().fn_ret_map = self.fn_ret_map.clone();
-            module.instance_ctx_mut().derived = self.derived.clone();
-            module.instance_ctx_mut().data_source_return_value =
+            instance.instance_ctx_mut().store = self.store.clone();
+            instance.instance_ctx_mut().fn_ret_map = self.fn_ret_map.clone();
+            instance.instance_ctx_mut().derived = self.derived.clone();
+            instance.instance_ctx_mut().data_source_return_value =
                 self.data_source_return_value.clone();
-            module.instance_ctx_mut().ipfs = self.ipfs.clone();
 
-            module.instance_ctx_mut().wasm_ctx.ctx.state.enter_handler();
-
-            module
+            instance
                 .instance
                 .get_func(&callback)
                 .with_context(|| format!("function {} not found", &callback))?
                 .typed()?
-                .call((v_ptr.wasm_ptr(), data_ptr.wasm_ptr()))
+                .call((value_ptr.wasm_ptr(), data_ptr.wasm_ptr()))
                 .with_context(|| format!("Failed to handle callback '{}'", &callback))?;
 
-            module.instance_ctx_mut().wasm_ctx.ctx.state.exit_handler();
-
-            self.store = module.instance_ctx().store.clone();
-            self.fn_ret_map = module.instance_ctx().fn_ret_map.clone();
-            self.derived = module.instance_ctx().derived.clone();
-            self.data_source_return_value = module.instance_ctx().data_source_return_value.clone();
-            self.ipfs = module.instance_ctx().ipfs.clone();
+            self.store = instance.instance_ctx().store.clone();
+            self.fn_ret_map = instance.instance_ctx().fn_ret_map.clone();
+            self.derived = instance.instance_ctx().derived.clone();
+            self.data_source_return_value =
+                instance.instance_ctx().data_source_return_value.clone();
         }
 
         Ok(())

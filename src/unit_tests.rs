@@ -8,7 +8,7 @@ mod unit_tests {
     use graph::{
         data::store::Value,
         prelude::ethabi::{Address, Token},
-        runtime::{asc_get, gas::GasCounter, try_asc_get, AscPtr, AscType},
+        runtime::{asc_get, asc_new, gas::GasCounter, try_asc_get, AscPtr, AscType},
     };
     use graph_chain_ethereum::{runtime::abi::AscUnresolvedContractCall_0_0_4, Chain};
     use graph_runtime_wasm::asc_abi::class::{
@@ -1130,5 +1130,124 @@ mod unit_tests {
             .unwrap();
 
         assert_eq!(2, result);
+    }
+
+    #[test]
+    #[serial]
+    fn mock_ipfs_file_basic_test() {
+        let mut context = get_context();
+
+        assert_eq!(context.ipfs.len(), 0);
+
+        let hash = asc_string_from_str("QmTkzDwWqPbnAh5YiV5VwcTLnGdwSNsNTn2aDxdXBFca7D");
+        let file = asc_string_from_str("./mocks/ipfs.json");
+        let hash_ptr = AscPtr::alloc_obj(hash, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
+        let file_ptr = AscPtr::alloc_obj(file, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
+
+        context
+            .mock_ipfs_file(&GasCounter::new(), hash_ptr, file_ptr)
+            .unwrap();
+
+        assert_eq!(context.ipfs.len(), 1);
+        assert_eq!(
+            context
+                .ipfs
+                .contains_key("QmTkzDwWqPbnAh5YiV5VwcTLnGdwSNsNTn2aDxdXBFca7D"),
+            true
+        );
+        assert_eq!(
+            context
+                .ipfs
+                .get("QmTkzDwWqPbnAh5YiV5VwcTLnGdwSNsNTn2aDxdXBFca7D"),
+            Some(&"./mocks/ipfs.json".to_owned())
+        );
+    }
+
+    #[test]
+    #[serial]
+    fn mock_ipfs_cat() {
+        let mut context = get_context();
+
+        let hash = asc_string_from_str("QmTkzDwWqPbnAh5YiV5VwcTLnGdwSNsNTn2aDxdXBFca7D");
+        let file = asc_string_from_str("./mocks/ipfs/cat.json");
+        let hash_ptr = AscPtr::alloc_obj(hash, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
+        let file_ptr = AscPtr::alloc_obj(file, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
+
+        context
+            .mock_ipfs_file(&GasCounter::new(), hash_ptr, file_ptr)
+            .unwrap();
+
+        let result_ptr = context.mock_ipfs_cat(&GasCounter::new(), hash_ptr).unwrap();
+        let result: Vec<u8> =
+            asc_get(&mut context.wasm_ctx, result_ptr, &GasCounter::new()).unwrap();
+        let string = std::fs::read_to_string("./mocks/ipfs/cat.json").expect("File not found!");
+
+        assert_eq!(result, string.as_bytes());
+    }
+
+    #[test]
+    #[serial]
+    fn mock_ipfs_map() {
+        let mut context = get_context();
+
+        let hash = asc_string_from_str("QmTkzDwWqPbnAh5YiV5VwcTLnGdwSNsNTn2aDxdXBFca7D");
+        let file = asc_string_from_str("./mocks/ipfs/map.json");
+        let callback = asc_string_from_str("processGravatar");
+        let user_data = Value::from("Gravatar");
+        let flags = vec!["json".to_owned()];
+
+        let hash_ptr = AscPtr::alloc_obj(hash, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
+        let file_ptr = AscPtr::alloc_obj(file, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
+        let callback_ptr = AscPtr::alloc_obj(callback, &mut context.wasm_ctx, &GasCounter::new())
+            .expect("Couldn't create pointer.");
+        let user_data_ptr = asc_new(&mut context.wasm_ctx, &user_data, &GasCounter::new())
+            .expect("Couldn't create pointer.");
+        let flags_ptr = asc_new(&mut context.wasm_ctx, &flags, &GasCounter::new())
+            .expect("Couldn't create pointer.");
+
+        context
+            .mock_ipfs_file(&GasCounter::new(), hash_ptr, file_ptr)
+            .unwrap();
+
+        assert_eq!(context.store.len(), 0);
+
+        context
+            .mock_ipfs_map(
+                &GasCounter::new(),
+                hash_ptr,
+                callback_ptr,
+                user_data_ptr,
+                flags_ptr,
+            )
+            .unwrap();
+
+        assert_eq!(context.store.len(), 1);
+
+        let gravatar_map = context.store.get("Gravatar").expect("No such key in map");
+
+        assert_eq!(gravatar_map.len(), 3);
+
+        let gravatar_1 = gravatar_map.get("1").expect("No such key in map");
+        let gravatar_2 = gravatar_map.get("2").expect("No such key in map");
+        let gravatar_3 = gravatar_map.get("3").expect("No such key in map");
+
+        assert_eq!(
+            gravatar_1.get("displayName"),
+            Some(&Value::from("Gravatar1"))
+        );
+        assert_eq!(
+            gravatar_2.get("displayName"),
+            Some(&Value::from("Gravatar2"))
+        );
+        assert_eq!(
+            gravatar_3.get("displayName"),
+            Some(&Value::from("Gravatar3"))
+        );
     }
 }
