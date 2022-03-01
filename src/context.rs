@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use anyhow::Context;
 use graph::{
     blockchain::Blockchain,
     data::{
@@ -20,9 +21,10 @@ use graph_graphql::graphql_parser::schema;
 use graph_runtime_wasm::{
     asc_abi::class::{
         Array, AscEntity, AscEnum, AscEnumArray, AscString, EnumPayload, EthereumValueKind,
-        Uint8Array,
+        StoreValueKind, Uint8Array,
     },
     module::WasmInstanceContext,
+    ExperimentalFeatures,
 };
 use lazy_static::lazy_static;
 use serde_json::to_string_pretty;
@@ -90,6 +92,9 @@ pub struct MatchstickInstanceContext<C: Blockchain> {
         Option<String>,
         Option<HashMap<Attribute, Value>>,
     ),
+    /// Holds the mocked ipfs files in a HashMap, where key is the file hash, and the value is the
+    /// path to the file that matchstick should read and parse
+    pub(crate) ipfs: HashMap<String, String>,
 }
 
 /// Implementation of non-external functions.
@@ -103,6 +108,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             meta_tests: Vec::new(),
             derived: HashMap::new(),
             data_source_return_value: (None, None, None),
+            ipfs: HashMap::new(),
         }
     }
 
@@ -768,6 +774,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         Ok(())
     }
 
+    /// function countEntities(entityType: string): i32
     pub fn count_entities(
         &mut self,
         _gas: &GasCounter,
@@ -785,6 +792,114 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             })),
             None => Ok(0),
         }
+    }
+
+    /// function mockIpfsFile(hash: string, file_path: string): void
+    pub fn mock_ipfs_file(
+        &mut self,
+        _gas: &GasCounter,
+        hash_ptr: AscPtr<AscString>,
+        file_path_ptr: AscPtr<AscString>,
+    ) -> Result<(), HostExportError> {
+        let hash: String = asc_get(&self.wasm_ctx, hash_ptr, &GasCounter::new())?;
+        let file_path: String = asc_get(&self.wasm_ctx, file_path_ptr, &GasCounter::new())?;
+
+        self.ipfs.insert(hash, file_path);
+        Ok(())
+    }
+
+    /// function ipfs.cat(hash: string): Bytes | null
+    pub fn mock_ipfs_cat(
+        &mut self,
+        _gas: &GasCounter,
+        hash_ptr: AscPtr<AscString>,
+    ) -> Result<AscPtr<Uint8Array>, HostExportError> {
+        let hash: String = asc_get(&self.wasm_ctx, hash_ptr, &GasCounter::new())?;
+        let file_path = &self
+            .ipfs
+            .get(&hash)
+            .unwrap_or_else(|| logging::critical!("IPFS file `{}` not found", hash));
+        let string = std::fs::read_to_string(file_path).unwrap_or_else(|err| {
+            logging::critical!("Failed to read file `{}` with error: {}", &file_path, err)
+        });
+        let result = asc_new(&mut self.wasm_ctx, string.as_bytes(), &GasCounter::new())?;
+
+        Ok(result)
+    }
+
+    /// function ipfs.map(link: string, callback: string, user_data: Value, flags: Array<string>): void
+    pub fn mock_ipfs_map(
+        &mut self,
+        _gas: &GasCounter,
+        link_ptr: AscPtr<AscString>,
+        callback_ptr: AscPtr<AscString>,
+        user_data_ptr: AscPtr<AscEnum<StoreValueKind>>,
+        _flags_ptr: AscPtr<Array<AscPtr<AscString>>>,
+    ) -> Result<(), HostExportError> {
+        let link: String = asc_get(&self.wasm_ctx, link_ptr, &GasCounter::new())?;
+        let callback: String = asc_get(&self.wasm_ctx, callback_ptr, &GasCounter::new())?;
+        let user_data: Value = try_asc_get(&self.wasm_ctx, user_data_ptr, &GasCounter::new())?;
+
+        let file_path = &self
+            .ipfs
+            .get(&link)
+            .unwrap_or_else(|| logging::critical!("IPFS file `{}` not found", link));
+        let data = std::fs::read_to_string(&file_path).unwrap_or_else(|err| {
+            logging::critical!("Failed to read file `{}` with error: {}", file_path, err)
+        });
+        let json_values: Vec<serde_json::Value> = serde_json::from_str(&data).unwrap();
+
+        let host_metrics = &self.wasm_ctx.host_metrics.clone();
+        let valid_module = &self.wasm_ctx.valid_module.clone();
+        let ctx = &self.wasm_ctx.ctx.derive_with_empty_block_state();
+        let experimental_features = ExperimentalFeatures {
+            allow_non_deterministic_ipfs: true,
+        };
+
+        let instance = crate::MatchstickInstance::<C>::from_valid_module_with_ctx(
+            valid_module.clone(),
+            ctx.derive_with_empty_block_state(),
+            host_metrics.clone(),
+            None,
+            experimental_features,
+        )
+        .unwrap();
+
+        let data_ptr = asc_new(
+            &mut instance.instance_ctx_mut().wasm_ctx,
+            &user_data,
+            &GasCounter::new(),
+        )?;
+
+        for value in json_values {
+            let value_ptr = asc_new(
+                &mut instance.instance_ctx_mut().wasm_ctx,
+                &value,
+                &GasCounter::new(),
+            )?;
+
+            instance.instance_ctx_mut().store = self.store.clone();
+            instance.instance_ctx_mut().fn_ret_map = self.fn_ret_map.clone();
+            instance.instance_ctx_mut().derived = self.derived.clone();
+            instance.instance_ctx_mut().data_source_return_value =
+                self.data_source_return_value.clone();
+
+            instance
+                .instance
+                .get_func(&callback)
+                .with_context(|| format!("function {} not found", &callback))?
+                .typed()?
+                .call((value_ptr.wasm_ptr(), data_ptr.wasm_ptr()))
+                .with_context(|| format!("Failed to handle callback '{}'", &callback))?;
+
+            self.store = instance.instance_ctx().store.clone();
+            self.fn_ret_map = instance.instance_ctx().fn_ret_map.clone();
+            self.derived = instance.instance_ctx().derived.clone();
+            self.data_source_return_value =
+                instance.instance_ctx().data_source_return_value.clone();
+        }
+
+        Ok(())
     }
 }
 

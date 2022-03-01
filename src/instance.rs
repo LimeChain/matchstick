@@ -96,7 +96,15 @@ impl<C: Blockchain> MatchstickInstance<C> {
         })
     }
 
-    fn from_valid_module_with_ctx(
+    pub(crate) fn instance_ctx(&self) -> std::cell::Ref<'_, MatchstickInstanceContext<C>> {
+        std::cell::Ref::map(self.instance_ctx.borrow(), |i| i.as_ref().unwrap())
+    }
+
+    pub(crate) fn instance_ctx_mut(&self) -> std::cell::RefMut<'_, MatchstickInstanceContext<C>> {
+        std::cell::RefMut::map(self.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap())
+    }
+
+    pub fn from_valid_module_with_ctx(
         valid_module: Arc<ValidModule>,
         ctx: MappingContext<C>,
         host_metrics: Arc<HostMetrics>,
@@ -312,15 +320,12 @@ impl<C: Blockchain> MatchstickInstance<C> {
         );
         link!("store.remove", mock_store_remove, entity_ptr, id_ptr);
 
-        link!(
-            "ipfs.cat",
-            wasm_ctx.ipfs_cat,
-            "host_export_ipfs_cat",
-            hash_ptr
-        );
+        link!("mockIpfsFile", mock_ipfs_file, hash, file_path);
+
+        link!("ipfs.cat", mock_ipfs_cat, "host_export_ipfs_cat", hash_ptr);
         link!(
             "ipfs.map",
-            wasm_ctx.ipfs_map,
+            mock_ipfs_map,
             "host_export_ipfs_map",
             link_ptr,
             callback,
