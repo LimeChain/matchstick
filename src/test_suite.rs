@@ -256,7 +256,7 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
                     suite
                         .groups
                         .get_mut(&id)
-                        .unwrap_or_else(|| panic!("No group with id {} found", parent_id))
+                        .unwrap_or_else(|| panic!("No group with id {} found", id))
                         .name = name.clone();
                 }
                 _ => {
@@ -346,7 +346,7 @@ fn test_groups(path: &str) -> BTreeMap<i32, Vec<i32>> {
 
             // Looks for any anonymous functions that are not direct descendents
             // `tests/gravity/utils/handleNewGravatars~anonymous|0`
-            // ` start:tests/gravity/gravity.test~anonymous|0~anonymous|0~anonymous|0`
+            // `start:tests/gravity/gravity.test~anonymous|0~anonymous|0~anonymous|0`
             if !parent_regex.is_match(&name) && !child_regex.is_match(&name) {
                 nested_children += 1
             }
@@ -400,12 +400,19 @@ fn calculate_parent_id(path: &Value, prev_parent_id: i32, nested_children: i32) 
     let child_regex = Regex::new(r#"data\[\d+\]"#).expect("Incorrect regex");
 
     let mut children_num = 0;
+    let callers = path["callers"].as_array().unwrap();
+    let callers_names: Vec<String> = callers
+        .iter()
+        .map(|caller| caller["name"].as_str().unwrap().to_owned())
+        .collect();
 
-    for caller in path["callers"].as_array().unwrap().iter() {
-        let name = caller["name"].as_str().unwrap().to_string();
-
-        if child_regex.is_match(&name) {
-            children_num += 1
+    if callers_names.contains(&"import index::_registerTest".to_owned())
+        || callers_names.contains(&"import index::_registerHook".to_owned())
+    {
+        for name in callers_names.iter() {
+            if child_regex.is_match(name) {
+                children_num += 1
+            }
         }
     }
 
