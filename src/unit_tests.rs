@@ -1044,7 +1044,7 @@ mod unit_tests {
 
         let mut result_tuple = get_address_network_context(&mut context);
 
-        assert_eq!("0x0000000000000000000000000000000000000000", result_tuple.0);
+        assert_eq!(Address::from_str("0x0000000000000000000000000000000000000000").expect("Couldn't create Address."), result_tuple.0);
         assert_eq!("mainnet", result_tuple.1);
         assert_eq!(0, result_tuple.2.len());
 
@@ -1066,7 +1066,7 @@ mod unit_tests {
 
         result_tuple = get_address_network_context(&mut context);
 
-        assert_eq!("0x90cBa2Bbb19ecc291A12066Fd8329D65FA1f1947", result_tuple.0);
+        assert_eq!(Address::from_str("0x90cBa2Bbb19ecc291A12066Fd8329D65FA1f1947").expect("Couldn't create Address."), result_tuple.0);
         assert_eq!("sidenet", result_tuple.1);
         assert_eq!(1, result_tuple.2.len());
         assert_eq!(
@@ -1077,13 +1077,9 @@ mod unit_tests {
 
     fn get_address_network_context(
         context: &mut MatchstickInstanceContext<Chain>,
-    ) -> (String, String, HashMap<String, Value>) {
+    ) -> (Address, String, HashMap<String, Value>) {
         let address_ptr = context
             .mock_data_source_address(&GasCounter::new())
-            .unwrap()
-            .read_ptr(&context.wasm_ctx, &GasCounter::new())
-            .unwrap()
-            .to_vec(&context.wasm_ctx, &GasCounter::new())
             .unwrap();
         let network_ptr = context
             .mock_data_source_network(&GasCounter::new())
@@ -1093,7 +1089,7 @@ mod unit_tests {
             .unwrap()
             .wasm_ptr();
 
-        let address: String = String::from_utf8_lossy(address_ptr.as_slice()).to_string();
+        let address: Address = asc_get(&context.wasm_ctx, address_ptr, &GasCounter::new()).unwrap();
         let network: String = asc_get(&context.wasm_ctx, network_ptr, &GasCounter::new()).unwrap();
         let context: HashMap<String, Value> = try_asc_get(
             &context.wasm_ctx,
