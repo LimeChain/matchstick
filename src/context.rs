@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::str::FromStr;
 
 use anyhow::Context;
 use graph::{
@@ -696,11 +697,15 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     ) -> Result<AscPtr<Uint8Array>, HostExportError> {
         let default_address_val = "0x0000000000000000000000000000000000000000";
         let result = match &self.data_source_return_value.0 {
-            Some(value) => asc_new(&mut self.wasm_ctx, value.as_bytes(), &GasCounter::new())
-                .expect("Couldn't create pointer."),
+            Some(value) => asc_new(
+                &mut self.wasm_ctx,
+                &Address::from_str(value).expect("Couldn't create Address."),
+                &GasCounter::new(),
+            )
+            .expect("Couldn't create pointer."),
             None => asc_new(
                 &mut self.wasm_ctx,
-                default_address_val.as_bytes(),
+                &Address::from_str(default_address_val).expect("Couldn't create Address."),
                 &GasCounter::new(),
             )
             .expect("Couldn't create pointer."),
