@@ -1044,7 +1044,11 @@ mod unit_tests {
 
         let mut result_tuple = get_address_network_context(&mut context);
 
-        assert_eq!(Address::from_str("0x0000000000000000000000000000000000000000").expect("Couldn't create Address."), result_tuple.0);
+        assert_eq!(
+            Address::from_str("0x0000000000000000000000000000000000000000")
+                .expect("Couldn't create Address."),
+            result_tuple.0
+        );
         assert_eq!("mainnet", result_tuple.1);
         assert_eq!(0, result_tuple.2.len());
 
@@ -1066,7 +1070,11 @@ mod unit_tests {
 
         result_tuple = get_address_network_context(&mut context);
 
-        assert_eq!(Address::from_str("0x90cBa2Bbb19ecc291A12066Fd8329D65FA1f1947").expect("Couldn't create Address."), result_tuple.0);
+        assert_eq!(
+            Address::from_str("0x90cBa2Bbb19ecc291A12066Fd8329D65FA1f1947")
+                .expect("Couldn't create Address."),
+            result_tuple.0
+        );
         assert_eq!("sidenet", result_tuple.1);
         assert_eq!(1, result_tuple.2.len());
         assert_eq!(
