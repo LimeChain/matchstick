@@ -127,7 +127,7 @@ fn run_test_suites(test_suites: HashMap<String, TestSuite>) -> i32 {
                         None
                     } else {
                         if !group.name.is_empty() {
-                            Log::Default(format!("{}", group.name.cyan().bold())).println();
+                            logging::log_with_style!(cyan, bold, "{}", group.name);
                         }
 
                         logging::add_indent();
@@ -180,12 +180,12 @@ fn run_test_suites(test_suites: HashMap<String, TestSuite>) -> i32 {
         logging::log_with_style!(red, "\nFailed tests:\n");
 
         for (suite, group) in failed_suites {
-            logging::log_with_style!(bright_blue, bold, suite);
+            logging::log_with_style!(bright_blue, bold, "{}", suite);
             logging::add_indent();
 
             for tests in group {
                 for (name, result) in tests {
-                    logging::log_with_style!(red, bold, name);
+                    logging::log_with_style!(red, bold, "{}", name);
 
                     if !result.logs.is_empty() {
                         logging::default!(result.logs);

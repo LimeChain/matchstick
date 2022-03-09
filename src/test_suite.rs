@@ -1,7 +1,5 @@
 use colored::Colorize;
 use graph::blockchain::Blockchain;
-use regex::Regex;
-use serde_json::Value;
 use std::collections::BTreeMap;
 use std::time::Instant;
 use wasmtime::Func;
@@ -138,31 +136,14 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
             )
         });
 
-        // Map parent to descendent functions
-        let test_groups = test_groups(&matchstick.wasm);
-
         let mut suite = TestSuite {
             groups: BTreeMap::new(),
             before_all: vec![],
             after_all: vec![],
         };
 
-        // Pre-initialises all test groups
-        for (id, _descendents) in test_groups.iter() {
-            let test_group = TestGroup {
-                name: "".to_string(),
-                tests: vec![],
-                before_all: vec![],
-                after_all: vec![],
-            };
-            suite.groups.insert(*id, test_group);
-        }
-
-        // Used to accumulate all before and after functions that should be ran for each test()
-        // in a specific describe group
-        // The key is the parent function id and the value is a vector of functions
-        let mut before_each: BTreeMap<i32, Vec<Func>> = BTreeMap::new();
-        let mut after_each: BTreeMap<i32, Vec<Func>> = BTreeMap::new();
+        let mut before_each = vec![];
+        let mut after_each = vec![];
 
         for (name, should_fail, func_idx, role) in &matchstick
             .instance_ctx
@@ -176,234 +157,150 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
             let func = table
                 .get(*func_idx)
                 .unwrap_or_else(|| {
-                    panic!(
-                        "{}",
-                        Log::Critical(format!(
-                            "Could not get WebAssembly.Table entry with index '{}'.",
-                            func_idx,
-                        )),
-                    );
+                    logging::critical!(
+                        "Could not get WebAssembly.Table entry with index '{}'.",
+                        func_idx,
+                    )
                 })
                 .unwrap_funcref()
                 .unwrap()
                 .to_owned();
 
-            let id = *func_idx as i32;
-
-            // Checks if the current function is a parent or a descendent
-            // Returns the parent id
-            let parent_id = get_parent_id(id, test_groups.clone());
-
             match role.as_str() {
                 "beforeAll" => {
-                    if parent_id == id {
-                        suite.before_all.push(func.clone());
-                    } else {
-                        suite
-                            .groups
-                            .get_mut(&parent_id)
-                            .unwrap_or_else(|| panic!("No group with id {} found", parent_id))
-                            .before_all
-                            .push(func.clone());
-                    }
+                    suite.before_all.push(func.clone());
                 }
                 "afterAll" => {
-                    if parent_id == id {
-                        suite.after_all.push(func.clone());
-                    } else {
-                        suite
-                            .groups
-                            .get_mut(&parent_id)
-                            .unwrap_or_else(|| panic!("No group with id {} found", parent_id))
-                            .after_all
-                            .push(func.clone());
-                    }
+                    suite.after_all.push(func.clone());
                 }
                 "beforeEach" => {
-                    if parent_id == id {
-                        for (_, group) in suite.groups.iter_mut() {
-                            group.before_all.push(func.clone());
-                        }
-                    } else {
-                        before_each
-                            .entry(parent_id)
-                            .or_insert_with_key(|_| vec![func.clone()]);
-                    }
+                    before_each.push(func.clone());
                 }
                 "afterEach" => {
-                    if parent_id == id {
-                        for (_, group) in suite.groups.iter_mut() {
-                            group.after_all.push(func.clone());
-                        }
-                    } else {
-                        after_each
-                            .entry(parent_id)
-                            .or_insert_with_key(|_| vec![func.clone()]);
-                    }
+                    after_each.push(func.clone());
                 }
                 "describe" => {
-                    suite
-                        .groups
-                        .get_mut(&id)
-                        .unwrap_or_else(|| panic!("No group with id {} found", id))
-                        .name = name.clone();
+                    let host_metrics = matchstick.instance_ctx().wasm_ctx.host_metrics.clone();
+                    let valid_module = matchstick.instance_ctx().wasm_ctx.valid_module.clone();
+                    let ctx = matchstick.instance_ctx().wasm_ctx.ctx.derive_with_empty_block_state();
+                    let experimental_features = graph_runtime_wasm::ExperimentalFeatures {
+                        allow_non_deterministic_ipfs: true,
+                    };
+
+                    let inst = crate::MatchstickInstance::<C>::from_valid_module_with_ctx(
+                        valid_module.clone(),
+                        ctx.derive_with_empty_block_state(),
+                        host_metrics.clone(),
+                        None,
+                        experimental_features,
+                    )
+                    .unwrap();
+
+                    let tb = inst.instance.get_table("table").unwrap_or_else(|| {
+                        logging::critical!(
+                            "WebAssembly.Table was not exported from the AssemblyScript sources.
+                                (Please compile with the `--exportTable` option.)"
+                        )
+                    });
+
+                    let before_meta_tests = inst
+                        .instance_ctx()
+                        .meta_tests
+                        .clone();
+
+                    let fun = tb
+                        .get(*func_idx)
+                        .unwrap_or_else(|| {
+                            logging::critical!(
+                                "Could not get WebAssembly.Table entry with index '{}'.",
+                                func_idx,
+                            )
+                        })
+                        .unwrap_funcref()
+                        .unwrap()
+                        .to_owned();
+
+                    fun.call(&[]).expect("Failed to execute function");
+
+                    let after_meta_tests = inst
+                        .instance_ctx()
+                        .meta_tests
+                        .clone();
+
+                    let difference: Vec<_> = after_meta_tests.into_iter().filter(|item| !before_meta_tests.contains(item)).collect();
+
+                    let mut test_group = TestGroup {
+                        name: name.to_owned(),
+                        tests: vec![],
+                        before_all: vec![],
+                        after_all: vec![],
+                    };
+
+                    let mut desc_b_e = vec![];
+                    let mut desc_a_e = vec![];
+
+                    for (t_name, should_fail, t_idx, role) in difference {
+                        let test = table
+                            .get(t_idx)
+                            .unwrap_or_else(|| {
+                                logging::critical!(
+                                    "Could not get WebAssembly.Table entry with index '{}'.",
+                                    func_idx,
+                                )
+                            })
+                            .unwrap_funcref()
+                            .unwrap()
+                            .to_owned();
+
+                        match role.as_str() {
+                            "beforeAll" => {
+                                test_group.before_all.push(test.clone());
+                            }
+                            "afterAll" => {
+                                test_group.after_all.push(test.clone());
+                            }
+                            "beforeEach" => {
+                                desc_b_e.push(test.clone());
+                            }
+                            "afterEach" => {
+                                desc_a_e.push(test.clone());
+                            }
+                            "test" => {
+                                test_group.tests.push(Test::new(t_name.to_string(), should_fail, test.clone()))
+                            }
+                            _ => logging::critical!("Nested describes are not supported!")
+                        }
+                    }
+
+                    for mut test in test_group.tests.iter_mut() {
+                        test.before_hooks = desc_b_e.clone();
+                        test.after_hooks = desc_a_e.clone();
+                    }
+
+                    suite.groups.insert((*func_idx).try_into().unwrap(), test_group);
+
                 }
                 _ => {
-                    suite
-                        .groups
-                        .get_mut(&parent_id)
-                        .unwrap_or_else(|| panic!("No group with id {} found", parent_id))
-                        .tests
-                        .push(Test::new(name.to_string(), *should_fail, func.clone()));
+                    let test_group = TestGroup {
+                        name: "".to_owned(),
+                        tests: vec![Test::new(name.to_string(), *should_fail, func.clone())],
+                        before_all: vec![],
+                        after_all: vec![],
+                    };
+
+                    suite.groups.insert((*func_idx).try_into().unwrap(), test_group);
                 }
             };
         }
 
         // Add the accumulated before and after functions to every test()
         // in the corresponding describe group
-        for (id, funcs) in before_each {
-            for test in suite
-                .groups
-                .get_mut(&id)
-                .unwrap_or_else(|| panic!("No group with id {} found", id))
-                .tests
-                .iter_mut()
-            {
-                test.before_hooks = funcs.clone();
-            }
-        }
-
-        for (id, funcs) in after_each {
-            for test in suite
-                .groups
-                .get_mut(&id)
-                .unwrap_or_else(|| panic!("No group with id {} found", id))
-                .tests
-                .iter_mut()
-            {
-                test.after_hooks = funcs.clone();
-            }
+        for (_, group) in suite.groups.iter_mut() {
+            group.before_all = before_each.clone();
+            group.after_all = after_each.clone();
         }
 
         // Return the generates suite
         suite
     }
-}
-
-/// Determines if the current function is a parent or a descendent
-/// Returns the parent ID if descendent
-fn get_parent_id(id: i32, test_groups: BTreeMap<i32, Vec<i32>>) -> i32 {
-    let mut parent_id = 0;
-
-    for (parent, children) in test_groups.iter() {
-        if *parent == id {
-            parent_id = id;
-            break;
-        } else if children.contains(&id) {
-            parent_id = *parent;
-            break;
-        }
-    }
-
-    parent_id
-}
-
-/// Calculates the ID of each describe function
-/// and which functions are its children
-/// Also handles before/after hooks and test functions
-/// that are not part of a group
-fn test_groups(path: &str) -> BTreeMap<i32, Vec<i32>> {
-    // A collection of all anonymous functions in the wasm file
-    let paths: Value = parse_wasm(path);
-
-    let mut prev_parent_id = 0;
-    let mut nested_children = 0;
-
-    paths
-        .as_array()
-        .unwrap()
-        .iter()
-        .filter_map(|path| {
-            // Will match `start:tests/gravity/gravity.test~anonymous|0`
-            let parent_regex = Regex::new(r#"test~anonymous\|\d+$"#).expect("Incorrect regex");
-
-            // Will match `start:tests/gravity/gravity.test~anonymous|0~anonymous|0`
-            let child_regex =
-                Regex::new(r#"test(~anonymous\|\d+~anonymous\|\d+\z)"#).expect("Incorrect regex");
-
-            let name = path["name"].as_str().unwrap().to_string();
-
-            // Looks for any anonymous functions that are not direct descendents
-            // `tests/gravity/utils/handleNewGravatars~anonymous|0`
-            // `start:tests/gravity/gravity.test~anonymous|0~anonymous|0~anonymous|0`
-            if !parent_regex.is_match(&name) && !child_regex.is_match(&name) {
-                nested_children += 1
-            }
-
-            // If parent function is detected e.g `start:tests/gravity/gravity.test~anonymous|0`
-            // calculates the ID and the ID of its descendents
-            if parent_regex.is_match(&name) {
-                let parent_id = calculate_parent_id(path, prev_parent_id, nested_children);
-
-                let children: Vec<i32> = (prev_parent_id + 1..parent_id).collect();
-
-                prev_parent_id = parent_id;
-                nested_children = 0;
-
-                Some((parent_id, children))
-            } else {
-                None
-            }
-        })
-        .collect()
-}
-
-/// Reads and parses the wasm file to serde_json Value
-fn parse_wasm(path: &str) -> Value {
-    // Reads and parses the wasm file
-    let mut wasm = twiggy_parser::read_and_parse(path, twiggy_traits::ParseMode::Auto).unwrap();
-
-    // Initialise options with default values
-    let mut opts = twiggy_opt::Paths::new();
-    // Add the name of the function to be looked up
-    opts.add_function("anonymous".to_string());
-    // Use regex mode to catch all anonymous functions
-    opts.set_using_regexps(true);
-    // Display paths in descending order
-    opts.set_descending(true);
-    // Default max path is 10, which sometimes is not enough to show all child functions
-    // Set it to 100 just in case
-    opts.set_max_paths(100);
-
-    // Fetches all anonymous functions and which functions have been called from it
-    let json_paths = twiggy_analyze::paths(&mut wasm, &opts).unwrap();
-    let mut buf = Vec::new();
-    json_paths.emit_json(&wasm, &mut buf).unwrap();
-    let result = String::from_utf8(buf).unwrap();
-
-    serde_json::from_str(&result).unwrap()
-}
-
-fn calculate_parent_id(path: &Value, prev_parent_id: i32, nested_children: i32) -> i32 {
-    // All anonymous functions that are direct descendant are displayed as data[<integer>]
-    let child_regex = Regex::new(r#"data\[\d+\]"#).expect("Incorrect regex");
-
-    let mut children_num = 0;
-    let callers = path["callers"].as_array().unwrap();
-    let callers_names: Vec<String> = callers
-        .iter()
-        .map(|caller| caller["name"].as_str().unwrap().to_owned())
-        .collect();
-
-    if callers_names.contains(&"import index::_registerTest".to_owned())
-        || callers_names.contains(&"import index::_registerHook".to_owned())
-    {
-        for name in callers_names.iter() {
-            if child_regex.is_match(name) {
-                children_num += 1
-            }
-        }
-    }
-
-    prev_parent_id + children_num + nested_children + 1
 }

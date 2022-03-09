@@ -188,9 +188,11 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         name: AscPtr<AscString>,
         func_idx: u32,
     ) -> Result<(), HostExportError> {
-        let name: String = asc_get(&self.wasm_ctx, name)?;
+        let name: String = asc_get(&self.wasm_ctx, name, &GasCounter::new())?;
         self.meta_tests
-            .push((name, false, func_idx, String::from("describe")));
+            .push((name, false, func_idx.clone(), String::from("describe")));
+
+
         Ok(())
     }
 
@@ -201,7 +203,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         func_idx: u32,
         role: AscPtr<AscString>,
     ) -> Result<(), HostExportError> {
-        let role: String = asc_get(&self.wasm_ctx, role)?;
+        let role: String = asc_get(&self.wasm_ctx, role, &GasCounter::new())?;
         self.meta_tests
             .push((String::from(""), false, func_idx, role));
         Ok(())
