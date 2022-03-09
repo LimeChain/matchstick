@@ -190,8 +190,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     ) -> Result<(), HostExportError> {
         let name: String = asc_get(&self.wasm_ctx, name, &GasCounter::new())?;
         self.meta_tests
-            .push((name, false, func_idx.clone(), String::from("describe")));
-
+            .push((name, false, func_idx, String::from("describe")));
 
         Ok(())
     }

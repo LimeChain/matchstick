@@ -182,7 +182,11 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
                 "describe" => {
                     let host_metrics = matchstick.instance_ctx().wasm_ctx.host_metrics.clone();
                     let valid_module = matchstick.instance_ctx().wasm_ctx.valid_module.clone();
-                    let ctx = matchstick.instance_ctx().wasm_ctx.ctx.derive_with_empty_block_state();
+                    let ctx = matchstick
+                        .instance_ctx()
+                        .wasm_ctx
+                        .ctx
+                        .derive_with_empty_block_state();
                     let experimental_features = graph_runtime_wasm::ExperimentalFeatures {
                         allow_non_deterministic_ipfs: true,
                     };
@@ -203,10 +207,7 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
                         )
                     });
 
-                    let before_meta_tests = inst
-                        .instance_ctx()
-                        .meta_tests
-                        .clone();
+                    let before_meta_tests = inst.instance_ctx().meta_tests.clone();
 
                     let fun = tb
                         .get(*func_idx)
@@ -222,12 +223,12 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
 
                     fun.call(&[]).expect("Failed to execute function");
 
-                    let after_meta_tests = inst
-                        .instance_ctx()
-                        .meta_tests
-                        .clone();
+                    let after_meta_tests = inst.instance_ctx().meta_tests.clone();
 
-                    let difference: Vec<_> = after_meta_tests.into_iter().filter(|item| !before_meta_tests.contains(item)).collect();
+                    let difference: Vec<_> = after_meta_tests
+                        .into_iter()
+                        .filter(|item| !before_meta_tests.contains(item))
+                        .collect();
 
                     let mut test_group = TestGroup {
                         name: name.to_owned(),
@@ -265,10 +266,12 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
                             "afterEach" => {
                                 desc_a_e.push(test.clone());
                             }
-                            "test" => {
-                                test_group.tests.push(Test::new(t_name.to_string(), should_fail, test.clone()))
-                            }
-                            _ => logging::critical!("Nested describes are not supported!")
+                            "test" => test_group.tests.push(Test::new(
+                                t_name.to_string(),
+                                should_fail,
+                                test.clone(),
+                            )),
+                            _ => logging::critical!("Nested describes are not supported!"),
                         }
                     }
 
@@ -277,8 +280,9 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
                         test.after_hooks = desc_a_e.clone();
                     }
 
-                    suite.groups.insert((*func_idx).try_into().unwrap(), test_group);
-
+                    suite
+                        .groups
+                        .insert((*func_idx).try_into().unwrap(), test_group);
                 }
                 _ => {
                     let test_group = TestGroup {
@@ -288,7 +292,9 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
                         after_all: vec![],
                     };
 
-                    suite.groups.insert((*func_idx).try_into().unwrap(), test_group);
+                    suite
+                        .groups
+                        .insert((*func_idx).try_into().unwrap(), test_group);
                 }
             };
         }
