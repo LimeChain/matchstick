@@ -23,7 +23,7 @@ use graph_runtime_wasm::{
 use wasmtime::Trap;
 
 use crate::subgraph_store::MockSubgraphStore;
-use crate::{context::MatchstickInstanceContext, logging::Log};
+use crate::{context::MatchstickInstanceContext, logging};
 
 /// The Matchstick Instance is simply a wrapper around WASM Instance and
 pub struct MatchstickInstance<C: Blockchain> {
@@ -39,12 +39,8 @@ pub struct MatchstickInstance<C: Blockchain> {
 impl<C: Blockchain> MatchstickInstance<C> {
     pub fn new(path_to_wasm: &str) -> MatchstickInstance<Chain> {
         let subgraph_id = "ipfsMap";
-        let deployment_id = &DeploymentHash::new(subgraph_id).unwrap_or_else(|err| {
-            panic!(
-                "{}",
-                Log::Critical(format!("Could not create deployment id: {}", err)),
-            );
-        });
+        let deployment_id = &DeploymentHash::new(subgraph_id)
+            .unwrap_or_else(|err| logging::critical!("Could not create deployment id: {}", err));
         let deployment = DeploymentLocator::new(DeploymentId::new(42), deployment_id.clone());
         let data_source = mock_data_source(path_to_wasm, Version::new(0, 0, 6));
 
@@ -71,22 +67,15 @@ impl<C: Blockchain> MatchstickInstance<C> {
         let valid_module = Arc::new(
             ValidModule::new(
                 Arc::new(std::fs::read(path_to_wasm).unwrap_or_else(|err| {
-                    panic!(
-                        "{}",
-                        Log::Critical(format!(
-                            "Something went wrong while trying to read `{}`: {}",
-                            path_to_wasm, err,
-                        )),
-                    );
+                    logging::critical!(
+                        "Something went wrong while trying to read `{}`: {}",
+                        path_to_wasm,
+                        err,
+                    )
                 }))
                 .as_ref(),
             )
-            .unwrap_or_else(|err| {
-                panic!(
-                    "{}",
-                    Log::Critical(format!("Could not create ValidModule: {}", err)),
-                );
-            }),
+            .unwrap_or_else(|err| logging::critical!("Could not create ValidModule: {}", err)),
         );
 
         let mut instance = MatchstickInstance::<Chain>::from_valid_module_with_ctx(
@@ -102,20 +91,25 @@ impl<C: Blockchain> MatchstickInstance<C> {
             experimental_features,
         )
         .unwrap_or_else(|err| {
-            panic!(
-                "{}",
-                Log::Critical(format!(
-                    "Could not create WasmInstance from valid module with context: {}",
-                    err,
-                )),
-            );
+            logging::critical!(
+                "Could not create WasmInstance from valid module with context: {}",
+                err
+            )
         });
 
         instance.wasm = path_to_wasm.to_string();
         instance
     }
 
-    fn from_valid_module_with_ctx(
+    pub(crate) fn instance_ctx(&self) -> std::cell::Ref<'_, MatchstickInstanceContext<C>> {
+        std::cell::Ref::map(self.instance_ctx.borrow(), |i| i.as_ref().unwrap())
+    }
+
+    pub(crate) fn instance_ctx_mut(&self) -> std::cell::RefMut<'_, MatchstickInstanceContext<C>> {
+        std::cell::RefMut::map(self.instance_ctx.borrow_mut(), |i| i.as_mut().unwrap())
+    }
+
+    pub fn from_valid_module_with_ctx(
         valid_module: Arc<ValidModule>,
         ctx: MappingContext<C>,
         host_metrics: Arc<HostMetrics>,
@@ -331,15 +325,12 @@ impl<C: Blockchain> MatchstickInstance<C> {
         );
         link!("store.remove", mock_store_remove, entity_ptr, id_ptr);
 
-        link!(
-            "ipfs.cat",
-            wasm_ctx.ipfs_cat,
-            "host_export_ipfs_cat",
-            hash_ptr
-        );
+        link!("mockIpfsFile", mock_ipfs_file, hash, file_path);
+
+        link!("ipfs.cat", mock_ipfs_cat, "host_export_ipfs_cat", hash_ptr);
         link!(
             "ipfs.map",
-            wasm_ctx.ipfs_map,
+            mock_ipfs_map,
             "host_export_ipfs_map",
             link_ptr,
             callback,
@@ -478,7 +469,6 @@ impl<C: Blockchain> MatchstickInstance<C> {
             field_name_ptr,
             expected_val_ptr
         );
-
         link!("_assert.equals", assert_equals, expected_ptr, actual_ptr);
         link!(
             "_assert.notInStore",
@@ -487,14 +477,13 @@ impl<C: Blockchain> MatchstickInstance<C> {
             id_ptr
         );
 
+        link!("countEntities", count_entities, entity_type);
+
         // Linking gas function
         let gas = gas.cheap_clone();
         linker.func("gas", "gas", move |gas_used: u32| -> Result<(), Trap> {
             if let Err(e) = gas.consume_host_fn(gas_used.saturating_into()) {
-                panic!(
-                    "{}",
-                    Log::Critical(format!("Could not link gas function: {}", e)),
-                );
+                logging::critical!("Could not link gas function: {}", e)
             }
 
             Ok(())

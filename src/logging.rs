@@ -5,7 +5,7 @@ use colored::Colorize;
 /// Controls the amount of indentation added and substracted.
 static MARGIN: usize = 2;
 /// Current indentation when logging.
-static mut INDENT: usize = 0;
+pub static mut INDENT: usize = 0;
 pub fn add_indent() {
     unsafe { INDENT += MARGIN };
 }
@@ -19,6 +19,7 @@ pub fn clear_indent() {
 /// Whether to accumulate the logs or print them as they come.
 static mut ACCUM: bool = false;
 pub(crate) static mut LOGS: Vec<String> = vec![];
+
 /// Start accumulating the logs instead of printing them directly.
 pub fn accum() {
     unsafe { ACCUM = true };
@@ -82,10 +83,84 @@ impl<T: fmt::Display> fmt::Display for Log<T> {
             Log::Error(s) => format!("𝖷 {}", s).bold().red(),
             Log::Warning(s) => format!("⚠️  {}", s).yellow(),
             Log::Info(s) => format!("💬 {}", s).italic(),
-            Log::Debug(s) => format!("🛠 {}", s).italic().cyan(),
+            Log::Debug(s) => format!("🛠  {}", s).italic().cyan(),
             Log::Success(s) => format!("√ {}", s).bold().green(),
             Log::Default(s) => format!("{}", s).normal(),
         };
         unsafe { write!(f, "{}{}", " ".repeat(INDENT), s) }
     }
 }
+
+macro_rules! log {
+    ($log_level:expr, $log_string:expr) => ({
+        $crate::logging::Log::new($log_level, $log_string).println();
+    });
+
+    ($log_level:expr, $log_string:expr, $($arg:tt)*) => ({
+        $crate::logging::Log::new($log_level, format!($log_string, $($arg)*)).println();
+    });
+}
+
+/// Prints the message formatted with the passed color identifier
+/// Can accept multiple style options.
+/// log_with_style!(bright_red, "Hello world!")
+/// log_with_style!(bold, green, "Hello {}", "world!")
+/// log_with_style!(bold, blue, on_yellow, "{} {}", "Hello", "world!")
+macro_rules! log_with_style {
+    ($($log_style:ident,)+ $log_string:literal) => ({
+        $crate::logging::log!(6, $log_string$(.$log_style())+)
+    });
+
+    ($($log_style:ident,)+ $log_string:literal, $($arg:tt)*) => ({
+        $crate::logging::log!(6, format!($log_string, $($arg)*)$(.$log_style())+)
+    });
+}
+
+/// This macro will panic
+macro_rules! critical {
+    ($log_string:expr) => ({
+        panic!("{}", $crate::logging::Log::Critical($log_string));
+    });
+
+    ($log_string:expr, $($arg:tt)*) => ({
+        panic!("{}", $crate::logging::Log::Critical(format!($log_string, $($arg)*)));
+    });
+}
+
+macro_rules! error {
+    ($($arg:tt)*) => ({
+        $crate::logging::log!(1, $($arg)*);
+    });
+}
+
+macro_rules! warning {
+    ($($arg:tt)*) => ({
+        $crate::logging::log!(2, $($arg)*);
+    });
+}
+
+macro_rules! info {
+    ($($arg:tt)*) => ({
+        $crate::logging::log!(3, $($arg)*);
+    });
+}
+
+macro_rules! debug {
+    ($($arg:tt)*) => ({
+        $crate::logging::log!(4, $($arg)*);
+    });
+}
+
+macro_rules! success {
+    ($($arg:tt)*) => ({
+        $crate::logging::log!(5, $($arg)*);
+    });
+}
+
+macro_rules! default {
+    ($($arg:tt)*) => ({
+        $crate::logging::log!(6, $($arg)*);
+    });
+}
+
+pub(crate) use {critical, debug, default, error, info, log, log_with_style, success, warning};

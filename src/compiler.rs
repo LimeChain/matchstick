@@ -13,7 +13,7 @@ use std::os::windows::process::ExitStatusExt;
 
 mod sources;
 
-use crate::logging::Log;
+use crate::logging;
 use sources::*;
 
 pub struct Compiler {
@@ -34,14 +34,7 @@ pub struct CompileOutput {
 impl Compiler {
     pub fn new(lib: PathBuf) -> Self {
         if !lib.exists() {
-            panic!(
-                "{}",
-                Log::Critical(format!(
-                    "Path to lib `{}` does not exist!",
-                    lib.to_str()
-                        .expect("unexpected: lib should always have a value"),
-                )),
-            );
+            logging::critical!("Path to lib {:?} does not exist!", lib);
         }
         Compiler {
             exec: lib.join("assemblyscript/bin/asc"),
@@ -98,11 +91,11 @@ impl Compiler {
                     || !Path::new(&out_file).exists()
                     || is_source_modified(&in_files, &out_file)
                 {
-                    Log::Info(format!("Compiling {}...", name.bright_blue())).println();
+                    logging::info!("Compiling {}...", name.bright_blue());
 
                     self.compile(in_files, out_file)
                 } else {
-                    Log::Info(format!("{} skipped!", name.bright_blue())).println();
+                    logging::info!("{} skipped!", name.bright_blue());
 
                     self.skip_compile(out_file)
                 };
@@ -126,12 +119,7 @@ impl Compiler {
             .arg("--outFile")
             .arg(out_file.clone())
             .output()
-            .unwrap_or_else(|err| {
-                panic!(
-                    "{}",
-                    Log::Critical(format!("Internal error during compilation: {}", err)),
-                );
-            });
+            .unwrap_or_else(|err| logging::critical!("Internal error during compilation: {}", err));
 
         CompileOutput {
             status: output.status,
@@ -157,16 +145,10 @@ fn verify_outputs(outputs: &HashMap<String, CompileOutput>) {
             io::stderr()
                 .write_all(&output.stderr)
                 .unwrap_or_else(|err| {
-                    panic!(
-                        "{}",
-                        Log::Critical(format!("Could not write to `stderr`: {}", err)),
-                    );
+                    logging::critical!("Could not write to `stderr`: {}", err);
                 });
         });
 
-        panic!(
-            "{}",
-            Log::Critical("Please attend to the compilation errors above!"),
-        );
+        logging::critical!("Please attend to the compilation errors above!");
     }
 }
