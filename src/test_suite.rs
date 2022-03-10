@@ -1,6 +1,5 @@
 use colored::Colorize;
 use graph::blockchain::Blockchain;
-use std::collections::BTreeMap;
 use std::time::Instant;
 use wasmtime::Func;
 
@@ -114,7 +113,7 @@ impl Test {
 
 #[derive(Debug)]
 pub struct TestSuite {
-    pub groups: BTreeMap<i32, TestGroup>,
+    pub groups: Vec<TestGroup>,
     pub before_all: Vec<Func>,
     pub after_all: Vec<Func>,
 }
@@ -137,7 +136,7 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
         });
 
         let mut suite = TestSuite {
-            groups: BTreeMap::new(),
+            groups: vec![],
             before_all: vec![],
             after_all: vec![],
         };
@@ -271,7 +270,9 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
                                 should_fail,
                                 test.clone(),
                             )),
-                            _ => logging::critical!("Nested describes are not supported!"),
+                            _ => {
+                                logging::critical!("Nested describes are not supported!")
+                            },
                         }
                     }
 
@@ -282,7 +283,7 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
 
                     suite
                         .groups
-                        .insert((*func_idx).try_into().unwrap(), test_group);
+                        .push(test_group);
                 }
                 _ => {
                     let test_group = TestGroup {
@@ -294,14 +295,14 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
 
                     suite
                         .groups
-                        .insert((*func_idx).try_into().unwrap(), test_group);
+                        .push(test_group);
                 }
             };
         }
 
         // Add the accumulated before and after functions to every test()
         // in the corresponding describe group
-        for (_, group) in suite.groups.iter_mut() {
+        for group in suite.groups.iter_mut() {
             group.before_all = before_each.clone();
             group.after_all = after_each.clone();
         }

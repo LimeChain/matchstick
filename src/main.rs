@@ -122,7 +122,7 @@ fn run_test_suites(test_suites: HashMap<String, TestSuite>) -> i32 {
             let failed_tests: Vec<HashMap<String, TestResult>> = suite
                 .groups
                 .into_iter()
-                .filter_map(|(_, group)| {
+                .filter_map(|group| {
                     if group.tests.is_empty() {
                         None
                     } else {
