@@ -236,50 +236,7 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
                         after_all: vec![],
                     };
 
-                    let mut desc_b_e = vec![];
-                    let mut desc_a_e = vec![];
-
-                    for (t_name, should_fail, t_idx, role) in difference {
-                        let test = table
-                            .get(t_idx)
-                            .unwrap_or_else(|| {
-                                logging::critical!(
-                                    "Could not get WebAssembly.Table entry with index '{}'.",
-                                    func_idx,
-                                )
-                            })
-                            .unwrap_funcref()
-                            .unwrap()
-                            .to_owned();
-
-                        match role.as_str() {
-                            "beforeAll" => {
-                                test_group.before_all.push(test.clone());
-                            }
-                            "afterAll" => {
-                                test_group.after_all.push(test.clone());
-                            }
-                            "beforeEach" => {
-                                desc_b_e.push(test.clone());
-                            }
-                            "afterEach" => {
-                                desc_a_e.push(test.clone());
-                            }
-                            "test" => test_group.tests.push(Test::new(
-                                t_name.to_string(),
-                                should_fail,
-                                test.clone(),
-                            )),
-                            _ => {
-                                logging::critical!("Nested describes are not supported!")
-                            },
-                        }
-                    }
-
-                    for mut test in test_group.tests.iter_mut() {
-                        test.before_hooks = desc_b_e.clone();
-                        test.after_hooks = desc_a_e.clone();
-                    }
+                    handle_describe(difference, &mut test_group, &table);
 
                     suite
                         .groups
@@ -309,5 +266,52 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
 
         // Return the generates suite
         suite
+    }
+}
+
+fn handle_describe(difference: Vec<(String, bool, u32, String)>, test_group: &mut TestGroup, table: &wasmtime::Table) {
+    let mut desc_b_e = vec![];
+    let mut desc_a_e = vec![];
+
+    for (t_name, should_fail, t_idx, role) in difference {
+        let test = table
+            .get(t_idx)
+            .unwrap_or_else(|| {
+                logging::critical!(
+                    "Could not get WebAssembly.Table entry with index '{}'.",
+                    t_idx,
+                )
+            })
+            .unwrap_funcref()
+            .unwrap()
+            .to_owned();
+
+        match role.as_str() {
+            "beforeAll" => {
+                test_group.before_all.push(test.clone());
+            }
+            "afterAll" => {
+                test_group.after_all.push(test.clone());
+            }
+            "beforeEach" => {
+                desc_b_e.push(test.clone());
+            }
+            "afterEach" => {
+                desc_a_e.push(test.clone());
+            }
+            "test" => test_group.tests.push(Test::new(
+                t_name.to_string(),
+                should_fail,
+                test.clone(),
+            )),
+            _ => {
+                logging::critical!("Nested describes are not supported!")
+            },
+        }
+    }
+
+    for mut test in test_group.tests.iter_mut() {
+        test.before_hooks = desc_b_e.clone();
+        test.after_hooks = desc_a_e.clone();
     }
 }
