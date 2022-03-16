@@ -665,7 +665,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             let param_type = get_kind(arg_type.to_owned());
 
             if !arg.type_check(&param_type) {
-                logging::critical!("{} parameters missmatch:\n Expected `{:?}`\nRecieved `{:?}`", fn_signature, param_type, arg);
+                logging::critical!("{} parameters missmatch:\nExpected `{:?}`\nRecieved `{:?}`", fn_signature, param_type, arg);
             }
         }
 
