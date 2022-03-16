@@ -238,9 +238,7 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
 
                     handle_describe(difference, &mut test_group, &table);
 
-                    suite
-                        .groups
-                        .push(test_group);
+                    suite.groups.push(test_group);
                 }
                 _ => {
                     let test_group = TestGroup {
@@ -250,9 +248,7 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
                         after_all: vec![],
                     };
 
-                    suite
-                        .groups
-                        .push(test_group);
+                    suite.groups.push(test_group);
                 }
             };
         }
@@ -275,7 +271,11 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
     }
 }
 
-fn handle_describe(difference: Vec<(String, bool, u32, String)>, test_group: &mut TestGroup, table: &wasmtime::Table) {
+fn handle_describe(
+    difference: Vec<(String, bool, u32, String)>,
+    test_group: &mut TestGroup,
+    table: &wasmtime::Table,
+) {
     let mut desc_b_e = vec![];
     let mut desc_a_e = vec![];
 
@@ -305,14 +305,14 @@ fn handle_describe(difference: Vec<(String, bool, u32, String)>, test_group: &mu
             "afterEach" => {
                 desc_a_e.push(test.clone());
             }
-            "test" => test_group.tests.push(Test::new(
-                t_name.to_string(),
-                should_fail,
-                test.clone(),
-            )),
+            "test" => {
+                test_group
+                    .tests
+                    .push(Test::new(t_name.to_string(), should_fail, test.clone()))
+            }
             _ => {
                 logging::critical!("Nested describes are not supported!")
-            },
+            }
         }
     }
 
