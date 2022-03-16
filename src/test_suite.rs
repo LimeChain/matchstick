@@ -260,8 +260,14 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
         // Add the accumulated before and after functions to every test()
         // in the corresponding describe group
         for group in suite.groups.iter_mut() {
+            let mut inner_ba = group.before_all.clone();
+            let mut inner_aa = group.after_all.clone();
             group.before_all = before_each.clone();
+            group.before_all.append(&mut inner_ba);
+
             group.after_all = after_each.clone();
+            group.after_all.append(&mut inner_aa);
+            group.after_all.reverse();
         }
 
         // Return the generates suite
