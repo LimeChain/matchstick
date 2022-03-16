@@ -11,7 +11,7 @@ use graph::{
         store::{Attribute, Value},
     },
     prelude::{
-        ethabi::{Address, Token, ParamType},
+        ethabi::{Address, ParamType, Token},
         Entity,
     },
     runtime::{asc_get, asc_new, gas::GasCounter, try_asc_get, AscPtr, HostExportError},
@@ -658,14 +658,25 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let arg_types: Vec<String> = collect_types(tmp_args_str);
 
         if arg_types.len() != fn_args.len() {
-            logging::critical!("{} expected {} arguments, but received {}", fn_name, arg_types.len(), fn_args.len())
+            logging::critical!(
+                "{} expected {} arguments, but received {}",
+                fn_name,
+                arg_types.len(),
+                fn_args.len()
+            )
         }
 
-        for (arg_type, arg) in arg_types.iter().zip(fn_args.clone().iter()) {
+        for (index, (arg_type, fn_arg)) in arg_types.iter().zip(fn_args.iter()).enumerate() {
             let param_type = get_kind(arg_type.to_owned());
 
-            if !arg.type_check(&param_type) {
-                logging::critical!("{} parameters missmatch:\nExpected `{:?}`\nRecieved `{:?}`", fn_signature, param_type, arg);
+            if !fn_arg.type_check(&param_type) {
+                logging::critical!(
+                    "`{}` parameters missmatch at position {}:\nExpected: {:?}\nRecieved: {:?}\n",
+                    fn_signature,
+                    index + 1,
+                    param_type,
+                    fn_arg
+                );
             }
         }
 
@@ -938,7 +949,7 @@ pub fn asc_string_from_str(initial_string: &str) -> AscString {
 fn collect_types(arg_str: &str) -> Vec<String> {
     let mut arg_types: Vec<String> = vec![];
 
-    if arg_str != "" {
+    if !arg_str.is_empty() {
         let mut parenthesis = 0;
         let mut arg_type = "".to_owned();
 
@@ -957,8 +968,8 @@ fn collect_types(arg_str: &str) -> Vec<String> {
             }
         }
 
-        if arg_type != "" {
-            arg_types.push(arg_type.to_owned())
+        if !arg_type.is_empty() {
+            arg_types.push(arg_type)
         }
     }
 
@@ -979,9 +990,13 @@ fn get_kind(kind: String) -> ParamType {
         "bytes" => ParamType::Bytes,
         "string" => ParamType::String,
         kind_str if int_r.is_match(kind_str) => {
-            let size = kind_str.replace("uint", "").replace("int", "").parse::<usize>().unwrap();
+            let size = kind_str
+                .replace("uint", "")
+                .replace("int", "")
+                .parse::<usize>()
+                .unwrap();
             ParamType::Int(size)
-        },
+        }
         // kind_str if kind_str.starts_with("uint") && !kind_str.ends_with("[]") => {
         //     let size = kind_str.replace("uint", "").parse::<usize>().unwrap();
         //     ParamType::Uint(size)
@@ -989,27 +1004,24 @@ fn get_kind(kind: String) -> ParamType {
         kind_str if array_r.is_match(kind_str) => {
             let p_type = Box::new(get_kind(kind_str.replace("[]", "")));
             ParamType::Array(p_type)
-        },
+        }
         kind_str if fixed_bytes_r.is_match(kind_str) => {
             let size = kind_str.replace("bytes", "").parse::<usize>().unwrap();
             ParamType::FixedBytes(size)
-        },
+        }
         kind_str if fixed_array_r.is_match(kind_str) => {
             let tmp_str = kind.replace(']', "");
             let components: Vec<&str> = tmp_str.split('[').collect();
             let p_type = Box::new(get_kind(components[0].to_owned()));
             let size = components[1].parse::<usize>().unwrap();
             ParamType::FixedArray(p_type, size)
-        },
+        }
         kind_str if tuple_r.is_match(kind_str) => {
             let tmp_str = &kind_str[1..kind_str.len() - 1];
-            let str_components: Vec<String> = collect_types(&tmp_str);
-            let components: Vec<ParamType> = str_components.into_iter().map(|component| {
-                let inner_comp = get_kind(component.to_owned());
-                inner_comp
-            }).collect();
+            let str_components: Vec<String> = collect_types(tmp_str);
+            let components: Vec<ParamType> = str_components.into_iter().map(get_kind).collect();
             ParamType::Tuple(components)
-        },
+        }
         _ => logging::critical!("Unrecognized argument type `{}`", kind_str),
     }
 }
