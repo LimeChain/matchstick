@@ -1,3 +1,5 @@
+use regex::Regex;
+use std::boxed::Box;
 use std::collections::HashMap;
 use std::str::FromStr;
 
@@ -9,7 +11,7 @@ use graph::{
         store::{Attribute, Value},
     },
     prelude::{
-        ethabi::{Address, Token},
+        ethabi::{Address, Token, ParamType},
         Entity,
     },
     runtime::{asc_get, asc_new, gas::GasCounter, try_asc_get, AscPtr, HostExportError},
@@ -650,6 +652,37 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         )?;
         let reverts = bool::from(EnumPayload(reverts_ptr.to_payload()));
 
+        let tmp_str = fn_signature.replace(&(fn_name.clone() + "("), "");
+        let components: Vec<&str> = tmp_str.split("):").collect();
+        let tmp_args_str = components[0];
+        let arg_types: Vec<&str> = collect_types(tmp_args_str);
+
+        let test_r = Regex::new(r#"\(.*\)"#).unwrap();
+        let mut tuples = "";
+
+        match test_r.find(&tmp_args_str) {
+            None => (),
+            Some(result) => tuples = result.as_str(),
+        }
+
+        let replaced_tuples = tuples.replace(',', "<replaced>");
+        let replaced_args_str = tmp_args_str.replace(tuples, &replaced_tuples);
+        println!("{:?}", tuples);
+        println!("{:?}", replaced_tuples);
+        println!("{:?}", replaced_args_str);
+
+        if arg_types.len() != fn_args.len() {
+            logging::critical!("{} expected {} arguments, but received {}", fn_name, arg_types.len(), fn_args.len())
+        }
+
+        for (arg_type, arg) in arg_types.iter().zip(fn_args.clone().iter()) {
+            let param_type = get_kind(arg_type);
+
+            if !arg.type_check(&param_type) {
+                logging::critical!("{} parameters missmatch: Expected `{}`, recieved `{}`", fn_signature, param_type, arg);
+            }
+        }
+
         let fn_id = MatchstickInstanceContext::<C>::fn_id(
             &contract_address.to_string(),
             &fn_name,
@@ -914,4 +947,85 @@ pub fn asc_string_from_str(initial_string: &str) -> AscString {
     utf_16_iterator.for_each(|element| u16_vector.push(element));
     let version = Version::new(0, 0, 6);
     AscString::new(&u16_vector, version).expect("Couldn't create AscString.")
+}
+
+fn collect_types(str: &str) -> Vec<&str> {
+    let mut tmp_args_str = str.clone();
+    let mut arg_types: Vec<&str> = vec![];
+
+    if tmp_args_str != "" {
+        let mut parenthesis = 0;
+        let mut index = 0;
+
+        for char in tmp_args_str.chars() {
+            if char == ',' && parenthesis == 0 {
+                let (chunk, rest) = tmp_args_str.split_at(std::cmp::min(index, tmp_args_str.len()));
+                arg_types.push(chunk.trim_start_matches(&[',', ' ']));
+                tmp_args_str = rest;
+                index = 0;
+            } else if char == '(' {
+                parenthesis += 1;
+            } else if char == ')' {
+                if index + 1 == tmp_args_str.len() {
+                    arg_types.push(tmp_args_str.trim_start_matches(&[',', ' ']));
+                }
+                parenthesis -= 1;
+            } else if index + 1 == tmp_args_str.len() {
+                arg_types.push(tmp_args_str.trim_start_matches(&[',', ' ']));
+            }
+
+            index += 1;
+        }
+    }
+
+    arg_types
+}
+
+fn get_kind(mut kind: &str) -> ParamType {
+    kind = kind.trim();
+    let int_r = Regex::new(r#"^u?int\d+$"#).expect("Invalid uint/int regex");
+    let array_r = Regex::new(r#"\w*\d*\[\]$"#).expect("Invalid array regex");
+    let fixed_bytes_r = Regex::new(r#"bytes\d+$"#).expect("Invalid fixedBytes regex");
+    let fixed_array_r = Regex::new(r#"\w*\d*\[\d+\]$"#).expect("Invalid fixedArray regex");
+    let tuple_r = Regex::new(r#"\((.+?)(?:,|$)*\)$"#).expect("Invalid tuple regex");
+
+    match kind {
+        "address" => ParamType::Address,
+        "bool" => ParamType::Bool,
+        "bytes" => ParamType::Bytes,
+        "string" => ParamType::String,
+        kind if int_r.is_match(kind) => {
+            let size = kind.replace("uint", "").replace("int", "").parse::<usize>().unwrap();
+            ParamType::Int(size)
+        },
+        // kind if kind.starts_with("uint") && !kind.ends_with("[]") => {
+        //     let size = kind.replace("uint", "").parse::<usize>().unwrap();
+        //     ParamType::Uint(size)
+        // },
+        kind if array_r.is_match(kind) => {
+            let p_type = Box::new(get_kind(&kind.replace("[]", "")));
+            ParamType::Array(p_type)
+        },
+        kind if fixed_bytes_r.is_match(kind) => {
+            let size = kind.replace("bytes", "").parse::<usize>().unwrap();
+            ParamType::FixedBytes(size)
+        },
+        kind if fixed_array_r.is_match(kind) => {
+            let tmp_str = kind.replace(']', "");
+            let components: Vec<&str> = tmp_str.split('[').collect();
+            let p_type = Box::new(get_kind(components[0]));
+            let size = components[1].parse::<usize>().unwrap();
+            ParamType::FixedArray(p_type, size)
+        },
+        kind if tuple_r.is_match(kind) => {
+            let tmp_str = &kind[1..kind.len() - 1];
+            let str_components: Vec<&str> = collect_types(tmp_str);
+            let components: Vec<ParamType> = str_components.into_iter().map(|component| {
+                let inner_comp = get_kind(component);
+                inner_comp
+            }).collect();
+            ParamType::Tuple(components)
+        },
+        _ => logging::critical!("Unrecognized argument type `{}`", kind),
+    }
 }
