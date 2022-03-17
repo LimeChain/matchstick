@@ -925,7 +925,10 @@ mod unit_tests {
             .get("0x8920…43e7funcNamefuncName(address):(string,string)89205a3a3b2a69de6dbf7f01ed13b2108b2c43e7")
             .unwrap()[0]
             .clone();
-        assert_eq!(&token.to_string(), "89205a3a3b2a69de6dbf7f01ed13b2108b2c43e7");
+        assert_eq!(
+            &token.to_string(),
+            "89205a3a3b2a69de6dbf7f01ed13b2108b2c43e7"
+        );
     }
 
     #[test]
