@@ -997,10 +997,6 @@ fn get_kind(kind: String) -> ParamType {
                 .unwrap();
             ParamType::Int(size)
         }
-        // kind_str if kind_str.starts_with("uint") && !kind_str.ends_with("[]") => {
-        //     let size = kind_str.replace("uint", "").parse::<usize>().unwrap();
-        //     ParamType::Uint(size)
-        // },
         kind_str if array_r.is_match(kind_str) => {
             let p_type = Box::new(get_kind(kind_str.replace("[]", "")));
             ParamType::Array(p_type)
