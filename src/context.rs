@@ -580,13 +580,13 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         {
             let mut inner_store = self.store.get(&original_entity).unwrap().clone();
             let mut innermost_store = inner_store.get(entity).unwrap().clone();
-            let mut value_list = field.1.clone().as_list().unwrap().clone();
+            let mut value_list = field.1.clone().as_list().unwrap();
 
             value_list.remove(value_list.iter().position(|x| *x == value).unwrap());
             innermost_store.insert(field.0.to_owned(), Value::List(value_list));
             inner_store.insert(entity.to_owned(), innermost_store);
 
-            self.store.insert(original_entity.clone(), inner_store);
+            self.store.insert(original_entity, inner_store);
         }
     }
 
@@ -663,7 +663,6 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         if self.store.contains_key(&entity_type)
             && self.store.get(&entity_type).unwrap().contains_key(&id)
         {
-            println!("-----------------------------------------------------------------");
             let data = self
                 .store
                 .get(&entity_type)
@@ -674,6 +673,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             self.update_derived_relations_in_store(entity_type.clone(), id.clone(), data, true);
             let mut entity_type_store = self.store.get(&entity_type).unwrap().clone();
             entity_type_store.remove(&id);
+
             self.store.insert(entity_type, entity_type_store);
         } else {
             logging::error!(
