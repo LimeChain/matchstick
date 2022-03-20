@@ -478,9 +478,116 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             HashMap::new()
         };
 
+        self.update_derived_relations_in_store(
+            entity_type.clone(),
+            id.clone(),
+            data.clone(),
+            false,
+        );
         entity_type_store.insert(id, data);
         self.store.insert(entity_type, entity_type_store);
         Ok(())
+    }
+
+    // This method checks for and removes falty store relations.
+    // The entity_deleted bool is necessary because one of the checks needs to be
+    // inverted depending on whether the entity is about to be deleted or not.
+    fn update_derived_relations_in_store(
+        &mut self,
+        entity_type: String,
+        id: String,
+        data: HashMap<String, Value>,
+        entity_deleted: bool,
+    ) {
+        if self.derived.contains_key(&entity_type) {
+            let linking_fields = self
+                .derived
+                .get(&entity_type)
+                .unwrap_or_else(|| {
+                    logging::critical!("Couldn't find value for key {} in derived map", entity_type)
+                })
+                .1
+                .clone();
+            let original_entity = self.derived.get(&entity_type).unwrap().0.clone();
+            if self.store.contains_key(&original_entity) {
+                let inner_store = self.store.get(&original_entity).unwrap().clone();
+                for original_entity_id_and_data in &inner_store {
+                    let innermost_store = inner_store
+                        .get(original_entity_id_and_data.0)
+                        .unwrap()
+                        .clone();
+                    for field in &innermost_store {
+                        for linking_field in &linking_fields {
+                            if &linking_field.0 == field.0 && matches!(field.1, Value::List(_)) {
+                                let value_list = field.1.clone().as_list().unwrap().clone();
+                                for value in value_list.clone() {
+                                    if value.is_string()
+                                        && value.clone().as_string().unwrap() == id
+                                        && data.contains_key(&linking_field.1)
+                                    {
+                                        if data.get(&linking_field.1).unwrap().is_string() {
+                                            self.remove_dead_relations(
+                                                data.get(&linking_field.1).unwrap().to_owned(),
+                                                original_entity_id_and_data.0,
+                                                field,
+                                                value,
+                                                original_entity.clone(),
+                                                entity_deleted,
+                                            );
+                                        } else if matches!(
+                                            data.get(&linking_field.1).unwrap(),
+                                            Value::List(_)
+                                        ) {
+                                            let linking_field_values = data
+                                                .get(&linking_field.1)
+                                                .unwrap()
+                                                .clone()
+                                                .as_list()
+                                                .unwrap();
+                                            for linking_field_value in linking_field_values {
+                                                self.remove_dead_relations(
+                                                    linking_field_value,
+                                                    original_entity_id_and_data.0,
+                                                    field,
+                                                    value.clone(),
+                                                    original_entity.clone(),
+                                                    entity_deleted,
+                                                );
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fn remove_dead_relations(
+        &mut self,
+        current_value: Value,
+        entity: &str,
+        field: (&String, &Value),
+        value: Value,
+        original_entity: String,
+        entity_deleted: bool,
+    ) {
+        if current_value.is_string()
+            && ((current_value.as_str().unwrap() != entity && !entity_deleted)
+                || (current_value.as_str().unwrap() == entity && entity_deleted))
+        {
+            let mut inner_store = self.store.get(&original_entity).unwrap().clone();
+            let mut innermost_store = inner_store.get(entity).unwrap().clone();
+            let mut value_list = field.1.clone().as_list().unwrap().clone();
+
+            value_list.remove(value_list.iter().position(|x| *x == value).unwrap());
+            innermost_store.insert(field.0.to_owned(), Value::List(value_list));
+            inner_store.insert(entity.to_owned(), innermost_store);
+
+            self.store.insert(original_entity.clone(), inner_store);
+        }
     }
 
     /// This function checks whether all the necessary data is present in the store to avoid linking
@@ -556,9 +663,17 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         if self.store.contains_key(&entity_type)
             && self.store.get(&entity_type).unwrap().contains_key(&id)
         {
+            println!("-----------------------------------------------------------------");
+            let data = self
+                .store
+                .get(&entity_type)
+                .unwrap()
+                .get(&id)
+                .unwrap()
+                .clone();
+            self.update_derived_relations_in_store(entity_type.clone(), id.clone(), data, true);
             let mut entity_type_store = self.store.get(&entity_type).unwrap().clone();
             entity_type_store.remove(&id);
-
             self.store.insert(entity_type, entity_type_store);
         } else {
             logging::error!(
