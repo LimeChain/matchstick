@@ -1,3 +1,5 @@
+use regex::Regex;
+use std::boxed::Box;
 use std::collections::HashMap;
 use std::str::FromStr;
 
@@ -9,7 +11,7 @@ use graph::{
         store::{Attribute, Value},
     },
     prelude::{
-        ethabi::{Address, Token},
+        ethabi::{Address, ParamType, Token},
         Entity,
     },
     runtime::{asc_get, asc_new, gas::GasCounter, try_asc_get, AscPtr, HostExportError},
@@ -506,9 +508,116 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             HashMap::new()
         };
 
+        self.update_derived_relations_in_store(
+            entity_type.clone(),
+            id.clone(),
+            data.clone(),
+            false,
+        );
         entity_type_store.insert(id, data);
         self.store.insert(entity_type, entity_type_store);
         Ok(())
+    }
+
+    // This method checks for and removes falty store relations.
+    // The entity_deleted bool is necessary because one of the checks needs to be
+    // inverted depending on whether the entity is about to be deleted or not.
+    fn update_derived_relations_in_store(
+        &mut self,
+        entity_type: String,
+        id: String,
+        data: HashMap<String, Value>,
+        entity_deleted: bool,
+    ) {
+        if self.derived.contains_key(&entity_type) {
+            let linking_fields = self
+                .derived
+                .get(&entity_type)
+                .unwrap_or_else(|| {
+                    logging::critical!("Couldn't find value for key {} in derived map", entity_type)
+                })
+                .1
+                .clone();
+            let original_entity = self.derived.get(&entity_type).unwrap().0.clone();
+            if self.store.contains_key(&original_entity) {
+                let inner_store = self.store.get(&original_entity).unwrap().clone();
+                for original_entity_id_and_data in &inner_store {
+                    let innermost_store = inner_store
+                        .get(original_entity_id_and_data.0)
+                        .unwrap()
+                        .clone();
+                    for field in &innermost_store {
+                        for linking_field in &linking_fields {
+                            if &linking_field.0 == field.0 && matches!(field.1, Value::List(_)) {
+                                let value_list = field.1.clone().as_list().unwrap().clone();
+                                for value in value_list.clone() {
+                                    if value.is_string()
+                                        && value.clone().as_string().unwrap() == id
+                                        && data.contains_key(&linking_field.1)
+                                    {
+                                        if data.get(&linking_field.1).unwrap().is_string() {
+                                            self.remove_dead_relations(
+                                                data.get(&linking_field.1).unwrap().to_owned(),
+                                                original_entity_id_and_data.0,
+                                                field,
+                                                value,
+                                                original_entity.clone(),
+                                                entity_deleted,
+                                            );
+                                        } else if matches!(
+                                            data.get(&linking_field.1).unwrap(),
+                                            Value::List(_)
+                                        ) {
+                                            let linking_field_values = data
+                                                .get(&linking_field.1)
+                                                .unwrap()
+                                                .clone()
+                                                .as_list()
+                                                .unwrap();
+                                            for linking_field_value in linking_field_values {
+                                                self.remove_dead_relations(
+                                                    linking_field_value,
+                                                    original_entity_id_and_data.0,
+                                                    field,
+                                                    value.clone(),
+                                                    original_entity.clone(),
+                                                    entity_deleted,
+                                                );
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fn remove_dead_relations(
+        &mut self,
+        current_value: Value,
+        entity: &str,
+        field: (&String, &Value),
+        value: Value,
+        original_entity: String,
+        entity_deleted: bool,
+    ) {
+        if current_value.is_string()
+            && ((current_value.as_str().unwrap() != entity && !entity_deleted)
+                || (current_value.as_str().unwrap() == entity && entity_deleted))
+        {
+            let mut inner_store = self.store.get(&original_entity).unwrap().clone();
+            let mut innermost_store = inner_store.get(entity).unwrap().clone();
+            let mut value_list = field.1.clone().as_list().unwrap();
+
+            value_list.remove(value_list.iter().position(|x| *x == value).unwrap());
+            innermost_store.insert(field.0.to_owned(), Value::List(value_list));
+            inner_store.insert(entity.to_owned(), innermost_store);
+
+            self.store.insert(original_entity, inner_store);
+        }
     }
 
     /// This function checks whether all the necessary data is present in the store to avoid linking
@@ -584,6 +693,14 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         if self.store.contains_key(&entity_type)
             && self.store.get(&entity_type).unwrap().contains_key(&id)
         {
+            let data = self
+                .store
+                .get(&entity_type)
+                .unwrap()
+                .get(&id)
+                .unwrap()
+                .clone();
+            self.update_derived_relations_in_store(entity_type.clone(), id.clone(), data, true);
             let mut entity_type_store = self.store.get(&entity_type).unwrap().clone();
             entity_type_store.remove(&id);
 
@@ -677,6 +794,34 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             &GasCounter::new(),
         )?;
         let reverts = bool::from(EnumPayload(reverts_ptr.to_payload()));
+
+        let tmp_str = fn_signature.replace(&(fn_name.clone() + "("), "");
+        let components: Vec<&str> = tmp_str.split("):").collect();
+        let tmp_args_str = components[0];
+        let arg_types: Vec<String> = collect_types(tmp_args_str);
+
+        if arg_types.len() != fn_args.len() {
+            logging::critical!(
+                "{} expected {} arguments, but received {}",
+                fn_name,
+                arg_types.len(),
+                fn_args.len()
+            )
+        }
+
+        for (index, (arg_type, fn_arg)) in arg_types.iter().zip(fn_args.iter()).enumerate() {
+            let param_type = get_kind(arg_type.to_owned());
+
+            if !fn_arg.type_check(&param_type) {
+                logging::critical!(
+                    "`{}` parameters missmatch at position {}:\nExpected: {:?}\nRecieved: {:?}\n",
+                    fn_signature,
+                    index + 1,
+                    param_type,
+                    fn_arg
+                );
+            }
+        }
 
         let fn_id = MatchstickInstanceContext::<C>::fn_id(
             &contract_address.to_string(),
@@ -942,4 +1087,80 @@ pub fn asc_string_from_str(initial_string: &str) -> AscString {
     utf_16_iterator.for_each(|element| u16_vector.push(element));
     let version = Version::new(0, 0, 6);
     AscString::new(&u16_vector, version).expect("Couldn't create AscString.")
+}
+
+fn collect_types(arg_str: &str) -> Vec<String> {
+    let mut arg_types: Vec<String> = vec![];
+
+    if !arg_str.is_empty() {
+        let mut parenthesis = 0;
+        let mut arg_type = "".to_owned();
+
+        for char in arg_str.chars() {
+            if char == '(' {
+                arg_type = arg_type.to_owned() + "(";
+                parenthesis += 1;
+            } else if char == ')' {
+                arg_type = arg_type.to_owned() + ")";
+                parenthesis -= 1;
+            } else if char == ',' && parenthesis == 0 {
+                arg_types.push(arg_type);
+                arg_type = "".to_owned();
+            } else {
+                arg_type = arg_type.to_owned() + &char.to_string();
+            }
+        }
+
+        if !arg_type.is_empty() {
+            arg_types.push(arg_type)
+        }
+    }
+
+    arg_types
+}
+
+fn get_kind(kind: String) -> ParamType {
+    let kind_str = kind.trim();
+    let int_r = Regex::new(r#"^u?int\d+$"#).expect("Invalid uint/int regex");
+    let array_r = Regex::new(r#"\w*\d*\[\]$"#).expect("Invalid array regex");
+    let fixed_bytes_r = Regex::new(r#"bytes\d+$"#).expect("Invalid fixedBytes regex");
+    let fixed_array_r = Regex::new(r#"\w*\d*\[\d+\]$"#).expect("Invalid fixedArray regex");
+    let tuple_r = Regex::new(r#"\((.+?)(?:,|$)*\)$"#).expect("Invalid tuple regex");
+
+    match kind_str {
+        "address" => ParamType::Address,
+        "bool" => ParamType::Bool,
+        "bytes" => ParamType::Bytes,
+        "string" => ParamType::String,
+        kind_str if int_r.is_match(kind_str) => {
+            let size = kind_str
+                .replace("uint", "")
+                .replace("int", "")
+                .parse::<usize>()
+                .unwrap();
+            ParamType::Int(size)
+        }
+        kind_str if array_r.is_match(kind_str) => {
+            let p_type = Box::new(get_kind(kind_str.replace("[]", "")));
+            ParamType::Array(p_type)
+        }
+        kind_str if fixed_bytes_r.is_match(kind_str) => {
+            let size = kind_str.replace("bytes", "").parse::<usize>().unwrap();
+            ParamType::FixedBytes(size)
+        }
+        kind_str if fixed_array_r.is_match(kind_str) => {
+            let tmp_str = kind.replace(']', "");
+            let components: Vec<&str> = tmp_str.split('[').collect();
+            let p_type = Box::new(get_kind(components[0].to_owned()));
+            let size = components[1].parse::<usize>().unwrap();
+            ParamType::FixedArray(p_type, size)
+        }
+        kind_str if tuple_r.is_match(kind_str) => {
+            let tmp_str = &kind_str[1..kind_str.len() - 1];
+            let str_components: Vec<String> = collect_types(tmp_str);
+            let components: Vec<ParamType> = str_components.into_iter().map(get_kind).collect();
+            ParamType::Tuple(components)
+        }
+        _ => logging::critical!("Unrecognized argument type `{}`", kind_str),
+    }
 }

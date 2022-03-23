@@ -875,7 +875,6 @@ mod unit_tests {
         .expect("Coudln't create address.");
         let func_name = asc_string_from_str("funcName");
         let func_signature = asc_string_from_str("funcName(address):(string,string)");
-        let val = asc_string_from_str("val");
 
         let address_pointer = AscPtr::alloc_obj(address, &mut context.wasm_ctx, &GasCounter::new())
             .expect("Couldn't create pointer.");
@@ -885,14 +884,12 @@ mod unit_tests {
         let func_signature_pointer =
             AscPtr::alloc_obj(func_signature, &mut context.wasm_ctx, &GasCounter::new())
                 .expect("Couldn't create pointer.");
-        let val_pointer = AscPtr::alloc_obj(val, &mut context.wasm_ctx, &GasCounter::new())
-            .expect("Couldn't create pointer.");
         let reverts_pointer = AscPtr::new(0);
 
         let asc_enum = AscEnum::<EthereumValueKind> {
-            kind: EthereumValueKind::String,
+            kind: EthereumValueKind::Address,
             _padding: 0,
-            payload: EnumPayload::from(val_pointer),
+            payload: EnumPayload::from(address_pointer),
         };
         let func_args_pointer =
             AscPtr::alloc_obj(asc_enum, &mut context.wasm_ctx, &GasCounter::new())
@@ -921,12 +918,17 @@ mod unit_tests {
             )
             .expect("Couldn't call mock_function.");
 
+        println!("{:?}", context.fn_ret_map);
+
         let token = context
             .fn_ret_map
-            .get("0x8920…43e7funcNamefuncName(address):(string,string)val")
+            .get("0x8920…43e7funcNamefuncName(address):(string,string)89205a3a3b2a69de6dbf7f01ed13b2108b2c43e7")
             .unwrap()[0]
             .clone();
-        assert_eq!(&token.to_string(), "val");
+        assert_eq!(
+            &token.to_string(),
+            "89205a3a3b2a69de6dbf7f01ed13b2108b2c43e7"
+        );
     }
 
     #[test]
@@ -946,7 +948,6 @@ mod unit_tests {
         .expect("Coudln't create address.");
         let func_name = asc_string_from_str("funcName");
         let func_signature = asc_string_from_str("funcName(address):(string,string)");
-        let val = asc_string_from_str("val");
 
         let address_pointer = AscPtr::alloc_obj(address, &mut context.wasm_ctx, &GasCounter::new())
             .expect("Couldn't create pointer.");
@@ -956,14 +957,12 @@ mod unit_tests {
         let func_signature_pointer =
             AscPtr::alloc_obj(func_signature, &mut context.wasm_ctx, &GasCounter::new())
                 .expect("Couldn't create pointer.");
-        let val_pointer = AscPtr::alloc_obj(val, &mut context.wasm_ctx, &GasCounter::new())
-            .expect("Couldn't create pointer.");
         let reverts_pointer = AscPtr::new(1);
 
         let asc_enum = AscEnum::<EthereumValueKind> {
-            kind: EthereumValueKind::String,
+            kind: EthereumValueKind::Address,
             _padding: 0,
-            payload: EnumPayload::from(val_pointer),
+            payload: EnumPayload::from(address_pointer),
         };
         let func_args_pointer =
             AscPtr::alloc_obj(asc_enum, &mut context.wasm_ctx, &GasCounter::new())
@@ -994,7 +993,7 @@ mod unit_tests {
 
         let token = context
             .fn_ret_map
-            .get("0x8920…43e7funcNamefuncName(address):(string,string)val")
+            .get("0x8920…43e7funcNamefuncName(address):(string,string)89205a3a3b2a69de6dbf7f01ed13b2108b2c43e7")
             .unwrap()[0]
             .clone();
         assert_eq!(token, REVERTS_IDENTIFIER[0]);
