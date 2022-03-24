@@ -1093,7 +1093,8 @@ fn collect_types(arg_str: &str) -> Vec<String> {
 
 fn get_kind(kind: String) -> ParamType {
     let kind_str = kind.trim();
-    let int_r = Regex::new(r#"^u?int\d+$"#).expect("Invalid uint/int regex");
+    let int_r = Regex::new(r#"^int\d+$"#).expect("Invalid uint/int regex");
+    let uint_r = Regex::new(r#"^uint\d+$"#).expect("Invalid uint/int regex");
     let array_r = Regex::new(r#"\w*\d*\[\]$"#).expect("Invalid array regex");
     let fixed_bytes_r = Regex::new(r#"bytes\d+$"#).expect("Invalid fixedBytes regex");
     let fixed_array_r = Regex::new(r#"\w*\d*\[\d+\]$"#).expect("Invalid fixedArray regex");
@@ -1105,12 +1106,12 @@ fn get_kind(kind: String) -> ParamType {
         "bytes" => ParamType::Bytes,
         "string" => ParamType::String,
         kind_str if int_r.is_match(kind_str) => {
-            let size = kind_str
-                .replace("uint", "")
-                .replace("int", "")
-                .parse::<usize>()
-                .unwrap();
+            let size = kind_str.replace("int", "").parse::<usize>().unwrap();
             ParamType::Int(size)
+        }
+        kind_str if uint_r.is_match(kind_str) => {
+            let size = kind_str.replace("uint", "").parse::<usize>().unwrap();
+            ParamType::Uint(size)
         }
         kind_str if array_r.is_match(kind_str) => {
             let p_type = Box::new(get_kind(kind_str.replace("[]", "")));
