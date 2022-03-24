@@ -10,7 +10,7 @@ use graph_chain_ethereum::Chain;
 use crate::compiler::Compiler;
 use crate::config::MatchstickConfig;
 use crate::instance::MatchstickInstance;
-use crate::test_suite::{Test, TestResult, TestSuite};
+use crate::test_suite::{Test, TestResult, TestSuite, Testable, TestGroup};
 
 use crate::coverage::generate_coverage_report;
 
@@ -108,7 +108,7 @@ ___  ___      _       _         _   _      _
 fn run_test_suites(test_suites: HashMap<String, TestSuite>) -> i32 {
     logging::log_with_style!(bright_red, "\nIgniting tests 🔥");
 
-    let (mut num_passed, mut num_failed) = (0, 0);
+    let (mut num_passed, mut num_failed) = (Box::new(0), Box::new(0));
     let failed_suites: HashMap<String, Vec<HashMap<String, TestResult>>> = test_suites
         .into_iter()
         .filter_map(|(name, suite)| {
@@ -126,31 +126,7 @@ fn run_test_suites(test_suites: HashMap<String, TestSuite>) -> i32 {
                     if group.tests.is_empty() {
                         None
                     } else {
-                        if !group.name.is_empty() {
-                            logging::log_with_style!(cyan, bold, "{}", group.name);
-                        }
-
-                        logging::add_indent();
-
-                        Test::call_hooks(&group.before_all);
-
-                        let failed_test: HashMap<String, TestResult> = group
-                            .tests
-                            .into_iter()
-                            .filter_map(|test| {
-                                let result = test.run();
-                                if result.passed {
-                                    num_passed += 1;
-                                    None
-                                } else {
-                                    num_failed += 1;
-                                    Some((test.name, result))
-                                }
-                            })
-                            .collect();
-
-                        Test::call_hooks(&group.after_all);
-                        logging::sub_indent();
+                        let failed_test: HashMap<String, TestResult> = run_test_group(&group, &mut num_passed, &mut num_failed);
 
                         if failed_test.is_empty() {
                             None
@@ -172,10 +148,10 @@ fn run_test_suites(test_suites: HashMap<String, TestSuite>) -> i32 {
         })
         .collect();
 
-    if num_failed > 0 {
+    if *num_failed > 0 {
         let failed = format!("{} failed", num_failed).red();
         let passed = format!("{} passed", num_passed).green();
-        let total = format!("{} total", num_failed + num_passed);
+        let total = format!("{} total", *num_failed + *num_passed);
 
         logging::log_with_style!(red, "\nFailed tests:\n");
 
@@ -202,4 +178,40 @@ fn run_test_suites(test_suites: HashMap<String, TestSuite>) -> i32 {
         logging::log_with_style!(green, "\nAll {} tests passed! 😎", num_passed);
         0
     }
+}
+
+fn run_test_group(group: &TestGroup, num_passed: &mut Box<i32>, num_failed: &mut Box<i32>) -> HashMap<String, TestResult> {
+    if !group.name.is_empty() {
+        logging::log_with_style!(cyan, bold, "{}", group.name.to_uppercase());
+    }
+
+    logging::add_indent();
+
+    Test::call_hooks(&group.before_all);
+
+    let mut failed_tests: HashMap<String, TestResult> = HashMap::new();
+    for test in &group.tests {
+        match test {
+            Testable::Test(test) => {
+                let result = test.run();
+                if result.passed {
+                    let ref mut num = **num_passed;
+                    *num += 1;
+                } else {
+                    let ref mut num = **num_failed;
+                    *num += 1;
+                    failed_tests.insert(test.name.clone(), result);
+                }
+            }
+            Testable::Group(group) => {
+                let failed = run_test_group(&group, num_passed, num_failed);
+                failed_tests.extend(failed);
+            }
+        }
+    }
+
+    Test::call_hooks(&group.after_all);
+    logging::sub_indent();
+
+    failed_tests
 }

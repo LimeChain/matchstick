@@ -123,7 +123,13 @@ pub struct TestGroup {
     pub name: String,
     pub before_all: Vec<Func>,
     pub after_all: Vec<Func>,
-    pub tests: Vec<Test>,
+    pub tests: Vec<Testable>,
+}
+
+#[derive(Debug)]
+pub enum Testable {
+    Test(Test),
+    Group(TestGroup),
 }
 
 impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
@@ -179,77 +185,22 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
                     after_each.push(func.clone());
                 }
                 "describe" => {
-                    let host_metrics = matchstick.instance_ctx().wasm_ctx.host_metrics.clone();
-                    let valid_module = matchstick.instance_ctx().wasm_ctx.valid_module.clone();
-                    let ctx = matchstick
-                        .instance_ctx()
-                        .wasm_ctx
-                        .ctx
-                        .derive_with_empty_block_state();
-                    let experimental_features = graph_runtime_wasm::ExperimentalFeatures {
-                        allow_non_deterministic_ipfs: true,
-                    };
-
-                    let inst = crate::MatchstickInstance::<C>::from_valid_module_with_ctx(
-                        valid_module.clone(),
-                        ctx.derive_with_empty_block_state(),
-                        host_metrics.clone(),
-                        None,
-                        experimental_features,
-                    )
-                    .unwrap();
-
-                    let tb = inst.instance.get_table("table").unwrap_or_else(|| {
-                        logging::critical!(
-                            "WebAssembly.Table was not exported from the AssemblyScript sources.
-                                (Please compile with the `--exportTable` option.)"
-                        )
-                    });
-
-                    let before_meta_tests = inst.instance_ctx().meta_tests.clone();
-
-                    let fun = tb
-                        .get(*func_idx)
-                        .unwrap_or_else(|| {
-                            logging::critical!(
-                                "Could not get WebAssembly.Table entry with index '{}'.",
-                                func_idx,
-                            )
-                        })
-                        .unwrap_funcref()
-                        .unwrap()
-                        .to_owned();
-
-                    fun.call(&[]).expect("Failed to execute function");
-
-                    let after_meta_tests = inst.instance_ctx().meta_tests.clone();
-
-                    let difference: Vec<_> = after_meta_tests
-                        .into_iter()
-                        .filter(|item| !before_meta_tests.contains(item))
-                        .collect();
-
-                    let mut test_group = TestGroup {
-                        name: name.to_owned(),
-                        tests: vec![],
-                        before_all: vec![],
-                        after_all: vec![],
-                    };
-
-                    handle_describe(difference, &mut test_group, &table);
+                    let difference = get_nested_tests(matchstick, *func_idx);
+                    let test_group = handle_describe(matchstick, name, difference, &table);
 
                     suite.groups.push(test_group);
                 }
-                _ => {
+                "test" => {
                     let test_group = TestGroup {
                         name: "".to_owned(),
-                        tests: vec![Test::new(name.to_string(), *should_fail, func.clone())],
+                        tests: vec![Testable::Test(Test::new(name.to_string(), *should_fail, func.clone()))],
                         before_all: vec![],
                         after_all: vec![],
                     };
 
                     suite.groups.push(test_group);
                 }
+                _ => { logging::critical!("Unrecognized function type `{}`", role) }
             };
         }
 
@@ -271,13 +222,20 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
     }
 }
 
-fn handle_describe(
+fn handle_describe<C: graph::blockchain::Blockchain> (
+    matchstick: &MatchstickInstance<C>,
+    name: &str,
     difference: Vec<(String, bool, u32, String)>,
-    test_group: &mut TestGroup,
     table: &wasmtime::Table,
-) {
+) -> TestGroup {
     let mut desc_b_e = vec![];
     let mut desc_a_e = vec![];
+    let mut test_group = TestGroup {
+        name: name.to_owned(),
+        tests: vec![],
+        before_all: vec![],
+        after_all: vec![],
+    };
 
     for (t_name, should_fail, t_idx, role) in difference {
         let test = table
@@ -308,16 +266,92 @@ fn handle_describe(
             "test" => {
                 test_group
                     .tests
-                    .push(Test::new(t_name.to_string(), should_fail, test.clone()))
+                    .push(Testable::Test(Test::new(t_name.to_string(), should_fail, test.clone())))
             }
-            _ => {
-                logging::critical!("Nested describes are not supported!")
+            "describe" => {
+                let diff = get_nested_tests(matchstick, t_idx);
+                let nested_test_group = handle_describe(matchstick, &t_name, diff, &table);
+                test_group
+                    .tests
+                    .push(Testable::Group(nested_test_group))
+            }
+            _ => { logging::critical!("Unrecognized function type `{}`", role) }
+        }
+    }
+
+    for test in test_group.tests.iter_mut() {
+        match test {
+            Testable::Test(test) => {
+                test.before_hooks = desc_b_e.clone();
+                test.after_hooks = desc_a_e.clone();
+            }
+            Testable::Group(group) => {
+                let mut inner_ba = group.before_all.clone();
+                let mut inner_aa = group.after_all.clone();
+                group.before_all =  desc_b_e.clone();
+                group.before_all.append(&mut inner_ba);
+
+                group.after_all = desc_a_e.clone();
+                group.after_all.append(&mut inner_aa);
+                group.after_all.reverse();
             }
         }
     }
 
-    for mut test in test_group.tests.iter_mut() {
-        test.before_hooks = desc_b_e.clone();
-        test.after_hooks = desc_a_e.clone();
-    }
+    test_group
+}
+
+fn get_nested_tests<C: graph::blockchain::Blockchain>(
+    matchstick: &MatchstickInstance<C>,
+    func_idx: u32,
+) -> Vec<(String, bool, u32, String)> {
+    let host_metrics = matchstick.instance_ctx().wasm_ctx.host_metrics.clone();
+    let valid_module = matchstick.instance_ctx().wasm_ctx.valid_module.clone();
+    let ctx = matchstick
+        .instance_ctx()
+        .wasm_ctx
+        .ctx
+        .derive_with_empty_block_state();
+    let experimental_features = graph_runtime_wasm::ExperimentalFeatures {
+        allow_non_deterministic_ipfs: true,
+    };
+
+    let inst = crate::MatchstickInstance::<_>::from_valid_module_with_ctx(
+        valid_module.clone(),
+        ctx.derive_with_empty_block_state(),
+        host_metrics.clone(),
+        None,
+        experimental_features,
+    )
+    .unwrap();
+
+    let tb = inst.instance.get_table("table").unwrap_or_else(|| {
+        logging::critical!(
+            "WebAssembly.Table was not exported from the AssemblyScript sources.
+                (Please compile with the `--exportTable` option.)"
+        )
+    });
+
+    let before_meta_tests = inst.instance_ctx().meta_tests.clone();
+
+    let fun = tb
+        .get(func_idx)
+        .unwrap_or_else(|| {
+            logging::critical!(
+                "Could not get WebAssembly.Table entry with index '{}'.",
+                func_idx,
+            )
+        })
+        .unwrap_funcref()
+        .unwrap()
+        .to_owned();
+
+    fun.call(&[]).expect("Failed to execute function");
+
+    let after_meta_tests = inst.instance_ctx().meta_tests.clone();
+
+    after_meta_tests
+        .into_iter()
+        .filter(|item| !before_meta_tests.contains(item))
+        .collect()
 }
