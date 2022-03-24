@@ -119,10 +119,12 @@ macro_rules! log_with_style {
 /// This macro will panic
 macro_rules! critical {
     ($log_string:expr) => ({
+        $crate::logging::clear_indent();
         panic!("{}", $crate::logging::Log::Critical($log_string));
     });
 
     ($log_string:expr, $($arg:tt)*) => ({
+        $crate::logging::clear_indent();
         panic!("{}", $crate::logging::Log::Critical(format!($log_string, $($arg)*)));
     });
 }

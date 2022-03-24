@@ -143,10 +143,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let msg: String = asc_get(&self.wasm_ctx, msg, &GasCounter::new())?;
 
         match level {
-            0 => {
-                logging::clear_indent();
-                logging::critical!(msg)
-            }
+            0 => logging::critical!(msg),
             _ => logging::log!(level, msg),
         }
 
@@ -786,8 +783,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
             if !fn_arg.type_check(&param_type) {
                 logging::critical!(
-                    "`{}` parameters missmatch at position {}:\nExpected: {:?}\nRecieved: {:?}\n",
-                    fn_signature,
+                    "createMockedFunction `{}` parameters mismatch at position {}:\nExpected: {:?}\nRecieved: {:?}\n",
+                    fn_name,
                     index + 1,
                     param_type,
                     fn_arg
