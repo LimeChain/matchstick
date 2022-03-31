@@ -193,14 +193,20 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
                 "test" => {
                     let test_group = TestGroup {
                         name: "".to_owned(),
-                        tests: vec![Testable::Test(Test::new(name.to_string(), *should_fail, func.clone()))],
+                        tests: vec![Testable::Test(Test::new(
+                            name.to_string(),
+                            *should_fail,
+                            func.clone(),
+                        ))],
                         before_all: vec![],
                         after_all: vec![],
                     };
 
                     suite.groups.push(test_group);
                 }
-                _ => { logging::critical!("Unrecognized function type `{}`", role) }
+                _ => {
+                    logging::critical!("Unrecognized function type `{}`", role)
+                }
             };
         }
 
@@ -222,7 +228,7 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
     }
 }
 
-fn handle_describe<C: graph::blockchain::Blockchain> (
+fn handle_describe<C: graph::blockchain::Blockchain>(
     matchstick: &MatchstickInstance<C>,
     name: &str,
     difference: Vec<(String, bool, u32, String)>,
@@ -263,19 +269,19 @@ fn handle_describe<C: graph::blockchain::Blockchain> (
             "afterEach" => {
                 desc_a_e.push(test.clone());
             }
-            "test" => {
-                test_group
-                    .tests
-                    .push(Testable::Test(Test::new(t_name.to_string(), should_fail, test.clone())))
-            }
+            "test" => test_group.tests.push(Testable::Test(Test::new(
+                t_name.to_string(),
+                should_fail,
+                test.clone(),
+            ))),
             "describe" => {
                 let diff = get_nested_tests(matchstick, t_idx);
-                let nested_test_group = handle_describe(matchstick, &t_name, diff, &table);
-                test_group
-                    .tests
-                    .push(Testable::Group(nested_test_group))
+                let nested_test_group = handle_describe(matchstick, &t_name, diff, table);
+                test_group.tests.push(Testable::Group(nested_test_group))
             }
-            _ => { logging::critical!("Unrecognized function type `{}`", role) }
+            _ => {
+                logging::critical!("Unrecognized function type `{}`", role)
+            }
         }
     }
 
@@ -288,7 +294,7 @@ fn handle_describe<C: graph::blockchain::Blockchain> (
             Testable::Group(group) => {
                 let mut inner_ba = group.before_all.clone();
                 let mut inner_aa = group.after_all.clone();
-                group.before_all =  desc_b_e.clone();
+                group.before_all = desc_b_e.clone();
                 group.before_all.append(&mut inner_ba);
 
                 group.after_all = desc_a_e.clone();
@@ -317,9 +323,9 @@ fn get_nested_tests<C: graph::blockchain::Blockchain>(
     };
 
     let inst = crate::MatchstickInstance::<_>::from_valid_module_with_ctx(
-        valid_module.clone(),
+        valid_module,
         ctx.derive_with_empty_block_state(),
-        host_metrics.clone(),
+        host_metrics,
         None,
         experimental_features,
     )

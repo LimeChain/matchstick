@@ -10,7 +10,7 @@ use graph_chain_ethereum::Chain;
 use crate::compiler::Compiler;
 use crate::config::MatchstickConfig;
 use crate::instance::MatchstickInstance;
-use crate::test_suite::{Test, TestResult, TestSuite, Testable, TestGroup};
+use crate::test_suite::{Test, TestGroup, TestResult, TestSuite, Testable};
 
 use crate::coverage::generate_coverage_report;
 
@@ -126,7 +126,8 @@ fn run_test_suites(test_suites: HashMap<String, TestSuite>) -> i32 {
                     if group.tests.is_empty() {
                         None
                     } else {
-                        let failed_test: HashMap<String, TestResult> = run_test_group(&group, &mut num_passed, &mut num_failed);
+                        let failed_test: HashMap<String, TestResult> =
+                            run_test_group(&group, &mut num_passed, &mut num_failed);
 
                         if failed_test.is_empty() {
                             None
@@ -180,7 +181,11 @@ fn run_test_suites(test_suites: HashMap<String, TestSuite>) -> i32 {
     }
 }
 
-fn run_test_group(group: &TestGroup, num_passed: &mut Box<i32>, num_failed: &mut Box<i32>) -> HashMap<String, TestResult> {
+fn run_test_group(
+    group: &TestGroup,
+    num_passed: &mut Box<i32>,
+    num_failed: &mut Box<i32>,
+) -> HashMap<String, TestResult> {
     if !group.name.is_empty() {
         logging::log_with_style!(cyan, bold, "{}", group.name.to_uppercase());
     }
@@ -195,16 +200,16 @@ fn run_test_group(group: &TestGroup, num_passed: &mut Box<i32>, num_failed: &mut
             Testable::Test(test) => {
                 let result = test.run();
                 if result.passed {
-                    let ref mut num = **num_passed;
+                    let num = &mut (**num_passed);
                     *num += 1;
                 } else {
-                    let ref mut num = **num_failed;
+                    let num = &mut (**num_failed);
                     *num += 1;
                     failed_tests.insert(test.name.clone(), result);
                 }
             }
             Testable::Group(group) => {
-                let failed = run_test_group(&group, num_passed, num_failed);
+                let failed = run_test_group(group, num_passed, num_failed);
                 failed_tests.extend(failed);
             }
         }
