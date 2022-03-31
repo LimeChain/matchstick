@@ -9,8 +9,8 @@ use crate::logging;
 
 /// Collects all tests sources from the current TESTS_LOCATION
 /// Filters the sources if suite name[s] are passed to the `matchstick` command
-pub fn get_test_sources(matches: &ArgMatches) -> HashMap<String, Vec<PathBuf>> {
-    let mut testable: HashMap<String, Vec<PathBuf>> = HashMap::new();
+pub fn get_test_sources(matches: &ArgMatches) -> HashMap<String, PathBuf> {
+    let mut testable: HashMap<String, PathBuf> = HashMap::new();
 
     crate::TESTS_LOCATION.with(|path| {
         testable = collect_files(&*path.borrow());
@@ -49,8 +49,8 @@ pub fn get_test_sources(matches: &ArgMatches) -> HashMap<String, Vec<PathBuf>> {
 }
 
 /// Collects all tests sources from the current TESTS_LOCATION
-fn collect_files(path: &Path) -> HashMap<String, Vec<PathBuf>> {
-    let mut files: HashMap<String, Vec<PathBuf>> = HashMap::new();
+fn collect_files(path: &Path) -> HashMap<String, PathBuf> {
+    let mut files: HashMap<String, PathBuf> = HashMap::new();
 
     let entries = path
         .read_dir()
@@ -61,14 +61,16 @@ fn collect_files(path: &Path) -> HashMap<String, Vec<PathBuf>> {
         let name = entry.file_name().to_str().unwrap().to_ascii_lowercase();
 
         if name.ends_with(".test.ts") {
-            files.insert(name.replace(".test.ts", ""), vec![entry.path()]);
+            files.insert(name.replace(".test.ts", ""), entry.path());
         } else if entry.path().is_dir() {
             let mut sub_files = collect_files(&entry.path());
 
             if !sub_files.is_empty() {
-                files.insert(name.clone(), vec![]);
-                for val in sub_files.values_mut() {
-                    files.get_mut(&name).unwrap().append(val);
+                for (key, val) in sub_files.iter_mut() {
+                    files.insert(
+                        format!("{}/{}", name.clone(), key.clone()),
+                        val.to_path_buf(),
+                    );
                 }
             }
         }
@@ -79,9 +81,7 @@ fn collect_files(path: &Path) -> HashMap<String, Vec<PathBuf>> {
 
 /// Checks if any test files or imported files (except node_modules) have been modified
 /// since the last time the wasm files have been compiled
-pub fn is_source_modified(in_files: &[PathBuf], out_file: &Path) -> bool {
-    let mut is_modified = false;
-
+pub fn is_source_modified(in_file: &Path, out_file: &Path) -> bool {
     let wasm_modified = fs::metadata(out_file)
         .unwrap_or_else(|err| {
             logging::critical!(
@@ -93,27 +93,22 @@ pub fn is_source_modified(in_files: &[PathBuf], out_file: &Path) -> bool {
         .modified()
         .unwrap();
 
-    for file in in_files {
-        let in_file_modified = fs::metadata(file)
-            .unwrap_or_else(|err| {
-                logging::critical!(
-                    "Failed to extract metadata from {:?} with error: {}",
-                    file,
-                    err
-                )
-            })
-            .modified()
-            .unwrap();
+    let in_file_modified = fs::metadata(in_file)
+        .unwrap_or_else(|err| {
+            logging::critical!(
+                "Failed to extract metadata from {:?} with error: {}",
+                in_file,
+                err
+            )
+        })
+        .modified()
+        .unwrap();
 
-        if in_file_modified > wasm_modified {
-            is_modified = true;
-            break;
-        }
-
-        is_modified = are_imports_modified(file, wasm_modified);
+    if in_file_modified > wasm_modified {
+        return true;
     }
 
-    is_modified
+    are_imports_modified(in_file, wasm_modified)
 }
 
 /// Checks if any imported files (except node_modules) have been modified
