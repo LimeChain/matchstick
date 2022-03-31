@@ -4,7 +4,7 @@ mod integration_tests {
     use serial_test::serial;
     use std::path::PathBuf;
 
-    use crate::test_suite::TestSuite;
+    use crate::test_suite::{TestGroup, TestSuite, Testable};
     use crate::{MatchstickInstance, SCHEMA_LOCATION};
 
     #[test]
@@ -14,17 +14,13 @@ mod integration_tests {
         let module = <MatchstickInstance<Chain>>::new("mocks/wasm/gravity.wasm");
         let test_suite = TestSuite::from(&module);
 
-        let mut failed_tests = 0;
+        let mut failed_tests = Box::new(0);
 
         for group in &test_suite.groups {
-            for test in &group.tests {
-                if !test.run().passed {
-                    failed_tests += 1;
-                }
-            }
+            run_test_group(&group, &mut failed_tests);
         }
 
-        assert_eq!(failed_tests, 0);
+        assert_eq!(failed_tests, Box::new(0));
     }
 
     #[test]
@@ -34,15 +30,28 @@ mod integration_tests {
         let module = <MatchstickInstance<Chain>>::new("mocks/wasm/token-lock-wallet.wasm");
         let test_suite = TestSuite::from(&module);
 
-        let mut failed_tests = 0;
+        let mut failed_tests = Box::new(0);
         for group in &test_suite.groups {
-            for test in &group.tests {
-                if !test.run().passed {
-                    failed_tests += 1;
+            run_test_group(&group, &mut failed_tests);
+        }
+
+        assert_eq!(failed_tests, Box::new(0));
+    }
+
+    fn run_test_group(group: &TestGroup, num_failed: &mut Box<i32>) {
+        for test in &group.tests {
+            match test {
+                Testable::Test(test) => {
+                    let result = test.run();
+                    if !result.passed {
+                        let num = &mut (**num_failed);
+                        *num += 1;
+                    }
+                }
+                Testable::Group(group) => {
+                    run_test_group(group, num_failed);
                 }
             }
         }
-
-        assert_eq!(failed_tests, 0);
     }
 }
