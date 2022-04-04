@@ -185,8 +185,8 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
                     after_each.push(func.clone());
                 }
                 "describe" => {
-                    let difference = get_nested_tests(matchstick, *func_idx);
-                    let test_group = handle_describe(matchstick, name, difference, &table);
+                    let nested_functions = get_nested_function(matchstick, *func_idx);
+                    let test_group = handle_describe(matchstick, name, nested_functions, &table);
 
                     suite.groups.push(test_group);
                 }
@@ -210,7 +210,7 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
             };
         }
 
-        // Add the accumulated before and after functions to every test()
+        // Add the accumulated before and after functions to every TestGroup
         // in the corresponding describe group
         for group in suite.groups.iter_mut() {
             let mut inner_ba = group.before_all.clone();
@@ -231,7 +231,7 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
 fn handle_describe<C: graph::blockchain::Blockchain>(
     matchstick: &MatchstickInstance<C>,
     name: &str,
-    difference: Vec<(String, bool, u32, String)>,
+    functions: Vec<(String, bool, u32, String)>,
     table: &wasmtime::Table,
 ) -> TestGroup {
     let mut desc_b_e = vec![];
@@ -243,7 +243,7 @@ fn handle_describe<C: graph::blockchain::Blockchain>(
         after_all: vec![],
     };
 
-    for (t_name, should_fail, t_idx, role) in difference {
+    for (t_name, should_fail, t_idx, role) in functions {
         let test = table
             .get(t_idx)
             .unwrap_or_else(|| {
@@ -275,8 +275,9 @@ fn handle_describe<C: graph::blockchain::Blockchain>(
                 test.clone(),
             ))),
             "describe" => {
-                let diff = get_nested_tests(matchstick, t_idx);
-                let nested_test_group = handle_describe(matchstick, &t_name, diff, table);
+                let nested_functions = get_nested_function(matchstick, t_idx);
+                let nested_test_group =
+                    handle_describe(matchstick, &t_name, nested_functions, table);
                 test_group.tests.push(Testable::Group(nested_test_group))
             }
             _ => {
@@ -307,7 +308,7 @@ fn handle_describe<C: graph::blockchain::Blockchain>(
     test_group
 }
 
-fn get_nested_tests<C: graph::blockchain::Blockchain>(
+fn get_nested_function<C: graph::blockchain::Blockchain>(
     matchstick: &MatchstickInstance<C>,
     func_idx: u32,
 ) -> Vec<(String, bool, u32, String)> {
@@ -322,7 +323,7 @@ fn get_nested_tests<C: graph::blockchain::Blockchain>(
         allow_non_deterministic_ipfs: true,
     };
 
-    let inst = crate::MatchstickInstance::<_>::from_valid_module_with_ctx(
+    let matchstick_clone = crate::MatchstickInstance::<_>::from_valid_module_with_ctx(
         valid_module,
         ctx.derive_with_empty_block_state(),
         host_metrics,
@@ -331,16 +332,19 @@ fn get_nested_tests<C: graph::blockchain::Blockchain>(
     )
     .unwrap();
 
-    let tb = inst.instance.get_table("table").unwrap_or_else(|| {
-        logging::critical!(
-            "WebAssembly.Table was not exported from the AssemblyScript sources.
+    let table = matchstick_clone
+        .instance
+        .get_table("table")
+        .unwrap_or_else(|| {
+            logging::critical!(
+                "WebAssembly.Table was not exported from the AssemblyScript sources.
                 (Please compile with the `--exportTable` option.)"
-        )
-    });
+            )
+        });
 
-    let before_meta_tests = inst.instance_ctx().meta_tests.clone();
+    let meta_tests = matchstick_clone.instance_ctx().meta_tests.clone();
 
-    let fun = tb
+    let func = table
         .get(func_idx)
         .unwrap_or_else(|| {
             logging::critical!(
@@ -352,12 +356,12 @@ fn get_nested_tests<C: graph::blockchain::Blockchain>(
         .unwrap()
         .to_owned();
 
-    fun.call(&[]).expect("Failed to execute function");
+    func.call(&[]).expect("Failed to execute function");
 
-    let after_meta_tests = inst.instance_ctx().meta_tests.clone();
+    let updated_meta_tests = matchstick_clone.instance_ctx().meta_tests.clone();
 
-    after_meta_tests
+    updated_meta_tests
         .into_iter()
-        .filter(|item| !before_meta_tests.contains(item))
+        .filter(|item| !meta_tests.contains(item))
         .collect()
 }
