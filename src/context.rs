@@ -8,11 +8,11 @@ use graph::{
     blockchain::Blockchain,
     data::{
         graphql::ext::DirectiveFinder,
-        store::{Attribute, Value},
+        store::{scalar::Bytes, Attribute, Value},
     },
     prelude::{
         ethabi::{Address, ParamType, Token},
-        Entity,
+        BigInt, Entity,
     },
     runtime::{asc_get, asc_new, gas::GasCounter, try_asc_get, AscPtr, HostExportError},
     semver::Version,
@@ -288,14 +288,18 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             &GasCounter::new(),
         )?;
 
-        if expected != actual {
+        let exp_val = get_token_value(expected);
+        let act_val = get_token_value(actual);
+
+        if exp_val != act_val {
             logging::error!(
-                "(assert.equals) Expected value was '{:?}' but actual value was '{:?}'",
-                expected,
-                actual
+                "(assert.equals) Expected value was '{}' but actual value was '{}'",
+                exp_val,
+                act_val
             );
             return Ok(false);
         }
+
         Ok(true)
     }
 
@@ -1160,5 +1164,21 @@ fn get_kind(kind: String) -> ParamType {
             ParamType::Tuple(components)
         }
         _ => logging::critical!("Unrecognized argument type `{}`", kind_str),
+    }
+}
+
+fn get_token_value(token: Token) -> Value {
+    match token {
+        Token::Address(address) => Value::Bytes(Bytes::from(address)),
+        Token::FixedBytes(bytes) | Token::Bytes(bytes) => {
+            Value::Bytes(Bytes::from(bytes.as_slice()))
+        }
+        Token::Int(uint) => Value::BigInt(BigInt::from_signed_u256(&uint)),
+        Token::Uint(uint) => Value::BigInt(BigInt::from_unsigned_u256(&uint)),
+        Token::Bool(bool) => Value::Bool(bool),
+        Token::String(string) => Value::String(string),
+        Token::FixedArray(tokens) | Token::Array(tokens) | Token::Tuple(tokens) => {
+            Value::List(tokens.into_iter().map(get_token_value).collect())
+        }
     }
 }
