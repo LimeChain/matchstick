@@ -113,7 +113,7 @@ impl Test {
 
 #[derive(Debug)]
 pub struct TestSuite {
-    pub groups: Vec<TestGroup>,
+    pub groups: Vec<Testable>,
     pub before_all: Vec<Func>,
     pub after_all: Vec<Func>,
 }
@@ -188,21 +188,14 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
                     let nested_functions = get_nested_function(matchstick, *func_idx);
                     let test_group = handle_describe(matchstick, name, nested_functions, &table);
 
-                    suite.groups.push(test_group);
+                    suite.groups.push(Testable::Group(test_group));
                 }
                 "test" => {
-                    let test_group = TestGroup {
-                        name: "".to_owned(),
-                        tests: vec![Testable::Test(Test::new(
-                            name.to_string(),
-                            *should_fail,
-                            func.clone(),
-                        ))],
-                        before_all: vec![],
-                        after_all: vec![],
-                    };
-
-                    suite.groups.push(test_group);
+                    suite.groups.push(Testable::Test(Test::new(
+                        name.to_string(),
+                        *should_fail,
+                        func.clone(),
+                    )));
                 }
                 _ => {
                     logging::critical!("Unrecognized function type `{}`", role)
@@ -210,17 +203,24 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
             };
         }
 
-        // Add the accumulated before and after functions to every TestGroup
-        // in the corresponding describe group
+        // Add the accumulated beforeAll and afterAll functions to every TestGroup
         for group in suite.groups.iter_mut() {
-            let mut inner_ba = group.before_all.clone();
-            let mut inner_aa = group.after_all.clone();
-            group.before_all = before_each.clone();
-            group.before_all.append(&mut inner_ba);
+            match group {
+                Testable::Test(test) => {
+                    test.before_hooks = before_each.clone();
+                    test.after_hooks = after_each.clone();
+                }
+                Testable::Group(group) => {
+                    let mut inner_ba = group.before_all.clone();
+                    let mut inner_aa = group.after_all.clone();
+                    group.before_all = before_each.clone();
+                    group.before_all.append(&mut inner_ba);
 
-            group.after_all = after_each.clone();
-            group.after_all.append(&mut inner_aa);
-            group.after_all.reverse();
+                    group.after_all = after_each.clone();
+                    group.after_all.append(&mut inner_aa);
+                    group.after_all.reverse();
+                }
+            }
         }
 
         // Return the generates suite

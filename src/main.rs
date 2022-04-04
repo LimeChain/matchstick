@@ -123,17 +123,13 @@ fn run_test_suites(test_suites: HashMap<String, TestSuite>) -> i32 {
                 .groups
                 .into_iter()
                 .filter_map(|group| {
-                    if group.tests.is_empty() {
+                    let failed_test: HashMap<String, TestResult> =
+                        run_testable(&group, &mut num_passed, &mut num_failed);
+
+                    if failed_test.is_empty() {
                         None
                     } else {
-                        let failed_test: HashMap<String, TestResult> =
-                            run_test_group(&group, &mut num_passed, &mut num_failed);
-
-                        if failed_test.is_empty() {
-                            None
-                        } else {
-                            Some(failed_test)
-                        }
+                        Some(failed_test)
                     }
                 })
                 .collect();
@@ -181,42 +177,43 @@ fn run_test_suites(test_suites: HashMap<String, TestSuite>) -> i32 {
     }
 }
 
-fn run_test_group(
-    group: &TestGroup,
+fn run_testable(
+    testable: &Testable,
     num_passed: &mut Box<i32>,
     num_failed: &mut Box<i32>,
 ) -> HashMap<String, TestResult> {
-    if !group.name.is_empty() {
-        logging::log_with_style!(cyan, bold, "{}", group.name.to_uppercase());
-    }
-
-    logging::add_indent();
-
-    Test::call_hooks(&group.before_all);
-
     let mut failed_tests: HashMap<String, TestResult> = HashMap::new();
-    for test in &group.tests {
-        match test {
-            Testable::Test(test) => {
-                let result = test.run();
-                if result.passed {
-                    let num = &mut (**num_passed);
-                    *num += 1;
-                } else {
-                    let num = &mut (**num_failed);
-                    *num += 1;
-                    failed_tests.insert(test.name.clone(), result);
-                }
-            }
-            Testable::Group(group) => {
-                let failed = run_test_group(group, num_passed, num_failed);
-                failed_tests.extend(failed);
+
+    match testable {
+        Testable::Test(test) => {
+            let result = test.run();
+            if result.passed {
+                let num = &mut (**num_passed);
+                *num += 1;
+            } else {
+                let num = &mut (**num_failed);
+                *num += 1;
+                failed_tests.insert(test.name.clone(), result);
             }
         }
-    }
+        Testable::Group(group) =>{
+            if !group.name.is_empty() {
+                logging::log_with_style!(cyan, bold, "{}", group.name.to_uppercase());
+            }
 
-    Test::call_hooks(&group.after_all);
-    logging::sub_indent();
+            logging::add_indent();
+
+            Test::call_hooks(&group.before_all);
+
+            for test in &group.tests {
+                let failed = run_testable(test, num_passed, num_failed);
+                failed_tests.extend(failed);
+            }
+
+            Test::call_hooks(&group.after_all);
+            logging::sub_indent();
+        }
+    }
 
     failed_tests
 }
