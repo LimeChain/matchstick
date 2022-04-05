@@ -20,6 +20,20 @@ pub struct TestResult {
     pub logs: String,
 }
 
+#[derive(Debug)]
+pub struct TestGroup {
+    pub name: String,
+    pub before_all: Vec<Func>,
+    pub after_all: Vec<Func>,
+    pub testables: Vec<Testable>,
+}
+
+#[derive(Debug)]
+pub enum Testable {
+    Test(Test),
+    Group(TestGroup),
+}
+
 impl Test {
     fn new(name: String, should_fail: bool, func: Func) -> Self {
         Test {
@@ -111,28 +125,7 @@ impl Test {
     }
 }
 
-#[derive(Debug)]
-pub struct TestSuite {
-    pub groups: Vec<Testable>,
-    pub before_all: Vec<Func>,
-    pub after_all: Vec<Func>,
-}
-
-#[derive(Debug)]
-pub struct TestGroup {
-    pub name: String,
-    pub before_all: Vec<Func>,
-    pub after_all: Vec<Func>,
-    pub tests: Vec<Testable>,
-}
-
-#[derive(Debug)]
-pub enum Testable {
-    Test(Test),
-    Group(TestGroup),
-}
-
-impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
+impl<C: Blockchain> From<&MatchstickInstance<C>> for TestGroup {
     fn from(matchstick: &MatchstickInstance<C>) -> Self {
         let table = matchstick.instance.get_table("table").unwrap_or_else(|| {
             logging::critical!(
@@ -141,94 +134,13 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestSuite {
             )
         });
 
-        let mut suite = TestSuite {
-            groups: vec![],
-            before_all: vec![],
-            after_all: vec![],
-        };
+        let functions = matchstick.instance_ctx().meta_tests.clone();
 
-        let mut before_each = vec![];
-        let mut after_each = vec![];
-
-        for (name, should_fail, func_idx, role) in &matchstick
-            .instance_ctx
-            .borrow()
-            .as_ref()
-            .unwrap_or_else(|| {
-                logging::critical!("Unexpected: MatchstickInstanceContext is 'None'.")
-            })
-            .meta_tests
-        {
-            let func = table
-                .get(*func_idx)
-                .unwrap_or_else(|| {
-                    logging::critical!(
-                        "Could not get WebAssembly.Table entry with index '{}'.",
-                        func_idx,
-                    )
-                })
-                .unwrap_funcref()
-                .unwrap()
-                .to_owned();
-
-            match role.as_str() {
-                "beforeAll" => {
-                    suite.before_all.push(func.clone());
-                }
-                "afterAll" => {
-                    suite.after_all.push(func.clone());
-                }
-                "beforeEach" => {
-                    before_each.push(func.clone());
-                }
-                "afterEach" => {
-                    after_each.push(func.clone());
-                }
-                "describe" => {
-                    let nested_functions = get_nested_function(matchstick, *func_idx);
-                    let test_group = handle_describe(matchstick, name, nested_functions, &table);
-
-                    suite.groups.push(Testable::Group(test_group));
-                }
-                "test" => {
-                    suite.groups.push(Testable::Test(Test::new(
-                        name.to_string(),
-                        *should_fail,
-                        func.clone(),
-                    )));
-                }
-                _ => {
-                    logging::critical!("Unrecognized function type `{}`", role)
-                }
-            };
-        }
-
-        // Add the accumulated beforeAll and afterAll functions to every TestGroup
-        for group in suite.groups.iter_mut() {
-            match group {
-                Testable::Test(test) => {
-                    test.before_hooks = before_each.clone();
-                    test.after_hooks = after_each.clone();
-                }
-                Testable::Group(group) => {
-                    let mut inner_ba = group.before_all.clone();
-                    let mut inner_aa = group.after_all.clone();
-                    group.before_all = before_each.clone();
-                    group.before_all.append(&mut inner_ba);
-
-                    group.after_all = after_each.clone();
-                    group.after_all.append(&mut inner_aa);
-                    group.after_all.reverse();
-                }
-            }
-        }
-
-        // Return the generates suite
-        suite
+        handle_testables(matchstick, "", functions, &table)
     }
 }
 
-fn handle_describe<C: graph::blockchain::Blockchain>(
+fn handle_testables<C: graph::blockchain::Blockchain>(
     matchstick: &MatchstickInstance<C>,
     name: &str,
     functions: Vec<(String, bool, u32, String)>,
@@ -238,7 +150,7 @@ fn handle_describe<C: graph::blockchain::Blockchain>(
     let mut desc_a_e = vec![];
     let mut test_group = TestGroup {
         name: name.to_owned(),
-        tests: vec![],
+        testables: vec![],
         before_all: vec![],
         after_all: vec![],
     };
@@ -269,7 +181,7 @@ fn handle_describe<C: graph::blockchain::Blockchain>(
             "afterEach" => {
                 desc_a_e.push(test.clone());
             }
-            "test" => test_group.tests.push(Testable::Test(Test::new(
+            "test" => test_group.testables.push(Testable::Test(Test::new(
                 t_name.to_string(),
                 should_fail,
                 test.clone(),
@@ -277,8 +189,10 @@ fn handle_describe<C: graph::blockchain::Blockchain>(
             "describe" => {
                 let nested_functions = get_nested_function(matchstick, t_idx);
                 let nested_test_group =
-                    handle_describe(matchstick, &t_name, nested_functions, table);
-                test_group.tests.push(Testable::Group(nested_test_group))
+                    handle_testables(matchstick, &t_name, nested_functions, table);
+                test_group
+                    .testables
+                    .push(Testable::Group(nested_test_group))
             }
             _ => {
                 logging::critical!("Unrecognized function type `{}`", role)
@@ -286,7 +200,7 @@ fn handle_describe<C: graph::blockchain::Blockchain>(
         }
     }
 
-    for test in test_group.tests.iter_mut() {
+    for test in test_group.testables.iter_mut() {
         match test {
             Testable::Test(test) => {
                 test.before_hooks = desc_b_e.clone();

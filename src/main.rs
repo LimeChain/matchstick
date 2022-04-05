@@ -10,7 +10,7 @@ use graph_chain_ethereum::Chain;
 use crate::compiler::Compiler;
 use crate::config::MatchstickConfig;
 use crate::instance::MatchstickInstance;
-use crate::test_suite::{Test, TestGroup, TestResult, TestSuite, Testable};
+use crate::test_suite::{Test, TestGroup, TestResult, Testable};
 
 use crate::coverage::generate_coverage_report;
 
@@ -75,9 +75,9 @@ fn main() {
         .collect();
 
     // A test suite abstraction for each instance.
-    let test_suites: HashMap<String, TestSuite> = ms_instances
+    let test_suites: HashMap<String, TestGroup> = ms_instances
         .iter()
-        .map(|(key, val)| (key.clone(), TestSuite::from(val)))
+        .map(|(key, val)| (key.clone(), TestGroup::from(val)))
         .collect();
 
     let exit_code = run_test_suites(test_suites);
@@ -105,7 +105,7 @@ ___  ___      _       _         _   _      _
     )
 }
 
-fn run_test_suites(test_suites: HashMap<String, TestSuite>) -> i32 {
+fn run_test_suites(test_suites: HashMap<String, TestGroup>) -> i32 {
     logging::log_with_style!(bright_red, "\nIgniting tests 🔥");
 
     let (mut num_passed, mut num_failed) = (Box::new(0), Box::new(0));
@@ -120,7 +120,7 @@ fn run_test_suites(test_suites: HashMap<String, TestSuite>) -> i32 {
             Test::call_hooks(&suite.before_all);
 
             let failed_tests: Vec<HashMap<String, TestResult>> = suite
-                .groups
+                .testables
                 .into_iter()
                 .filter_map(|group| {
                     let failed_test: HashMap<String, TestResult> =
@@ -196,7 +196,7 @@ fn run_testable(
                 failed_tests.insert(test.name.clone(), result);
             }
         }
-        Testable::Group(group) =>{
+        Testable::Group(group) => {
             if !group.name.is_empty() {
                 logging::log_with_style!(cyan, bold, "{}", group.name.to_uppercase());
             }
@@ -205,7 +205,7 @@ fn run_testable(
 
             Test::call_hooks(&group.before_all);
 
-            for test in &group.tests {
+            for test in &group.testables {
                 let failed = run_testable(test, num_passed, num_failed);
                 failed_tests.extend(failed);
             }
