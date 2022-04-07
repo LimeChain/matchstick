@@ -115,16 +115,14 @@ pub fn is_source_modified(in_file: &Path, out_file: &Path) -> bool {
 /// since the last time the wasm files have been compiled
 fn are_imports_modified(in_file: &Path, wasm_modified: SystemTime) -> bool {
     let mut is_modified = false;
-    let matches: Vec<String> = get_imports_from_file(in_file);
+    let matches: HashSet<PathBuf> = get_imports_from_file(in_file);
 
     for m in matches {
-        let absolute_path = get_import_absolute_path(in_file, &m);
-
-        let import_modified = fs::metadata(&absolute_path)
+        let import_modified = fs::metadata(&m)
             .unwrap_or_else(|err| {
                 logging::critical!(
                     "Failed to extract metadata from {:?} with error: {}",
-                    absolute_path,
+                    m,
                     err
                 )
             })
@@ -140,31 +138,60 @@ fn are_imports_modified(in_file: &Path, wasm_modified: SystemTime) -> bool {
     is_modified
 }
 
-/// Collects all imported file paths froma test.ts file an returns their absolute path
-fn get_import_absolute_path(in_file: &Path, imported_file: &str) -> PathBuf {
+/// Returns the Result of #canonicalize
+/// First tries to get the absolute path of the passed Path as a dir
+/// If it returns an Error, tries again as a .ts file
+fn get_import_absolute_path(
+    in_file: &Path,
+    imported_file: &Path,
+) -> Result<PathBuf, std::io::Error> {
     let mut combined_path = PathBuf::from(in_file);
     combined_path.pop();
-    combined_path.push(format!("{}.ts", imported_file));
-    combined_path
-        .canonicalize()
-        .unwrap_or_else(|_| logging::critical!("{} does not exists!", &imported_file))
+    combined_path.push(imported_file);
+    if let Ok(abs_path) = combined_path.canonicalize() {
+        Ok(abs_path)
+    } else {
+        combined_path.set_extension("ts");
+        combined_path.canonicalize()
+    }
 }
 
 /// Collects all imported file paths (except node_modules) from a test.ts file using regex
-fn get_imports_from_file(in_file: &Path) -> Vec<String> {
+/// Returns a HashSet of the absolute paths of each import.
+/// Ignores the files that dont have .ts extension.
+fn get_imports_from_file(in_file: &Path) -> HashSet<PathBuf> {
     // Regex should match the file path of each import statement except for node_modules
     // e.g. should return `../generated/schema` from `import { Gravatar } from '../generated/schema'`
-    // but it will ignore `import { test, log } from 'matchstick-as/assembly/index'`
+    // but it will ignore node_modules, e.g. `import { test, log } from 'matchstick-as/assembly/index'`
     // Handles single and double quotes
     let imports_regex = Regex::new(r#"[import.*from]\s*["|']\s*([../+|./].*)\s*["|']"#).unwrap();
     let file_as_str = fs::read_to_string(in_file).unwrap_or_else(|err| {
         logging::critical!("Failed to read {:?} with error: {}", in_file, err)
     });
 
-    imports_regex
-        .captures_iter(&file_as_str)
-        .map(|m| m[1].to_owned())
-        .collect()
+    let mut imports: HashSet<PathBuf> = HashSet::new();
+
+    for import in imports_regex.captures_iter(&file_as_str) {
+        if let Ok(path) = get_import_absolute_path(in_file, &PathBuf::from(import[1].to_owned())) {
+            if path.is_dir() {
+                for entry in path
+                    .read_dir()
+                    .unwrap_or_else(|_| panic!("Could not read dir: {:?}", path))
+                {
+                    if let Ok(abs_path) = get_import_absolute_path(in_file, &entry.unwrap().path())
+                    {
+                        imports.insert(abs_path.clone());
+                        imports.extend(get_imports_from_file(&abs_path));
+                    }
+                }
+            } else if let Ok(abs_path) = get_import_absolute_path(in_file, &path) {
+                imports.insert(abs_path.clone());
+                imports.extend(get_imports_from_file(&abs_path));
+            }
+        }
+    }
+
+    imports
 }
 
 #[cfg(test)]
@@ -177,10 +204,16 @@ mod compiler_tests {
     fn it_gets_project_imports_test() {
         let in_file = PathBuf::from("mocks/as/mock-includes.test.ts");
         let includes = get_imports_from_file(&in_file);
+        let root_path = fs::canonicalize("./").expect("Something went wrong!");
+        let root_path_str = root_path.to_str().unwrap();
 
         assert_eq!(
             includes,
-            ["./utils", "../generated/schema", "../../src/gravity"]
+            HashSet::from([
+                PathBuf::from(format!("{}/mocks/as/utils.ts", root_path_str)),
+                PathBuf::from(format!("{}/mocks/generated/schema.ts", root_path_str)),
+                PathBuf::from(format!("{}/mocks/src/gravity.ts", root_path_str))
+            ])
         )
     }
 
@@ -189,22 +222,9 @@ mod compiler_tests {
         let in_file = PathBuf::from("mocks/as/mock-includes.test.ts");
         let root_path = fs::canonicalize("./").expect("Something went wrong!");
 
-        let result = get_import_absolute_path(&in_file, "./utils");
+        let result = get_import_absolute_path(&in_file, Path::new("./utils"));
         let abs_path = PathBuf::from(format!("{}/mocks/as/utils.ts", root_path.to_str().unwrap()));
 
-        assert_eq!(result, abs_path);
-    }
-
-    #[test]
-    fn it_should_panic_if_imports_does_not_exist_test() {
-        let in_file = PathBuf::from("mocks/as/mock-includes.test.ts");
-        let result =
-            std::panic::catch_unwind(|| get_import_absolute_path(&in_file, "../generated/schema"));
-
-        assert!(result.is_err());
-
-        let err = *(result.unwrap_err().downcast::<String>().unwrap());
-
-        assert!(err.contains("../generated/schema does not exists!"));
+        assert_eq!(result.unwrap(), abs_path);
     }
 }
