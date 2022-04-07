@@ -146,8 +146,8 @@ fn handle_testables<C: graph::blockchain::Blockchain>(
     functions: Vec<(String, bool, u32, String)>,
     table: &wasmtime::Table,
 ) -> TestGroup {
-    let mut desc_b_e = vec![];
-    let mut desc_a_e = vec![];
+    let mut before_each = vec![];
+    let mut after_each = vec![];
     let mut test_group = TestGroup {
         name: name.to_owned(),
         testables: vec![],
@@ -176,10 +176,10 @@ fn handle_testables<C: graph::blockchain::Blockchain>(
                 test_group.after_all.push(test.clone());
             }
             "beforeEach" => {
-                desc_b_e.push(test.clone());
+                before_each.push(test.clone());
             }
             "afterEach" => {
-                desc_a_e.push(test.clone());
+                after_each.push(test.clone());
             }
             "test" => test_group.testables.push(Testable::Test(Test::new(
                 t_name.to_string(),
@@ -200,26 +200,23 @@ fn handle_testables<C: graph::blockchain::Blockchain>(
         }
     }
 
-    for test in test_group.testables.iter_mut() {
-        match test {
+    update_test_hooks(&mut test_group, before_each.clone(), after_each.clone());
+
+    test_group
+}
+
+fn update_test_hooks(test_group: &mut TestGroup, before_each: Vec<Func>, after_each: Vec<Func>) {
+    for testable in test_group.testables.iter_mut() {
+        match testable {
             Testable::Test(test) => {
-                test.before_hooks = desc_b_e.clone();
-                test.after_hooks = desc_a_e.clone();
+                test.before_hooks.splice(0..0, before_each.clone());
+                test.after_hooks.append(&mut after_each.clone());
             }
             Testable::Group(group) => {
-                let mut inner_ba = group.before_all.clone();
-                let mut inner_aa = group.after_all.clone();
-                group.before_all = desc_b_e.clone();
-                group.before_all.append(&mut inner_ba);
-
-                group.after_all = desc_a_e.clone();
-                group.after_all.append(&mut inner_aa);
-                group.after_all.reverse();
+                update_test_hooks(group, before_each.clone(), after_each.clone());
             }
         }
     }
-
-    test_group
 }
 
 fn get_nested_function<C: graph::blockchain::Blockchain>(
