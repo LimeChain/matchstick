@@ -118,7 +118,7 @@ fn are_imports_modified(in_file: &Path, wasm_modified: SystemTime) -> bool {
     let mut matches: HashSet<PathBuf> = HashSet::new();
 
     get_imports_from_file(in_file, &mut matches);
-    
+
     for m in matches {
         let import_modified = fs::metadata(&m)
             .unwrap_or_else(|err| {
@@ -205,7 +205,8 @@ mod compiler_tests {
     #[test]
     fn it_gets_project_imports_test() {
         let in_file = PathBuf::from("mocks/as/mock-includes.test.ts");
-        let includes = get_imports_from_file(&in_file);
+        let mut includes: HashSet<PathBuf> = HashSet::new();
+        get_imports_from_file(&in_file, &mut includes);
         let root_path = fs::canonicalize("./").expect("Something went wrong!");
         let root_path_str = root_path.to_str().unwrap();
 
