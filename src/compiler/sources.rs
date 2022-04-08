@@ -115,8 +115,10 @@ pub fn is_source_modified(in_file: &Path, out_file: &Path) -> bool {
 /// since the last time the wasm files have been compiled
 fn are_imports_modified(in_file: &Path, wasm_modified: SystemTime) -> bool {
     let mut is_modified = false;
-    let matches: HashSet<PathBuf> = get_imports_from_file(in_file);
+    let mut matches: HashSet<PathBuf> = HashSet::new();
 
+    get_imports_from_file(in_file, &mut matches);
+    
     for m in matches {
         let import_modified = fs::metadata(&m)
             .unwrap_or_else(|err| {
@@ -159,7 +161,7 @@ fn get_import_absolute_path(
 /// Collects all imported file paths (except node_modules) from a test.ts file using regex
 /// Returns a HashSet of the absolute paths of each import.
 /// Ignores the files that dont have .ts extension.
-fn get_imports_from_file(in_file: &Path) -> HashSet<PathBuf> {
+fn get_imports_from_file(in_file: &Path, imports: &mut HashSet<PathBuf>) {
     // Regex should match the file path of each import statement except for node_modules
     // e.g. should return `../generated/schema` from `import { Gravatar } from '../generated/schema'`
     // but it will ignore node_modules, e.g. `import { test, log } from 'matchstick-as/assembly/index'`
@@ -168,8 +170,6 @@ fn get_imports_from_file(in_file: &Path) -> HashSet<PathBuf> {
     let file_as_str = fs::read_to_string(in_file).unwrap_or_else(|err| {
         logging::critical!("Failed to read {:?} with error: {}", in_file, err)
     });
-
-    let mut imports: HashSet<PathBuf> = HashSet::new();
 
     for import in imports_regex.captures_iter(&file_as_str) {
         if let Ok(path) = get_import_absolute_path(in_file, &PathBuf::from(import[1].to_owned())) {
@@ -180,18 +180,20 @@ fn get_imports_from_file(in_file: &Path) -> HashSet<PathBuf> {
                 {
                     if let Ok(abs_path) = get_import_absolute_path(in_file, &entry.unwrap().path())
                     {
-                        imports.insert(abs_path.clone());
-                        imports.extend(get_imports_from_file(&abs_path));
+                        if !imports.contains(&abs_path) {
+                            imports.insert(abs_path.clone());
+                            get_imports_from_file(&abs_path, imports);
+                        }
                     }
                 }
             } else if let Ok(abs_path) = get_import_absolute_path(in_file, &path) {
-                imports.insert(abs_path.clone());
-                imports.extend(get_imports_from_file(&abs_path));
+                if !imports.contains(&abs_path) {
+                    imports.insert(abs_path.clone());
+                    get_imports_from_file(&abs_path, imports);
+                }
             }
         }
     }
-
-    imports
 }
 
 #[cfg(test)]
