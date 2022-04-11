@@ -31,8 +31,6 @@ pub struct MatchstickInstance<C: Blockchain> {
     pub instance: wasmtime::Instance,
 
     pub instance_ctx: Rc<RefCell<Option<MatchstickInstanceContext<C>>>>,
-
-    pub wasm: String,
 }
 
 // Initialization functions.
@@ -78,7 +76,7 @@ impl<C: Blockchain> MatchstickInstance<C> {
             .unwrap_or_else(|err| logging::critical!("Could not create ValidModule: {}", err)),
         );
 
-        let mut instance = MatchstickInstance::<Chain>::from_valid_module_with_ctx(
+        MatchstickInstance::<Chain>::from_valid_module_with_ctx(
             valid_module,
             mock_context(
                 deployment,
@@ -95,10 +93,7 @@ impl<C: Blockchain> MatchstickInstance<C> {
                 "Could not create WasmInstance from valid module with context: {}",
                 err
             )
-        });
-
-        instance.wasm = path_to_wasm.to_string();
-        instance
+        })
     }
 
     pub(crate) fn instance_ctx(&self) -> std::cell::Ref<'_, MatchstickInstanceContext<C>> {
@@ -520,7 +515,6 @@ impl<C: Blockchain> MatchstickInstance<C> {
         Ok(MatchstickInstance {
             instance,
             instance_ctx: shared_ctx,
-            wasm: "".to_string(),
         })
     }
 }
