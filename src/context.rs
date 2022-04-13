@@ -156,6 +156,10 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             "{}",
             to_string_pretty(&self.store).unwrap_or_else(|err| logging::critical!(err)),
         );
+        logging::debug!(
+          "{:?}",
+          &self.derived,
+      );
         Ok(())
     }
 
@@ -356,6 +360,80 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             .fields
             .iter();
 
+        SCHEMA
+            .definitions
+            .iter()
+            .for_each(|def| {
+                if let schema::Definition::TypeDefinition(schema::TypeDefinition::Object(o)) = def {
+                    let derived_fields = o.fields.iter().filter(|&f| matches!(f.field_type, schema::Type::NonNullType(..)) && f.is_derived());
+                    for f in derived_fields {
+                        // println!("{:?}\n{:?}", o.name, f);
+                        // field type is received as: '[ExampleClass!]!' and needs to be reduced to a class string
+                        let clean_field_type = f
+                            .field_type
+                            .to_string()
+                            .replace('!', "")
+                            .replace('[', "")
+                            .replace(']', "");
+                        let mut directive = f.find_directive("derivedFrom").unwrap().clone();
+            
+                        if self.derived.contains_key(&clean_field_type) {
+                            let mut field_names_vec = self
+                                .derived
+                                .get(&clean_field_type)
+                                .unwrap_or_else(|| {
+                                    logging::critical!(
+                                        "Failed to get field names vector for type {}",
+                                        clean_field_type
+                                    )
+                                })
+                                .1
+                                .clone();
+                            
+                            let field_names_tuple = (
+                                f.name.clone(),
+                                directive
+                                    .arguments
+                                    .pop()
+                                    .unwrap()
+                                    .1
+                                    .to_string()
+                                    .replace('\"', ""),
+                            );
+                            if !field_names_vec.contains(&field_names_tuple) {
+                                field_names_vec.push(field_names_tuple);
+                                self.derived
+                                    .insert(clean_field_type, (o.name.clone(), field_names_vec));
+                            }
+                        } else {
+                            self.derived.insert(
+                                clean_field_type,
+                                (
+                                    o.name.clone(),
+                                    vec![(
+                                        f.name.clone(),
+                                        directive
+                                            .arguments
+                                            .pop()
+                                            .unwrap()
+                                            .1
+                                            .to_string()
+                                            .replace('\"', ""),
+                                    )],
+                                ),
+                            );
+                        }
+                    }
+                    // println!("сцхема: {:?}", self.derived);
+                }
+            });
+            // .iter()
+            // .unwrap_or_else(|| {
+            //     logging::critical!("Something went wrong! Could not find the entity defined in the GraphQL schema.")
+            // })
+            // .fields
+            // .iter();
+
         let required_fields = schema_fields_iter
             .clone()
             .filter(|&f| matches!(f.field_type, schema::Type::NonNullType(..)) && !f.is_derived());
@@ -376,63 +454,66 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             }
         }
 
-        let derived_fields = schema_fields_iter
-            .filter(|&f| matches!(f.field_type, schema::Type::NonNullType(..)) && f.is_derived());
+        // let derived_fields = schema_fields_iter
+        //     .filter(|&f| matches!(f.field_type, schema::Type::NonNullType(..)) && f.is_derived());
+        // for f in derived_fields {
+        //     // field type is received as: '[ExampleClass!]!' and needs to be reduced to a class string
+        //     let clean_field_type = f
+        //         .field_type
+        //         .to_string()
+        //         .replace('!', "")
+        //         .replace('[', "")
+        //         .replace(']', "");
+        //     let mut directive = f.find_directive("derivedFrom").unwrap().clone();
 
-        for f in derived_fields {
-            // field type is received as: '[ExampleClass!]!' and needs to be reduced to a class string
-            let clean_field_type = f
-                .field_type
-                .to_string()
-                .replace('!', "")
-                .replace('[', "")
-                .replace(']', "");
-            let mut directive = f.find_directive("derivedFrom").unwrap().clone();
-
-            if self.derived.contains_key(&clean_field_type) {
-                let mut field_names_vec = self
-                    .derived
-                    .get(&clean_field_type)
-                    .unwrap_or_else(|| {
-                        logging::critical!(
-                            "Failed to get field names vector for type {}",
-                            clean_field_type
-                        )
-                    })
-                    .1
-                    .clone();
-                field_names_vec.push((
-                    f.name.clone(),
-                    directive
-                        .arguments
-                        .pop()
-                        .unwrap()
-                        .1
-                        .to_string()
-                        .replace('\"', ""),
-                ));
-                self.derived
-                    .insert(clean_field_type, (entity_type.clone(), field_names_vec));
-            } else {
-                self.derived.insert(
-                    clean_field_type,
-                    (
-                        entity_type.clone(),
-                        vec![(
-                            f.name.clone(),
-                            directive
-                                .arguments
-                                .pop()
-                                .unwrap()
-                                .1
-                                .to_string()
-                                .replace('\"', ""),
-                        )],
-                    ),
-                );
-            }
-        }
-
+        //     if self.derived.contains_key(&clean_field_type) {
+        //         let mut field_names_vec = self
+        //             .derived
+        //             .get(&clean_field_type)
+        //             .unwrap_or_else(|| {
+        //                 logging::critical!(
+        //                     "Failed to get field names vector for type {}",
+        //                     clean_field_type
+        //                 )
+        //             })
+        //             .1
+        //             .clone();
+                
+        //         let field_names_tuple = (
+        //             f.name.clone(),
+        //             directive
+        //                 .arguments
+        //                 .pop()
+        //                 .unwrap()
+        //                 .1
+        //                 .to_string()
+        //                 .replace('\"', ""),
+        //         );
+        //         if !field_names_vec.contains(&field_names_tuple) {
+        //             field_names_vec.push(field_names_tuple);
+        //             self.derived
+        //                 .insert(clean_field_type, (entity_type.clone(), field_names_vec));
+        //         }
+        //     } else {
+        //         self.derived.insert(
+        //             clean_field_type,
+        //             (
+        //                 entity_type.clone(),
+        //                 vec![(
+        //                     f.name.clone(),
+        //                     directive
+        //                         .arguments
+        //                         .pop()
+        //                         .unwrap()
+        //                         .1
+        //                         .to_string()
+        //                         .replace('\"', ""),
+        //                 )],
+        //             ),
+        //         );
+        //     }
+        // }
+        // println!("сцхема: {:?}", self.derived);
         if self.derived.contains_key(&entity_type) {
             let linking_fields = self
                 .derived
