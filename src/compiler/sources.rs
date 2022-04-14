@@ -173,25 +173,23 @@ fn get_imports_from_file(in_file: &Path, imports: &mut HashSet<PathBuf>) {
 
     for import in imports_regex.captures_iter(&file_as_str) {
         if let Ok(path) = get_import_absolute_path(in_file, &PathBuf::from(import[1].to_owned())) {
-            if path.is_dir() {
-                for entry in path
-                    .read_dir()
-                    .unwrap_or_else(|_| panic!("Could not read dir: {:?}", path))
-                {
-                    if let Ok(abs_path) = get_import_absolute_path(in_file, &entry.unwrap().path())
-                    {
-                        if !imports.contains(&abs_path) {
-                            imports.insert(abs_path.clone());
-                            get_imports_from_file(&abs_path, imports);
-                        }
-                    }
-                }
-            } else if let Ok(abs_path) = get_import_absolute_path(in_file, &path) {
-                if !imports.contains(&abs_path) {
-                    imports.insert(abs_path.clone());
-                    get_imports_from_file(&abs_path, imports);
-                }
-            }
+            handle_import(in_file, &path, imports)
+        }
+    }
+}
+
+fn handle_import(in_file: &Path, import: &Path, imports: &mut HashSet<PathBuf>) {
+    if import.is_dir() {
+        for entry in import
+            .read_dir()
+            .unwrap_or_else(|_| panic!("Could not read dir: {:?}", import))
+        {
+            handle_import(in_file, &entry.unwrap().path(), imports)
+        }
+    } else if let Ok(abs_path) = get_import_absolute_path(in_file, import) {
+        if !imports.contains(&abs_path) {
+            imports.insert(abs_path.clone());
+            get_imports_from_file(&abs_path, imports);
         }
     }
 }
