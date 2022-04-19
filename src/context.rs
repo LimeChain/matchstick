@@ -64,7 +64,6 @@ lazy_static! {
 
 /// The Matchstick Instance Context wraps WASM Instance Context and
 /// implements the external functions.
-#[allow(dead_code)]
 pub struct MatchstickInstanceContext<C: Blockchain> {
     /// Handle to WASM Instance Context.
     pub wasm_ctx: WasmInstanceContext<C>,
@@ -103,7 +102,6 @@ pub struct MatchstickInstanceContext<C: Blockchain> {
 }
 
 /// Implementation of non-external functions.
-// #[allow(dead_code)]
 impl<C: Blockchain> MatchstickInstanceContext<C> {
     pub fn new(wasm_ctx: WasmInstanceContext<C>) -> Self {
         let mut context = MatchstickInstanceContext {
@@ -136,7 +134,6 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 }
 
 /// Implementation of external functions (used in AssemblyScript sources).
-// #[allow(dead_code)]
 impl<C: Blockchain> MatchstickInstanceContext<C> {
     /// function log(level: enum Level (u32), msg: string): void
     pub fn log(
@@ -599,48 +596,44 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                                                         field.1.clone().as_list().unwrap().clone();
                                                     if value_list
                                                         .contains(&Value::String(id.clone()))
+                                                        && data.contains_key(&linking_field.1)
                                                     {
-                                                        if data.contains_key(&linking_field.1) {
-                                                            if data
+                                                        if data
+                                                            .get(&linking_field.1)
+                                                            .unwrap()
+                                                            .is_string()
+                                                        {
+                                                            self.remove_dead_relations(
+                                                                data.get(&linking_field.1)
+                                                                    .unwrap()
+                                                                    .to_owned(),
+                                                                relation_id.as_str().unwrap(),
+                                                                field,
+                                                                Value::String(id.clone()),
+                                                                original_entity_type.clone(),
+                                                                entity_deleted,
+                                                            );
+                                                        } else if matches!(
+                                                            data.get(&linking_field.1).unwrap(),
+                                                            Value::List(_)
+                                                        ) {
+                                                            let linking_field_values = data
                                                                 .get(&linking_field.1)
                                                                 .unwrap()
-                                                                .is_string()
+                                                                .clone()
+                                                                .as_list()
+                                                                .unwrap();
+                                                            for linking_field_value in
+                                                                linking_field_values
                                                             {
                                                                 self.remove_dead_relations(
-                                                                    data.get(&linking_field.1)
-                                                                        .unwrap()
-                                                                        .to_owned(),
+                                                                    linking_field_value,
                                                                     relation_id.as_str().unwrap(),
                                                                     field,
                                                                     Value::String(id.clone()),
                                                                     original_entity_type.clone(),
                                                                     entity_deleted,
                                                                 );
-                                                            } else if matches!(
-                                                                data.get(&linking_field.1).unwrap(),
-                                                                Value::List(_)
-                                                            ) {
-                                                                let linking_field_values = data
-                                                                    .get(&linking_field.1)
-                                                                    .unwrap()
-                                                                    .clone()
-                                                                    .as_list()
-                                                                    .unwrap();
-                                                                for linking_field_value in
-                                                                    linking_field_values
-                                                                {
-                                                                    self.remove_dead_relations(
-                                                                        linking_field_value,
-                                                                        relation_id
-                                                                            .as_str()
-                                                                            .unwrap(),
-                                                                        field,
-                                                                        Value::String(id.clone()),
-                                                                        original_entity_type
-                                                                            .clone(),
-                                                                        entity_deleted,
-                                                                    );
-                                                                }
                                                             }
                                                         }
                                                     }
