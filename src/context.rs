@@ -598,6 +598,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn handle_different_value_types(
         &mut self,
         data: HashMap<String, Value>,
@@ -613,8 +614,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 data.get(&linking_field.1).unwrap().to_owned(),
                 relation_id.as_str().unwrap(),
                 field,
-                Value::String(id.clone()),
-                original_entity_type.clone(),
+                Value::String(id),
+                original_entity_type,
                 entity_deleted,
             );
         } else if matches!(data.get(&linking_field.1).unwrap(), Value::List(_)) {
