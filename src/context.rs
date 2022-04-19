@@ -539,39 +539,15 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                                             if !value_list.contains(&Value::String(id.clone()))
                                                 && data.contains_key(&linking_field.1)
                                             {
-                                                if data.get(&linking_field.1).unwrap().is_string() {
-                                                    self.remove_dead_relations(
-                                                        data.get(&linking_field.1)
-                                                            .unwrap()
-                                                            .to_owned(),
-                                                        relation_id.as_str().unwrap(),
-                                                        field,
-                                                        Value::String(id.clone()),
-                                                        original_entity_type.clone(),
-                                                        entity_deleted,
-                                                    );
-                                                } else if matches!(
-                                                    data.get(&linking_field.1).unwrap(),
-                                                    Value::List(_)
-                                                ) {
-                                                    let linking_field_values = data
-                                                        .get(&linking_field.1)
-                                                        .unwrap()
-                                                        .clone()
-                                                        .as_list()
-                                                        .unwrap();
-                                                    for linking_field_value in linking_field_values
-                                                    {
-                                                        self.remove_dead_relations(
-                                                            linking_field_value,
-                                                            relation_id.as_str().unwrap(),
-                                                            field,
-                                                            Value::String(id.clone()),
-                                                            original_entity_type.clone(),
-                                                            entity_deleted,
-                                                        );
-                                                    }
-                                                }
+                                                self.handle_different_value_types(
+                                                    data.clone(),
+                                                    linking_field,
+                                                    relation_id,
+                                                    field,
+                                                    id.clone(),
+                                                    original_entity_type.clone(),
+                                                    entity_deleted,
+                                                );
                                             }
                                         }
                                     }
@@ -598,44 +574,15 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                                                         .contains(&Value::String(id.clone()))
                                                         && data.contains_key(&linking_field.1)
                                                     {
-                                                        if data
-                                                            .get(&linking_field.1)
-                                                            .unwrap()
-                                                            .is_string()
-                                                        {
-                                                            self.remove_dead_relations(
-                                                                data.get(&linking_field.1)
-                                                                    .unwrap()
-                                                                    .to_owned(),
-                                                                relation_id.as_str().unwrap(),
-                                                                field,
-                                                                Value::String(id.clone()),
-                                                                original_entity_type.clone(),
-                                                                entity_deleted,
-                                                            );
-                                                        } else if matches!(
-                                                            data.get(&linking_field.1).unwrap(),
-                                                            Value::List(_)
-                                                        ) {
-                                                            let linking_field_values = data
-                                                                .get(&linking_field.1)
-                                                                .unwrap()
-                                                                .clone()
-                                                                .as_list()
-                                                                .unwrap();
-                                                            for linking_field_value in
-                                                                linking_field_values
-                                                            {
-                                                                self.remove_dead_relations(
-                                                                    linking_field_value,
-                                                                    relation_id.as_str().unwrap(),
-                                                                    field,
-                                                                    Value::String(id.clone()),
-                                                                    original_entity_type.clone(),
-                                                                    entity_deleted,
-                                                                );
-                                                            }
-                                                        }
+                                                        self.handle_different_value_types(
+                                                            data.clone(),
+                                                            linking_field,
+                                                            relation_id,
+                                                            field,
+                                                            id.clone(),
+                                                            original_entity_type.clone(),
+                                                            entity_deleted,
+                                                        );
                                                     }
                                                 }
                                             }
@@ -648,6 +595,45 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 }
             }
             self.store_updated = true;
+        }
+    }
+
+    fn handle_different_value_types(
+        &mut self,
+        data: HashMap<String, Value>,
+        linking_field: &(String, String),
+        relation_id: &Value,
+        field: (&String, &Value),
+        id: String,
+        original_entity_type: String,
+        entity_deleted: bool,
+    ) {
+        if data.get(&linking_field.1).unwrap().is_string() {
+            self.remove_dead_relations(
+                data.get(&linking_field.1).unwrap().to_owned(),
+                relation_id.as_str().unwrap(),
+                field,
+                Value::String(id.clone()),
+                original_entity_type.clone(),
+                entity_deleted,
+            );
+        } else if matches!(data.get(&linking_field.1).unwrap(), Value::List(_)) {
+            let linking_field_values = data
+                .get(&linking_field.1)
+                .unwrap()
+                .clone()
+                .as_list()
+                .unwrap();
+            for linking_field_value in linking_field_values {
+                self.remove_dead_relations(
+                    linking_field_value,
+                    relation_id.as_str().unwrap(),
+                    field,
+                    Value::String(id.clone()),
+                    original_entity_type.clone(),
+                    entity_deleted,
+                );
+            }
         }
     }
 
