@@ -17,7 +17,7 @@ The quickest way to use **Matchstick** "out of the box" is to build and run an u
 
 - Install [Docker](https://docs.docker.com/get-docker/) if you don't have it already.
 
-- Create a file named `Dockerfile` in the root folder of your subgraph project, and paste [the contents of this file](https://github.com/LimeChain/demo-subgraph/blob/main/Dockerfile) there.
+- Create a file named `Dockerfile` in the root folder of your subgraph project, and paste [the contents of this file](https://github.com/LimeChain/demo-subgraph/blob/main/Dockerfile) there. Replace `<MATCHSTICK_VERSION>` placeholder with the desired matchstick version. You can find all available versions [here](https://github.com/LimeChain/matchstick/releases)
 
 - Build a **Matchstick** image using the following command:
 ```
@@ -25,28 +25,18 @@ docker build -t matchstick .
 ```
 
  - The build step might take a while, but once that's done we can quickly run our tests like this:
-```
-docker run --rm matchstick
-```
-
-or
 
 ```
 docker run -it --rm --mount type=bind,source=<absolute/path/to/project>,target=/matchstick matchstick
 ```
 
 ❗ If you want to pass arguments to **Matchstick** (for instance to test only a specific datasource or to generate a test coverage report) you can do so like this:
-```
-docker run -e ARGS="gravity" --rm matchstick
-```
-
-or
 
 ```
 docker run -e ARGS="gravity" -it --rm --mount type=bind,source=<absolute/path/to/project>,target=/matchstick matchstick
 ```
 
-❗ **Note:** The second command will mount the project folder in the container, so you don't need to rebuild the image after every change to your code. Also any changes that happen to files during the run will persist on the host machine as well. [More info about docker bind mounts](https://docs.docker.com/storage/bind-mounts/)
+❗ **Note:** The command will mount the project folder in the container, so you don't need to rebuild the image after every change to your code. Also any changes that happen to files during the run will persist on the host machine as well. [More info about docker bind mounts](https://docs.docker.com/storage/bind-mounts/)
 
 After that you can go straight to [the final setup step](https://github.com/LimeChain/matchstick/tree/dockerize#install-dependencies) and you'll be all set to start writing your first unit test.
 
