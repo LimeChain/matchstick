@@ -64,7 +64,6 @@ lazy_static! {
 
 /// The Matchstick Instance Context wraps WASM Instance Context and
 /// implements the external functions.
-#[allow(dead_code)]
 pub struct MatchstickInstanceContext<C: Blockchain> {
     /// Handle to WASM Instance Context.
     pub wasm_ctx: WasmInstanceContext<C>,
@@ -89,6 +88,8 @@ pub struct MatchstickInstanceContext<C: Blockchain> {
     /// }
     /// ```
     pub(crate) derived: HashMap<String, (String, Vec<(String, String)>)>,
+    /// Gives guarantee that all derived relations are in order when true
+    store_updated: bool,
     /// Holds the mocked return values of `dataSource.address()`, `dataSource.network()` and `dataSource.context()` in that order
     data_source_return_value: (
         Option<String>,
@@ -101,18 +102,20 @@ pub struct MatchstickInstanceContext<C: Blockchain> {
 }
 
 /// Implementation of non-external functions.
-#[allow(dead_code)]
 impl<C: Blockchain> MatchstickInstanceContext<C> {
     pub fn new(wasm_ctx: WasmInstanceContext<C>) -> Self {
-        MatchstickInstanceContext {
+        let mut context = MatchstickInstanceContext {
             wasm_ctx,
             store: HashMap::new(),
             fn_ret_map: HashMap::new(),
             meta_tests: Vec::new(),
             derived: HashMap::new(),
+            store_updated: true,
             data_source_return_value: (None, None, None),
             ipfs: HashMap::new(),
-        }
+        };
+        context.derive_schema();
+        context
     }
 
     /// Constructs a unique ID for a given contract function.
@@ -131,7 +134,6 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 }
 
 /// Implementation of external functions (used in AssemblyScript sources).
-#[allow(dead_code)]
 impl<C: Blockchain> MatchstickInstanceContext<C> {
     /// function log(level: enum Level (u32), msg: string): void
     pub fn log(
@@ -162,6 +164,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     /// function clearStore(): void
     pub fn clear_store(&mut self, _gas: &GasCounter) -> Result<(), HostExportError> {
         self.store.clear();
+        self.store_updated = true;
         Ok(())
     }
 
@@ -219,6 +222,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         field_name_ptr: AscPtr<AscString>,
         expected_val_ptr: AscPtr<AscString>,
     ) -> Result<bool, HostExportError> {
+        self.update_derived_relations_in_store();
         let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new())?;
         let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new())?;
         let field_name: String = asc_get(&self.wasm_ctx, field_name_ptr, &GasCounter::new())?;
@@ -277,6 +281,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         expected_ptr: u32,
         actual_ptr: u32,
     ) -> Result<bool, HostExportError> {
+        self.update_derived_relations_in_store();
         let expected: Token = asc_get::<_, AscEnum<EthereumValueKind>, _>(
             &self.wasm_ctx,
             expected_ptr.into(),
@@ -310,6 +315,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
     ) -> Result<bool, HostExportError> {
+        self.update_derived_relations_in_store();
         let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new())?;
         let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new())?;
 
@@ -334,6 +340,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
     ) -> Result<AscPtr<AscEntity>, HostExportError> {
+        self.update_derived_relations_in_store();
         let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new())?;
         let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new())?;
 
@@ -364,7 +371,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let data: HashMap<String, Value> =
             try_asc_get(&self.wasm_ctx, data_ptr, &GasCounter::new())?;
 
-        let schema_fields_iter = SCHEMA
+        let required_fields = SCHEMA
             .definitions
             .iter()
             .find_map(|def| {
@@ -382,9 +389,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 logging::critical!("Something went wrong! Could not find the entity defined in the GraphQL schema.")
             })
             .fields
-            .iter();
-
-        let required_fields = schema_fields_iter
+            .iter()
             .clone()
             .filter(|&f| matches!(f.field_type, schema::Type::NonNullType(..)) && !f.is_derived());
 
@@ -404,63 +409,6 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             }
         }
 
-        let derived_fields = schema_fields_iter
-            .filter(|&f| matches!(f.field_type, schema::Type::NonNullType(..)) && f.is_derived());
-
-        for f in derived_fields {
-            // field type is received as: '[ExampleClass!]!' and needs to be reduced to a class string
-            let clean_field_type = f
-                .field_type
-                .to_string()
-                .replace('!', "")
-                .replace('[', "")
-                .replace(']', "");
-            let mut directive = f.find_directive("derivedFrom").unwrap().clone();
-
-            if self.derived.contains_key(&clean_field_type) {
-                let mut field_names_vec = self
-                    .derived
-                    .get(&clean_field_type)
-                    .unwrap_or_else(|| {
-                        logging::critical!(
-                            "Failed to get field names vector for type {}",
-                            clean_field_type
-                        )
-                    })
-                    .1
-                    .clone();
-                field_names_vec.push((
-                    f.name.clone(),
-                    directive
-                        .arguments
-                        .pop()
-                        .unwrap()
-                        .1
-                        .to_string()
-                        .replace('\"', ""),
-                ));
-                self.derived
-                    .insert(clean_field_type, (entity_type.clone(), field_names_vec));
-            } else {
-                self.derived.insert(
-                    clean_field_type,
-                    (
-                        entity_type.clone(),
-                        vec![(
-                            f.name.clone(),
-                            directive
-                                .arguments
-                                .pop()
-                                .unwrap()
-                                .1
-                                .to_string()
-                                .replace('\"', ""),
-                        )],
-                    ),
-                );
-            }
-        }
-
         if self.derived.contains_key(&entity_type) {
             let linking_fields = self
                 .derived
@@ -470,7 +418,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 })
                 .1
                 .clone();
-            let original_entity = self.derived.get(&entity_type).unwrap().0.clone();
+            let original_entity_type = self.derived.get(&entity_type).unwrap().0.clone();
             for linking_field in linking_fields {
                 if data.contains_key(&linking_field.1) {
                     let derived_field_value = data
@@ -486,7 +434,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                         for derived_field_value in derived_field_value.as_list().unwrap().clone() {
                             self.insert_derived_field_in_store(
                                 derived_field_value,
-                                original_entity.clone(),
+                                original_entity_type.clone(),
                                 linking_field.clone(),
                                 id.clone(),
                             );
@@ -494,7 +442,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                     } else {
                         self.insert_derived_field_in_store(
                             derived_field_value,
-                            original_entity.clone(),
+                            original_entity_type.clone(),
                             linking_field.clone(),
                             id.clone(),
                         );
@@ -509,116 +457,10 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             HashMap::new()
         };
 
-        self.update_derived_relations_in_store(
-            entity_type.clone(),
-            id.clone(),
-            data.clone(),
-            false,
-        );
         entity_type_store.insert(id, data);
-        self.store.insert(entity_type, entity_type_store);
+        self.store.insert(entity_type.clone(), entity_type_store);
+        self.store_updated = false;
         Ok(())
-    }
-
-    // This method checks for and removes falty store relations.
-    // The entity_deleted bool is necessary because one of the checks needs to be
-    // inverted depending on whether the entity is about to be deleted or not.
-    fn update_derived_relations_in_store(
-        &mut self,
-        entity_type: String,
-        id: String,
-        data: HashMap<String, Value>,
-        entity_deleted: bool,
-    ) {
-        if self.derived.contains_key(&entity_type) {
-            let linking_fields = self
-                .derived
-                .get(&entity_type)
-                .unwrap_or_else(|| {
-                    logging::critical!("Couldn't find value for key {} in derived map", entity_type)
-                })
-                .1
-                .clone();
-            let original_entity = self.derived.get(&entity_type).unwrap().0.clone();
-            if self.store.contains_key(&original_entity) {
-                let inner_store = self.store.get(&original_entity).unwrap().clone();
-                for original_entity_id_and_data in &inner_store {
-                    let innermost_store = inner_store
-                        .get(original_entity_id_and_data.0)
-                        .unwrap()
-                        .clone();
-                    for field in &innermost_store {
-                        for linking_field in &linking_fields {
-                            if &linking_field.0 == field.0 && matches!(field.1, Value::List(_)) {
-                                let value_list = field.1.clone().as_list().unwrap().clone();
-                                for value in value_list.clone() {
-                                    if value.is_string()
-                                        && value.clone().as_string().unwrap() == id
-                                        && data.contains_key(&linking_field.1)
-                                    {
-                                        if data.get(&linking_field.1).unwrap().is_string() {
-                                            self.remove_dead_relations(
-                                                data.get(&linking_field.1).unwrap().to_owned(),
-                                                original_entity_id_and_data.0,
-                                                field,
-                                                value,
-                                                original_entity.clone(),
-                                                entity_deleted,
-                                            );
-                                        } else if matches!(
-                                            data.get(&linking_field.1).unwrap(),
-                                            Value::List(_)
-                                        ) {
-                                            let linking_field_values = data
-                                                .get(&linking_field.1)
-                                                .unwrap()
-                                                .clone()
-                                                .as_list()
-                                                .unwrap();
-                                            for linking_field_value in linking_field_values {
-                                                self.remove_dead_relations(
-                                                    linking_field_value,
-                                                    original_entity_id_and_data.0,
-                                                    field,
-                                                    value.clone(),
-                                                    original_entity.clone(),
-                                                    entity_deleted,
-                                                );
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    fn remove_dead_relations(
-        &mut self,
-        current_value: Value,
-        entity: &str,
-        field: (&String, &Value),
-        value: Value,
-        original_entity: String,
-        entity_deleted: bool,
-    ) {
-        if current_value.is_string()
-            && ((current_value.as_str().unwrap() != entity && !entity_deleted)
-                || (current_value.as_str().unwrap() == entity && entity_deleted))
-        {
-            let mut inner_store = self.store.get(&original_entity).unwrap().clone();
-            let mut innermost_store = inner_store.get(entity).unwrap().clone();
-            let mut value_list = field.1.clone().as_list().unwrap();
-
-            value_list.remove(value_list.iter().position(|x| *x == value).unwrap());
-            innermost_store.insert(field.0.to_owned(), Value::List(value_list));
-            inner_store.insert(entity.to_owned(), innermost_store);
-
-            self.store.insert(original_entity, inner_store);
-        }
     }
 
     /// This function checks whether all the necessary data is present in the store to avoid linking
@@ -681,6 +523,191 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         }
     }
 
+    /// Checks for and removes faulty store relations.
+    /// This function is called on every assert/store.get to make sure assertions and entity loading is done with an updated store
+    fn update_derived_relations_in_store(&mut self) {
+        if !self.store_updated {
+            for entity in self.store.clone() {
+                for inner_entity in entity.1 {
+                    let entity_type = entity.0.clone();
+                    let id = inner_entity.0;
+                    let data = inner_entity.1;
+                    if self.derived.contains_key(&entity_type) {
+                        let linking_fields = self
+                            .derived
+                            .get(&entity_type)
+                            .unwrap_or_else(|| {
+                                logging::critical!(
+                                    "Couldn't find value for key {} in derived map",
+                                    entity_type
+                                )
+                            })
+                            .1
+                            .clone();
+                        let original_entity_type =
+                            self.derived.get(&entity_type).unwrap().0.clone();
+                        if self.store.contains_key(&original_entity_type) {
+                            let inner_store =
+                                self.store.get(&original_entity_type).unwrap().clone();
+                            let mut entity_deleted = true;
+                            for linking_field in &linking_fields {
+                                let relation_id = data.get(&linking_field.1).unwrap();
+                                if relation_id.is_string()
+                                    && inner_store.contains_key(relation_id.as_str().unwrap())
+                                {
+                                    entity_deleted = false;
+                                    let original_entity_data =
+                                        inner_store.get(relation_id.as_str().unwrap()).unwrap();
+                                    for field in original_entity_data {
+                                        if &linking_field.0 == field.0
+                                            && matches!(field.1, Value::List(_))
+                                        {
+                                            let value_list =
+                                                field.1.clone().as_list().unwrap().clone();
+                                            if !value_list.contains(&Value::String(id.clone()))
+                                                && data.contains_key(&linking_field.1)
+                                            {
+                                                self.handle_different_value_types(
+                                                    data.clone(),
+                                                    linking_field,
+                                                    relation_id,
+                                                    field,
+                                                    id.clone(),
+                                                    original_entity_type.clone(),
+                                                    entity_deleted,
+                                                );
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Removes the entity with no relations from every list it may be in
+                            if entity_deleted {
+                                for linking_field in &linking_fields {
+                                    let relation_id = data.get(&linking_field.1).unwrap();
+                                    if relation_id.is_string() {
+                                        for original_entity_id_and_data in &inner_store {
+                                            let innermost_store = inner_store
+                                                .get(original_entity_id_and_data.0)
+                                                .unwrap()
+                                                .clone();
+                                            for field in &innermost_store {
+                                                if &linking_field.0 == field.0
+                                                    && matches!(field.1, Value::List(_))
+                                                {
+                                                    let value_list =
+                                                        field.1.clone().as_list().unwrap().clone();
+                                                    if value_list
+                                                        .contains(&Value::String(id.clone()))
+                                                        && data.contains_key(&linking_field.1)
+                                                    {
+                                                        self.handle_different_value_types(
+                                                            data.clone(),
+                                                            linking_field,
+                                                            relation_id,
+                                                            field,
+                                                            id.clone(),
+                                                            original_entity_type.clone(),
+                                                            entity_deleted,
+                                                        );
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            self.store_updated = true;
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn handle_different_value_types(
+        &mut self,
+        data: HashMap<String, Value>,
+        linking_field: &(String, String),
+        relation_id: &Value,
+        field: (&String, &Value),
+        id: String,
+        original_entity_type: String,
+        entity_deleted: bool,
+    ) {
+        if data.get(&linking_field.1).unwrap().is_string() {
+            self.remove_dead_relations(
+                data.get(&linking_field.1).unwrap().to_owned(),
+                relation_id.as_str().unwrap(),
+                field,
+                Value::String(id),
+                original_entity_type,
+                entity_deleted,
+            );
+        } else if matches!(data.get(&linking_field.1).unwrap(), Value::List(_)) {
+            let linking_field_values = data
+                .get(&linking_field.1)
+                .unwrap()
+                .clone()
+                .as_list()
+                .unwrap();
+            for linking_field_value in linking_field_values {
+                self.remove_dead_relations(
+                    linking_field_value,
+                    relation_id.as_str().unwrap(),
+                    field,
+                    Value::String(id.clone()),
+                    original_entity_type.clone(),
+                    entity_deleted,
+                );
+            }
+        }
+    }
+
+    fn remove_dead_relations(
+        &mut self,
+        current_value: Value,
+        entity: &str,
+        field: (&String, &Value),
+        value: Value,
+        original_entity: String,
+        entity_deleted: bool,
+    ) {
+        if current_value.is_string()
+            && (current_value.as_str().unwrap() != entity && !entity_deleted)
+            || (current_value.as_str().unwrap() == entity && entity_deleted)
+        {
+            let mut inner_store = self.store.get(&original_entity).unwrap().clone();
+            if !entity_deleted {
+                let mut innermost_store = inner_store.get(entity).unwrap().clone();
+                let mut value_list = field.1.clone().as_list().unwrap();
+
+                if value_list.contains(&value) {
+                    value_list.remove(value_list.iter().position(|x| *x == value).unwrap());
+                    innermost_store.insert(field.0.to_owned(), Value::List(value_list));
+                    inner_store.insert(entity.to_owned(), innermost_store);
+
+                    self.store.insert(original_entity, inner_store);
+                }
+            } else {
+                for mut entity in inner_store.clone() {
+                    let mut value_list = field.1.clone().as_list().unwrap();
+
+                    if value_list.contains(&value) {
+                        value_list.remove(value_list.iter().position(|x| *x == value).unwrap());
+                        entity.1.insert(field.0.to_owned(), Value::List(value_list));
+                        inner_store.insert(entity.0, entity.1);
+
+                        self.store
+                            .insert(original_entity.clone(), inner_store.clone());
+                    }
+                }
+            }
+        }
+    }
+
     /// function store.remove(entityType: string, id: string): void
     pub fn mock_store_remove(
         &mut self,
@@ -694,18 +721,14 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         if self.store.contains_key(&entity_type)
             && self.store.get(&entity_type).unwrap().contains_key(&id)
         {
-            let data = self
-                .store
-                .get(&entity_type)
-                .unwrap()
-                .get(&id)
-                .unwrap()
-                .clone();
-            self.update_derived_relations_in_store(entity_type.clone(), id.clone(), data, true);
+            if self.derived.contains_key(&entity_type) {
+                self.cascade_remove(entity_type.clone(), id.clone());
+            }
             let mut entity_type_store = self.store.get(&entity_type).unwrap().clone();
             entity_type_store.remove(&id);
 
             self.store.insert(entity_type, entity_type_store);
+            self.store_updated = false;
         } else {
             logging::error!(
                 "(store.remove) Entity with type '{}' and id '{}' does not exist.",
@@ -715,6 +738,59 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         }
 
         Ok(())
+    }
+
+    /// Removes the deleted entity from the other end of any relations it may have
+    fn cascade_remove(&mut self, entity_type: String, id: String) {
+        let store = self.store.clone();
+        let deleted_entity_data = store.get(&entity_type).unwrap().get(&id).unwrap();
+        let linking_fields = self
+            .derived
+            .get(&entity_type)
+            .unwrap_or_else(|| {
+                logging::critical!("Couldn't find value for key {} in derived map", entity_type)
+            })
+            .1
+            .clone();
+
+        let original_entity_type = self.derived.get(&entity_type).unwrap().0.clone();
+        if self.store.contains_key(&original_entity_type) {
+            let mut original_entity = store.get(&original_entity_type).unwrap().clone();
+            for linking_field in linking_fields {
+                if deleted_entity_data.contains_key(&linking_field.1) {
+                    let relation_id = deleted_entity_data.get(&linking_field.1).unwrap();
+                    if relation_id.is_string()
+                        && original_entity.contains_key(relation_id.as_str().unwrap())
+                    {
+                        let mut inner_store = original_entity
+                            .get(relation_id.as_str().unwrap())
+                            .unwrap()
+                            .clone();
+                        if inner_store.contains_key(&linking_field.0) {
+                            let mut value_list = inner_store
+                                .get(&linking_field.0)
+                                .unwrap()
+                                .clone()
+                                .as_list()
+                                .unwrap();
+                            if value_list.contains(&Value::String(id.clone())) {
+                                value_list.remove(
+                                    value_list
+                                        .iter()
+                                        .position(|x| *x == Value::String(id.clone()))
+                                        .unwrap(),
+                                );
+                                inner_store.insert(linking_field.0, Value::List(value_list));
+                                original_entity
+                                    .insert(relation_id.clone().as_string().unwrap(), inner_store);
+                                self.store
+                                    .insert(original_entity_type.clone(), original_entity.clone());
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /// function ethereum.call(call: SmartContractCall): Array<Value> | null
@@ -1079,6 +1155,75 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         }
 
         Ok(())
+    }
+
+    /// This function reads the schema.graphql file and writes all the relations
+    /// between the entities to the derived data structure
+    fn derive_schema(&mut self) {
+        SCHEMA.definitions.iter().for_each(|def| {
+            if let schema::Definition::TypeDefinition(schema::TypeDefinition::Object(o)) = def {
+                let derived_fields = o.fields.iter().filter(|&f| {
+                    matches!(f.field_type, schema::Type::NonNullType(..)) && f.is_derived()
+                });
+                for f in derived_fields {
+                    // field type is received as: '[ExampleClass!]!' and needs to be reduced to a class string
+                    let clean_field_type = f
+                        .field_type
+                        .to_string()
+                        .replace('!', "")
+                        .replace('[', "")
+                        .replace(']', "");
+                    let mut directive = f.find_directive("derivedFrom").unwrap().clone();
+
+                    if self.derived.contains_key(&clean_field_type) {
+                        let mut field_names_vec = self
+                            .derived
+                            .get(&clean_field_type)
+                            .unwrap_or_else(|| {
+                                logging::critical!(
+                                    "Failed to get field names vector for type {}",
+                                    clean_field_type
+                                )
+                            })
+                            .1
+                            .clone();
+
+                        let field_names_tuple = (
+                            f.name.clone(),
+                            directive
+                                .arguments
+                                .pop()
+                                .unwrap()
+                                .1
+                                .to_string()
+                                .replace('\"', ""),
+                        );
+                        if !field_names_vec.contains(&field_names_tuple) {
+                            field_names_vec.push(field_names_tuple);
+                            self.derived
+                                .insert(clean_field_type, (o.name.clone(), field_names_vec));
+                        }
+                    } else {
+                        self.derived.insert(
+                            clean_field_type,
+                            (
+                                o.name.clone(),
+                                vec![(
+                                    f.name.clone(),
+                                    directive
+                                        .arguments
+                                        .pop()
+                                        .unwrap()
+                                        .1
+                                        .to_string()
+                                        .replace('\"', ""),
+                                )],
+                            ),
+                        );
+                    }
+                }
+            }
+        });
     }
 }
 
