@@ -36,10 +36,18 @@ impl Compiler {
         if !lib.exists() {
             logging::critical!("Path to lib {:?} does not exist!", lib);
         }
+
+        let work_dir = std::env::current_dir().unwrap();
+
+        let abs_lib_path = work_dir
+            .join(&lib)
+            .canonicalize()
+            .unwrap_or_else(|_| logging::critical!("libs folder {:?} does not exists!", &lib));
+
         Compiler {
-            exec: lib.join("assemblyscript/bin/asc"),
-            global: lib.join("@graphprotocol/graph-ts/global/global.ts"),
-            lib,
+            exec: abs_lib_path.join("assemblyscript/bin/asc"),
+            global: abs_lib_path.join("@graphprotocol/graph-ts/global/global.ts"),
+            lib: abs_lib_path,
             options: vec![String::from("--explicitStart")],
         }
     }
@@ -119,7 +127,7 @@ impl Compiler {
             .arg("--outFile")
             .arg(out_file.clone())
             .output()
-            .unwrap_or_else(|err| logging::critical!("Internal error during compilation: {}", err));
+            .unwrap_or_else(|err| logging::critical!("Internal error during compilation: {}.\nCommand path: {:?}\nGlobals path: {:?}\nLibs folder: {:?}", err, &self.exec, &self.global, &self.lib));
 
         CompileOutput {
             status: output.status,
