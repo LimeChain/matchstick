@@ -5,7 +5,6 @@ use wasmtime::Func;
 
 use crate::{instance::MatchstickInstance, logging};
 
-#[derive(Debug)]
 pub struct Test {
     pub name: String,
     should_fail: bool,
@@ -14,13 +13,13 @@ pub struct Test {
     after_hooks: Vec<Func>,
 }
 
-#[derive(Debug)]
 pub struct TestResult {
     pub passed: bool,
     pub logs: String,
 }
 
-#[derive(Debug)]
+// TestGroup replaces the TestSuite struct. A TestGroup represents a group of testables that
+// can be either Test or other TestGroups.
 pub struct TestGroup {
     pub name: String,
     pub before_all: Vec<Func>,
@@ -28,7 +27,8 @@ pub struct TestGroup {
     pub testables: Vec<Testable>,
 }
 
-#[derive(Debug)]
+// A Testable could be a single Test struct, e.g a test() funcyion , or a TestGroup which in this case
+// represents a describe() block containing other describe() blocks or a group of Test structs
 pub enum Testable {
     Test(Test),
     Group(TestGroup),
@@ -135,12 +135,11 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestGroup {
         });
 
         let functions = matchstick.instance_ctx().meta_tests.clone();
-
-        handle_testables(matchstick, "", functions, &table)
+        build_test_group(matchstick, "", functions, &table)
     }
 }
 
-fn handle_testables<C: graph::blockchain::Blockchain>(
+fn build_test_group<C: graph::blockchain::Blockchain>(
     matchstick: &MatchstickInstance<C>,
     name: &str,
     functions: Vec<(String, bool, u32, String)>,
@@ -187,9 +186,9 @@ fn handle_testables<C: graph::blockchain::Blockchain>(
                 test.clone(),
             ))),
             "describe" => {
-                let nested_functions = get_nested_function(matchstick, t_idx);
+                let nested_functions = register_describe(matchstick, t_idx);
                 let nested_test_group =
-                    handle_testables(matchstick, &t_name, nested_functions, table);
+                    build_test_group(matchstick, &t_name, nested_functions, table);
                 test_group
                     .testables
                     .push(Testable::Group(nested_test_group))
@@ -219,7 +218,13 @@ fn update_test_hooks(test_group: &mut TestGroup, before_each: Vec<Func>, after_e
     }
 }
 
-fn get_nested_function<C: graph::blockchain::Blockchain>(
+// In order for matchstick to know which functions belong to a specific describe block
+// we need to call the annonymous function itself. What we do here is to create a clone
+// of the current MatchstickInstance, then we fetch the describe function by its id from the
+// table and call it. This will add all the function from that describe into the
+// MatchstickInstance's meta_tests field. Then we can get the difference between
+// before and after the executions, this way we know which function belong to this specific describe.
+fn register_describe<C: graph::blockchain::Blockchain>(
     matchstick: &MatchstickInstance<C>,
     func_idx: u32,
 ) -> Vec<(String, bool, u32, String)> {

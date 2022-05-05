@@ -872,11 +872,15 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         )?;
         let reverts = bool::from(EnumPayload(reverts_ptr.to_payload()));
 
+        // Extracts the arguments part from the function signature
+        // e.g "fnName(int32, string, address)" -> "int32, string, address"
+        // and then calls `collect_types` to split the result into a Vec
         let tmp_str = fn_signature.replace(&(fn_name.clone() + "("), "");
         let components: Vec<&str> = tmp_str.split("):").collect();
         let tmp_args_str = components[0];
         let arg_types: Vec<String> = collect_types(tmp_args_str);
 
+        // Checks if the count of the passed arguments matches the count of expected arguments
         if arg_types.len() != fn_args.len() {
             logging::critical!(
                 "{} expected {} arguments, but received {}",
@@ -886,6 +890,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             )
         }
 
+        // Validates that every passed argument matches the type of the expected argument
+        // from the function signature. Panics if there is a mismatch and informs the user
+        // of the position and the expected and recieved type
         for (index, (arg_type, fn_arg)) in arg_types.iter().zip(fn_args.iter()).enumerate() {
             let param_type = get_kind(arg_type.to_owned());
 
@@ -1235,6 +1242,9 @@ pub fn asc_string_from_str(initial_string: &str) -> AscString {
     AscString::new(&u16_vector, version).expect("Couldn't create AscString.")
 }
 
+/// Collects the arguments types from the function signature and returns a Vec
+/// Because the arguments could be tuples, it's not possible jus to split on every comma
+/// so we count the open parentheses and only split when there are none currently open.
 fn collect_types(arg_str: &str) -> Vec<String> {
     let mut arg_types: Vec<String> = vec![];
 
@@ -1265,6 +1275,7 @@ fn collect_types(arg_str: &str) -> Vec<String> {
     arg_types
 }
 
+/// Converts string argument types from the function signature into ethabi::ParamType.
 fn get_kind(kind: String) -> ParamType {
     let kind_str = kind.trim();
     let int_r = Regex::new(r#"^int\d+$"#).expect("Invalid uint/int regex");
@@ -1312,6 +1323,11 @@ fn get_kind(kind: String) -> ParamType {
     }
 }
 
+/// Converst ethabi::Token into graph::data::store::Value
+/// This is needed because ethabi::Token stores Int values as a Uint256
+/// and negative numbers are stored as overflowed Uint256
+/// e.g -2147483648 is stored as
+/// 115792089237316195423570985008687907853269984665640564039457584007910982156288
 fn get_token_value(token: Token) -> Value {
     match token {
         Token::Address(address) => Value::Bytes(Bytes::from(address)),
