@@ -393,7 +393,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 if self.store.contains_key(&linking_field.2) 
                     && data.contains_key(&linking_field.1) 
                 {
-                    let original_entity_type = linking_field.2.to_string();
+                    let original_entity_type = linking_field.2.clone();
                     let derived_field_value = data
                         .get(&linking_field.1)
                         .unwrap_or_else(|| {
@@ -517,11 +517,11 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                                 )
                             })
                             .clone();
-                        for linking_field in linking_fields.iter() {
-                            let relation_id = data.get(&linking_field.1).unwrap();
+                        for linking_field in &linking_fields {
                             if self.store.contains_key(&linking_field.2) {
-                                let original_entity_type = linking_field.2.to_string();
+                                let original_entity_type = linking_field.2.clone();
                                 let inner_store = self.store.get(&String::from(&original_entity_type)).unwrap().clone();
+                                let relation_id = data.get(&linking_field.1).unwrap();
                                 if relation_id.is_string()
                                     && inner_store.contains_key(relation_id.as_str().unwrap())
                                 {
@@ -543,7 +543,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                                                     relation_id,
                                                     field,
                                                     id.clone(),
-                                                    original_entity_type.to_string(),
+                                                    original_entity_type.clone(),
                                                     entity_deleted,
                                                 );
                                             }
@@ -556,10 +556,10 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                         // Removes the entity with no relations from every list it may be in
                         if entity_deleted {
                             for linking_field in &linking_fields {
-                                let relation_id = data.get(&linking_field.1).unwrap();
                                 if self.store.contains_key(&linking_field.2) {
-                                    let original_entity_type = linking_field.2.to_string();
+                                    let original_entity_type = linking_field.2.clone();
                                     let inner_store = self.store.get(&String::from(&original_entity_type)).unwrap().clone();
+                                    let relation_id = data.get(&linking_field.1).unwrap();
                                     if relation_id.is_string() {
                                         for original_entity_id_and_data in &inner_store {
                                             let innermost_store = inner_store
@@ -728,7 +728,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
         for linking_field in linking_fields {
             if self.store.contains_key(&linking_field.2) {
-                let original_entity_type = linking_field.2.to_string();
+                let original_entity_type = linking_field.2.clone();
                 let mut original_entity = store.get(&original_entity_type).unwrap().clone();
                 if deleted_entity_data.contains_key(&linking_field.1) {
                     let relation_id = deleted_entity_data.get(&linking_field.1).unwrap();
