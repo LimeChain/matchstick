@@ -390,15 +390,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 })
                 .clone();
             for linking_field in linking_fields {
-                let mut derived_entity_type:Option<String> = None;
-                let rel_vec = self.derived.get(&entity_type).unwrap().clone();
-                let rel_iter = rel_vec.iter();
-                for val in rel_iter {
-                    if val.0 == linking_field.0 && val.1 == linking_field.1 {
-                        derived_entity_type = Some(String::from(&val.2));
-                    }
-                }
-                if let Some(original_entity_type) = &derived_entity_type {
+                if self.store.contains_key(&linking_field.2) {
+                    let original_entity_type = linking_field.2.to_string();
                     if data.contains_key(&linking_field.1) {
                         let derived_field_value = data
                             .get(&linking_field.1)
@@ -524,19 +517,11 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                                 )
                             })
                             .clone();
-                        for linking_field in &linking_fields {
-                            let mut derived_entity_type:Option<String> = None;
-                            let mut inner_store = self.store.get(&entity_type).unwrap().clone();
+                        for linking_field in linking_fields.iter() {
                             let relation_id = data.get(&linking_field.1).unwrap();
-                            let rel_vec = self.derived.get(&entity_type).unwrap().clone();
-                            let rel_iter = rel_vec.iter();
-                            for val in rel_iter {
-                                if val.0 == linking_field.0 && val.1 == linking_field.1 && self.store.contains_key(&val.2) {
-                                    inner_store = self.store.get(&val.2).unwrap().clone();
-                                    derived_entity_type = Some(String::from(&val.2))
-                                }
-                            }
-                            if let Some(original_entity_type) = &derived_entity_type {
+                            if self.store.contains_key(&linking_field.2) {
+                                let original_entity_type = linking_field.2.to_string();
+                                let inner_store = self.store.get(&String::from(&original_entity_type)).unwrap().clone();
                                 if relation_id.is_string()
                                     && inner_store.contains_key(relation_id.as_str().unwrap())
                                 {
@@ -558,7 +543,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                                                     relation_id,
                                                     field,
                                                     id.clone(),
-                                                    original_entity_type.clone(),
+                                                    original_entity_type.to_string(),
                                                     entity_deleted,
                                                 );
                                             }
@@ -571,18 +556,10 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                         // Removes the entity with no relations from every list it may be in
                         if entity_deleted {
                             for linking_field in &linking_fields {
-                                let mut derived_entity_type:Option<String> = None;
-                                let mut inner_store = self.store.get(&entity_type).unwrap().clone();
                                 let relation_id = data.get(&linking_field.1).unwrap();
-                                let rel_vec = self.derived.get(&entity_type.clone()).unwrap().clone();
-                                let rel_iter = rel_vec.iter();
-                                for val in rel_iter {
-                                    if val.0 == linking_field.0 && val.1 == linking_field.1 && self.store.contains_key(&val.2) {
-                                        derived_entity_type = Some(String::from(&val.2));
-                                        inner_store = self.store.get(&val.2).unwrap().clone();
-                                    }
-                                }
-                                if let Some(original_entity_type) = &derived_entity_type {
+                                if self.store.contains_key(&linking_field.2) {
+                                    let original_entity_type = linking_field.2.to_string();
+                                    let inner_store = self.store.get(&String::from(&original_entity_type)).unwrap().clone();
                                     if relation_id.is_string() {
                                         for original_entity_id_and_data in &inner_store {
                                             let innermost_store = inner_store
@@ -750,16 +727,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             .clone();
 
         for linking_field in linking_fields {
-            let mut derived_entity_type:Option<String> = None;
-            let rel_vec = self.derived.get(&entity_type.clone()).unwrap().clone();
-            let rel_iter = rel_vec.iter();
-            for val in rel_iter {
-                if val.0 == linking_field.0 && val.1 == linking_field.1 && self.store.contains_key(&val.2) {
-                    derived_entity_type = Some(String::from(&val.2));
-                }
-            }
-            if let Some(original_entity_type) = &derived_entity_type {
-                let mut original_entity = store.get(original_entity_type).unwrap().clone();
+            if self.store.contains_key(&linking_field.2) {
+                let original_entity_type = linking_field.2.to_string();
+                let mut original_entity = store.get(&original_entity_type).unwrap().clone();
                 if deleted_entity_data.contains_key(&linking_field.1) {
                     let relation_id = deleted_entity_data.get(&linking_field.1).unwrap();
                     if relation_id.is_string()
