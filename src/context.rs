@@ -390,8 +390,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 })
                 .clone();
             for linking_field in linking_fields {
-                if self.store.contains_key(&linking_field.2) 
-                    && data.contains_key(&linking_field.1) 
+                if self.store.contains_key(&linking_field.2) && data.contains_key(&linking_field.1)
                 {
                     let original_entity_type = linking_field.2.clone();
                     let derived_field_value = data
@@ -520,7 +519,11 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                         for linking_field in &linking_fields {
                             if self.store.contains_key(&linking_field.2) {
                                 let original_entity_type = linking_field.2.clone();
-                                let inner_store = self.store.get(&String::from(&original_entity_type)).unwrap().clone();
+                                let inner_store = self
+                                    .store
+                                    .get(&String::from(&original_entity_type))
+                                    .unwrap()
+                                    .clone();
                                 let relation_id = data.get(&linking_field.1).unwrap();
                                 if relation_id.is_string()
                                     && inner_store.contains_key(relation_id.as_str().unwrap())
@@ -558,7 +561,11 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                             for linking_field in &linking_fields {
                                 if self.store.contains_key(&linking_field.2) {
                                     let original_entity_type = linking_field.2.clone();
-                                    let inner_store = self.store.get(&String::from(&original_entity_type)).unwrap().clone();
+                                    let inner_store = self
+                                        .store
+                                        .get(&String::from(&original_entity_type))
+                                        .unwrap()
+                                        .clone();
                                     let relation_id = data.get(&linking_field.1).unwrap();
                                     if relation_id.is_string() {
                                         for original_entity_id_and_data in &inner_store {
@@ -1156,7 +1163,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                         .1
                         .to_string()
                         .replace('\"', "");
-                    
+
                     if self.derived.contains_key(&clean_field_type) {
                         let mut field_names_vec = self
                             .derived
@@ -1169,24 +1176,15 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                             })
                             .clone();
 
-                        let field_names_tuple = (
-                            f.name.clone(),
-                            field,
-                            String::from(entity_type)
-                        );
+                        let field_names_tuple = (f.name.clone(), field, String::from(entity_type));
                         if !field_names_vec.contains(&field_names_tuple) {
                             field_names_vec.push(field_names_tuple);
-                            self.derived
-                                .insert(clean_field_type, field_names_vec);
+                            self.derived.insert(clean_field_type, field_names_vec);
                         }
                     } else {
                         self.derived.insert(
                             clean_field_type,
-                            vec![(
-                                f.name.clone(),
-                                field,
-                                String::from(entity_type)
-                            )],
+                            vec![(f.name.clone(), field, String::from(entity_type))],
                         );
                     }
                 }
