@@ -127,7 +127,15 @@ impl Compiler {
             .arg("--outFile")
             .arg(out_file.clone())
             .output()
-            .unwrap_or_else(|err| logging::critical!("Internal error during compilation: {}.\nCommand path: {:?}\nGlobals path: {:?}\nLibs folder: {:?}", err, &self.exec, &self.global, &self.lib));
+            .unwrap_or_else(|err|
+                logging::critical!(
+                    "Internal error during compilation: {}.\nCommand path: {:?}\nGlobals path: {:?}\nLibs folder: {:?}",
+                     err,
+                     &self.exec,
+                     &self.global,
+                     &self.lib
+                 )
+            );
 
         CompileOutput {
             status: output.status,
