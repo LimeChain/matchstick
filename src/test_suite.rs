@@ -27,8 +27,8 @@ pub struct TestGroup {
     pub testables: Vec<Testable>,
 }
 
-// A Testable could be a single Test struct, e.g a test() funcyion , or a TestGroup which in this case
-// represents a describe() block containing other describe() blocks or a group of Test structs
+// A Testable could be a single Test struct, e.g a test() function, or a TestGroup which in this case
+// represents a describe() block containing other describe() blocks or test() functions.
 pub enum Testable {
     Test(Test),
     Group(TestGroup),
@@ -97,7 +97,6 @@ impl Test {
         };
 
         // Convert the elapsed time to milliseconds
-        // Seems hacky, might need refactoring
         let elapsed_in_ms = now.elapsed().as_secs_f32() * 1000.0;
 
         logging::sub_indent();
@@ -139,6 +138,8 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestGroup {
     }
 }
 
+// A recursive fucntion that builds the the test suite from a single test.ts file.
+// The functions creates a TestGroup and arranges the function based on their role.
 fn build_test_group<C: graph::blockchain::Blockchain>(
     matchstick: &MatchstickInstance<C>,
     name: &str,
@@ -204,6 +205,7 @@ fn build_test_group<C: graph::blockchain::Blockchain>(
     test_group
 }
 
+// A recursive function that assigns before/after_each functions to each Test
 fn update_test_hooks(test_group: &mut TestGroup, before_each: Vec<Func>, after_each: Vec<Func>) {
     for testable in test_group.testables.iter_mut() {
         match testable {
@@ -218,12 +220,11 @@ fn update_test_hooks(test_group: &mut TestGroup, before_each: Vec<Func>, after_e
     }
 }
 
-// In order for matchstick to know which functions belong to a specific describe block
-// we need to call the annonymous function itself. What we do here is to create a clone
-// of the current MatchstickInstance, then we fetch the describe function by its id from the
-// table and call it. This will add all the function from that describe into the
-// MatchstickInstance's meta_tests field. Then we can get the difference between
-// before and after the executions, this way we know which function belong to this specific describe.
+// In order to get all functions inside a describe() block, we need to create a clone
+// of the current MatchstickInstance, then fetch and execute the said describe() function by it's id
+// from the context of the cloned instance. This will trigger the reigstration of all the functions
+// from the describe into the cloned MatchstickInstance's meta_tests field.
+// Then we can get the difference between the orignal meta_test and the cloned one and return it.
 fn register_describe<C: graph::blockchain::Blockchain>(
     matchstick: &MatchstickInstance<C>,
     func_idx: u32,
