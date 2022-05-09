@@ -390,28 +390,21 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 })
                 .clone();
             for linking_field in linking_fields {
-                if self.store.contains_key(&linking_field.2) {
+                if self.store.contains_key(&linking_field.2) 
+                    && data.contains_key(&linking_field.1) 
+                {
                     let original_entity_type = linking_field.2.to_string();
-                    if data.contains_key(&linking_field.1) {
-                        let derived_field_value = data
-                            .get(&linking_field.1)
-                            .unwrap_or_else(|| {
-                                logging::critical!(
-                                    "Couldn't find value for {} in submitted data",
-                                    linking_field.1
-                                )
-                            })
-                            .clone();
-                        if matches!(derived_field_value, Value::List(_)) {
-                            for derived_field_value in derived_field_value.as_list().unwrap().clone() {
-                                self.insert_derived_field_in_store(
-                                    derived_field_value,
-                                    original_entity_type.clone(),
-                                    linking_field.clone(),
-                                    id.clone(),
-                                );
-                            }
-                        } else {
+                    let derived_field_value = data
+                        .get(&linking_field.1)
+                        .unwrap_or_else(|| {
+                            logging::critical!(
+                                "Couldn't find value for {} in submitted data",
+                                linking_field.1
+                            )
+                        })
+                        .clone();
+                    if matches!(derived_field_value, Value::List(_)) {
+                        for derived_field_value in derived_field_value.as_list().unwrap().clone() {
                             self.insert_derived_field_in_store(
                                 derived_field_value,
                                 original_entity_type.clone(),
@@ -419,6 +412,13 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                                 id.clone(),
                             );
                         }
+                    } else {
+                        self.insert_derived_field_in_store(
+                            derived_field_value,
+                            original_entity_type.clone(),
+                            linking_field.clone(),
+                            id.clone(),
+                        );
                     }
                 }
             }
