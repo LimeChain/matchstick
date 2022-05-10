@@ -76,7 +76,7 @@ pub struct MatchstickInstanceContext<C: Blockchain> {
     /// Holding the derived field type and a tuple of the entity it points to
     /// with a vector of all the field names and the corresponding derived field names.
     /// The example below is taken from a schema.graphql file and will fill the map in the following way:
-    /// {"NameSignalTransaction": ("GraphAccount", [("nameSignalTransactions", "signer")])}
+    /// {"NameSignalTransaction": [("nameSignalTransactions", "signer", "GraphAccount")])}
     /// ```
     /// type GraphAccount @entity {
     ///     id: ID!
@@ -596,7 +596,6 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         }
     }
 
-    #[allow(clippy::too_many_arguments)]
     fn handle_different_value_types(
         &mut self,
         data: HashMap<String, Value>,
