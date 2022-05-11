@@ -1,6 +1,6 @@
 [package]
 name = "matchstick"
-version = "0.5.0-rc1"
+version = "0.5.0"
 authors = ["LimeChain <limechain.tech>"]
 edition = "2021"
 

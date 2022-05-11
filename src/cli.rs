@@ -2,7 +2,7 @@ use clap::{App, Arg};
 
 pub fn initialize() -> App<'static, 'static> {
     App::new("Matchstick 🔥")
-        .version("0.5.0-rc1")
+        .version("0.5.0")
         .author("Limechain <https://limechain.tech>")
         .about("Unit testing framework for Subgraph development on The Graph protocol.")
         .arg(
