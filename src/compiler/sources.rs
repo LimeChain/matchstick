@@ -13,37 +13,35 @@ pub fn get_test_sources(matches: &ArgMatches) -> HashMap<String, PathBuf> {
     let mut testable: HashMap<String, PathBuf> = HashMap::new();
 
     crate::TESTS_LOCATION.with(|path| {
-        testable = collect_files(&*path.borrow());
-    });
+        let tests_path = &*path.borrow();
+        testable = collect_files(tests_path);
 
-    if testable.is_empty() {
-        logging::critical!("No tests have been written yet.");
-    }
-
-    if let Some(vals) = matches.values_of("test_suites") {
-        let sources: HashSet<String> = vals
-            .collect::<Vec<&str>>()
-            .iter()
-            .map(|&s| String::from(s).to_ascii_lowercase())
-            .collect();
-
-        let set = RegexSet::new(&sources).unwrap();
-        let filtered: HashMap<String, PathBuf> = testable
-            .into_iter()
-            .filter(|test| set.is_match(&test.0))
-            .collect();
-
-        if filtered.is_empty() {
-            logging::critical!(
-                "The following tests could not be found: {}",
-                sources.into_iter().collect::<Vec<String>>().join(", ")
-            );
+        if testable.is_empty() {
+            logging::critical!("No tests have been written yet.");
         }
 
-        filtered
-    } else {
-        testable
-    }
+        if let Some(vals) = matches.values_of("test_suites") {
+            let patterns: Vec<&str> = vals.collect::<Vec<&str>>();
+            let formatted: HashSet<String> = patterns
+                .iter()
+                .map(|&s| {
+                    format!("^{}/{}[.|/]", tests_path.to_str().unwrap(), s).to_ascii_lowercase()
+                })
+                .collect();
+
+            let patterns_set = RegexSet::new(&formatted).unwrap();
+            testable = testable
+                .clone()
+                .into_iter()
+                .filter(|test| patterns_set.is_match(test.1.to_str().unwrap()))
+                .collect();
+
+            if testable.is_empty() {
+                logging::critical!("No tests match set patterns: {}", patterns.join(","));
+            }
+        }
+    });
+    testable
 }
 
 /// Collects all tests sources from the current TESTS_LOCATION
