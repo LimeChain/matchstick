@@ -607,10 +607,11 @@ mod unit_tests {
         context.store.insert("GraphAccount".to_owned(), inner_map);
         context.derived.insert(
             "NameSignalTransaction".to_owned(),
-            (
+            vec![(
+                "nameSignalTransactions".to_owned(),
+                "signer".to_owned(),
                 "GraphAccount".to_owned(),
-                vec![("nameSignalTransactions".to_owned(), "signer".to_owned())],
-            ),
+            )],
         );
 
         let payload = AscEnum::<StoreValueKind> {
