@@ -519,7 +519,14 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                         for linking_field in &linking_fields {
                             if self.store.contains_key(&linking_field.2) {
                                 let inner_store = self.store.get(&linking_field.2).unwrap().clone();
-                                let relation_id = data.get(&linking_field.1).unwrap();
+                                let relation_id = data.get(&linking_field.1).unwrap_or_else(|| {
+                                    logging::critical!(
+                                        "Required field {:?} for entity {:?} with id {:?} is not set!",
+                                        &linking_field.1,
+                                        entity_type,
+                                        id
+                                    )
+                                });
                                 if relation_id.is_string()
                                     && inner_store.contains_key(relation_id.as_str().unwrap())
                                 {
@@ -556,7 +563,12 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                                 if self.store.contains_key(&linking_field.2) {
                                     let inner_store =
                                         self.store.get(&linking_field.2).unwrap().clone();
-                                    let relation_id = data.get(&linking_field.1).unwrap();
+                                    let relation_id = data.get(&linking_field.1).unwrap_or_else(|| {
+                                        logging::critical!(
+                                            "Required field {:?} for entity {:?} with id {:?} is not set!",
+                                            &linking_field.1,
+                                            entity_type, id)
+                                        });
                                     if relation_id.is_string() {
                                         for original_entity_id_and_data in &inner_store {
                                             let innermost_store = inner_store
