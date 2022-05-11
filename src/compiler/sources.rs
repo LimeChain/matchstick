@@ -1,5 +1,5 @@
 use clap::ArgMatches;
-use regex::Regex;
+use regex::{Regex, RegexSet};
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -27,22 +27,20 @@ pub fn get_test_sources(matches: &ArgMatches) -> HashMap<String, PathBuf> {
             .map(|&s| String::from(s).to_ascii_lowercase())
             .collect();
 
-        let unrecog_sources: Vec<String> = sources
-            .difference(&testable.keys().cloned().collect())
-            .map(String::from)
+        let set = RegexSet::new(&sources).unwrap();
+        let filtered: HashMap<String, PathBuf> = testable
+            .into_iter()
+            .filter(|test| set.is_match(&test.0))
             .collect();
 
-        if !unrecog_sources.is_empty() {
+        if filtered.is_empty() {
             logging::critical!(
                 "The following tests could not be found: {}",
-                unrecog_sources.join(", ")
+                sources.into_iter().collect::<Vec<String>>().join(", ")
             );
         }
 
-        testable
-            .into_iter()
-            .filter(|(name, _)| sources.contains(name))
-            .collect()
+        filtered
     } else {
         testable
     }
