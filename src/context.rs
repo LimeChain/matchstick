@@ -76,7 +76,7 @@ pub struct MatchstickInstanceContext<C: Blockchain> {
     /// Holding the derived field type and a tuple of the entity it points to
     /// with a vector of all the field names and the corresponding derived field names.
     /// The example below is taken from a schema.graphql file and will fill the map in the following way:
-    /// {"NameSignalTransaction": ("GraphAccount", [("nameSignalTransactions", "signer")])}
+    /// {"NameSignalTransaction": [("nameSignalTransactions", "signer", "GraphAccount")])}
     /// ```
     /// type GraphAccount @entity {
     ///     id: ID!
@@ -87,7 +87,7 @@ pub struct MatchstickInstanceContext<C: Blockchain> {
     ///     signer: GraphAccount!
     /// }
     /// ```
-    pub(crate) derived: HashMap<String, (String, Vec<(String, String)>)>,
+    pub(crate) derived: HashMap<String, Vec<(String, String, String)>>,
     /// Gives guarantee that all derived relations are in order when true
     store_updated: bool,
     /// Holds the mocked return values of `dataSource.address()`, `dataSource.network()` and `dataSource.context()` in that order
@@ -388,11 +388,11 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 .unwrap_or_else(|| {
                     logging::critical!("Couldn't find value for key {} in derived map", entity_type)
                 })
-                .1
                 .clone();
-            let original_entity_type = self.derived.get(&entity_type).unwrap().0.clone();
             for linking_field in linking_fields {
-                if data.contains_key(&linking_field.1) {
+                if data.contains_key(&linking_field.1) && self.store.contains_key(&linking_field.2)
+                {
+                    let original_entity_type = linking_field.2.clone();
                     let derived_field_value = data
                         .get(&linking_field.1)
                         .unwrap_or_else(|| {
@@ -441,7 +441,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         &mut self,
         derived_field_value: Value,
         original_entity: String,
-        linking_field: (String, String),
+        linking_field: (String, String, String),
         id: String,
     ) {
         if derived_field_value.is_string() {
@@ -505,6 +505,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                     let id = inner_entity.0;
                     let data = inner_entity.1;
                     if self.derived.contains_key(&entity_type) {
+                        let mut entity_deleted = true;
                         let linking_fields = self
                             .derived
                             .get(&entity_type)
@@ -514,15 +515,10 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                                     entity_type
                                 )
                             })
-                            .1
                             .clone();
-                        let original_entity_type =
-                            self.derived.get(&entity_type).unwrap().0.clone();
-                        if self.store.contains_key(&original_entity_type) {
-                            let inner_store =
-                                self.store.get(&original_entity_type).unwrap().clone();
-                            let mut entity_deleted = true;
-                            for linking_field in &linking_fields {
+                        for linking_field in &linking_fields {
+                            if self.store.contains_key(&linking_field.2) {
+                                let inner_store = self.store.get(&linking_field.2).unwrap().clone();
                                 let relation_id = data.get(&linking_field.1).unwrap();
                                 if relation_id.is_string()
                                     && inner_store.contains_key(relation_id.as_str().unwrap())
@@ -545,7 +541,6 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                                                     relation_id,
                                                     field,
                                                     id.clone(),
-                                                    original_entity_type.clone(),
                                                     entity_deleted,
                                                 );
                                             }
@@ -553,10 +548,14 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                                     }
                                 }
                             }
+                        }
 
-                            // Removes the entity with no relations from every list it may be in
-                            if entity_deleted {
-                                for linking_field in &linking_fields {
+                        // Removes the entity with no relations from every list it may be in
+                        if entity_deleted {
+                            for linking_field in &linking_fields {
+                                if self.store.contains_key(&linking_field.2) {
+                                    let inner_store =
+                                        self.store.get(&linking_field.2).unwrap().clone();
                                     let relation_id = data.get(&linking_field.1).unwrap();
                                     if relation_id.is_string() {
                                         for original_entity_id_and_data in &inner_store {
@@ -580,7 +579,6 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                                                             relation_id,
                                                             field,
                                                             id.clone(),
-                                                            original_entity_type.clone(),
                                                             entity_deleted,
                                                         );
                                                     }
@@ -598,15 +596,13 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         }
     }
 
-    #[allow(clippy::too_many_arguments)]
     fn handle_different_value_types(
         &mut self,
         data: HashMap<String, Value>,
-        linking_field: &(String, String),
+        linking_field: &(String, String, String),
         relation_id: &Value,
         field: (&String, &Value),
         id: String,
-        original_entity_type: String,
         entity_deleted: bool,
     ) {
         if data.get(&linking_field.1).unwrap().is_string() {
@@ -615,7 +611,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 relation_id.as_str().unwrap(),
                 field,
                 Value::String(id),
-                original_entity_type,
+                linking_field.2.clone(),
                 entity_deleted,
             );
         } else if matches!(data.get(&linking_field.1).unwrap(), Value::List(_)) {
@@ -631,7 +627,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                     relation_id.as_str().unwrap(),
                     field,
                     Value::String(id.clone()),
-                    original_entity_type.clone(),
+                    linking_field.2.clone(),
                     entity_deleted,
                 );
             }
@@ -722,13 +718,12 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             .unwrap_or_else(|| {
                 logging::critical!("Couldn't find value for key {} in derived map", entity_type)
             })
-            .1
             .clone();
 
-        let original_entity_type = self.derived.get(&entity_type).unwrap().0.clone();
-        if self.store.contains_key(&original_entity_type) {
-            let mut original_entity = store.get(&original_entity_type).unwrap().clone();
-            for linking_field in linking_fields {
+        for linking_field in linking_fields {
+            if self.store.contains_key(&linking_field.2) {
+                let original_entity_type = linking_field.2.clone();
+                let mut original_entity = store.get(&original_entity_type).unwrap().clone();
                 if deleted_entity_data.contains_key(&linking_field.1) {
                     let relation_id = deleted_entity_data.get(&linking_field.1).unwrap();
                     if relation_id.is_string()
@@ -1134,6 +1129,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     fn derive_schema(&mut self) {
         SCHEMA.definitions.iter().for_each(|def| {
             if let schema::Definition::TypeDefinition(schema::TypeDefinition::Object(o)) = def {
+                let entity_type = &o.name;
                 let derived_fields = o.fields.iter().filter(|&f| {
                     matches!(f.field_type, schema::Type::NonNullType(..)) && f.is_derived()
                 });
@@ -1147,6 +1143,14 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                         .replace(']', "");
                     let mut directive = f.find_directive("derivedFrom").unwrap().clone();
 
+                    let field = directive
+                        .arguments
+                        .pop()
+                        .unwrap()
+                        .1
+                        .to_string()
+                        .replace('\"', "");
+
                     if self.derived.contains_key(&clean_field_type) {
                         let mut field_names_vec = self
                             .derived
@@ -1157,40 +1161,17 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                                     clean_field_type
                                 )
                             })
-                            .1
                             .clone();
 
-                        let field_names_tuple = (
-                            f.name.clone(),
-                            directive
-                                .arguments
-                                .pop()
-                                .unwrap()
-                                .1
-                                .to_string()
-                                .replace('\"', ""),
-                        );
+                        let field_names_tuple = (f.name.clone(), field, String::from(entity_type));
                         if !field_names_vec.contains(&field_names_tuple) {
                             field_names_vec.push(field_names_tuple);
-                            self.derived
-                                .insert(clean_field_type, (o.name.clone(), field_names_vec));
+                            self.derived.insert(clean_field_type, field_names_vec);
                         }
                     } else {
                         self.derived.insert(
                             clean_field_type,
-                            (
-                                o.name.clone(),
-                                vec![(
-                                    f.name.clone(),
-                                    directive
-                                        .arguments
-                                        .pop()
-                                        .unwrap()
-                                        .1
-                                        .to_string()
-                                        .replace('\"', ""),
-                                )],
-                            ),
+                            vec![(f.name.clone(), field, String::from(entity_type))],
                         );
                     }
                 }
