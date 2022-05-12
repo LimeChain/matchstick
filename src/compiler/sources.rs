@@ -24,8 +24,10 @@ pub fn get_test_sources(matches: &ArgMatches) -> HashMap<String, PathBuf> {
             let patterns: Vec<&str> = vals.collect::<Vec<&str>>();
             let formatted: HashSet<String> = patterns
                 .iter()
-                .map(|&s| {
-                    format!("^{}/{}[.|/]", tests_path.to_str().unwrap(), s).to_ascii_lowercase()
+                .map(|pattern| {
+                    let full_path = tests_path.join(&pattern);
+                    println!("{:?}", full_path);
+                    format!("^{}", full_path.to_str().unwrap()).to_ascii_lowercase()
                 })
                 .collect();
 
@@ -33,7 +35,9 @@ pub fn get_test_sources(matches: &ArgMatches) -> HashMap<String, PathBuf> {
             testable = testable
                 .clone()
                 .into_iter()
-                .filter(|test| patterns_set.is_match(test.1.to_str().unwrap()))
+                .filter(|test| {
+                    patterns_set.is_match(&test.1.to_str().unwrap().to_ascii_lowercase())
+                })
                 .collect();
 
             if testable.is_empty() {
