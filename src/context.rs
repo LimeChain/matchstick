@@ -859,9 +859,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let fn_signature_splitted: Vec<&str> = fn_signature.split('(').collect();
         if fn_name != fn_signature_splitted[0] {
             logging::critical!(
-                "function name {} and signature {} are not the same",
+                "Function name `{}` should match the name in the function signature `{}`",
                 fn_name,
-                fn_signature_splitted[0]
+                fn_signature
             )
         }
 
