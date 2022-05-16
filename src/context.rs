@@ -568,8 +568,12 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                                                     if &linking_field.0 == field.0
                                                         && matches!(field.1, Value::List(_))
                                                     {
-                                                        let value_list =
-                                                            field.1.clone().as_list().unwrap().clone();
+                                                        let value_list = field
+                                                            .1
+                                                            .clone()
+                                                            .as_list()
+                                                            .unwrap()
+                                                            .clone();
                                                         if value_list
                                                             .contains(&Value::String(id.clone()))
                                                             && data.contains_key(&linking_field.1)
