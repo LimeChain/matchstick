@@ -856,6 +856,15 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let tmp_args_str = components[0];
         let arg_types: Vec<String> = collect_types(tmp_args_str);
 
+        let fn_signature_splitted: Vec<&str> = fn_signature.split('(').collect();
+        if fn_name != fn_signature_splitted[0] {
+            logging::critical!(
+                "function name {} and signature {} are not the same",
+                fn_name,
+                fn_signature_splitted[0]
+            )
+        }
+
         if arg_types.len() != fn_args.len() {
             logging::critical!(
                 "{} expected {} arguments, but received {}",
