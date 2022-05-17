@@ -859,7 +859,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let fn_signature_splitted: Vec<&str> = fn_signature.split('(').collect();
         if fn_name != fn_signature_splitted[0] {
             logging::critical!(
-                "Function name `{}` should match the name in the function signature `{}`",
+                "createMockedFunction: function name `{}` should match the name in the function signature `{}`",
                 fn_name,
                 fn_signature
             )
