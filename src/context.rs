@@ -519,37 +519,31 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                         for linking_field in &linking_fields {
                             if self.store.contains_key(&linking_field.2) {
                                 let inner_store = self.store.get(&linking_field.2).unwrap().clone();
-                                let relation_id = data.get(&linking_field.1).unwrap_or_else(|| {
-                                    logging::critical!(
-                                        "Required field {:?} for entity {:?} with id {:?} is not set!",
-                                        &linking_field.1,
-                                        entity_type,
-                                        id
-                                    )
-                                });
-                                if relation_id.is_string()
-                                    && inner_store.contains_key(relation_id.as_str().unwrap())
-                                {
-                                    entity_deleted = false;
-                                    let original_entity_data =
-                                        inner_store.get(relation_id.as_str().unwrap()).unwrap();
-                                    for field in original_entity_data {
-                                        if &linking_field.0 == field.0
-                                            && matches!(field.1, Value::List(_))
-                                        {
-                                            let value_list =
-                                                field.1.clone().as_list().unwrap().clone();
-                                            if !value_list.contains(&Value::String(id.clone()))
-                                                && data.contains_key(&linking_field.1)
+                                if let Some(relation_id) = data.get(&linking_field.1) {
+                                    if relation_id.is_string()
+                                        && inner_store.contains_key(relation_id.as_str().unwrap())
+                                    {
+                                        entity_deleted = false;
+                                        let original_entity_data =
+                                            inner_store.get(relation_id.as_str().unwrap()).unwrap();
+                                        for field in original_entity_data {
+                                            if &linking_field.0 == field.0
+                                                && matches!(field.1, Value::List(_))
                                             {
-                                                self.handle_different_value_types(
-                                                    data.clone(),
-                                                    linking_field,
-                                                    relation_id,
-                                                    field,
-                                                    id.clone(),
-                                                    entity_deleted,
-                                                );
+                                                let value_list =
+                                                    field.1.clone().as_list().unwrap().clone();
+                                                if !value_list.contains(&Value::String(id.clone()))
+                                                    && data.contains_key(&linking_field.1)
+                                                {
+                                                    self.handle_different_value_types(
+                                                        data.clone(),
+                                                        linking_field,
+                                                        relation_id,
+                                                        field,
+                                                        id.clone(),
+                                                        entity_deleted,
+                                                    );
+                                                }
                                             }
                                         }
                                     }
@@ -563,36 +557,36 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                                 if self.store.contains_key(&linking_field.2) {
                                     let inner_store =
                                         self.store.get(&linking_field.2).unwrap().clone();
-                                    let relation_id = data.get(&linking_field.1).unwrap_or_else(|| {
-                                        logging::critical!(
-                                            "Required field {:?} for entity {:?} with id {:?} is not set!",
-                                            &linking_field.1,
-                                            entity_type, id)
-                                        });
-                                    if relation_id.is_string() {
-                                        for original_entity_id_and_data in &inner_store {
-                                            let innermost_store = inner_store
-                                                .get(original_entity_id_and_data.0)
-                                                .unwrap()
-                                                .clone();
-                                            for field in &innermost_store {
-                                                if &linking_field.0 == field.0
-                                                    && matches!(field.1, Value::List(_))
-                                                {
-                                                    let value_list =
-                                                        field.1.clone().as_list().unwrap().clone();
-                                                    if value_list
-                                                        .contains(&Value::String(id.clone()))
-                                                        && data.contains_key(&linking_field.1)
+                                    if let Some(relation_id) = data.get(&linking_field.1) {
+                                        if relation_id.is_string() {
+                                            for original_entity_id_and_data in &inner_store {
+                                                let innermost_store = inner_store
+                                                    .get(original_entity_id_and_data.0)
+                                                    .unwrap()
+                                                    .clone();
+                                                for field in &innermost_store {
+                                                    if &linking_field.0 == field.0
+                                                        && matches!(field.1, Value::List(_))
                                                     {
-                                                        self.handle_different_value_types(
-                                                            data.clone(),
-                                                            linking_field,
-                                                            relation_id,
-                                                            field,
-                                                            id.clone(),
-                                                            entity_deleted,
-                                                        );
+                                                        let value_list = field
+                                                            .1
+                                                            .clone()
+                                                            .as_list()
+                                                            .unwrap()
+                                                            .clone();
+                                                        if value_list
+                                                            .contains(&Value::String(id.clone()))
+                                                            && data.contains_key(&linking_field.1)
+                                                        {
+                                                            self.handle_different_value_types(
+                                                                data.clone(),
+                                                                linking_field,
+                                                                relation_id,
+                                                                field,
+                                                                id.clone(),
+                                                                entity_deleted,
+                                                            );
+                                                        }
                                                     }
                                                 }
                                             }
