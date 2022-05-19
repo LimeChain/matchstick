@@ -123,7 +123,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         contract_address: &str,
         fn_name: &str,
         fn_signature: &str,
-        fn_args: Vec<Token>,
+        fn_args: &Vec<Token>,
     ) -> String {
         let mut unique_fn_string = String::from(contract_address) + fn_name + fn_signature;
         for element in fn_args.iter() {
@@ -784,13 +784,18 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             &GasCounter::new(),
         )?;
 
+        let contract_address = call.contract_address.to_string();
+        let fn_name = call.function_name.to_string();
+        let fn_signature = call
+            .function_signature
+            .unwrap_or_else(|| logging::critical!("Could not get function signature."));
+        let fn_args = call.function_args;
+
         let fn_id = MatchstickInstanceContext::<C>::fn_id(
-            &call.contract_address.to_string(),
-            &call.function_name,
-            &call
-                .function_signature
-                .unwrap_or_else(|| logging::critical!("Could not get function signature.")),
-            call.function_args,
+            &contract_address,
+            &fn_name,
+            &fn_signature,
+            &fn_args
         );
 
         let return_val;
@@ -811,8 +816,11 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             Ok(return_val)
         } else {
             logging::critical!(
-                "Key: '{}' not found in map. Please mock the function before calling it.",
-                &fn_id,
+                "Could not find a mocked function for function with address: {}, name: {}, signature {}, params: {:?}.",
+                &contract_address,
+                &fn_name,
+                &fn_signature,
+                &fn_args
             );
         }
     }
@@ -883,7 +891,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             &contract_address.to_string(),
             &fn_name,
             &fn_signature,
-            fn_args,
+            &fn_args
         );
 
         if reverts {
