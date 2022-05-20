@@ -123,7 +123,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         contract_address: &str,
         fn_name: &str,
         fn_signature: &str,
-        fn_args: &Vec<Token>,
+        fn_args: &[Token],
     ) -> String {
         let mut unique_fn_string = String::from(contract_address) + fn_name + fn_signature;
         for element in fn_args.iter() {
@@ -795,7 +795,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             &contract_address,
             &fn_name,
             &fn_signature,
-            &fn_args
+            &fn_args,
         );
 
         let return_val;
@@ -891,7 +891,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             &contract_address.to_string(),
             &fn_name,
             &fn_signature,
-            &fn_args
+            &fn_args,
         );
 
         if reverts {
