@@ -881,6 +881,15 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let tmp_args_str = components[0];
         let arg_types: Vec<String> = collect_types(tmp_args_str);
 
+        let fn_signature_split: Vec<&str> = fn_signature.split('(').collect();
+        if fn_name != fn_signature_split[0] {
+            logging::critical!(
+                "createMockedFunction: function name `{}` should match the name in the function signature `{}`",
+                fn_name,
+                fn_signature
+            )
+        }
+
         // Checks if the count of the passed arguments matches the count of expected arguments
         if arg_types.len() != fn_args.len() {
             logging::critical!(
