@@ -26,7 +26,6 @@ pub fn get_test_sources(matches: &ArgMatches) -> HashMap<String, PathBuf> {
                 .iter()
                 .map(|pattern| {
                     let full_path = tests_path.join(&pattern);
-                    println!("{:?}", full_path);
                     format!("^{}", full_path.to_str().unwrap()).to_ascii_lowercase()
                 })
                 .collect();
