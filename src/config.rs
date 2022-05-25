@@ -5,6 +5,7 @@ use crate::parser;
 pub struct MatchstickConfig {
     pub libs_path: String,
     pub tests_path: String,
+    pub manifest_path: String,
 }
 
 impl MatchstickConfig {
@@ -13,6 +14,7 @@ impl MatchstickConfig {
         MatchstickConfig {
             libs_path: "./node_modules".to_owned(),
             tests_path: "./tests".to_owned(),
+            manifest_path: "./subgraph.yaml".to_owned(),
         }
     }
 
@@ -29,6 +31,8 @@ impl MatchstickConfig {
                 parser::extract_string_or(&matchstick_yaml, "testsFolder", config.tests_path);
             config.libs_path =
                 parser::extract_string_or(&matchstick_yaml, "libsFolder", config.libs_path);
+            config.manifest_path =
+                parser::extract_string_or(&matchstick_yaml, "manifestPath", config.manifest_path);
         }
 
         config
@@ -45,6 +49,7 @@ mod config_tests {
 
         assert_eq!(config.libs_path, "./node_modules".to_owned());
         assert_eq!(config.tests_path, "./tests".to_owned());
+        assert_eq!(config.manifest_path, "./subgraph.yaml".to_owned());
     }
 
     #[test]
