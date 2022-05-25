@@ -82,8 +82,6 @@ pub fn generate_coverage_report() {
             global_handlers_count
         );
     });
-
-    
 }
 
 fn is_called(wat_content: &str, handler: &str) -> bool {
