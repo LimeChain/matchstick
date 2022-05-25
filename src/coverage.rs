@@ -8,18 +8,16 @@ use crate::logging;
 use crate::parser;
 
 pub fn generate_coverage_report() {
-    logging::log_with_style!(cyan, "\nRunning in coverage report mode.\n️");
-
-    logging::log_with_style!(cyan, "Reading generated test modules... 🔎️\n");
-
-    let wat_files = generate_wat_files();
-
-    logging::log_with_style!(cyan, "Generating coverage report 📝\n");
-
-    let mut global_handlers_count: i32 = 0;
-    let mut global_handlers_called: i32 = 0;
-
     crate::MANIFEST_LOCATION.with(|path| {
+        logging::log_with_style!(cyan, "\nRunning in coverage report mode.\n️");
+
+        let wat_files = generate_wat_files();
+
+        logging::log_with_style!(cyan, "Generating coverage report 📝\n");
+
+        let mut global_handlers_count: i32 = 0;
+        let mut global_handlers_called: i32 = 0;
+
         let source_handlers =
             parser::collect_handlers(path.borrow().to_str().expect("Cannot convert to string."));
 
@@ -70,20 +68,22 @@ pub fn generate_coverage_report() {
             global_handlers_count += all_handlers;
             global_handlers_called += called;
         }
+
+        let mut percentage: f32 = 0.0;
+
+        if global_handlers_count > 0 {
+            percentage = (global_handlers_called as f32 * 100.0) / global_handlers_count as f32;
+        }
+
+        logging::default!(
+            "Global test coverage: {:.1}% ({}/{} handlers).\n",
+            percentage,
+            global_handlers_called,
+            global_handlers_count
+        );
     });
 
-    let mut percentage: f32 = 0.0;
-
-    if global_handlers_count > 0 {
-        percentage = (global_handlers_called as f32 * 100.0) / global_handlers_count as f32;
-    }
-
-    logging::default!(
-        "Global test coverage: {:.1}% ({}/{} handlers).\n",
-        percentage,
-        global_handlers_called,
-        global_handlers_count
-    );
+    
 }
 
 fn is_called(wat_content: &str, handler: &str) -> bool {
