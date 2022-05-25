@@ -29,6 +29,7 @@ mod unit_tests;
 mod writable_store;
 
 thread_local! {
+    pub(crate) static MANIFEST_LOCATION: RefCell<PathBuf> = RefCell::new(PathBuf::new());
     pub(crate) static SCHEMA_LOCATION: RefCell<PathBuf> = RefCell::new(PathBuf::new());
     pub(crate) static TESTS_LOCATION: RefCell<PathBuf> = RefCell::new(PathBuf::new());
     pub(crate) static LIBS_LOCATION: RefCell<PathBuf> = RefCell::new(PathBuf::new());
@@ -40,9 +41,10 @@ fn main() {
 
     print_logo();
 
-    let schema_location = parser::get_schema_location("subgraph.yaml");
     let config = MatchstickConfig::from("matchstick.yaml");
+    let schema_location = parser::get_schema_location(&config.manifest_path);
 
+    MANIFEST_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&config.manifest_path));
     SCHEMA_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&schema_location));
     TESTS_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&config.tests_path));
     LIBS_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&config.libs_path));
