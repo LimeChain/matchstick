@@ -10,8 +10,6 @@ use crate::parser;
 pub fn generate_coverage_report() {
     logging::log_with_style!(cyan, "\nRunning in coverage report mode.\n️");
 
-    let source_handlers = parser::collect_handlers("subgraph.yaml");
-
     logging::log_with_style!(cyan, "Reading generated test modules... 🔎️\n");
 
     let wat_files = generate_wat_files();
@@ -21,53 +19,58 @@ pub fn generate_coverage_report() {
     let mut global_handlers_count: i32 = 0;
     let mut global_handlers_called: i32 = 0;
 
-    for (name, handlers) in source_handlers.into_iter() {
-        logging::default!("Handlers for source '{}':", name);
+    crate::MANIFEST_LOCATION.with(|path| {
+        let source_handlers =
+            parser::collect_handlers(path.borrow().to_str().expect("Cannot convert to string."));
 
-        let mut called: i32 = 0;
-        let all_handlers: i32 = handlers.len().try_into().unwrap();
+        for (name, handlers) in source_handlers.into_iter() {
+            logging::default!("Handlers for source '{}':", name);
 
-        // Iterates over every handler and checks if the handler has been called in any test suite
-        // If called, it'll set `is_tested` to true and break out of the loop
-        // called will be incremented by 1
-        for handler in handlers {
-            let mut is_tested = false;
+            let mut called: i32 = 0;
+            let all_handlers: i32 = handlers.len().try_into().unwrap();
 
-            for wat_file in &wat_files {
-                let wat_content = fs::read_to_string(&wat_file)
-                    .unwrap_or_else(|_| logging::critical!("Couldn't read wat file."));
+            // Iterates over every handler and checks if the handler has been called in any test suite
+            // If called, it'll set `is_tested` to true and break out of the loop
+            // called will be incremented by 1
+            for handler in handlers {
+                let mut is_tested = false;
 
-                if is_called(&wat_content, &handler) {
-                    is_tested = true;
-                    break;
+                for wat_file in &wat_files {
+                    let wat_content = fs::read_to_string(&wat_file)
+                        .unwrap_or_else(|_| logging::critical!("Couldn't read wat file."));
+
+                    if is_called(&wat_content, &handler) {
+                        is_tested = true;
+                        break;
+                    }
+                }
+
+                if is_tested {
+                    called += 1;
+
+                    logging::log_with_style!(green, "Handler '{}' is tested.", handler);
+                } else {
+                    logging::log_with_style!(red, "Handler '{}' is not tested.", handler);
                 }
             }
 
-            if is_tested {
-                called += 1;
+            let mut percentage: f32 = 0.0;
 
-                logging::log_with_style!(green, "Handler '{}' is tested.", handler);
-            } else {
-                logging::log_with_style!(red, "Handler '{}' is not tested.", handler);
+            if all_handlers > 0 {
+                percentage = (called as f32 * 100.0) / all_handlers as f32;
             }
+
+            logging::default!(
+                "Test coverage: {:.1}% ({}/{} handlers).\n",
+                percentage,
+                called,
+                all_handlers
+            );
+
+            global_handlers_count += all_handlers;
+            global_handlers_called += called;
         }
-
-        let mut percentage: f32 = 0.0;
-
-        if all_handlers > 0 {
-            percentage = (called as f32 * 100.0) / all_handlers as f32;
-        }
-
-        logging::default!(
-            "Test coverage: {:.1}% ({}/{} handlers).\n",
-            percentage,
-            called,
-            all_handlers
-        );
-
-        global_handlers_count += all_handlers;
-        global_handlers_called += called;
-    }
+    });
 
     let mut percentage: f32 = 0.0;
 

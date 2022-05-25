@@ -5,7 +5,7 @@ use crate::parser;
 pub struct MatchstickConfig {
     pub libs_path: String,
     pub tests_path: String,
-    pub manifest_path: String
+    pub manifest_path: String,
 }
 
 impl MatchstickConfig {
@@ -14,7 +14,7 @@ impl MatchstickConfig {
         MatchstickConfig {
             libs_path: "./node_modules".to_owned(),
             tests_path: "./tests".to_owned(),
-            manifest_path: "./subgraph.yaml".to_owned()
+            manifest_path: "./subgraph.yaml".to_owned(),
         }
     }
 
