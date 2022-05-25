@@ -371,44 +371,6 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let data: HashMap<String, Value> =
             try_asc_get(&self.wasm_ctx, data_ptr, &GasCounter::new())?;
 
-        let required_fields = SCHEMA
-            .definitions
-            .iter()
-            .find_map(|def| {
-                if let schema::Definition::TypeDefinition(schema::TypeDefinition::Object(o)) = def {
-                    if o.name == entity_type {
-                        Some(o)
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                }
-            })
-            .unwrap_or_else(|| {
-                logging::critical!("Something went wrong! Could not find the entity defined in the GraphQL schema.")
-            })
-            .fields
-            .iter()
-            .clone()
-            .filter(|&f| matches!(f.field_type, schema::Type::NonNullType(..)) && !f.is_derived());
-
-        for f in required_fields {
-            if !data.contains_key(&f.name) {
-                logging::warning!(
-                    "Missing a required field '{}' for an entity of type '{}'.",
-                    f.name,
-                    entity_type,
-                );
-            } else if let Value::Null = data.get(&f.name).unwrap() {
-                logging::warning!(
-                    "The required field '{}' for an entity of type '{}' is null.",
-                    f.name,
-                    entity_type,
-                );
-            }
-        }
-
         if self.derived.contains_key(&entity_type) {
             let linking_fields = self
                 .derived
@@ -458,7 +420,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         };
 
         entity_type_store.insert(id, data);
-        self.store.insert(entity_type.clone(), entity_type_store);
+        self.store.insert(entity_type, entity_type_store);
         self.store_updated = false;
         Ok(())
     }
