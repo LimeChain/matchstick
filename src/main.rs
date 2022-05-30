@@ -42,10 +42,17 @@ fn main() {
     print_logo();
 
     let config = MatchstickConfig::from("matchstick.yaml");
-    let schema_location = parser::get_schema_location(&config.manifest_path);
 
     MANIFEST_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&config.manifest_path));
-    SCHEMA_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&schema_location));
+    SCHEMA_LOCATION.with(|path| {
+        let manifest_schema = parser::get_schema_location(&config.manifest_path);
+        let mut schema_location = PathBuf::from(&config.manifest_path);
+        schema_location.pop();
+        schema_location.push(&manifest_schema);
+        *path.borrow_mut() = schema_location.canonicalize().unwrap_or_else(|_| {
+            logging::critical!("Could not find schema at `{}`", manifest_schema)
+        });
+    });
     TESTS_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&config.tests_path));
     LIBS_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&config.libs_path));
 
