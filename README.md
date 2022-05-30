@@ -8,9 +8,11 @@
 ### Configuration ⚙️
 Matchstick can be configured to use a custom tests and libs folder via `matchstick.yaml` config file:
 
-- To change the default tests location (./tests), add `testsFolder: ./custom/path`
+- To change the default tests location (./tests), add `testsFolder: path/to/tests_folder`
 
-- To change the default libs location (./node_modules), add `libsFolder: ./custom/path`
+- To change the default libs location (./node_modules), add `libsFolder: path/to/node_modules`
+
+- To change the default manifest location (./subgraph.yaml), add `manifestPath: path/to/subgraph.yaml`
 
 ### Docker 🐳
 The quickest way to use **Matchstick** "out of the box" is to build and run an ubuntu-based Docker container with a **Matchstick** image. Steps:
