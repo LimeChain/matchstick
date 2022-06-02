@@ -15,7 +15,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        name: [linux-18, linux-20, macos-10.15, macos-11]
+        name: [linux-18, linux-20, linux-22, macos-10.15, macos-11]
 
         include:
           - name: linux-18
@@ -26,6 +26,10 @@ jobs:
             os: ubuntu-20.04
             artifact_name: matchstick
             asset_name: binary-linux-20
+          - name: linux-22
+            os: ubuntu-22.04
+            artifact_name: matchstick
+            asset_name: binary-linux-22
           - name: macos-10.15
             os: macos-10.15
             artifact_name: matchstick
@@ -34,7 +38,7 @@ jobs:
             os: macos-11
             artifact_name: matchstick
             asset_name: binary-macos-11
-            
+
     steps:
       - uses: actions/checkout@v2
 

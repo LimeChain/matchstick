@@ -87,7 +87,7 @@ impl Compiler {
     pub fn execute(&self, matches: &ArgMatches) -> HashMap<String, CompileOutput> {
         let outputs = get_test_sources(matches)
             .into_iter()
-            .map(|(name, in_files)| {
+            .map(|(name, in_file)| {
                 let mut out_file = PathBuf::new();
 
                 crate::TESTS_LOCATION.with(|path| {
@@ -97,11 +97,11 @@ impl Compiler {
 
                 let output = if matches.is_present("recompile")
                     || !Path::new(&out_file).exists()
-                    || is_source_modified(&in_files, &out_file)
+                    || is_source_modified(&in_file, &out_file)
                 {
                     logging::info!("Compiling {}...", name.bright_blue());
 
-                    self.compile(in_files, out_file)
+                    self.compile(in_file, out_file)
                 } else {
                     logging::info!("{} skipped!", name.bright_blue());
 
@@ -117,9 +117,9 @@ impl Compiler {
         outputs
     }
 
-    fn compile(&self, in_files: Vec<PathBuf>, out_file: PathBuf) -> CompileOutput {
+    fn compile(&self, in_file: PathBuf, out_file: PathBuf) -> CompileOutput {
         let output = Command::new(&self.exec)
-            .args(in_files)
+            .args([in_file])
             .arg(&self.global)
             .arg("--lib")
             .arg(&self.lib)

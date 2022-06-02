@@ -72,7 +72,7 @@ pub struct MatchstickInstanceContext<C: Blockchain> {
     /// Function-Return map storing mocked Smart Contracts' functions' return values.
     pub(crate) fn_ret_map: HashMap<String, Vec<Token>>,
     /// Registered tests metadata.
-    pub meta_tests: Vec<(String, bool, u32)>,
+    pub meta_tests: Vec<(String, bool, u32, String)>,
     /// Holding the derived field type and a tuple of the entity it points to
     /// with a vector of all the field names and the corresponding derived field names.
     /// The example below is taken from a schema.graphql file and will fill the map in the following way:
@@ -178,7 +178,35 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     ) -> Result<(), HostExportError> {
         let name: String = asc_get(&self.wasm_ctx, name, &GasCounter::new())?;
         let should_fail = bool::from(EnumPayload(should_fail.to_payload()));
-        self.meta_tests.push((name, should_fail, func_idx));
+        self.meta_tests
+            .push((name, should_fail, func_idx, "test".to_owned()));
+        Ok(())
+    }
+
+    /// function _registerDescribe(name: string, funcIdx: u32): void
+    pub fn register_describe(
+        &mut self,
+        _gas: &GasCounter,
+        name: AscPtr<AscString>,
+        func_idx: u32,
+    ) -> Result<(), HostExportError> {
+        let name: String = asc_get(&self.wasm_ctx, name, &GasCounter::new())?;
+        self.meta_tests
+            .push((name, false, func_idx, "describe".to_owned()));
+
+        Ok(())
+    }
+
+    /// function _registerHook(funcIdx: u32, role: string): void
+    pub fn register_hook(
+        &mut self,
+        _gas: &GasCounter,
+        func_idx: u32,
+        role: AscPtr<AscString>,
+    ) -> Result<(), HostExportError> {
+        let role: String = asc_get(&self.wasm_ctx, role, &GasCounter::new())?;
+        self.meta_tests
+            .push((String::from(""), false, func_idx, role));
         Ok(())
     }
 
@@ -343,44 +371,6 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let data: HashMap<String, Value> =
             try_asc_get(&self.wasm_ctx, data_ptr, &GasCounter::new())?;
 
-        let required_fields = SCHEMA
-            .definitions
-            .iter()
-            .find_map(|def| {
-                if let schema::Definition::TypeDefinition(schema::TypeDefinition::Object(o)) = def {
-                    if o.name == entity_type {
-                        Some(o)
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                }
-            })
-            .unwrap_or_else(|| {
-                logging::critical!("Something went wrong! Could not find the entity defined in the GraphQL schema.")
-            })
-            .fields
-            .iter()
-            .clone()
-            .filter(|&f| matches!(f.field_type, schema::Type::NonNullType(..)) && !f.is_derived());
-
-        for f in required_fields {
-            if !data.contains_key(&f.name) {
-                logging::warning!(
-                    "Missing a required field '{}' for an entity of type '{}'.",
-                    f.name,
-                    entity_type,
-                );
-            } else if let Value::Null = data.get(&f.name).unwrap() {
-                logging::warning!(
-                    "The required field '{}' for an entity of type '{}' is null.",
-                    f.name,
-                    entity_type,
-                );
-            }
-        }
-
         if self.derived.contains_key(&entity_type) {
             let linking_fields = self
                 .derived
@@ -430,7 +420,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         };
 
         entity_type_store.insert(id, data);
-        self.store.insert(entity_type.clone(), entity_type_store);
+        self.store.insert(entity_type, entity_type_store);
         self.store_updated = false;
         Ok(())
     }
@@ -853,6 +843,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         )?;
         let reverts = bool::from(EnumPayload(reverts_ptr.to_payload()));
 
+        // Extracts the arguments part from the function signature
+        // e.g "fnName(int32, string, address)" -> "int32, string, address"
+        // and then calls `collect_types` to split the result into a Vec
         let tmp_str = fn_signature.replace(&(fn_name.clone() + "("), "");
         let components: Vec<&str> = tmp_str.split("):").collect();
         let tmp_args_str = components[0];
@@ -867,6 +860,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             )
         }
 
+        // Checks if the count of the passed arguments matches the count of expected arguments
         if arg_types.len() != fn_args.len() {
             logging::critical!(
                 "{} expected {} arguments, but received {}",
@@ -876,6 +870,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             )
         }
 
+        // Validates that every passed argument matches the type of the expected argument
+        // from the function signature. Panics if there is a mismatch and informs the user
+        // of the position and the expected and recieved type
         for (index, (arg_type, fn_arg)) in arg_types.iter().zip(fn_args.iter()).enumerate() {
             let param_type = get_kind(arg_type.to_owned());
 
@@ -1211,6 +1208,9 @@ pub fn asc_string_from_str(initial_string: &str) -> AscString {
     AscString::new(&u16_vector, version).expect("Couldn't create AscString.")
 }
 
+/// Collects the arguments types from the function signature and returns a Vec
+/// Because the arguments could be tuples, it's not possible jus to split on every comma
+/// so we count the open parentheses and only split when there are none currently open.
 fn collect_types(arg_str: &str) -> Vec<String> {
     let mut arg_types: Vec<String> = vec![];
 
@@ -1241,6 +1241,7 @@ fn collect_types(arg_str: &str) -> Vec<String> {
     arg_types
 }
 
+/// Converts string argument types from the function signature into ethabi::ParamType.
 fn get_kind(kind: String) -> ParamType {
     let kind_str = kind.trim();
     let int_r = Regex::new(r#"^int\d+$"#).expect("Invalid uint/int regex");
@@ -1288,6 +1289,11 @@ fn get_kind(kind: String) -> ParamType {
     }
 }
 
+/// Converst ethabi::Token into graph::data::store::Value
+/// This is needed because ethabi::Token stores Int values as a Uint256
+/// and negative numbers are stored as overflowed Uint256
+/// e.g -2147483648 is stored as
+/// 115792089237316195423570985008687907853269984665640564039457584007910982156288
 fn get_token_value(token: Token) -> Value {
     match token {
         Token::Address(address) => Value::Bytes(Bytes::from(address)),

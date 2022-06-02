@@ -10,7 +10,7 @@ use graph_chain_ethereum::Chain;
 use crate::compiler::Compiler;
 use crate::config::MatchstickConfig;
 use crate::instance::MatchstickInstance;
-use crate::test_suite::{TestResult, TestSuite};
+use crate::test_suite::{Test, TestGroup, TestResult, Testable};
 
 use crate::coverage::generate_coverage_report;
 
@@ -42,10 +42,17 @@ fn main() {
     print_logo();
 
     let config = MatchstickConfig::from("matchstick.yaml");
-    let schema_location = parser::get_schema_location(&config.manifest_path);
 
     MANIFEST_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&config.manifest_path));
-    SCHEMA_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&schema_location));
+    SCHEMA_LOCATION.with(|path| {
+        let manifest_schema = parser::get_schema_location(&config.manifest_path);
+        let mut schema_location = PathBuf::from(&config.manifest_path);
+        schema_location.pop();
+        schema_location.push(&manifest_schema);
+        *path.borrow_mut() = schema_location.canonicalize().unwrap_or_else(|_| {
+            logging::critical!("Could not find schema at `{}`", manifest_schema)
+        });
+    });
     TESTS_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&config.tests_path));
     LIBS_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from(&config.libs_path));
 
@@ -77,9 +84,9 @@ fn main() {
         .collect();
 
     // A test suite abstraction for each instance.
-    let test_suites: HashMap<String, TestSuite> = ms_instances
+    let test_suites: HashMap<String, TestGroup> = ms_instances
         .iter()
-        .map(|(key, val)| (key.clone(), TestSuite::from(val)))
+        .map(|(key, val)| (key.clone(), TestGroup::from(val)))
         .collect();
 
     let exit_code = run_test_suites(test_suites);
@@ -107,56 +114,68 @@ ___  ___      _       _         _   _      _
     )
 }
 
-fn run_test_suites(test_suites: HashMap<String, TestSuite>) -> i32 {
+fn run_test_suites(test_suites: HashMap<String, TestGroup>) -> i32 {
     logging::log_with_style!(bright_red, "\nIgniting tests 🔥");
 
-    let (mut num_passed, mut num_failed) = (0, 0);
-    let failed_suites: HashMap<String, HashMap<String, TestResult>> = test_suites
+    let (mut num_passed, mut num_failed) = (Box::new(0), Box::new(0));
+    let failed_suites: HashMap<String, Vec<HashMap<String, TestResult>>> = test_suites
         .into_iter()
         .filter_map(|(name, suite)| {
             logging::log_with_style!(bright_blue, "\n{}", name);
             logging::default!("-".repeat(50));
 
             logging::add_indent();
-            let failed: HashMap<String, TestResult> = suite
-                .tests
+
+            Test::call_hooks(&suite.before_all);
+
+            let failed_tests: Vec<HashMap<String, TestResult>> = suite
+                .testables
                 .into_iter()
-                .filter_map(|test| {
-                    let result = test.run();
-                    if result.passed {
-                        num_passed += 1;
+                .filter_map(|group| {
+                    let failed_test: HashMap<String, TestResult> =
+                        run_testable(&group, &mut num_passed, &mut num_failed);
+
+                    if failed_test.is_empty() {
                         None
                     } else {
-                        num_failed += 1;
-                        Some((test.name, result))
+                        Some(failed_test)
                     }
                 })
                 .collect();
+
+            Test::call_hooks(&suite.after_all);
             logging::clear_indent();
 
-            if failed.is_empty() {
+            if failed_tests.is_empty() {
                 None
             } else {
-                Some((name, failed))
+                Some((name, failed_tests))
             }
         })
         .collect();
 
-    if num_failed > 0 {
+    if *num_failed > 0 {
         let failed = format!("{} failed", num_failed).red();
         let passed = format!("{} passed", num_passed).green();
-        let total = format!("{} total", num_failed + num_passed);
+        let total = format!("{} total", *num_failed + *num_passed);
 
         logging::log_with_style!(red, "\nFailed tests:\n");
 
-        for (suite, tests) in failed_suites {
-            for (name, result) in tests {
-                logging::default!("{} {}", suite.bright_blue(), name.red());
+        for (suite, group) in failed_suites {
+            logging::log_with_style!(bright_blue, bold, "{}", suite);
+            logging::add_indent();
 
-                if !result.logs.is_empty() {
-                    logging::default!(result.logs);
+            for tests in group {
+                for (name, result) in tests {
+                    logging::log_with_style!(red, bold, "{}", name);
+
+                    if !result.logs.is_empty() {
+                        logging::default!(result.logs);
+                    }
                 }
             }
+
+            logging::sub_indent();
         }
 
         logging::default!("{}, {}, {}", failed, passed, total);
@@ -165,4 +184,45 @@ fn run_test_suites(test_suites: HashMap<String, TestSuite>) -> i32 {
         logging::log_with_style!(green, "\nAll {} tests passed! 😎", num_passed);
         0
     }
+}
+
+fn run_testable(
+    testable: &Testable,
+    num_passed: &mut Box<i32>,
+    num_failed: &mut Box<i32>,
+) -> HashMap<String, TestResult> {
+    let mut failed_tests: HashMap<String, TestResult> = HashMap::new();
+
+    match testable {
+        Testable::Test(test) => {
+            let result = test.run();
+            if result.passed {
+                let num = &mut (**num_passed);
+                *num += 1;
+            } else {
+                let num = &mut (**num_failed);
+                *num += 1;
+                failed_tests.insert(test.name.clone(), result);
+            }
+        }
+        Testable::Group(group) => {
+            if !group.name.is_empty() {
+                logging::log_with_style!(cyan, bold, "{}", group.name.to_uppercase());
+            }
+
+            logging::add_indent();
+
+            Test::call_hooks(&group.before_all);
+
+            for test in &group.testables {
+                let failed = run_testable(test, num_passed, num_failed);
+                failed_tests.extend(failed);
+            }
+
+            Test::call_hooks(&group.after_all);
+            logging::sub_indent();
+        }
+    }
+
+    failed_tests
 }
