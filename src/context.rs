@@ -179,7 +179,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let name: String = asc_get(&self.wasm_ctx, name, &GasCounter::new())?;
         let should_fail = bool::from(EnumPayload(should_fail.to_payload()));
         self.meta_tests
-            .push((name, should_fail, func_idx, String::from("test")));
+            .push((name, should_fail, func_idx, "test".to_owned()));
         Ok(())
     }
 
@@ -192,7 +192,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     ) -> Result<(), HostExportError> {
         let name: String = asc_get(&self.wasm_ctx, name, &GasCounter::new())?;
         self.meta_tests
-            .push((name, false, func_idx, String::from("describe")));
+            .push((name, false, func_idx, "describe".to_owned()));
 
         Ok(())
     }

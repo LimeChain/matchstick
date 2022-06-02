@@ -138,7 +138,7 @@ impl<C: Blockchain> From<&MatchstickInstance<C>> for TestGroup {
     }
 }
 
-// A recursive fucntion that builds the the test suite from a single test.ts file.
+// A recursive function that builds the the test suite from a single test.ts file.
 // The functions creates a TestGroup and arranges the function based on their role.
 fn build_test_group<C: graph::blockchain::Blockchain>(
     matchstick: &MatchstickInstance<C>,
@@ -222,7 +222,7 @@ fn update_test_hooks(test_group: &mut TestGroup, before_each: Vec<Func>, after_e
 
 // In order to get all functions inside a describe() block, we need to create a clone
 // of the current MatchstickInstance, then fetch and execute the said describe() function by it's id
-// from the context of the cloned instance. This will trigger the reigstration of all the functions
+// from the context of the cloned instance. This will trigger the registration of all the functions
 // from the describe into the cloned MatchstickInstance's meta_tests field.
 // Then we can get the difference between the orignal meta_test and the cloned one and return it.
 fn register_describe<C: graph::blockchain::Blockchain>(
