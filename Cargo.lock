@@ -1147,7 +1147,7 @@ checksum = "78cc372d058dcf6d5ecd98510e7fbc9e5aec4d21de70f65fea8fecebcd881bd4"
 [[package]]
 name = "graph"
 version = "0.26.0"
-source = "git+https://github.com/graphprotocol/graph-node?rev=94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a#94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a"
+source = "git+https://github.com/graphprotocol/graph-node?rev=2eaf730d48c37c72b49bca9f7536cd59fe5ad254#2eaf730d48c37c72b49bca9f7536cd59fe5ad254"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -1210,7 +1210,7 @@ dependencies = [
 [[package]]
 name = "graph-chain-arweave"
 version = "0.26.0"
-source = "git+https://github.com/graphprotocol/graph-node?rev=94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a#94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a"
+source = "git+https://github.com/graphprotocol/graph-node?rev=2eaf730d48c37c72b49bca9f7536cd59fe5ad254#2eaf730d48c37c72b49bca9f7536cd59fe5ad254"
 dependencies = [
  "base64-url",
  "graph",
@@ -1226,7 +1226,7 @@ dependencies = [
 [[package]]
 name = "graph-chain-cosmos"
 version = "0.26.0"
-source = "git+https://github.com/graphprotocol/graph-node?rev=94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a#94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a"
+source = "git+https://github.com/graphprotocol/graph-node?rev=2eaf730d48c37c72b49bca9f7536cd59fe5ad254#2eaf730d48c37c72b49bca9f7536cd59fe5ad254"
 dependencies = [
  "anyhow",
  "graph",
@@ -1243,7 +1243,7 @@ dependencies = [
 [[package]]
 name = "graph-chain-ethereum"
 version = "0.26.0"
-source = "git+https://github.com/graphprotocol/graph-node?rev=94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a#94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a"
+source = "git+https://github.com/graphprotocol/graph-node?rev=2eaf730d48c37c72b49bca9f7536cd59fe5ad254#2eaf730d48c37c72b49bca9f7536cd59fe5ad254"
 dependencies = [
  "anyhow",
  "dirs-next",
@@ -1269,7 +1269,7 @@ dependencies = [
 [[package]]
 name = "graph-chain-near"
 version = "0.26.0"
-source = "git+https://github.com/graphprotocol/graph-node?rev=94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a#94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a"
+source = "git+https://github.com/graphprotocol/graph-node?rev=2eaf730d48c37c72b49bca9f7536cd59fe5ad254#2eaf730d48c37c72b49bca9f7536cd59fe5ad254"
 dependencies = [
  "base64",
  "graph",
@@ -1284,7 +1284,7 @@ dependencies = [
 [[package]]
 name = "graph-core"
 version = "0.26.0"
-source = "git+https://github.com/graphprotocol/graph-node?rev=94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a#94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a"
+source = "git+https://github.com/graphprotocol/graph-node?rev=2eaf730d48c37c72b49bca9f7536cd59fe5ad254#2eaf730d48c37c72b49bca9f7536cd59fe5ad254"
 dependencies = [
  "async-stream",
  "async-trait",
@@ -1310,7 +1310,7 @@ dependencies = [
 [[package]]
 name = "graph-graphql"
 version = "0.26.0"
-source = "git+https://github.com/graphprotocol/graph-node?rev=94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a#94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a"
+source = "git+https://github.com/graphprotocol/graph-node?rev=2eaf730d48c37c72b49bca9f7536cd59fe5ad254#2eaf730d48c37c72b49bca9f7536cd59fe5ad254"
 dependencies = [
  "Inflector",
  "anyhow",
@@ -1330,7 +1330,7 @@ dependencies = [
 [[package]]
 name = "graph-mock"
 version = "0.26.0"
-source = "git+https://github.com/graphprotocol/graph-node?rev=94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a#94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a"
+source = "git+https://github.com/graphprotocol/graph-node?rev=2eaf730d48c37c72b49bca9f7536cd59fe5ad254#2eaf730d48c37c72b49bca9f7536cd59fe5ad254"
 dependencies = [
  "graph",
 ]
@@ -1338,7 +1338,7 @@ dependencies = [
 [[package]]
 name = "graph-runtime-derive"
 version = "0.26.0"
-source = "git+https://github.com/graphprotocol/graph-node?rev=94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a#94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a"
+source = "git+https://github.com/graphprotocol/graph-node?rev=2eaf730d48c37c72b49bca9f7536cd59fe5ad254#2eaf730d48c37c72b49bca9f7536cd59fe5ad254"
 dependencies = [
  "quote",
  "syn",
@@ -1347,7 +1347,7 @@ dependencies = [
 [[package]]
 name = "graph-runtime-test"
 version = "0.26.0"
-source = "git+https://github.com/graphprotocol/graph-node?rev=94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a#94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a"
+source = "git+https://github.com/graphprotocol/graph-node?rev=2eaf730d48c37c72b49bca9f7536cd59fe5ad254#2eaf730d48c37c72b49bca9f7536cd59fe5ad254"
 dependencies = [
  "graph",
  "graph-chain-ethereum",
@@ -1360,7 +1360,7 @@ dependencies = [
 [[package]]
 name = "graph-runtime-wasm"
 version = "0.26.0"
-source = "git+https://github.com/graphprotocol/graph-node?rev=94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a#94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a"
+source = "git+https://github.com/graphprotocol/graph-node?rev=2eaf730d48c37c72b49bca9f7536cd59fe5ad254#2eaf730d48c37c72b49bca9f7536cd59fe5ad254"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1827,7 +1827,6 @@ dependencies = [
  "serial_test",
  "tokio",
  "wasmtime",
- "web3",
 ]
 
 [[package]]
@@ -3794,8 +3793,9 @@ checksum = "d554b7f530dee5964d9a9468d95c1f8b8acae4f282807e7d27d4b03099a46744"
 
 [[package]]
 name = "wasm-instrument"
-version = "0.1.1"
-source = "git+https://github.com/edgeandnode/wasm-instrument?branch=master#7a02a05525ad4689b22f8d56f1cf6e6d67280896"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8bca81f5279342b38b17d9acbf007a46ddeb73144e2bd5f0a21bfa9fc5d4ab3e"
 dependencies = [
  "parity-wasm",
 ]

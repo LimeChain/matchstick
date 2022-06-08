@@ -5,13 +5,13 @@ authors = ["LimeChain <limechain.tech>"]
 edition = "2021"
 
 [dependencies]
-graph = { git = "https://github.com/graphprotocol/graph-node", rev = "94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a" }
-graph-core = { git = "https://github.com/graphprotocol/graph-node", rev = "94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a" }
-graph-chain-ethereum = { git = "https://github.com/graphprotocol/graph-node", rev = "94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a" }
-graph-graphql = { git = "https://github.com/graphprotocol/graph-node", rev = "94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a" }
-graph-mock = { git = "https://github.com/graphprotocol/graph-node", rev = "94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a" }
-graph-runtime-test = { git = "https://github.com/graphprotocol/graph-node", rev = "94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a" }
-graph-runtime-wasm = { git = "https://github.com/graphprotocol/graph-node", rev = "94bcf57cafaf0cdfb5c792a90ce2ba0ef037020a" }
+graph = { git = "https://github.com/graphprotocol/graph-node", rev = "2eaf730d48c37c72b49bca9f7536cd59fe5ad254" }
+graph-core = { git = "https://github.com/graphprotocol/graph-node", rev = "2eaf730d48c37c72b49bca9f7536cd59fe5ad254" }
+graph-chain-ethereum = { git = "https://github.com/graphprotocol/graph-node", rev = "2eaf730d48c37c72b49bca9f7536cd59fe5ad254" }
+graph-graphql = { git = "https://github.com/graphprotocol/graph-node", rev = "2eaf730d48c37c72b49bca9f7536cd59fe5ad254" }
+graph-mock = { git = "https://github.com/graphprotocol/graph-node", rev = "2eaf730d48c37c72b49bca9f7536cd59fe5ad254" }
+graph-runtime-test = { git = "https://github.com/graphprotocol/graph-node", rev = "2eaf730d48c37c72b49bca9f7536cd59fe5ad254" }
+graph-runtime-wasm = { git = "https://github.com/graphprotocol/graph-node", rev = "2eaf730d48c37c72b49bca9f7536cd59fe5ad254" }
 wasmtime = "0.27.0"
 tokio = "1.15.0"
 anyhow = "1.0"
@@ -27,4 +27,3 @@ graphql-parser = "0.4.0"
 
 [dev-dependencies]
 serial_test = "0.5.1"
-web3 = { git = "https://github.com/graphprotocol/rust-web3", branch = "graph-patches-onto-0.18", features = ["arbitrary_precision"] }

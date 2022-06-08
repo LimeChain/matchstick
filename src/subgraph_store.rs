@@ -125,9 +125,13 @@ impl SubgraphStore for MockSubgraphStore {
 
     fn entity_changes_in_block(
         &self,
-        _: &graph::prelude::DeploymentHash,
-        _: i32,
+        _id: &graph::prelude::DeploymentHash,
+        _block: i32,
     ) -> Result<Vec<EntityOperation>, graph::prelude::StoreError> {
+        unreachable!()
+    }
+
+    async fn is_healthy(&self, _id: &graph::prelude::DeploymentHash) -> Result<bool, StoreError> {
         unreachable!()
     }
 }
