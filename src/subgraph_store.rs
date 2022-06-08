@@ -6,7 +6,7 @@ use graph::{
     blockchain::BlockPtr,
     components::store::{DeploymentId, DeploymentLocator, EnsLookup, SubgraphFork},
     data::subgraph::*,
-    prelude::{DeploymentHash, StoreError, SubgraphStore},
+    prelude::{DeploymentHash, EntityOperation, StoreError, SubgraphStore},
     slog::Logger,
 };
 
@@ -36,7 +36,7 @@ impl SubgraphStore for MockSubgraphStore {
         &self,
         _name: SubgraphName,
         _schema: &graph::prelude::Schema,
-        _deployment: graph::prelude::SubgraphDeploymentEntity,
+        _deployment: graph::data::subgraph::schema::DeploymentCreate,
         _node_id: graph::prelude::NodeId,
         _network: String,
         _mode: graph::prelude::SubgraphVersionSwitchingMode,
@@ -112,15 +112,7 @@ impl SubgraphStore for MockSubgraphStore {
         Ok(Arc::from(mock_writable_store))
     }
 
-    fn writable_for_network_indexer(
-        &self,
-        _logger: Logger,
-        _id: &DeploymentHash,
-    ) -> Result<Arc<dyn graph::components::store::WritableStore>, graph::prelude::StoreError> {
-        unreachable!()
-    }
-
-    fn least_block_ptr(
+    async fn least_block_ptr(
         &self,
         _id: &DeploymentHash,
     ) -> Result<Option<BlockPtr>, graph::prelude::StoreError> {
@@ -128,6 +120,14 @@ impl SubgraphStore for MockSubgraphStore {
     }
 
     fn locators(&self, _hash: &str) -> Result<Vec<DeploymentLocator>, graph::prelude::StoreError> {
+        unreachable!()
+    }
+
+    fn entity_changes_in_block(
+        &self,
+        _: &graph::prelude::DeploymentHash,
+        _: i32,
+    ) -> Result<Vec<EntityOperation>, graph::prelude::StoreError> {
         unreachable!()
     }
 }
