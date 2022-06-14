@@ -419,23 +419,31 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             HashMap::new()
         };
 
-        // {"DemoTransfer": [("transfers", "token", "Demo")]}
-        let child_entities: HashMap<&String, &Vec<(String, String, String)>> = self
+        // Collect all child entities for the passed entity_type
+        let child_entities: HashMap<String, Vec<(String, String, String)>> = self
             .derived
             .iter()
-            .filter(|(_, linking_fields)| {
+            .filter_map(|(linked_entity, linking_fields)| {
                 let mapping = linking_fields
                     .iter()
                     .filter(|linking_field| linking_field.2 == entity_type);
-                mapping.count() > 0
+
+                if mapping.count() > 0 {
+                    Some((linked_entity.clone(), linking_fields.clone()))
+                } else {
+                    None
+                }
             })
             .collect();
 
-        // Store<EntityType, EntityTypeStore<EntityId, Entity<Field, Value>>>
+        // Iterate over all child entities
+        // Fetch all saved records
+        // Collect the ids of the records which derivedFrom field points to the passed entity id
+        // Update the parent's data with the list of child records
         if !child_entities.is_empty() {
             for (linked_entity, linking_fields) in child_entities.iter() {
                 for linking_field in linking_fields.iter() {
-                    if let Some(entities) = self.store.get(linked_entity as &str) {
+                    if let Some(entities) = self.store.get(linked_entity) {
                         let children: Vec<Value> = entities
                             .iter()
                             .filter_map(|(child_id, fields)| {
