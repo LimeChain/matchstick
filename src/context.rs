@@ -368,7 +368,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     ) -> Result<(), HostExportError> {
         let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new())?;
         let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new())?;
-        let data: HashMap<String, Value> =
+        let mut data: HashMap<String, Value> =
             try_asc_get(&self.wasm_ctx, data_ptr, &GasCounter::new())?;
 
         if self.derived.contains_key(&entity_type) {
@@ -418,6 +418,53 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         } else {
             HashMap::new()
         };
+
+        // Collect all child entities for the passed entity_type
+        let child_entities: HashMap<String, Vec<(String, String, String)>> = self
+            .derived
+            .iter()
+            .filter_map(|(linked_entity, linking_fields)| {
+                let mapping = linking_fields
+                    .iter()
+                    .filter(|linking_field| linking_field.2 == entity_type);
+
+                if mapping.count() > 0 {
+                    Some((linked_entity.clone(), linking_fields.clone()))
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        // Iterate over all child entities
+        // Fetch all saved records
+        // Collect the ids of the records which derivedFrom field points to the passed entity id
+        // Update the parent's data with the list of child records
+        if !child_entities.is_empty() {
+            for (linked_entity, linking_fields) in child_entities.iter() {
+                for linking_field in linking_fields.iter() {
+                    if let Some(entities) = self.store.get(linked_entity) {
+                        let children: Vec<Value> = entities
+                            .iter()
+                            .filter_map(|(child_id, fields)| {
+                                if let Some(Value::String(parent_id)) = fields.get(&linking_field.1)
+                                {
+                                    if parent_id == &id {
+                                        Some(Value::String(child_id.clone()))
+                                    } else {
+                                        None
+                                    }
+                                } else {
+                                    None
+                                }
+                            })
+                            .collect();
+
+                        data.insert(linking_field.0.clone(), Value::List(children));
+                    }
+                }
+            }
+        }
 
         entity_type_store.insert(id, data);
         self.store.insert(entity_type, entity_type_store);
