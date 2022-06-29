@@ -5,13 +5,13 @@ authors = ["LimeChain <limechain.tech>"]
 edition = "2021"
 
 [dependencies]
-graph = { git = "https://github.com/graphprotocol/graph-node", rev = "2d36abb15a14e5b529bc3960ac845349ac80dacd" }
-graph-core = { git = "https://github.com/graphprotocol/graph-node", rev = "2d36abb15a14e5b529bc3960ac845349ac80dacd" }
-graph-chain-ethereum = { git = "https://github.com/graphprotocol/graph-node", rev = "2d36abb15a14e5b529bc3960ac845349ac80dacd" }
-graph-graphql = { git = "https://github.com/graphprotocol/graph-node", rev = "2d36abb15a14e5b529bc3960ac845349ac80dacd" }
-graph-mock = { git = "https://github.com/graphprotocol/graph-node", rev = "2d36abb15a14e5b529bc3960ac845349ac80dacd" }
-graph-runtime-test = { git = "https://github.com/graphprotocol/graph-node", rev = "2d36abb15a14e5b529bc3960ac845349ac80dacd" }
-graph-runtime-wasm = { git = "https://github.com/graphprotocol/graph-node", rev = "2d36abb15a14e5b529bc3960ac845349ac80dacd" }
+graph = { git = "https://github.com/graphprotocol/graph-node", rev = "2eaf730d48c37c72b49bca9f7536cd59fe5ad254" }
+graph-core = { git = "https://github.com/graphprotocol/graph-node", rev = "2eaf730d48c37c72b49bca9f7536cd59fe5ad254" }
+graph-chain-ethereum = { git = "https://github.com/graphprotocol/graph-node", rev = "2eaf730d48c37c72b49bca9f7536cd59fe5ad254" }
+graph-graphql = { git = "https://github.com/graphprotocol/graph-node", rev = "2eaf730d48c37c72b49bca9f7536cd59fe5ad254" }
+graph-mock = { git = "https://github.com/graphprotocol/graph-node", rev = "2eaf730d48c37c72b49bca9f7536cd59fe5ad254" }
+graph-runtime-test = { git = "https://github.com/graphprotocol/graph-node", rev = "2eaf730d48c37c72b49bca9f7536cd59fe5ad254" }
+graph-runtime-wasm = { git = "https://github.com/graphprotocol/graph-node", rev = "2eaf730d48c37c72b49bca9f7536cd59fe5ad254" }
 wasmtime = "0.27.0"
 tokio = "1.15.0"
 anyhow = "1.0"
@@ -27,4 +27,3 @@ graphql-parser = "0.4.0"
 
 [dev-dependencies]
 serial_test = "0.5.1"
-web3 = { git = "https://github.com/graphprotocol/rust-web3", branch = "lutter/graph-0.15.0" }

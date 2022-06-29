@@ -43,10 +43,12 @@ impl<C: Blockchain> MatchstickInstance<C> {
         let data_source = mock_data_source(path_to_wasm, Version::new(0, 0, 6));
 
         let metrics_registry = Arc::new(MockMetricsRegistry::new());
+        let logger = graph::slog::Logger::root(graph::slog::Discard, graph::prelude::o!());
 
         let stopwatch_metrics = StopwatchMetrics::new(
-            graph::slog::Logger::root(graph::slog::Discard, graph::prelude::o!()),
-            deployment_id.clone(),
+            logger.clone(),
+            DeploymentHash::new("things").unwrap(),
+            &deployment_id.clone(),
             metrics_registry.clone(),
         );
 
@@ -64,6 +66,7 @@ impl<C: Blockchain> MatchstickInstance<C> {
 
         let valid_module = Arc::new(
             ValidModule::new(
+                &logger,
                 Arc::new(std::fs::read(path_to_wasm).unwrap_or_else(|err| {
                     logging::critical!(
                         "Something went wrong while trying to read `{}`: {}",

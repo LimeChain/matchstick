@@ -12,19 +12,19 @@ pub struct MockWritableStore {}
 
 #[async_trait]
 impl WritableStore for MockWritableStore {
-    fn block_ptr(&self) -> Option<BlockPtr> {
+    async fn block_ptr(&self) -> Option<BlockPtr> {
         unreachable!()
     }
 
-    fn block_cursor(&self) -> Option<String> {
+    async fn block_cursor(&self) -> Option<String> {
         unreachable!()
     }
 
-    fn start_subgraph_deployment(&self, _logger: &Logger) -> Result<(), StoreError> {
+    async fn start_subgraph_deployment(&self, _logger: &Logger) -> Result<(), StoreError> {
         unreachable!()
     }
 
-    fn revert_block_operations(
+    async fn revert_block_operations(
         &self,
         _block_ptr_to: BlockPtr,
         _firehose_cursor: Option<&str>,
@@ -40,11 +40,14 @@ impl WritableStore for MockWritableStore {
         &self,
         _current_ptr: &BlockPtr,
         _parent_ptr: &BlockPtr,
-    ) -> Result<(), StoreError> {
+    ) -> Result<UnfailOutcome, StoreError> {
         unreachable!()
     }
 
-    fn unfail_non_deterministic_error(&self, _current_ptr: &BlockPtr) -> Result<(), StoreError> {
+    fn unfail_non_deterministic_error(
+        &self,
+        _current_ptr: &BlockPtr,
+    ) -> Result<UnfailOutcome, StoreError> {
         unreachable!()
     }
 
@@ -60,12 +63,12 @@ impl WritableStore for MockWritableStore {
         unreachable!()
     }
 
-    fn transact_block_operations(
+    async fn transact_block_operations(
         &self,
         _block_ptr_to: BlockPtr,
         _firehose_cursor: Option<String>,
         _mods: Vec<EntityModification>,
-        _stopwatch: StopwatchMetrics,
+        _stopwatch: &StopwatchMetrics,
         _data_sources: Vec<StoredDynamicDataSource>,
         _deterministic_errors: Vec<SubgraphError>,
     ) -> Result<(), StoreError> {
@@ -100,6 +103,14 @@ impl WritableStore for MockWritableStore {
     }
 
     async fn health(&self, _id: &DeploymentHash) -> Result<SubgraphHealth, StoreError> {
+        unreachable!()
+    }
+
+    async fn delete_block_cursor(&self) -> Result<(), StoreError> {
+        unreachable!()
+    }
+
+    async fn flush(&self) -> Result<(), graph::prelude::StoreError> {
         unreachable!()
     }
 }
