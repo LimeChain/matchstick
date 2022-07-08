@@ -207,7 +207,7 @@ fn run_testable(
         }
         Testable::Group(group) => {
             if !group.name.is_empty() {
-                logging::log_with_style!(cyan, bold, "{}", group.name.to_uppercase());
+                logging::log_with_style!(cyan, bold, italic, "{}:", group.name);
             }
 
             logging::add_indent();
