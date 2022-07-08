@@ -447,26 +447,19 @@ mod unit_tests {
 
         let entity = asc_string_from_str("entity");
         let id = asc_string_from_str("id");
-        let key = asc_string_from_str("key");
-        let data = asc_string_from_str("data");
         let entity_pointer = AscPtr::alloc_obj(entity, &mut context.wasm_ctx, &GasCounter::new())
             .expect("Couldn't create pointer.");
         let id_pointer = AscPtr::alloc_obj(id, &mut context.wasm_ctx, &GasCounter::new())
             .expect("Couldn't create pointer.");
-        let key_pointer = AscPtr::alloc_obj(key, &mut context.wasm_ctx, &GasCounter::new())
-            .expect("Couldn't create pointer.");
-        let data_pointer = AscPtr::alloc_obj(data, &mut context.wasm_ctx, &GasCounter::new())
-            .expect("Couldn't create pointer.");
-
         let payload = AscEnum::<StoreValueKind> {
             kind: StoreValueKind::String,
             _padding: 0,
-            payload: EnumPayload::from(data_pointer),
+            payload: EnumPayload::from(id_pointer),
         };
         let payload_pointer = AscPtr::alloc_obj(payload, &mut context.wasm_ctx, &GasCounter::new())
             .expect("Couldn't create pointer.");
         let map_entry = AscTypedMapEntry {
-            key: key_pointer,
+            key: id_pointer,
             value: payload_pointer,
         };
         let map_entry_pointer =
@@ -495,7 +488,7 @@ mod unit_tests {
                 id_pointer,
                 asc_map_pointer,
             )
-            .expect("Couldn't call mock_store_get.");
+            .expect("Couldn't call mock_store_set.");
 
         let inner_map = context
             .store
@@ -511,15 +504,9 @@ mod unit_tests {
 
         let entity = asc_string_from_str("entity");
         let id = asc_string_from_str("id");
-        let key = asc_string_from_str("key");
-        let data = asc_string_from_str("data");
         let entity_pointer = AscPtr::alloc_obj(entity, &mut context.wasm_ctx, &GasCounter::new())
             .expect("Couldn't create pointer.");
         let id_pointer = AscPtr::alloc_obj(id, &mut context.wasm_ctx, &GasCounter::new())
-            .expect("Couldn't create pointer.");
-        let key_pointer = AscPtr::alloc_obj(key, &mut context.wasm_ctx, &GasCounter::new())
-            .expect("Couldn't create pointer.");
-        let data_pointer = AscPtr::alloc_obj(data, &mut context.wasm_ctx, &GasCounter::new())
             .expect("Couldn't create pointer.");
 
         context.store.insert("entity".to_owned(), HashMap::new());
@@ -534,12 +521,12 @@ mod unit_tests {
         let payload = AscEnum::<StoreValueKind> {
             kind: StoreValueKind::String,
             _padding: 0,
-            payload: EnumPayload::from(data_pointer),
+            payload: EnumPayload::from(id_pointer),
         };
         let payload_pointer = AscPtr::alloc_obj(payload, &mut context.wasm_ctx, &GasCounter::new())
             .expect("Couldn't create pointer.");
         let map_entry = AscTypedMapEntry {
-            key: key_pointer,
+            key: id_pointer,
             value: payload_pointer,
         };
         let map_entry_pointer =
@@ -584,16 +571,21 @@ mod unit_tests {
 
         let nst = asc_string_from_str("NameSignalTransaction");
         let id = asc_string_from_str("nstid");
-        let key = asc_string_from_str("signer");
-        let data = asc_string_from_str("graphAccountId");
+        let id_key = asc_string_from_str("id");
+        let signer_key = asc_string_from_str("signer");
+        let signer_value = asc_string_from_str("graphAccountId");
         let entity_pointer = AscPtr::alloc_obj(nst, &mut context.wasm_ctx, &GasCounter::new())
             .expect("Couldn't create pointer.");
         let id_pointer = AscPtr::alloc_obj(id, &mut context.wasm_ctx, &GasCounter::new())
             .expect("Couldn't create pointer.");
-        let key_pointer = AscPtr::alloc_obj(key, &mut context.wasm_ctx, &GasCounter::new())
+        let id_key_pointer = AscPtr::alloc_obj(id_key, &mut context.wasm_ctx, &GasCounter::new())
             .expect("Couldn't create pointer.");
-        let data_pointer = AscPtr::alloc_obj(data, &mut context.wasm_ctx, &GasCounter::new())
-            .expect("Couldn't create pointer.");
+        let signer_key_pointer =
+            AscPtr::alloc_obj(signer_key, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
+        let signer_value_pointer =
+            AscPtr::alloc_obj(signer_value, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
 
         context
             .store
@@ -614,24 +606,44 @@ mod unit_tests {
             )],
         );
 
-        let payload = AscEnum::<StoreValueKind> {
+        // Create signer field parameter
+        let signer_payload = AscEnum::<StoreValueKind> {
             kind: StoreValueKind::String,
             _padding: 0,
-            payload: EnumPayload::from(data_pointer),
+            payload: EnumPayload::from(signer_value_pointer),
         };
-        let payload_pointer = AscPtr::alloc_obj(payload, &mut context.wasm_ctx, &GasCounter::new())
-            .expect("Couldn't create pointer.");
-        let map_entry = AscTypedMapEntry {
-            key: key_pointer,
-            value: payload_pointer,
-        };
-        let map_entry_pointer =
-            AscPtr::alloc_obj(map_entry, &mut context.wasm_ctx, &GasCounter::new())
+        let signer_payload_pointer =
+            AscPtr::alloc_obj(signer_payload, &mut context.wasm_ctx, &GasCounter::new())
                 .expect("Couldn't create pointer.");
+        let signer_entry = AscTypedMapEntry {
+            key: signer_key_pointer,
+            value: signer_payload_pointer,
+        };
+        let signer_entry_pointer =
+            AscPtr::alloc_obj(signer_entry, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
+
+        // Create ID field parameter
+        let id_payload = AscEnum::<StoreValueKind> {
+            kind: StoreValueKind::String,
+            _padding: 0,
+            payload: EnumPayload::from(id_pointer),
+        };
+        let id_payload_pointer =
+            AscPtr::alloc_obj(id_payload, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
+        let id_entry = AscTypedMapEntry {
+            key: id_key_pointer,
+            value: id_payload_pointer,
+        };
+        let id_entry_pointer =
+            AscPtr::alloc_obj(id_entry, &mut context.wasm_ctx, &GasCounter::new())
+                .expect("Couldn't create pointer.");
+
         let asc_map = AscTypedMap {
             entries: AscPtr::alloc_obj(
                 Array::new(
-                    &[map_entry_pointer],
+                    &[id_entry_pointer, signer_entry_pointer],
                     &mut context.wasm_ctx,
                     &GasCounter::new(),
                 )
@@ -651,7 +663,7 @@ mod unit_tests {
                 id_pointer,
                 asc_map_pointer,
             )
-            .expect("Couldn't call mock_store_get.");
+            .expect("Couldn't call mock_store_set.");
 
         let inner_map = context
             .store
