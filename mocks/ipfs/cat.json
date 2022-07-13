@@ -1,4 +1,5 @@
 {
   "id": "1",
-  "imageUrl": "https://i.ytimg.com/vi/MELP46s8Cic/maxresdefault.jpg"
+  "imageUrl": "https://example.com/image1.png",
+  "owner": "0x0000000000000000000000000000000000000001"
 }

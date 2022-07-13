@@ -4,7 +4,7 @@ mod integration_tests {
     use serial_test::serial;
     use std::path::PathBuf;
 
-    use crate::test_suite::{TestGroup, Testable};
+    use crate::test_suite::{Test, TestGroup, Testable};
     use crate::{MatchstickInstance, SCHEMA_LOCATION};
 
     #[test]
@@ -13,8 +13,9 @@ mod integration_tests {
         SCHEMA_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from("./mocks/schema.graphql"));
         let module = <MatchstickInstance<Chain>>::new("mocks/wasm/gravity.wasm");
         let test_suite = TestGroup::from(&module);
-
         let mut failed_tests = Box::new(0);
+
+        Test::call_hooks(&test_suite.before_all);
 
         for group in &test_suite.testables {
             run_testable(&group, &mut failed_tests);
@@ -29,8 +30,9 @@ mod integration_tests {
         SCHEMA_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from("./mocks/schema.graphql"));
         let module = <MatchstickInstance<Chain>>::new("mocks/wasm/token-lock-wallet.wasm");
         let test_suite = TestGroup::from(&module);
-
         let mut failed_tests = Box::new(0);
+
+        Test::call_hooks(&test_suite.before_all);
         for testable in &test_suite.testables {
             run_testable(&testable, &mut failed_tests);
         }
@@ -48,9 +50,13 @@ mod integration_tests {
                 }
             }
             Testable::Group(group) => {
+                Test::call_hooks(&group.before_all);
+
                 for testable in &group.testables {
                     run_testable(testable, num_failed);
                 }
+
+                Test::call_hooks(&group.after_all);
             }
         }
     }

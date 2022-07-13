@@ -3,7 +3,7 @@ use std::boxed::Box;
 use std::collections::HashMap;
 use std::str::FromStr;
 
-use anyhow::Context;
+use anyhow::{anyhow, Context};
 use graph::{
     blockchain::Blockchain,
     data::{
@@ -371,6 +371,45 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let mut data: HashMap<String, Value> =
             try_asc_get(&self.wasm_ctx, data_ptr, &GasCounter::new())?;
 
+        let required_fields = SCHEMA
+        .definitions
+        .iter()
+        .find_map(|def| {
+            if let schema::Definition::TypeDefinition(schema::TypeDefinition::Object(o)) = def {
+                if o.name == entity_type {
+                    Some(o)
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        })
+        .unwrap_or_else(|| {
+            logging::critical!("Something went wrong! Could not find the entity defined in the GraphQL schema.")
+        })
+        .fields
+        .iter()
+        .clone()
+        .filter(|&f| matches!(f.field_type, schema::Type::NonNullType(..)) && !f.is_derived());
+
+        for f in required_fields {
+            if !data.contains_key(&f.name) {
+                return Err(anyhow!(
+                    "Мissing value for non-nullable field '{}' for an entity of type '{}'.",
+                    f.name,
+                    entity_type,
+                )
+                .into());
+            } else if let Value::Null = data.get(&f.name).unwrap() {
+                return Err(anyhow!(
+                    "The required field '{}' for an entity of type '{}' is null.",
+                    f.name,
+                    entity_type,
+                )
+                .into());
+            }
+        }
         if self.derived.contains_key(&entity_type) {
             let linking_fields = self
                 .derived
