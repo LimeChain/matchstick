@@ -1,5 +1,3 @@
-use regex::Regex;
-use std::boxed::Box;
 use std::collections::HashMap;
 use std::str::FromStr;
 
@@ -8,11 +6,11 @@ use graph::{
     blockchain::Blockchain,
     data::{
         graphql::ext::DirectiveFinder,
-        store::{scalar::Bytes, Attribute, Value},
+        store::{Attribute, Value},
     },
     prelude::{
-        ethabi::{Address, ParamType, Token},
-        BigInt, Entity,
+        ethabi::{Address, Token},
+        Entity,
     },
     runtime::{asc_get, asc_new, gas::GasCounter, try_asc_get, AscPtr, HostExportError},
     semver::Version,
@@ -34,6 +32,15 @@ use serde_json::to_string_pretty;
 
 use crate::logging;
 use crate::SCHEMA_LOCATION;
+
+mod conversion;
+mod derived_fields;
+mod derived_schema;
+use conversion::{collect_types, get_kind, get_token_value};
+use derived_fields::{
+    cascade_remove, insert_derived_field_in_store, update_derived_relations_in_store,
+};
+use derived_schema::derive_schema;
 
 lazy_static! {
     /// Special tokens...
@@ -114,7 +121,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             data_source_return_value: (None, None, None),
             ipfs: HashMap::new(),
         };
-        context.derive_schema();
+        derive_schema(&mut context);
         context
     }
 
@@ -222,7 +229,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         field_name_ptr: AscPtr<AscString>,
         expected_val_ptr: AscPtr<AscString>,
     ) -> Result<bool, HostExportError> {
-        self.update_derived_relations_in_store();
+        update_derived_relations_in_store(self);
         let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new())?;
         let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new())?;
         let field_name: String = asc_get(&self.wasm_ctx, field_name_ptr, &GasCounter::new())?;
@@ -281,7 +288,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         expected_ptr: u32,
         actual_ptr: u32,
     ) -> Result<bool, HostExportError> {
-        self.update_derived_relations_in_store();
+        update_derived_relations_in_store(self);
         let expected: Token = asc_get::<_, AscEnum<EthereumValueKind>, _>(
             &self.wasm_ctx,
             expected_ptr.into(),
@@ -315,7 +322,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
     ) -> Result<bool, HostExportError> {
-        self.update_derived_relations_in_store();
+        update_derived_relations_in_store(self);
         let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new())?;
         let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new())?;
 
@@ -340,7 +347,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
     ) -> Result<AscPtr<AscEntity>, HostExportError> {
-        self.update_derived_relations_in_store();
+        update_derived_relations_in_store(self);
         let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new())?;
         let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new())?;
 
@@ -410,6 +417,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 .into());
             }
         }
+
         if self.derived.contains_key(&entity_type) {
             let linking_fields = self
                 .derived
@@ -433,7 +441,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                         .clone();
                     if matches!(derived_field_value, Value::List(_)) {
                         for derived_field_value in derived_field_value.as_list().unwrap().clone() {
-                            self.insert_derived_field_in_store(
+                            insert_derived_field_in_store(
+                                self,
                                 derived_field_value,
                                 original_entity_type.clone(),
                                 linking_field.clone(),
@@ -441,7 +450,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                             );
                         }
                     } else {
-                        self.insert_derived_field_in_store(
+                        insert_derived_field_in_store(
+                            self,
                             derived_field_value,
                             original_entity_type.clone(),
                             linking_field.clone(),
@@ -511,253 +521,6 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         Ok(())
     }
 
-    /// This function checks whether all the necessary data is present in the store to avoid linking
-    /// entities to other non existent entities which may cause serious collision problems later
-    fn insert_derived_field_in_store(
-        &mut self,
-        derived_field_value: Value,
-        original_entity: String,
-        linking_field: (String, String, String),
-        id: String,
-    ) {
-        if derived_field_value.is_string() {
-            let derived_field_string_value = derived_field_value.as_string().unwrap();
-            if self.store.contains_key(&original_entity) {
-                let mut inner_store = self
-                    .store
-                    .get(&original_entity)
-                    .unwrap_or_else(|| {
-                        logging::critical!("Couldn't find value for {} in store", original_entity)
-                    })
-                    .clone();
-                if inner_store.contains_key(&derived_field_string_value) {
-                    let mut innermost_store = inner_store
-                        .get(&derived_field_string_value)
-                        .unwrap_or_else(|| {
-                            logging::critical!(
-                                "Couldn't find value for {} in inner store",
-                                derived_field_string_value
-                            )
-                        })
-                        .clone();
-                    if innermost_store.contains_key(&linking_field.0) {
-                        let innermost_value = innermost_store
-                            .get(&linking_field.0)
-                            .unwrap_or_else(|| {
-                                logging::critical!(
-                                    "Couldn't find value for {} in innermost store",
-                                    linking_field.0
-                                )
-                            })
-                            .clone();
-                        if !innermost_value
-                            .clone()
-                            .as_list()
-                            .unwrap()
-                            .contains(&Value::from(id.clone()))
-                        {
-                            let mut innermost_value_list = innermost_value.as_list().unwrap();
-                            innermost_value_list.push(Value::from(id));
-                            innermost_store
-                                .insert(linking_field.0, Value::List(innermost_value_list));
-                        }
-                    } else {
-                        innermost_store.insert(linking_field.0, Value::List(vec![Value::from(id)]));
-                    }
-                    inner_store.insert(derived_field_string_value, innermost_store);
-                }
-                self.store.insert(original_entity, inner_store);
-            }
-        }
-    }
-
-    /// Checks for and removes faulty store relations.
-    /// This function is called on every assert/store.get to make sure assertions and entity loading is done with an updated store
-    fn update_derived_relations_in_store(&mut self) {
-        if !self.store_updated {
-            for entity in self.store.clone() {
-                for inner_entity in entity.1 {
-                    let entity_type = entity.0.clone();
-                    let id = inner_entity.0;
-                    let data = inner_entity.1;
-                    if self.derived.contains_key(&entity_type) {
-                        let mut entity_deleted = true;
-                        let linking_fields = self
-                            .derived
-                            .get(&entity_type)
-                            .unwrap_or_else(|| {
-                                logging::critical!(
-                                    "Couldn't find value for key {} in derived map",
-                                    entity_type
-                                )
-                            })
-                            .clone();
-                        for linking_field in &linking_fields {
-                            if self.store.contains_key(&linking_field.2) {
-                                let inner_store = self.store.get(&linking_field.2).unwrap().clone();
-                                if let Some(relation_id) = data.get(&linking_field.1) {
-                                    if relation_id.is_string()
-                                        && inner_store.contains_key(relation_id.as_str().unwrap())
-                                    {
-                                        entity_deleted = false;
-                                        let original_entity_data =
-                                            inner_store.get(relation_id.as_str().unwrap()).unwrap();
-                                        for field in original_entity_data {
-                                            if &linking_field.0 == field.0
-                                                && matches!(field.1, Value::List(_))
-                                            {
-                                                let value_list =
-                                                    field.1.clone().as_list().unwrap().clone();
-                                                if !value_list.contains(&Value::String(id.clone()))
-                                                    && data.contains_key(&linking_field.1)
-                                                {
-                                                    self.handle_different_value_types(
-                                                        data.clone(),
-                                                        linking_field,
-                                                        relation_id,
-                                                        field,
-                                                        id.clone(),
-                                                        entity_deleted,
-                                                    );
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // Removes the entity with no relations from every list it may be in
-                        if entity_deleted {
-                            for linking_field in &linking_fields {
-                                if self.store.contains_key(&linking_field.2) {
-                                    let inner_store =
-                                        self.store.get(&linking_field.2).unwrap().clone();
-                                    if let Some(relation_id) = data.get(&linking_field.1) {
-                                        if relation_id.is_string() {
-                                            for original_entity_id_and_data in &inner_store {
-                                                let innermost_store = inner_store
-                                                    .get(original_entity_id_and_data.0)
-                                                    .unwrap()
-                                                    .clone();
-                                                for field in &innermost_store {
-                                                    if &linking_field.0 == field.0
-                                                        && matches!(field.1, Value::List(_))
-                                                    {
-                                                        let value_list = field
-                                                            .1
-                                                            .clone()
-                                                            .as_list()
-                                                            .unwrap()
-                                                            .clone();
-                                                        if value_list
-                                                            .contains(&Value::String(id.clone()))
-                                                            && data.contains_key(&linking_field.1)
-                                                        {
-                                                            self.handle_different_value_types(
-                                                                data.clone(),
-                                                                linking_field,
-                                                                relation_id,
-                                                                field,
-                                                                id.clone(),
-                                                                entity_deleted,
-                                                            );
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            self.store_updated = true;
-        }
-    }
-
-    fn handle_different_value_types(
-        &mut self,
-        data: HashMap<String, Value>,
-        linking_field: &(String, String, String),
-        relation_id: &Value,
-        field: (&String, &Value),
-        id: String,
-        entity_deleted: bool,
-    ) {
-        if data.get(&linking_field.1).unwrap().is_string() {
-            self.remove_dead_relations(
-                data.get(&linking_field.1).unwrap().to_owned(),
-                relation_id.as_str().unwrap(),
-                field,
-                Value::String(id),
-                linking_field.2.clone(),
-                entity_deleted,
-            );
-        } else if matches!(data.get(&linking_field.1).unwrap(), Value::List(_)) {
-            let linking_field_values = data
-                .get(&linking_field.1)
-                .unwrap()
-                .clone()
-                .as_list()
-                .unwrap();
-            for linking_field_value in linking_field_values {
-                self.remove_dead_relations(
-                    linking_field_value,
-                    relation_id.as_str().unwrap(),
-                    field,
-                    Value::String(id.clone()),
-                    linking_field.2.clone(),
-                    entity_deleted,
-                );
-            }
-        }
-    }
-
-    fn remove_dead_relations(
-        &mut self,
-        current_value: Value,
-        entity: &str,
-        field: (&String, &Value),
-        value: Value,
-        original_entity: String,
-        entity_deleted: bool,
-    ) {
-        if current_value.is_string()
-            && (current_value.as_str().unwrap() != entity && !entity_deleted)
-            || (current_value.as_str().unwrap() == entity && entity_deleted)
-        {
-            let mut inner_store = self.store.get(&original_entity).unwrap().clone();
-            if !entity_deleted {
-                let mut innermost_store = inner_store.get(entity).unwrap().clone();
-                let mut value_list = field.1.clone().as_list().unwrap();
-
-                if value_list.contains(&value) {
-                    value_list.remove(value_list.iter().position(|x| *x == value).unwrap());
-                    innermost_store.insert(field.0.to_owned(), Value::List(value_list));
-                    inner_store.insert(entity.to_owned(), innermost_store);
-
-                    self.store.insert(original_entity, inner_store);
-                }
-            } else {
-                for mut entity in inner_store.clone() {
-                    let mut value_list = field.1.clone().as_list().unwrap();
-
-                    if value_list.contains(&value) {
-                        value_list.remove(value_list.iter().position(|x| *x == value).unwrap());
-                        entity.1.insert(field.0.to_owned(), Value::List(value_list));
-                        inner_store.insert(entity.0, entity.1);
-
-                        self.store
-                            .insert(original_entity.clone(), inner_store.clone());
-                    }
-                }
-            }
-        }
-    }
-
     /// function store.remove(entityType: string, id: string): void
     pub fn mock_store_remove(
         &mut self,
@@ -772,7 +535,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             && self.store.get(&entity_type).unwrap().contains_key(&id)
         {
             if self.derived.contains_key(&entity_type) {
-                self.cascade_remove(entity_type.clone(), id.clone());
+                cascade_remove(self, entity_type.clone(), id.clone());
             }
             let mut entity_type_store = self.store.get(&entity_type).unwrap().clone();
             entity_type_store.remove(&id);
@@ -788,58 +551,6 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         }
 
         Ok(())
-    }
-
-    /// Removes the deleted entity from the other end of any relations it may have
-    fn cascade_remove(&mut self, entity_type: String, id: String) {
-        let store = self.store.clone();
-        let deleted_entity_data = store.get(&entity_type).unwrap().get(&id).unwrap();
-        let linking_fields = self
-            .derived
-            .get(&entity_type)
-            .unwrap_or_else(|| {
-                logging::critical!("Couldn't find value for key {} in derived map", entity_type)
-            })
-            .clone();
-
-        for linking_field in linking_fields {
-            if self.store.contains_key(&linking_field.2) {
-                let original_entity_type = linking_field.2.clone();
-                let mut original_entity = store.get(&original_entity_type).unwrap().clone();
-                if deleted_entity_data.contains_key(&linking_field.1) {
-                    let relation_id = deleted_entity_data.get(&linking_field.1).unwrap();
-                    if relation_id.is_string()
-                        && original_entity.contains_key(relation_id.as_str().unwrap())
-                    {
-                        let mut inner_store = original_entity
-                            .get(relation_id.as_str().unwrap())
-                            .unwrap()
-                            .clone();
-                        if inner_store.contains_key(&linking_field.0) {
-                            let mut value_list = inner_store
-                                .get(&linking_field.0)
-                                .unwrap()
-                                .clone()
-                                .as_list()
-                                .unwrap();
-                            if value_list.contains(&Value::String(id.clone())) {
-                                value_list.remove(
-                                    value_list
-                                        .iter()
-                                        .position(|x| *x == Value::String(id.clone()))
-                                        .unwrap(),
-                                );
-                                inner_store.insert(linking_field.0, Value::List(value_list));
-                                original_entity
-                                    .insert(relation_id.clone().as_string().unwrap(), inner_store);
-                                self.store
-                                    .insert(original_entity_type.clone(), original_entity.clone());
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 
     /// function ethereum.call(call: SmartContractCall): Array<Value> | null
@@ -1229,61 +940,6 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
         Ok(())
     }
-
-    /// This function reads the schema.graphql file and writes all the relations
-    /// between the entities to the derived data structure
-    fn derive_schema(&mut self) {
-        SCHEMA.definitions.iter().for_each(|def| {
-            if let schema::Definition::TypeDefinition(schema::TypeDefinition::Object(o)) = def {
-                let entity_type = &o.name;
-                let derived_fields = o.fields.iter().filter(|&f| {
-                    matches!(f.field_type, schema::Type::NonNullType(..)) && f.is_derived()
-                });
-                for f in derived_fields {
-                    // field type is received as: '[ExampleClass!]!' and needs to be reduced to a class string
-                    let clean_field_type = f
-                        .field_type
-                        .to_string()
-                        .replace('!', "")
-                        .replace('[', "")
-                        .replace(']', "");
-                    let mut directive = f.find_directive("derivedFrom").unwrap().clone();
-
-                    let field = directive
-                        .arguments
-                        .pop()
-                        .unwrap()
-                        .1
-                        .to_string()
-                        .replace('\"', "");
-
-                    if self.derived.contains_key(&clean_field_type) {
-                        let mut field_names_vec = self
-                            .derived
-                            .get(&clean_field_type)
-                            .unwrap_or_else(|| {
-                                logging::critical!(
-                                    "Failed to get field names vector for type {}",
-                                    clean_field_type
-                                )
-                            })
-                            .clone();
-
-                        let field_names_tuple = (f.name.clone(), field, String::from(entity_type));
-                        if !field_names_vec.contains(&field_names_tuple) {
-                            field_names_vec.push(field_names_tuple);
-                            self.derived.insert(clean_field_type, field_names_vec);
-                        }
-                    } else {
-                        self.derived.insert(
-                            clean_field_type,
-                            vec![(f.name.clone(), field, String::from(entity_type))],
-                        );
-                    }
-                }
-            }
-        });
-    }
 }
 
 pub fn asc_string_from_str(initial_string: &str) -> AscString {
@@ -1292,106 +948,4 @@ pub fn asc_string_from_str(initial_string: &str) -> AscString {
     utf_16_iterator.for_each(|element| u16_vector.push(element));
     let version = Version::new(0, 0, 6);
     AscString::new(&u16_vector, version).expect("Couldn't create AscString.")
-}
-
-/// Collects the arguments types from the function signature and returns a Vec
-/// Because the arguments could be tuples, it's not possible jus to split on every comma
-/// so we count the open parentheses and only split when there are none currently open.
-fn collect_types(arg_str: &str) -> Vec<String> {
-    let mut arg_types: Vec<String> = vec![];
-
-    if !arg_str.is_empty() {
-        let mut parenthesis = 0;
-        let mut arg_type = "".to_owned();
-
-        for char in arg_str.chars() {
-            if char == '(' {
-                arg_type = arg_type.to_owned() + "(";
-                parenthesis += 1;
-            } else if char == ')' {
-                arg_type = arg_type.to_owned() + ")";
-                parenthesis -= 1;
-            } else if char == ',' && parenthesis == 0 {
-                arg_types.push(arg_type);
-                arg_type = "".to_owned();
-            } else {
-                arg_type = arg_type.to_owned() + &char.to_string();
-            }
-        }
-
-        if !arg_type.is_empty() {
-            arg_types.push(arg_type)
-        }
-    }
-
-    arg_types
-}
-
-/// Converts string argument types from the function signature into ethabi::ParamType.
-fn get_kind(kind: String) -> ParamType {
-    let kind_str = kind.trim();
-    let int_r = Regex::new(r#"^int\d+$"#).expect("Invalid uint/int regex");
-    let uint_r = Regex::new(r#"^uint\d+$"#).expect("Invalid uint/int regex");
-    let array_r = Regex::new(r#"\w*\d*\[\]$"#).expect("Invalid array regex");
-    let fixed_bytes_r = Regex::new(r#"bytes\d+$"#).expect("Invalid fixedBytes regex");
-    let fixed_array_r = Regex::new(r#"\w*\d*\[\d+\]$"#).expect("Invalid fixedArray regex");
-    let tuple_r = Regex::new(r#"\((.+?)(?:,|$)*\)$"#).expect("Invalid tuple regex");
-
-    match kind_str {
-        "address" => ParamType::Address,
-        "bool" => ParamType::Bool,
-        "bytes" => ParamType::Bytes,
-        "string" => ParamType::String,
-        kind_str if int_r.is_match(kind_str) => {
-            let size = kind_str.replace("int", "").parse::<usize>().unwrap();
-            ParamType::Int(size)
-        }
-        kind_str if uint_r.is_match(kind_str) => {
-            let size = kind_str.replace("uint", "").parse::<usize>().unwrap();
-            ParamType::Uint(size)
-        }
-        kind_str if array_r.is_match(kind_str) => {
-            let p_type = Box::new(get_kind(kind_str.replace("[]", "")));
-            ParamType::Array(p_type)
-        }
-        kind_str if fixed_bytes_r.is_match(kind_str) => {
-            let size = kind_str.replace("bytes", "").parse::<usize>().unwrap();
-            ParamType::FixedBytes(size)
-        }
-        kind_str if fixed_array_r.is_match(kind_str) => {
-            let tmp_str = kind.replace(']', "");
-            let components: Vec<&str> = tmp_str.split('[').collect();
-            let p_type = Box::new(get_kind(components[0].to_owned()));
-            let size = components[1].parse::<usize>().unwrap();
-            ParamType::FixedArray(p_type, size)
-        }
-        kind_str if tuple_r.is_match(kind_str) => {
-            let tmp_str = &kind_str[1..kind_str.len() - 1];
-            let str_components: Vec<String> = collect_types(tmp_str);
-            let components: Vec<ParamType> = str_components.into_iter().map(get_kind).collect();
-            ParamType::Tuple(components)
-        }
-        _ => logging::critical!("Unrecognized argument type `{}`", kind_str),
-    }
-}
-
-/// Converst ethabi::Token into graph::data::store::Value
-/// This is needed because ethabi::Token stores Int values as a Uint256
-/// and negative numbers are stored as overflowed Uint256
-/// e.g -2147483648 is stored as
-/// 115792089237316195423570985008687907853269984665640564039457584007910982156288
-fn get_token_value(token: Token) -> Value {
-    match token {
-        Token::Address(address) => Value::Bytes(Bytes::from(address)),
-        Token::FixedBytes(bytes) | Token::Bytes(bytes) => {
-            Value::Bytes(Bytes::from(bytes.as_slice()))
-        }
-        Token::Int(uint) => Value::BigInt(BigInt::from_signed_u256(&uint)),
-        Token::Uint(uint) => Value::BigInt(BigInt::from_unsigned_u256(&uint)),
-        Token::Bool(bool) => Value::Bool(bool),
-        Token::String(string) => Value::String(string),
-        Token::FixedArray(tokens) | Token::Array(tokens) | Token::Tuple(tokens) => {
-            Value::List(tokens.into_iter().map(get_token_value).collect())
-        }
-    }
 }
