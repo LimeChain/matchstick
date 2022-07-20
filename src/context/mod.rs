@@ -403,7 +403,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         for f in required_fields {
             if !data.contains_key(&f.name) {
                 return Err(anyhow!(
-                    "Мissing value for non-nullable field '{}' for an entity of type '{}'.",
+                    "Missing value for non-nullable field '{}' for an entity of type '{}'.",
                     f.name,
                     entity_type,
                 )
@@ -543,11 +543,12 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             self.store.insert(entity_type, entity_type_store);
             self.store_updated = false;
         } else {
-            logging::error!(
+            return Err(anyhow!(
                 "(store.remove) Entity with type '{}' and id '{}' does not exist.",
                 &entity_type,
                 &id
-            );
+            )
+            .into());
         }
 
         Ok(())
@@ -596,13 +597,13 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
             Ok(return_val)
         } else {
-            logging::critical!(
-                "Could not find a mocked function for function with address: {}, name: {}, signature {}, params: {:?}.",
+            return Err(anyhow!(
+                "Could not find a mocked function with the following parameters, address: {}, name: {}, signature {}, params: {:?}.",
                 &contract_address,
                 &fn_name,
                 &fn_signature,
                 &fn_args
-            );
+            ).into());
         }
     }
 
@@ -650,21 +651,22 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
         let fn_signature_split: Vec<&str> = fn_signature.split('(').collect();
         if fn_name != fn_signature_split[0] {
-            logging::critical!(
+            return Err(anyhow!(
                 "createMockedFunction: function name `{}` should match the name in the function signature `{}`",
                 fn_name,
                 fn_signature
-            )
+            ).into());
         }
 
         // Checks if the count of the passed arguments matches the count of expected arguments
         if arg_types.len() != fn_args.len() {
-            logging::critical!(
+            return Err(anyhow!(
                 "{} expected {} arguments, but received {}",
                 fn_name,
                 arg_types.len(),
                 fn_args.len()
             )
+            .into());
         }
 
         // Validates that every passed argument matches the type of the expected argument
@@ -674,13 +676,13 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             let param_type = get_kind(arg_type.to_owned());
 
             if !fn_arg.type_check(&param_type) {
-                logging::critical!(
+                return Err(anyhow!(
                     "createMockedFunction `{}` parameters mismatch at position {}:\nExpected: {:?}\nRecieved: {:?}\n",
                     fn_name,
                     index + 1,
                     param_type,
                     fn_arg
-                );
+                ).into());
             }
         }
 
