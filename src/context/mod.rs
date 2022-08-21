@@ -597,13 +597,13 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
             Ok(return_val)
         } else {
-            return Err(anyhow!(
+            Err(anyhow!(
                 "Could not find a mocked function with the following parameters, address: {}, name: {}, signature {}, params: {:?}.",
                 &contract_address,
                 &fn_name,
                 &fn_signature,
                 &fn_args
-            ).into());
+            ).into())
         }
     }
 

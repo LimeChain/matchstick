@@ -18,7 +18,7 @@ mod integration_tests {
         Test::call_hooks(&test_suite.before_all);
 
         for group in &test_suite.testables {
-            run_testable(&group, &mut failed_tests);
+            run_testable(group, &mut failed_tests);
         }
 
         assert_eq!(failed_tests, Box::new(0));
@@ -34,7 +34,7 @@ mod integration_tests {
 
         Test::call_hooks(&test_suite.before_all);
         for testable in &test_suite.testables {
-            run_testable(&testable, &mut failed_tests);
+            run_testable(testable, &mut failed_tests);
         }
 
         assert_eq!(failed_tests, Box::new(0));
