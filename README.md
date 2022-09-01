@@ -54,8 +54,15 @@ The release binary comes in two flavours - for **МacOS** and **Linux**. To add 
 
 #### MacOS 
 ❗ Postgres installation command:
+
 ```
-brew install postgresql
+brew install postgresql@14
+```
+
+Then create new symlink to the lib:
+
+```
+ln -sf /usr/local/opt/postgresql@14/lib/postgresql@14/libpq.5.dylib /usr/local/opt/postgresql/lib/libpq.5.dylib
 ```
 
 #### Linux 🐧
