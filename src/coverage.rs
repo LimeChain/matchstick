@@ -34,7 +34,7 @@ pub fn generate_coverage_report() {
                 let mut is_tested = false;
 
                 for wat_file in &wat_files {
-                    let wat_content = fs::read_to_string(&wat_file)
+                    let wat_content = fs::read_to_string(wat_file)
                         .unwrap_or_else(|_| logging::critical!("Couldn't read wat file."));
 
                     if is_called(&wat_content, &handler) {
