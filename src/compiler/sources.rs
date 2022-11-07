@@ -20,12 +20,12 @@ pub fn get_test_sources(matches: &ArgMatches) -> HashMap<String, PathBuf> {
             logging::critical!("No tests have been written yet.");
         }
 
-        if let Some(vals) = matches.values_of("test_suites") {
-            let patterns: Vec<&str> = vals.collect::<Vec<&str>>();
+        if let Some(values) = matches.values_of("test_suites") {
+            let patterns: Vec<&str> = values.collect::<Vec<&str>>();
             let formatted: HashSet<String> = patterns
                 .iter()
                 .map(|pattern| {
-                    let full_path = tests_path.join(&pattern);
+                    let full_path = tests_path.join(pattern);
                     format!("^{}", full_path.to_str().unwrap()).to_ascii_lowercase()
                 })
                 .collect();

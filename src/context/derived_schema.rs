@@ -15,12 +15,7 @@ pub(crate) fn derive_schema<C: graph::blockchain::Blockchain>(
             });
             for f in derived_fields {
                 // field type is received as: '[ExampleClass!]!' and needs to be reduced to a class string
-                let clean_field_type = f
-                    .field_type
-                    .to_string()
-                    .replace('!', "")
-                    .replace('[', "")
-                    .replace(']', "");
+                let clean_field_type = f.field_type.to_string().replace(['!', '[', ']'], "");
                 let mut directive = f.find_directive("derivedFrom").unwrap().clone();
 
                 let field = directive

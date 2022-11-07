@@ -885,7 +885,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             .ipfs
             .get(&link)
             .unwrap_or_else(|| logging::critical!("IPFS file `{}` not found", link));
-        let data = std::fs::read_to_string(&file_path).unwrap_or_else(|err| {
+        let data = std::fs::read_to_string(file_path).unwrap_or_else(|err| {
             logging::critical!("Failed to read file `{}` with error: {}", file_path, err)
         });
         let json_values: Vec<serde_json::Value> = serde_json::from_str(&data).unwrap();
