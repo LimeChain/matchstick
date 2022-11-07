@@ -2,7 +2,7 @@ use colored::Colorize;
 use regex::Regex;
 use run_script::{run_or_exit, ScriptOptions};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::logging;
 use crate::parser;
@@ -91,25 +91,29 @@ fn is_called(wat_content: &str, handler: &str) -> bool {
     regex.is_match(wat_content)
 }
 
-fn collect_wasm_files() -> Vec<PathBuf> {
+fn collect_wasm_files(path: &Path) -> Vec<PathBuf> {
     let mut files: Vec<PathBuf> = Vec::new();
 
-    crate::TESTS_LOCATION.with(|path| {
-        let bin_location = path.borrow().join(".bin");
+    let entries = path.read_dir().unwrap_or_else(|err| {
+        logging::critical!("Could not get wasm files from {:?}: {}", path, err)
+    });
 
-        let entries = fs::read_dir(&bin_location)
-            .unwrap_or_else(|_| logging::critical!("Couldn't find folder '{:?}.", bin_location));
+    for entry in entries {
+        let entry = entry.unwrap_or_else(|err| logging::critical!(err));
+        let name = entry.file_name().to_str().unwrap().to_ascii_lowercase();
 
-        for entry in entries {
-            let file_name = entry.unwrap().path();
+        if name.ends_with(".wasm") {
+            files.push(entry.path());
+        } else if entry.path().is_dir() {
+            let mut sub_files = collect_wasm_files(&entry.path());
 
-            if let Some(ext) = file_name.extension() {
-                if ext == "wasm" {
-                    files.push(file_name)
+            if !sub_files.is_empty() {
+                for file in sub_files.iter_mut() {
+                    files.push(file.to_path_buf());
                 }
             }
         }
-    });
+    }
 
     files
 }
@@ -117,7 +121,14 @@ fn collect_wasm_files() -> Vec<PathBuf> {
 /// Converts each wasm file to wat
 /// Returns a collection of all .wat files paths
 fn generate_wat_files() -> Vec<String> {
-    collect_wasm_files()
+    let mut wasm_files: Vec<PathBuf> = vec![];
+
+    crate::TESTS_LOCATION.with(|path| {
+        let bin_location = path.borrow().join(".bin");
+        wasm_files = collect_wasm_files(&bin_location);
+    });
+
+    wasm_files
         .iter()
         .map(|file| {
             let destination = file.with_extension("wat");
