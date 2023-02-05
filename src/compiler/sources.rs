@@ -181,7 +181,7 @@ fn handle_import(in_file: &Path, import: &Path, imports: &mut HashSet<PathBuf>) 
     if import.is_dir() {
         for entry in import
             .read_dir()
-            .unwrap_or_else(|_| panic!("Could not read dir: {:?}", import))
+            .unwrap_or_else(|_| panic!("Could not read dir: {import:?}"))
         {
             handle_import(in_file, &entry.unwrap().path(), imports)
         }
@@ -210,9 +210,9 @@ mod compiler_tests {
         assert_eq!(
             includes,
             HashSet::from([
-                PathBuf::from(format!("{}/mocks/as/utils.ts", root_path_str)),
-                PathBuf::from(format!("{}/mocks/generated/schema.ts", root_path_str)),
-                PathBuf::from(format!("{}/mocks/src/gravity.ts", root_path_str))
+                PathBuf::from(format!("{root_path_str}/mocks/as/utils.ts")),
+                PathBuf::from(format!("{root_path_str}/mocks/generated/schema.ts")),
+                PathBuf::from(format!("{root_path_str}/mocks/src/gravity.ts"))
             ])
         )
     }

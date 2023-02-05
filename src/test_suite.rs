@@ -105,7 +105,7 @@ impl Test {
         let msg = format!(
             "{} - {}",
             self.name.clone(),
-            format!("{:.3?}ms", elapsed_in_ms).bright_blue()
+            format!("{elapsed_in_ms:.3?}ms").bright_blue()
         );
         if passed {
             logging::success!(msg);

@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod unit_tests {
+mod tests {
     use std::collections::HashMap;
     use std::path::PathBuf;
     use std::str::FromStr;
@@ -110,7 +110,7 @@ mod unit_tests {
 
         assert_eq!(context.meta_tests.len(), 1);
         assert_eq!(context.meta_tests[0].0, "test");
-        assert_eq!(context.meta_tests[0].1, false);
+        assert!(!context.meta_tests[0].1);
         assert_eq!(context.meta_tests[0].2, 0);
     }
 
@@ -786,7 +786,7 @@ mod unit_tests {
             .expect("Couldn't call ethereum_call.");
 
         let fn_args: Vec<Token> = asc_get::<_, Array<AscPtr<AscEnum<EthereumValueKind>>>, _>(
-            &mut context.wasm_ctx,
+            &context.wasm_ctx,
             result,
             &GasCounter::new(),
         )
@@ -1167,12 +1167,9 @@ mod unit_tests {
             .unwrap();
 
         assert_eq!(context.ipfs.len(), 1);
-        assert_eq!(
-            context
-                .ipfs
-                .contains_key("QmTkzDwWqPbnAh5YiV5VwcTLnGdwSNsNTn2aDxdXBFca7D"),
-            true
-        );
+        assert!(context
+            .ipfs
+            .contains_key("QmTkzDwWqPbnAh5YiV5VwcTLnGdwSNsNTn2aDxdXBFca7D"));
         assert_eq!(
             context
                 .ipfs
@@ -1198,8 +1195,7 @@ mod unit_tests {
             .unwrap();
 
         let result_ptr = context.mock_ipfs_cat(&GasCounter::new(), hash_ptr).unwrap();
-        let result: Vec<u8> =
-            asc_get(&mut context.wasm_ctx, result_ptr, &GasCounter::new()).unwrap();
+        let result: Vec<u8> = asc_get(&context.wasm_ctx, result_ptr, &GasCounter::new()).unwrap();
         let string = std::fs::read_to_string("./mocks/ipfs/cat.json").expect("File not found!");
 
         assert_eq!(result, string.as_bytes());

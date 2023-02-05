@@ -32,7 +32,7 @@ pub fn flush() -> String {
     unsafe {
         ACCUM = false;
         LOGS.iter().for_each(|s| {
-            writeln!(&mut buf, "{}", s).unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
+            writeln!(&mut buf, "{s}").unwrap_or_else(|err| panic!("{}", Log::Critical(err)))
         });
         LOGS.clear();
     };
@@ -72,20 +72,20 @@ impl<T: fmt::Display> Log<T> {
                 return;
             }
         }
-        println!("{}", s);
+        println!("{s}");
     }
 }
 
 impl<T: fmt::Display> fmt::Display for Log<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
-            Log::Critical(s) => format!("🆘 {}", s).bold().red(),
-            Log::Error(s) => format!("𝖷 {}", s).bold().red(),
-            Log::Warning(s) => format!("⚠️  {}", s).yellow(),
-            Log::Info(s) => format!("💬 {}", s).italic(),
-            Log::Debug(s) => format!("🛠  {}", s).italic().cyan(),
-            Log::Success(s) => format!("√ {}", s).bold().green(),
-            Log::Default(s) => format!("{}", s).normal(),
+            Log::Critical(s) => format!("🆘 {s}").bold().red(),
+            Log::Error(s) => format!("𝖷 {s}").bold().red(),
+            Log::Warning(s) => format!("⚠️  {s}").yellow(),
+            Log::Info(s) => format!("💬 {s}").italic(),
+            Log::Debug(s) => format!("🛠  {s}").italic().cyan(),
+            Log::Success(s) => format!("√ {s}").bold().green(),
+            Log::Default(s) => format!("{s}").normal(),
         };
         unsafe { write!(f, "{}{}", " ".repeat(INDENT), s) }
     }
