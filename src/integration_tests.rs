@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod integration_tests {
+mod tests {
     use graph_chain_ethereum::Chain;
     use serial_test::serial;
     use std::path::PathBuf;

@@ -244,7 +244,7 @@ impl<C: Blockchain> MatchstickInstance<C> {
                     let name_for_metrics = host_fn.name.replace('.', "_");
                     let stopwatch = &instance.wasm_ctx.host_metrics.stopwatch;
                     let _section =
-                        stopwatch.start_section(&format!("host_export_{}", name_for_metrics));
+                        stopwatch.start_section(&format!("host_export_{name_for_metrics}"));
 
                     let ctx = HostFnCtx {
                         logger: instance.wasm_ctx.ctx.logger.cheap_clone(),

@@ -85,7 +85,7 @@ pub fn generate_coverage_report() {
 }
 
 fn is_called(wat_content: &str, handler: &str) -> bool {
-    let pattern = format!(r#"call.+{}"#, handler);
+    let pattern = format!(r#"call.+{handler}"#);
     let regex = Regex::new(&pattern).expect("Not a valid regex pattern.");
 
     regex.is_match(wat_content)

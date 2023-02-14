@@ -26,9 +26,9 @@ pub fn parse_yaml(path: &str) -> Value {
 fn extract_string(value: &Value, key: &str) -> String {
     value
         .get(key)
-        .unwrap_or_else(|| panic!("Couldn't find key `{}` in subgraph.yaml", key))
+        .unwrap_or_else(|| panic!("Couldn't find key `{key}` in subgraph.yaml"))
         .as_str()
-        .unwrap_or_else(|| panic!("Couldn't parse `{}` as str", key))
+        .unwrap_or_else(|| panic!("Couldn't parse `{key}` as str"))
         .to_owned()
 }
 
@@ -51,7 +51,7 @@ fn extract_vec(value: &Value, key: &str) -> Sequence {
         .get(key)
         .unwrap_or(&Value::Sequence(vec![]))
         .as_sequence()
-        .unwrap_or_else(|| panic!("Couldn't parse `{}` as Sequence", key))
+        .unwrap_or_else(|| panic!("Couldn't parse `{key}` as Sequence"))
         .to_vec()
 }
 

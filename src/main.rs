@@ -155,8 +155,8 @@ fn run_test_suites(test_suites: HashMap<String, TestGroup>) -> i32 {
         .collect();
 
     if *num_failed > 0 {
-        let failed = format!("{} failed", num_failed).red();
-        let passed = format!("{} passed", num_passed).green();
+        let failed = format!("{num_failed} failed").red();
+        let passed = format!("{num_passed} passed").green();
         let total = format!("{} total", *num_failed + *num_passed);
 
         logging::log_with_style!(red, "\nFailed tests:\n");
