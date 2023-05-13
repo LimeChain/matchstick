@@ -1973,7 +1973,7 @@ checksum = "73cbba799671b762df5a175adf59ce145165747bb891505c43d09aefbbf38beb"
 
 [[package]]
 name = "matchstick"
-version = "0.5.0"
+version = "0.5.5"
 dependencies = [
  "anyhow",
  "async-trait",
