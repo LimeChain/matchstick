@@ -435,6 +435,7 @@ impl<C: Blockchain> MatchstickInstance<C> {
 
         link!("ens.nameByHash", wasm_ctx.ens_name_by_hash, ptr);
 
+
         link!("log.log", log, level, msg_ptr);
 
         // `arweave and `box` functionality was removed, but apiVersion <= 0.0.4 must link it.

@@ -1,5 +1,5 @@
 use colored::Colorize;
-use graph::blockchain::Blockchain;
+use graph::{blockchain::Blockchain};
 use std::time::Instant;
 use wasmtime::Func;
 
@@ -33,6 +33,9 @@ pub enum Testable {
     Test(Test),
     Group(TestGroup),
 }
+
+impl std::panic::UnwindSafe for Test {}
+impl std::panic::RefUnwindSafe for Test {}
 
 impl Test {
     fn new(name: String, should_fail: bool, func: Func) -> Self {
@@ -71,15 +74,36 @@ impl Test {
         logging::add_indent();
         let now = Instant::now();
 
-        let passed: bool = match self.func.call(&[]) {
-            Ok(_) => {
-                // Log error and mark test as failed if should_fail is `true`, but test passes
-                // Otherwise mark test as passed
-                if self.should_fail {
-                    logging::error!("Expected test to fail but it passed successfully!");
-                    false
-                } else {
-                    true
+        let passed: bool = match std::panic::catch_unwind(|| self.func.call(&[])) {
+            // Catch some panics and mark test as failed instead of crashing
+            // For example when the test calls log.critical()
+            // If should_fail is `true`, mark test as passed
+            // If no panic is caught, check if test has passed or failed
+            Ok(result) => {
+                match result {
+                    Ok(_) => {
+                        // Log error and mark test as failed if should_fail is `true`, but test passes
+                        // Otherwise mark test as passed
+                        if self.should_fail {
+                            logging::error!("Expected test to fail but it passed successfully!");
+                            false
+                        } else {
+                            true
+                        }
+                    },
+                    Err(err) => {
+                        if self.should_fail {
+                            true
+                        } else {
+                            logging::add_indent();
+                            if let Ok(message) = err.downcast::<String>() {
+                                logging::debug!(message);
+                            }
+
+                            logging::sub_indent();
+                            false
+                        }
+                    }
                 }
             }
             Err(err) => {
@@ -89,7 +113,10 @@ impl Test {
                     true
                 } else {
                     logging::add_indent();
-                    logging::debug!(err);
+                    if let Ok(message) = err.downcast::<String>() {
+                        logging::debug!(message);
+                    }
+
                     logging::sub_indent();
                     false
                 }
