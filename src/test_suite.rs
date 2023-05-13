@@ -1,5 +1,5 @@
 use colored::Colorize;
-use graph::{blockchain::Blockchain};
+use graph::blockchain::Blockchain;
 use std::time::Instant;
 use wasmtime::Func;
 
@@ -90,7 +90,7 @@ impl Test {
                         } else {
                             true
                         }
-                    },
+                    }
                     Err(err) => {
                         if self.should_fail {
                             true
