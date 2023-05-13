@@ -62,11 +62,11 @@ mod tests {
 
     #[test]
     #[serial]
-    #[should_panic(expected = "🆘")]
+    #[should_panic(expected = "Aborted by `log.critical` with message: log message")]
     fn log_panic_test() {
         let mut context = get_context();
 
-        let message = asc_string_from_str("log message");
+        let message = asc_string_from_str("Aborted by `log.critical` with message: log message");
         let pointer = AscPtr::alloc_obj(message, &mut context.wasm_ctx, &GasCounter::new())
             .expect("Couldn't create pointer.");
 
