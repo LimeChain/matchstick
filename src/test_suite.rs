@@ -1,6 +1,6 @@
 use colored::Colorize;
 use graph::blockchain::Blockchain;
-use std::time::Instant;
+use std::{panic, time::Instant};
 use wasmtime::Func;
 
 use crate::{instance::MatchstickInstance, logging};
@@ -36,6 +36,14 @@ pub enum Testable {
 
 impl std::panic::UnwindSafe for Test {}
 impl std::panic::RefUnwindSafe for Test {}
+
+fn catch_unwind_silent<F: FnOnce() -> R + panic::UnwindSafe, R>(f: F) -> std::thread::Result<R> {
+    let prev_hook = panic::take_hook();
+    panic::set_hook(Box::new(|_| {}));
+    let result = panic::catch_unwind(f);
+    panic::set_hook(prev_hook);
+    result
+}
 
 impl Test {
     fn new(name: String, should_fail: bool, func: Func) -> Self {
@@ -74,7 +82,7 @@ impl Test {
         logging::add_indent();
         let now = Instant::now();
 
-        let passed: bool = match std::panic::catch_unwind(|| self.func.call(&[])) {
+        let passed: bool = match catch_unwind_silent(|| self.func.call(&[])) {
             // Catch some panics and mark test as failed instead of crashing
             // For example when the test calls log.critical()
             // If should_fail is `true`, mark test as passed
@@ -96,9 +104,7 @@ impl Test {
                             true
                         } else {
                             logging::add_indent();
-                            if let Ok(message) = err.downcast::<String>() {
-                                logging::debug!(message);
-                            }
+                            logging::debug!(err);
 
                             logging::sub_indent();
                             false
