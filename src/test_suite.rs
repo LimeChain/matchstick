@@ -82,7 +82,7 @@ impl Test {
         logging::add_indent();
         let now = Instant::now();
 
-        let passed: bool = match catch_unwind_silent(|| self.func.call(&[])) {
+        let passed: bool = match std::panic::catch_unwind(|| self.func.call(&[])) {
             // Catch some panics and mark test as failed instead of crashing
             // For example when the test calls log.critical()
             // If should_fail is `true`, mark test as passed

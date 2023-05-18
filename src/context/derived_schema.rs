@@ -1,7 +1,7 @@
 use graph::data::graphql::ext::DirectiveFinder;
 use graph_graphql::graphql_parser::schema;
 
-use crate::context::{MatchstickInstanceContext, SCHEMA};
+use crate::context::{LinkingField, MatchstickInstanceContext, SCHEMA};
 use crate::logging;
 
 pub(crate) fn derive_schema<C: graph::blockchain::Blockchain>(
@@ -38,7 +38,8 @@ pub(crate) fn derive_schema<C: graph::blockchain::Blockchain>(
                         })
                         .clone();
 
-                    let field_names_tuple = (f.name.clone(), field, String::from(entity_type));
+                    let field_names_tuple =
+                        LinkingField(f.name.clone(), field, String::from(entity_type));
                     if !field_names_vec.contains(&field_names_tuple) {
                         field_names_vec.push(field_names_tuple);
                         context.derived.insert(clean_field_type, field_names_vec);
@@ -46,7 +47,11 @@ pub(crate) fn derive_schema<C: graph::blockchain::Blockchain>(
                 } else {
                     context.derived.insert(
                         clean_field_type,
-                        vec![(f.name.clone(), field, String::from(entity_type))],
+                        vec![LinkingField(
+                            f.name.clone(),
+                            field,
+                            String::from(entity_type),
+                        )],
                     );
                 }
             }

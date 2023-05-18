@@ -36,6 +36,8 @@ use crate::SCHEMA_LOCATION;
 mod conversion;
 mod derived_fields;
 mod derived_schema;
+mod unit_tests;
+
 use conversion::{collect_types, get_kind, get_token_value};
 use derived_fields::{
     cascade_remove, insert_derived_field_in_store, update_derived_relations_in_store,
@@ -69,6 +71,22 @@ lazy_static! {
     };
 }
 
+#[derive(PartialEq, Clone)]
+pub(crate) struct LinkingField(String, String, String);
+
+impl LinkingField {
+    fn children(&self) -> &String {
+        &self.0
+    }
+
+    fn derived_from(&self) -> &String {
+        &self.1
+    }
+
+    fn parent(&self) -> &String {
+        &self.2
+    }
+}
 /// The Matchstick Instance Context wraps WASM Instance Context and
 /// implements the external functions.
 pub struct MatchstickInstanceContext<C: Blockchain> {
@@ -94,7 +112,7 @@ pub struct MatchstickInstanceContext<C: Blockchain> {
     ///     signer: GraphAccount!
     /// }
     /// ```
-    pub(crate) derived: HashMap<String, Vec<(String, String, String)>>,
+    pub(crate) derived: HashMap<String, Vec<LinkingField>>,
     /// Gives guarantee that all derived relations are in order when true
     store_updated: bool,
     /// Holds the mocked return values of `dataSource.address()`, `dataSource.network()` and `dataSource.context()` in that order
@@ -377,7 +395,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new())?;
         let mut data: HashMap<String, Value> =
             try_asc_get(&self.wasm_ctx, data_ptr, &GasCounter::new())?;
-
+        let id_value = data.get("id").unwrap();
         let required_fields = SCHEMA
         .definitions
         .iter()
@@ -439,6 +457,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                             )
                         })
                         .clone();
+
                     if matches!(derived_field_value, Value::List(_)) {
                         for derived_field_value in derived_field_value.as_list().unwrap().clone() {
                             insert_derived_field_in_store(
@@ -446,7 +465,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                                 derived_field_value,
                                 original_entity_type.clone(),
                                 linking_field.clone(),
-                                id.clone(),
+                                id_value.clone(),
                             );
                         }
                     } else {
@@ -455,7 +474,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                             derived_field_value,
                             original_entity_type.clone(),
                             linking_field.clone(),
-                            id.clone(),
+                            id_value.clone(),
                         );
                     }
                 }
@@ -469,7 +488,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         };
 
         // Collect all child entities for the passed entity_type
-        let child_entities: HashMap<String, Vec<(String, String, String)>> = self
+        let child_entities: HashMap<String, Vec<LinkingField>> = self
             .derived
             .iter()
             .filter_map(|(linked_entity, linking_fields)| {

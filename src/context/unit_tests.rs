@@ -18,7 +18,7 @@ mod tests {
     use serial_test::serial;
 
     use crate::{
-        context::{asc_string_from_str, MatchstickInstanceContext, REVERTS_IDENTIFIER},
+        context::{asc_string_from_str, LinkingField, MatchstickInstanceContext, REVERTS_IDENTIFIER},
         logging::{accum, flush, LOGS},
         {MatchstickInstance, SCHEMA_LOCATION},
     };
@@ -599,7 +599,7 @@ mod tests {
         context.store.insert("GraphAccount".to_owned(), inner_map);
         context.derived.insert(
             "NameSignalTransaction".to_owned(),
-            vec![(
+            vec![LinkingField(
                 "nameSignalTransactions".to_owned(),
                 "signer".to_owned(),
                 "GraphAccount".to_owned(),

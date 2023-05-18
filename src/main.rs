@@ -25,7 +25,6 @@ mod logging;
 mod parser;
 mod subgraph_store;
 mod test_suite;
-mod unit_tests;
 mod writable_store;
 
 thread_local! {
