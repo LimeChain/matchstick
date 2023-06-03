@@ -51,12 +51,7 @@ pub(crate) fn insert_derived_field_in_store<C: graph::blockchain::Blockchain>(
                             )
                         })
                         .clone();
-                    if !innermost_value
-                        .clone()
-                        .as_list()
-                        .unwrap()
-                        .contains(&id)
-                    {
+                    if !innermost_value.clone().as_list().unwrap().contains(&id) {
                         let mut innermost_value_list = innermost_value.as_list().unwrap();
                         innermost_value_list.push(id);
                         innermost_store.insert(
