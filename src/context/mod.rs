@@ -6,7 +6,8 @@ use graph::{
     blockchain::Blockchain,
     data::{
         graphql::ext::DirectiveFinder,
-        store::{Attribute, Value},
+        store::{Attribute, Value, scalar},
+
     },
     prelude::{
         ethabi::{Address, Token},
@@ -445,15 +446,15 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 })
                 .clone();
             for linking_field in linking_fields {
-                if data.contains_key(&linking_field.1) && self.store.contains_key(&linking_field.2)
+                if data.contains_key(linking_field.derived_from()) && self.store.contains_key(linking_field.parent())
                 {
-                    let original_entity_type = linking_field.2.clone();
+                    let original_entity_type = linking_field.parent().clone();
                     let derived_field_value = data
-                        .get(&linking_field.1)
+                        .get(linking_field.derived_from())
                         .unwrap_or_else(|| {
                             logging::critical!(
                                 "Couldn't find value for {} in submitted data",
-                                linking_field.1
+                                linking_field.derived_from()
                             )
                         })
                         .clone();
@@ -494,7 +495,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             .filter_map(|(linked_entity, linking_fields)| {
                 let mapping = linking_fields
                     .iter()
-                    .filter(|linking_field| linking_field.2 == entity_type);
+                    .filter(|linking_field| linking_field.parent() == &entity_type);
 
                 if mapping.count() > 0 {
                     Some((linked_entity.clone(), linking_fields.clone()))
@@ -515,10 +516,24 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                         let children: Vec<Value> = entities
                             .iter()
                             .filter_map(|(child_id, fields)| {
-                                if let Some(Value::String(parent_id)) = fields.get(&linking_field.1)
+                                let result = fields.get(&linking_field.1);
+                                if matches!(result, Some(Value::String(_)))
+                                    || matches!(result, Some(Value::Bytes(_)))
                                 {
-                                    if parent_id == &id {
-                                        Some(Value::String(child_id.clone()))
+                                    let parent_id = result.unwrap().clone();
+
+                                    let parent_id_string = match parent_id.clone() {
+                                        Value::String(s) => s,
+                                        Value::Bytes(b) => b.to_string(),
+                                        _ => unreachable!("Derived field value is not a string or bytes")
+                                    };
+
+                                    if parent_id_string == id {
+                                        match parent_id {
+                                            Value::String(_) => Some(Value::String(child_id.clone())),
+                                            Value::Bytes(_) => Some(Value::Bytes(scalar::Bytes::from_str(&child_id).unwrap())),
+                                            _ => unreachable!("Derived field value is not a string or bytes")
+                                        }
                                     } else {
                                         None
                                     }
