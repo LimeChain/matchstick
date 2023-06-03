@@ -6,8 +6,7 @@ use graph::{
     blockchain::Blockchain,
     data::{
         graphql::ext::DirectiveFinder,
-        store::{Attribute, Value, scalar},
-
+        store::{scalar, Attribute, Value},
     },
     prelude::{
         ethabi::{Address, Token},
@@ -446,7 +445,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 })
                 .clone();
             for linking_field in linking_fields {
-                if data.contains_key(linking_field.derived_from()) && self.store.contains_key(linking_field.parent())
+                if data.contains_key(linking_field.derived_from())
+                    && self.store.contains_key(linking_field.parent())
                 {
                     let original_entity_type = linking_field.parent().clone();
                     let derived_field_value = data
@@ -525,14 +525,22 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                                     let parent_id_string = match parent_id.clone() {
                                         Value::String(s) => s,
                                         Value::Bytes(b) => b.to_string(),
-                                        _ => unreachable!("Derived field value is not a string or bytes")
+                                        _ => unreachable!(
+                                            "Derived field value is not a string or bytes"
+                                        ),
                                     };
 
                                     if parent_id_string == id {
                                         match parent_id {
-                                            Value::String(_) => Some(Value::String(child_id.clone())),
-                                            Value::Bytes(_) => Some(Value::Bytes(scalar::Bytes::from_str(&child_id).unwrap())),
-                                            _ => unreachable!("Derived field value is not a string or bytes")
+                                            Value::String(_) => {
+                                                Some(Value::String(child_id.clone()))
+                                            }
+                                            Value::Bytes(_) => Some(Value::Bytes(
+                                                scalar::Bytes::from_str(child_id).unwrap(),
+                                            )),
+                                            _ => unreachable!(
+                                                "Derived field value is not a string or bytes"
+                                            ),
                                         }
                                     } else {
                                         None

@@ -17,11 +17,10 @@ pub(crate) fn insert_derived_field_in_store<C: graph::blockchain::Blockchain>(
     if matches!(derived_field_value, Value::String(_))
         || matches!(derived_field_value, Value::Bytes(_))
     {
-
         let derived_field_string_value = match derived_field_value {
             Value::String(s) => s,
             Value::Bytes(b) => b.to_string(),
-            _ => unreachable!("Derived field value is not a string or bytes")
+            _ => unreachable!("Derived field value is not a string or bytes"),
         };
 
         if context.store.contains_key(&original_entity) {
@@ -56,16 +55,19 @@ pub(crate) fn insert_derived_field_in_store<C: graph::blockchain::Blockchain>(
                         .clone()
                         .as_list()
                         .unwrap()
-                        .contains(&Value::from(id.clone()))
+                        .contains(&id)
                     {
                         let mut innermost_value_list = innermost_value.as_list().unwrap();
                         innermost_value_list.push(id);
-                        innermost_store.insert(linking_field.children().clone(), Value::List(innermost_value_list));
+                        innermost_store.insert(
+                            linking_field.children().clone(),
+                            Value::List(innermost_value_list),
+                        );
                     }
                 } else {
                     innermost_store.insert(linking_field.children().clone(), Value::List(vec![id]));
                 }
-                inner_store.insert(derived_field_string_value.to_owned(), innermost_store);
+                inner_store.insert(derived_field_string_value, innermost_store);
             }
             context.store.insert(original_entity, inner_store);
         }
@@ -103,11 +105,12 @@ pub(crate) fn update_derived_relations_in_store<C: graph::blockchain::Blockchain
                                 if matches!(relation_id, Value::String(_))
                                     || matches!(relation_id, Value::Bytes(_))
                                 {
-
                                     let relation_id_string = match relation_id.clone() {
                                         Value::String(s) => s,
                                         Value::Bytes(b) => b.to_string(),
-                                        _ => unreachable!("Derived field value is not a string or bytes")
+                                        _ => unreachable!(
+                                            "Derived field value is not a string or bytes"
+                                        ),
                                     };
 
                                     if inner_store.contains_key(&relation_id_string) {
@@ -121,12 +124,13 @@ pub(crate) fn update_derived_relations_in_store<C: graph::blockchain::Blockchain
                                                 let value_list =
                                                     field.1.clone().as_list().unwrap().clone();
                                                 if !value_list.contains(&Value::String(id.clone()))
-                                                    && data.contains_key(linking_field.derived_from())
+                                                    && data
+                                                        .contains_key(linking_field.derived_from())
                                                 {
                                                     handle_different_value_types(
                                                         context,
                                                         data.clone(),
-                                                        &linking_field,
+                                                        linking_field,
                                                         &relation_id_string,
                                                         field,
                                                         id.clone(),
@@ -149,13 +153,14 @@ pub(crate) fn update_derived_relations_in_store<C: graph::blockchain::Blockchain
                                     context.store.get(linking_field.parent()).unwrap().clone();
                                 if let Some(relation_id) = data.get(linking_field.derived_from()) {
                                     if matches!(relation_id, Value::String(_))
-                                    || matches!(relation_id, Value::Bytes(_))
+                                        || matches!(relation_id, Value::Bytes(_))
                                     {
-
                                         let relation_id_string = match relation_id.clone() {
                                             Value::String(s) => s,
                                             Value::Bytes(b) => b.to_string(),
-                                            _ => unreachable!("Derived field value is not a string or bytes")
+                                            _ => unreachable!(
+                                                "Derived field value is not a string or bytes"
+                                            ),
                                         };
                                         for original_entity_id_and_data in &inner_store {
                                             let innermost_store = inner_store
@@ -220,13 +225,15 @@ pub(crate) fn cascade_remove<C: graph::blockchain::Blockchain>(
             let original_entity_type = linking_field.parent().clone();
             let mut original_entity = store.get(&original_entity_type).unwrap().clone();
             if deleted_entity_data.contains_key(linking_field.derived_from()) {
-                let relation_id = deleted_entity_data.get(linking_field.derived_from()).unwrap();
+                let relation_id = deleted_entity_data
+                    .get(linking_field.derived_from())
+                    .unwrap();
                 if matches!(relation_id, Value::String(_)) || matches!(relation_id, Value::Bytes(_))
                 {
                     let relation_id_string = match relation_id.clone() {
                         Value::String(s) => s,
                         Value::Bytes(b) => b.to_string(),
-                        _ => unreachable!("Derived field value is not a string or bytes")
+                        _ => unreachable!("Derived field value is not a string or bytes"),
                     };
 
                     if original_entity.contains_key(&relation_id_string) {
@@ -239,14 +246,17 @@ pub(crate) fn cascade_remove<C: graph::blockchain::Blockchain>(
                                 .clone()
                                 .as_list()
                                 .unwrap();
-                            if value_list.contains(&deleted_entity_data.get("id").unwrap()) {
+                            if value_list.contains(deleted_entity_data.get("id").unwrap()) {
                                 value_list.remove(
                                     value_list
                                         .iter()
                                         .position(|x| x == deleted_entity_data.get("id").unwrap())
                                         .unwrap(),
                                 );
-                                inner_store.insert(linking_field.children().clone(), Value::List(value_list));
+                                inner_store.insert(
+                                    linking_field.children().clone(),
+                                    Value::List(value_list),
+                                );
                                 original_entity.insert(relation_id_string, inner_store);
                                 context
                                     .store
@@ -269,11 +279,12 @@ fn handle_different_value_types<C: graph::blockchain::Blockchain>(
     id: String,
     entity_deleted: bool,
 ) {
-    if data.get(linking_field.derived_from()).unwrap().is_string() || matches!(
-        data.get(linking_field.derived_from()).unwrap(),
-        Value::Bytes(_)) {
-
-
+    if data.get(linking_field.derived_from()).unwrap().is_string()
+        || matches!(
+            data.get(linking_field.derived_from()).unwrap(),
+            Value::Bytes(_)
+        )
+    {
         remove_dead_relations(
             context,
             data.get(linking_field.derived_from()).unwrap().to_owned(),
@@ -316,18 +327,15 @@ fn remove_dead_relations<C: graph::blockchain::Blockchain>(
     original_entity: String,
     entity_deleted: bool,
 ) {
-    if matches!(current_value, Value::String(_))
-        || matches!(current_value, Value::Bytes(_))
-    {
-
+    if matches!(current_value, Value::String(_)) || matches!(current_value, Value::Bytes(_)) {
         let current_value_string = match current_value {
             Value::String(s) => s,
             Value::Bytes(b) => b.to_string(),
-            _ => unreachable!("Derived field value is not a string or bytes")
+            _ => unreachable!("Derived field value is not a string or bytes"),
         };
 
-        if (&current_value_string != entity && !entity_deleted)
-            || (&current_value_string == entity && entity_deleted)
+        if (current_value_string != entity && !entity_deleted)
+            || (current_value_string == entity && entity_deleted)
         {
             let mut inner_store = context.store.get(&original_entity).unwrap().clone();
             if !entity_deleted {

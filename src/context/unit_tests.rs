@@ -18,7 +18,9 @@ mod tests {
     use serial_test::serial;
 
     use crate::{
-        context::{asc_string_from_str, LinkingField, MatchstickInstanceContext, REVERTS_IDENTIFIER},
+        context::{
+            asc_string_from_str, LinkingField, MatchstickInstanceContext, REVERTS_IDENTIFIER,
+        },
         logging::{accum, flush, LOGS},
         {MatchstickInstance, SCHEMA_LOCATION},
     };
