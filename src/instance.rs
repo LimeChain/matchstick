@@ -475,6 +475,30 @@ impl<C: Blockchain> MatchstickInstance<C> {
             id_ptr
         );
 
+        link!(
+            "_assert.fieldEqualsWithMessage",
+            assert_field_equals_with_message,
+            entity_type_ptr,
+            id_ptr,
+            field_name_ptr,
+            expected_val_ptr,
+            message_ptr
+        );
+        link!(
+            "_assert.equalsWithMessage",
+            assert_equals_with_message,
+            expected_ptr,
+            actual_ptr,
+            message_ptr
+        );
+        link!(
+            "_assert.notInStoreWithMessage",
+            assert_not_in_store_with_message,
+            entity_type_ptr,
+            id_ptr,
+            message_ptr
+        );
+
         link!("countEntities", count_entities, entity_type);
 
         // Linking gas function

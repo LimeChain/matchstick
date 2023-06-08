@@ -254,10 +254,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let expected_val: String = asc_get(&self.wasm_ctx, expected_val_ptr, &GasCounter::new())?;
 
         if !self.store.contains_key(&entity_type) {
-            logging::error!(
-                "(assert.fieldEquals) No entities with type '{}' found.",
-                &entity_type
-            );
+            logging::error!("No entities with type '{}' found.", &entity_type);
 
             return Ok(false);
         }
@@ -265,7 +262,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let entities = self.store.get(&entity_type).unwrap();
         if !entities.contains_key(&id) {
             logging::error!(
-                "(assert.fieldEquals) No entity with type '{}' and id '{}' found.",
+                "No entity with type '{}' and id '{}' found.",
                 &entity_type,
                 &id
             );
@@ -276,7 +273,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let entity = entities.get(&id).unwrap();
         if !entity.contains_key(&field_name) {
             logging::error!(
-                "(assert.fieldEquals) No field named '{}' on entity with type '{}' and id '{}' found.",
+                "No field named '{}' on entity with type '{}' and id '{}' found.",
                 &field_name,
                 &entity_type,
                 &id
@@ -288,7 +285,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let val = entity.get(&field_name).unwrap();
         if val.to_string() != expected_val {
             logging::error!(
-                "(assert.fieldEquals) Expected field '{}' to equal '{}', but was '{}' instead.",
+                "Expected field '{}' to equal '{}', but was '{}' instead.",
                 &field_name,
                 &expected_val,
                 val
@@ -323,7 +320,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
         if exp_val != act_val {
             logging::error!(
-                "(assert.equals) Expected value was '{}' but actual value was '{}'",
+                "Expected value was '{}' but actual value was '{}'",
                 exp_val,
                 act_val
             );
@@ -348,10 +345,129 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             && self.store.get(&entity_type).unwrap().contains_key(&id)
         {
             logging::error!(
-                "(assert.notInStore) Value for entity type: '{}' and id: '{}' was found in store.",
+                "Value for entity type: '{}' and id: '{}' was found in store.",
                 entity_type,
                 id
             );
+            return Ok(false);
+        }
+
+        Ok(true)
+    }
+
+    /// Overloading the assert function with custom error message for backwards compatibility with matchstick-as
+
+    /// function _assert.fieldEquals(
+    ///     entityType: string, id: string,
+    ///     fieldName: string, expectedVal: string,
+    ///     message: string,
+    /// ): bool
+    pub fn assert_field_equals_with_message(
+        &mut self,
+        _gas: &GasCounter,
+        entity_type_ptr: AscPtr<AscString>,
+        id_ptr: AscPtr<AscString>,
+        field_name_ptr: AscPtr<AscString>,
+        expected_val_ptr: AscPtr<AscString>,
+        message_ptr: AscPtr<AscString>,
+    ) -> Result<bool, HostExportError> {
+        update_derived_relations_in_store(self);
+        let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new())?;
+        let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new())?;
+        let field_name: String = asc_get(&self.wasm_ctx, field_name_ptr, &GasCounter::new())?;
+        let expected_val: String = asc_get(&self.wasm_ctx, expected_val_ptr, &GasCounter::new())?;
+        let message: String = asc_get(&self.wasm_ctx, message_ptr, &GasCounter::new())?;
+
+        if !self.store.contains_key(&entity_type) {
+            logging::error!("No entities with type '{}' found.", &entity_type);
+
+            return Ok(false);
+        }
+
+        let entities = self.store.get(&entity_type).unwrap();
+        if !entities.contains_key(&id) {
+            logging::error!(
+                "No entity with type '{}' and id '{}' found.",
+                &entity_type,
+                &id
+            );
+
+            return Ok(false);
+        }
+
+        let entity = entities.get(&id).unwrap();
+        if !entity.contains_key(&field_name) {
+            logging::error!(
+                "No field named '{}' on entity with type '{}' and id '{}' found.",
+                &field_name,
+                &entity_type,
+                &id
+            );
+
+            return Ok(false);
+        }
+
+        let val = entity.get(&field_name).unwrap();
+        if val.to_string() != expected_val {
+            logging::error!("{}", message);
+
+            return Ok(false);
+        };
+
+        Ok(true)
+    }
+
+    /// function _assert.equals(expected: ethereum.Value, actual: ethereum.Value, message: string): bool
+    pub fn assert_equals_with_message(
+        &mut self,
+        _gas: &GasCounter,
+        expected_ptr: u32,
+        actual_ptr: u32,
+        message_ptr: AscPtr<AscString>,
+    ) -> Result<bool, HostExportError> {
+        update_derived_relations_in_store(self);
+        let expected: Token = asc_get::<_, AscEnum<EthereumValueKind>, _>(
+            &self.wasm_ctx,
+            expected_ptr.into(),
+            &GasCounter::new(),
+        )?;
+        let actual: Token = asc_get::<_, AscEnum<EthereumValueKind>, _>(
+            &self.wasm_ctx,
+            actual_ptr.into(),
+            &GasCounter::new(),
+        )?;
+        let message: String = asc_get(&self.wasm_ctx, message_ptr, &GasCounter::new())?;
+
+        let exp_val = get_token_value(expected);
+        let act_val = get_token_value(actual);
+
+        if exp_val != act_val {
+            logging::error!("{}", message);
+
+            return Ok(false);
+        }
+
+        Ok(true)
+    }
+
+    /// function _assert.notInStore(entityType: string, id: string, message: string): bool
+    pub fn assert_not_in_store_with_message(
+        &mut self,
+        _gas: &GasCounter,
+        entity_type_ptr: AscPtr<AscString>,
+        id_ptr: AscPtr<AscString>,
+        message_ptr: AscPtr<AscString>,
+    ) -> Result<bool, HostExportError> {
+        update_derived_relations_in_store(self);
+        let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new())?;
+        let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new())?;
+        let message: String = asc_get(&self.wasm_ctx, message_ptr, &GasCounter::new())?;
+
+        if self.store.contains_key(&entity_type)
+            && self.store.get(&entity_type).unwrap().contains_key(&id)
+        {
+            logging::error!("{}", message);
+
             return Ok(false);
         }
 
