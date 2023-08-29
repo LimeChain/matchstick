@@ -305,11 +305,19 @@ impl<C: Blockchain> MatchstickInstance<C> {
         );
 
         link!("clearStore", clear_store,);
+        link!("clearCacheStore", clear_cache_store,);
         link!("logStore", log_store,);
         link!(
             "store.get",
             mock_store_get,
             "host_export_store_get",
+            entity,
+            id
+        );
+        link!(
+            "store.get_in_block",
+            mock_store_get_in_block,
+            "host_export_store_get_in_block",
             entity,
             id
         );
@@ -322,6 +330,15 @@ impl<C: Blockchain> MatchstickInstance<C> {
             data
         );
         link!("store.remove", mock_store_remove, entity_ptr, id_ptr);
+
+        link!(
+            "addEntityToCacheStore",
+            cache_store_set,
+            "host_export_cache_store_set",
+            entity,
+            id,
+            data
+        );
 
         link!("mockIpfsFile", mock_ipfs_file, hash, file_path);
 

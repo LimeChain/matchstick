@@ -1,4 +1,5 @@
-use std::collections::HashMap;
+use std::borrow::BorrowMut;
+use std::{collections::HashMap, borrow::Borrow};
 use std::str::FromStr;
 
 use anyhow::{anyhow, Context};
@@ -69,13 +70,16 @@ lazy_static! {
     };
 }
 
+type Store = HashMap<String, HashMap<String, HashMap<String, Value>>>;
 /// The Matchstick Instance Context wraps WASM Instance Context and
 /// implements the external functions.
 pub struct MatchstickInstanceContext<C: Blockchain> {
     /// Handle to WASM Instance Context.
     pub wasm_ctx: WasmInstanceContext<C>,
     /// Store<EntityType, EntityTypeStore<EntityId, Entity<Field, Value>>>.
-    pub(crate) store: HashMap<String, HashMap<String, HashMap<String, Value>>>,
+    pub(crate) store: Store,
+    /// Store<EntityType, EntityTypeStore<EntityId, Entity<Field, Value>>>.
+    pub(crate) cache_store: Store,
     /// Function-Return map storing mocked Smart Contracts' functions' return values.
     pub(crate) fn_ret_map: HashMap<String, Vec<Token>>,
     /// Registered tests metadata.
@@ -114,6 +118,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let mut context = MatchstickInstanceContext {
             wasm_ctx,
             store: HashMap::new(),
+            cache_store: HashMap::new(),
             fn_ret_map: HashMap::new(),
             meta_tests: Vec::new(),
             derived: HashMap::new(),
@@ -172,6 +177,12 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     pub fn clear_store(&mut self, _gas: &GasCounter) -> Result<(), HostExportError> {
         self.store.clear();
         self.store_updated = true;
+        Ok(())
+    }
+
+    /// function clearCacheStore(): void
+    pub fn clear_cache_store(&mut self, _gas: &GasCounter) -> Result<(), HostExportError> {
+        self.cache_store.clear();
         Ok(())
     }
 
@@ -340,21 +351,20 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         Ok(true)
     }
 
-    /// function store.get(entityType: string, id: string): Entity
-    pub fn mock_store_get(
+    fn store_get(
         &mut self,
         _gas: &GasCounter,
+        store: Store,
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
-    ) -> Result<AscPtr<AscEntity>, HostExportError> {
-        update_derived_relations_in_store(self);
+    )  -> Result<AscPtr<AscEntity>, HostExportError> {
         let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new())?;
         let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new())?;
 
-        if self.store.contains_key(&entity_type)
-            && self.store.get(&entity_type).unwrap().contains_key(&id)
+        if store.contains_key(&entity_type)
+            && store.get(&entity_type).unwrap().contains_key(&id)
         {
-            let entities = self.store.get(&entity_type).unwrap();
+            let entities = store.get(&entity_type).unwrap();
             let entity = entities.get(&id).unwrap().clone();
             let entity = Entity::from(entity);
 
@@ -365,14 +375,36 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         Ok(AscPtr::null())
     }
 
-    /// function store.set(entityType: string, id: string, data: map): void
-    pub fn mock_store_set(
+    /// function store.get(entityType: string, id: string): Entity
+    pub fn mock_store_get(
         &mut self,
         _gas: &GasCounter,
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
+    ) -> Result<AscPtr<AscEntity>, HostExportError> {
+        update_derived_relations_in_store(self);
+        
+        return self.store_get(_gas, self.store.clone(), entity_type_ptr, id_ptr)
+    }
+
+    /// function store.getInBlock(entityType: string, id: string): Entity
+    pub fn mock_store_get_in_block(
+        &mut self,
+        _gas: &GasCounter,
+        entity_type_ptr: AscPtr<AscString>,
+        id_ptr: AscPtr<AscString>,
+    )  -> Result<AscPtr<AscEntity>, HostExportError> {
+        return self.store_get(_gas, self.cache_store.clone(), entity_type_ptr, id_ptr);
+    }
+
+    fn prepare_store_set(
+        &mut self,
+        _gas: &GasCounter,
+        store: Store,
+        entity_type_ptr: AscPtr<AscString>,
+        id_ptr: AscPtr<AscString>,
         data_ptr: AscPtr<AscEntity>,
-    ) -> Result<(), HostExportError> {
+    ) -> Result<(String, HashMap<String, HashMap<String, Value>>), HostExportError> {
         let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new())?;
         let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new())?;
         let mut data: HashMap<String, Value> =
@@ -427,7 +459,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 })
                 .clone();
             for linking_field in linking_fields {
-                if data.contains_key(&linking_field.1) && self.store.contains_key(&linking_field.2)
+                if data.contains_key(&linking_field.1) && store.contains_key(&linking_field.2)
                 {
                     let original_entity_type = linking_field.2.clone();
                     let derived_field_value = data
@@ -462,8 +494,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             }
         }
 
-        let mut entity_type_store = if self.store.contains_key(&entity_type) {
-            self.store.get(&entity_type).unwrap().clone()
+        let mut entity_type_store = if store.contains_key(&entity_type) {
+            store.get(&entity_type).unwrap().clone()
         } else {
             HashMap::new()
         };
@@ -492,7 +524,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         if !child_entities.is_empty() {
             for (linked_entity, linking_fields) in child_entities.iter() {
                 for linking_field in linking_fields.iter() {
-                    if let Some(entities) = self.store.get(linked_entity) {
+                    if let Some(entities) = store.get(linked_entity) {
                         let children: Vec<Value> = entities
                             .iter()
                             .filter_map(|(child_id, fields)| {
@@ -516,8 +548,39 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         }
 
         entity_type_store.insert(id, data);
+
+        return Ok((entity_type, entity_type_store));
+        // Ok(())
+    }
+
+    /// function store.set(entityType: string, id: string, data: map): void
+    pub fn mock_store_set(
+        &mut self,
+        _gas: &GasCounter,
+        entity_type_ptr: AscPtr<AscString>,
+        id_ptr: AscPtr<AscString>,
+        data_ptr: AscPtr<AscEntity>,
+    ) -> Result<(), HostExportError> {
+        let (entity_type, entity_type_store) = self.prepare_store_set(_gas, self.store.clone(), entity_type_ptr, id_ptr, data_ptr).unwrap();
+
         self.store.insert(entity_type, entity_type_store);
         self.store_updated = false;
+
+        Ok(())
+    }
+
+    /// function addEntityToCacheStore(entityType: string, id: string, data: map): void
+    pub fn cache_store_set(
+        &mut self,
+        _gas: &GasCounter,
+        entity_type_ptr: AscPtr<AscString>,
+        id_ptr: AscPtr<AscString>,
+        data_ptr: AscPtr<AscEntity>,
+    ) -> Result<(), HostExportError> {
+        let (entity_type, entity_type_store) = self.prepare_store_set(_gas, self.cache_store.clone(), entity_type_ptr, id_ptr, data_ptr).unwrap();
+
+        self.cache_store.insert(entity_type, entity_type_store);
+
         Ok(())
     }
 
