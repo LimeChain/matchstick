@@ -7,18 +7,17 @@ use crate::logging;
 
 /// This function checks whether all the necessary data is present in the store to avoid linking
 /// entities to other non existent entities which may cause serious collision problems later
-pub(crate) fn insert_derived_field_in_store<C: graph::blockchain::Blockchain>(
-    context: &mut MatchstickInstanceContext<C>,
+pub(crate) fn insert_derived_field_in_store(
+    store: &mut HashMap<String, HashMap<String, HashMap<String, Value>>>,
     derived_field_value: Value,
     original_entity: String,
     linking_field: (String, String, String),
-    id: String,
+    id: String
 ) {
     if derived_field_value.is_string() {
         let derived_field_string_value = derived_field_value.as_string().unwrap();
-        if context.store.contains_key(&original_entity) {
-            let mut inner_store = context
-                .store
+        if store.contains_key(&original_entity) {
+            let mut inner_store = store
                 .get(&original_entity)
                 .unwrap_or_else(|| {
                     logging::critical!("Couldn't find value for {} in store", original_entity)
@@ -59,7 +58,7 @@ pub(crate) fn insert_derived_field_in_store<C: graph::blockchain::Blockchain>(
                 }
                 inner_store.insert(derived_field_string_value, innermost_store);
             }
-            context.store.insert(original_entity, inner_store);
+            store.insert(original_entity, inner_store);
         }
     }
 }
