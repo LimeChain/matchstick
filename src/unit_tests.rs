@@ -12,8 +12,8 @@ mod tests {
     };
     use graph_chain_ethereum::{runtime::abi::AscUnresolvedContractCall_0_0_4, Chain};
     use graph_runtime_wasm::asc_abi::class::{
-        Array, AscEnum, AscTypedMap, AscTypedMapEntry, EnumPayload, EthereumValueKind,
-        StoreValueKind, TypedArray, AscString,
+        Array, AscEnum, AscString, AscTypedMap, AscTypedMapEntry, EnumPayload, EthereumValueKind,
+        StoreValueKind, TypedArray,
     };
     use serial_test::serial;
 
@@ -94,7 +94,9 @@ mod tests {
     fn clear_cache_store_basic_test() {
         let mut context = get_context();
 
-        context.cache_store.insert("type".to_owned(), HashMap::new());
+        context
+            .cache_store
+            .insert("type".to_owned(), HashMap::new());
 
         context
             .clear_cache_store(&GasCounter::new())
@@ -459,7 +461,9 @@ mod tests {
     fn mock_store_get_in_block_basic_test() {
         let mut context = get_context();
 
-        context.cache_store.insert("entity".to_owned(), HashMap::new());
+        context
+            .cache_store
+            .insert("entity".to_owned(), HashMap::new());
         let mut inner_map = context
             .cache_store
             .get("entity")
@@ -519,7 +523,13 @@ mod tests {
         assert!(value.is_null());
     }
 
-    fn prepare_entity_store_pointers(context: &mut MatchstickInstanceContext<Chain>) -> (AscPtr<AscString>, AscPtr<AscString>, AscPtr<AscTypedMap<AscString, AscEnum<StoreValueKind>>>) {
+    fn prepare_entity_store_pointers(
+        context: &mut MatchstickInstanceContext<Chain>,
+    ) -> (
+        AscPtr<AscString>,
+        AscPtr<AscString>,
+        AscPtr<AscTypedMap<AscString, AscEnum<StoreValueKind>>>,
+    ) {
         let entity = asc_string_from_str("entity");
         let id = asc_string_from_str("id");
         let entity_pointer = AscPtr::alloc_obj(entity, &mut context.wasm_ctx, &GasCounter::new())
@@ -564,7 +574,8 @@ mod tests {
     fn mock_store_set_basic_test() {
         let mut context = get_context();
 
-        let (entity_pointer, id_pointer, asc_map_pointer,) = prepare_entity_store_pointers(&mut context);
+        let (entity_pointer, id_pointer, asc_map_pointer) =
+            prepare_entity_store_pointers(&mut context);
 
         context
             .mock_store_set(
@@ -587,7 +598,8 @@ mod tests {
     fn mock_store_set_existing_entity_type() {
         let mut context = get_context();
 
-        let (entity_pointer, id_pointer, asc_map_pointer,) = prepare_entity_store_pointers(&mut context);
+        let (entity_pointer, id_pointer, asc_map_pointer) =
+            prepare_entity_store_pointers(&mut context);
 
         context.store.insert("entity".to_owned(), HashMap::new());
         let mut inner_map = context
@@ -597,7 +609,7 @@ mod tests {
             .clone();
         inner_map.insert("another_id".to_owned(), HashMap::new());
         context.store.insert("entity".to_owned(), inner_map);
-        
+
         context
             .mock_store_set(
                 &GasCounter::new(),
@@ -739,7 +751,8 @@ mod tests {
     fn cache_store_set_basic_test() {
         let mut context = get_context();
 
-        let (entity_pointer, id_pointer, asc_map_pointer,) = prepare_entity_store_pointers(&mut context);
+        let (entity_pointer, id_pointer, asc_map_pointer) =
+            prepare_entity_store_pointers(&mut context);
 
         context
             .cache_store_set(
@@ -762,9 +775,12 @@ mod tests {
     fn cache_store_set_existing_entity_type() {
         let mut context = get_context();
 
-        let (entity_pointer, id_pointer, asc_map_pointer,) = prepare_entity_store_pointers(&mut context);
+        let (entity_pointer, id_pointer, asc_map_pointer) =
+            prepare_entity_store_pointers(&mut context);
 
-        context.cache_store.insert("entity".to_owned(), HashMap::new());
+        context
+            .cache_store
+            .insert("entity".to_owned(), HashMap::new());
         let mut inner_map = context
             .cache_store
             .get("entity")
@@ -772,7 +788,7 @@ mod tests {
             .clone();
         inner_map.insert("another_id".to_owned(), HashMap::new());
         context.cache_store.insert("entity".to_owned(), inner_map);
-        
+
         context
             .cache_store_set(
                 &GasCounter::new(),
@@ -821,7 +837,9 @@ mod tests {
             .expect("Couldn't get inner map.")
             .clone();
         inner_map.insert("graphAccountId".to_owned(), HashMap::new());
-        context.cache_store.insert("GraphAccount".to_owned(), inner_map);
+        context
+            .cache_store
+            .insert("GraphAccount".to_owned(), inner_map);
         context.derived.insert(
             "NameSignalTransaction".to_owned(),
             vec![(
@@ -896,7 +914,6 @@ mod tests {
             .expect("Couldn't get inner map.")
             .get("graphAccountId")
             .unwrap();
-
 
         assert_eq!(
             inner_map

@@ -12,7 +12,7 @@ pub(crate) fn insert_derived_field_in_store(
     derived_field_value: Value,
     original_entity: String,
     linking_field: (String, String, String),
-    id: String
+    id: String,
 ) {
     if derived_field_value.is_string() {
         let derived_field_string_value = derived_field_value.as_string().unwrap();

@@ -356,13 +356,11 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
         _gas: &GasCounter,
-    )  -> Result<AscPtr<AscEntity>, HostExportError> {
+    ) -> Result<AscPtr<AscEntity>, HostExportError> {
         let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new())?;
         let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new())?;
 
-        if store.contains_key(&entity_type)
-            && store.get(&entity_type).unwrap().contains_key(&id)
-        {
+        if store.contains_key(&entity_type) && store.get(&entity_type).unwrap().contains_key(&id) {
             let entities = store.get(&entity_type).unwrap();
             let entity = entities.get(&id).unwrap().clone();
             let entity = Entity::from(entity);
@@ -382,8 +380,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         id_ptr: AscPtr<AscString>,
     ) -> Result<AscPtr<AscEntity>, HostExportError> {
         update_derived_relations_in_store(self);
-        
-        return self.get_store_entity(self.store.clone(), entity_type_ptr, id_ptr, _gas)
+
+        return self.get_store_entity(self.store.clone(), entity_type_ptr, id_ptr, _gas);
     }
 
     /// function store.getInBlock(entityType: string, id: string): Entity
@@ -392,7 +390,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         _gas: &GasCounter,
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
-    )  -> Result<AscPtr<AscEntity>, HostExportError> {
+    ) -> Result<AscPtr<AscEntity>, HostExportError> {
         return self.get_store_entity(self.cache_store.clone(), entity_type_ptr, id_ptr, _gas);
     }
 
@@ -460,8 +458,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 })
                 .clone();
             for linking_field in linking_fields {
-                if data.contains_key(&linking_field.1) && store.contains_key(&linking_field.2)
-                {
+                if data.contains_key(&linking_field.1) && store.contains_key(&linking_field.2) {
                     let original_entity_type = linking_field.2.clone();
                     let derived_field_value = data
                         .get(&linking_field.1)
@@ -479,7 +476,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                                 derived_field_value,
                                 original_entity_type.clone(),
                                 linking_field.clone(),
-                                id.clone()
+                                id.clone(),
                             );
                         }
                     } else {
@@ -488,7 +485,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                             derived_field_value,
                             original_entity_type.clone(),
                             linking_field.clone(),
-                            id.clone()
+                            id.clone(),
                         );
                     }
                 }
@@ -563,14 +560,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         id_ptr: AscPtr<AscString>,
         data_ptr: AscPtr<AscEntity>,
     ) -> Result<(), HostExportError> {
-
-        let updated_store = self.update_store(
-            self.store.clone(),
-            entity_type_ptr,
-            id_ptr,
-            data_ptr,
-            _gas
-        ).unwrap();
+        let updated_store = self
+            .update_store(self.store.clone(), entity_type_ptr, id_ptr, data_ptr, _gas)
+            .unwrap();
 
         self.store = updated_store;
         self.store_updated = false;
@@ -586,13 +578,15 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         id_ptr: AscPtr<AscString>,
         data_ptr: AscPtr<AscEntity>,
     ) -> Result<(), HostExportError> {
-        let updated_store = self.update_store(
-            self.cache_store.clone(),
-            entity_type_ptr,
-            id_ptr,
-            data_ptr,
-            _gas
-        ).unwrap();
+        let updated_store = self
+            .update_store(
+                self.cache_store.clone(),
+                entity_type_ptr,
+                id_ptr,
+                data_ptr,
+                _gas,
+            )
+            .unwrap();
 
         self.cache_store = updated_store;
 
