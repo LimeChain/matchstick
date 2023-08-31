@@ -30,7 +30,7 @@ impl EnsLookup for DummyStruct {
 #[async_trait]
 impl SubgraphStore for MockSubgraphStore {
     fn ens_lookup(&self) -> Arc<(dyn EnsLookup + 'static)> {
-        unreachable!()
+        Arc::from(DummyStruct {})
     }
 
     fn create_subgraph_features(&self, _features: DeploymentFeatures) -> Result<(), StoreError> {

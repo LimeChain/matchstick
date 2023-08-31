@@ -46,7 +46,9 @@ impl ReadStore for MockWritableStore {
     }
 
     fn input_schema(&self) -> Arc<InputSchema> {
-        unreachable!()
+        let id = DeploymentHash::new("Qm123").unwrap();
+        let schema = InputSchema::parse("type User @entity { id: String!, name: String! }", id).unwrap();
+        Arc::from(schema)
     }
 }
 
