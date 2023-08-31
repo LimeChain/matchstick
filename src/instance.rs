@@ -5,7 +5,7 @@ use graph::{
     blockchain::{Blockchain, HostFnCtx},
     cheap_clone::CheapClone,
     components::store::{DeploymentId, DeploymentLocator},
-    prelude::{DeploymentHash, Duration, HostMetrics, StopwatchMetrics},
+    prelude::{DeploymentHash, Duration, HostMetrics, MetricsRegistry, StopwatchMetrics},
     runtime::{
         gas::{GasCounter, SaturatingInto},
         HostExportError,
@@ -13,12 +13,12 @@ use graph::{
     semver::Version,
 };
 use graph_chain_ethereum::Chain;
-use graph_mock::MockMetricsRegistry;
 use graph_runtime_test::common::{mock_context, mock_data_source};
 use graph_runtime_wasm::{
     error::DeterminismLevel,
+    mapping::MappingContext,
     module::{IntoTrap, IntoWasmRet, TimeoutStopwatch, WasmInstanceContext},
-    ExperimentalFeatures, MappingContext, ValidModule,
+    ExperimentalFeatures, ValidModule,
 };
 use wasmtime::Trap;
 
@@ -42,7 +42,7 @@ impl<C: Blockchain> MatchstickInstance<C> {
         let deployment = DeploymentLocator::new(DeploymentId::new(42), deployment_id.clone());
         let data_source = mock_data_source(path_to_wasm, Version::new(0, 0, 6));
 
-        let metrics_registry = Arc::new(MockMetricsRegistry::new());
+        let metrics_registry = Arc::new(MetricsRegistry::mock());
         let logger = graph::slog::Logger::root(graph::slog::Discard, graph::prelude::o!());
 
         let stopwatch_metrics = StopwatchMetrics::new(
@@ -312,6 +312,14 @@ impl<C: Blockchain> MatchstickInstance<C> {
             "host_export_store_get",
             entity,
             id
+        );
+        link!(
+            "store.loadRelated",
+            mock_store_load_related,
+            "host_export_store_load_related",
+            entity,
+            id,
+            field
         );
         link!(
             "store.set",

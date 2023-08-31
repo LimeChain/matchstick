@@ -6,7 +6,8 @@ use graph::{
     blockchain::BlockPtr,
     components::store::{DeploymentId, DeploymentLocator, EnsLookup, SubgraphFork},
     data::subgraph::*,
-    prelude::{DeploymentHash, EntityOperation, StoreError, SubgraphStore},
+    prelude::{ApiVersion, DeploymentHash, EntityOperation, NodeId, StoreError, SubgraphStore},
+    schema::{ApiSchema, InputSchema},
     slog::Logger,
 };
 
@@ -20,12 +21,62 @@ impl EnsLookup for DummyStruct {
     fn find_name(&self, _hash: &str) -> Result<Option<String>, StoreError> {
         Ok(Option::from("default".to_owned()))
     }
+
+    fn is_table_empty(&self) -> Result<bool, StoreError> {
+        Ok(false)
+    }
 }
 
 #[async_trait]
 impl SubgraphStore for MockSubgraphStore {
     fn ens_lookup(&self) -> Arc<(dyn EnsLookup + 'static)> {
-        Arc::new(DummyStruct {})
+        unreachable!()
+    }
+
+    fn create_subgraph_features(&self, _features: DeploymentFeatures) -> Result<(), StoreError> {
+        unreachable!()
+    }
+
+    async fn stop_subgraph(&self, _deployment: &DeploymentLocator) -> Result<(), StoreError> {
+        unreachable!()
+    }
+
+    fn active_locator(&self, _hash: &str) -> Result<Option<DeploymentLocator>, StoreError> {
+        unreachable!()
+    }
+
+    async fn set_manifest_raw_yaml(
+        &self,
+        _hash: &DeploymentHash,
+        _raw_yaml: String,
+    ) -> Result<(), StoreError> {
+        unreachable!()
+    }
+
+    fn instrument(&self, _deployment: &DeploymentLocator) -> Result<bool, StoreError> {
+        unreachable!()
+    }
+
+    fn assignment_status(
+        &self,
+        _deployment: &DeploymentLocator,
+    ) -> Result<Option<(NodeId, bool)>, StoreError> {
+        unreachable!()
+    }
+
+    fn active_assignments(&self, _node: &NodeId) -> Result<Vec<DeploymentLocator>, StoreError> {
+        unreachable!()
+    }
+
+    fn graft_pending(&self, _id: &DeploymentHash) -> Result<bool, StoreError> {
+        unreachable!()
+    }
+
+    async fn subgraph_features(
+        &self,
+        _deployment: &DeploymentHash,
+    ) -> Result<Option<DeploymentFeatures>, StoreError> {
+        unreachable!()
     }
 
     fn is_deployed(&self, _id: &DeploymentHash) -> Result<bool, StoreError> {
@@ -35,7 +86,7 @@ impl SubgraphStore for MockSubgraphStore {
     fn create_subgraph_deployment(
         &self,
         _name: SubgraphName,
-        _schema: &graph::prelude::Schema,
+        _schema: &graph::schema::InputSchema,
         _deployment: graph::data::subgraph::schema::DeploymentCreate,
         _node_id: graph::prelude::NodeId,
         _network: String,
@@ -86,17 +137,15 @@ impl SubgraphStore for MockSubgraphStore {
         unreachable!()
     }
 
-    fn input_schema(
-        &self,
-        _subgraph_id: &DeploymentHash,
-    ) -> Result<Arc<graph::prelude::Schema>, graph::prelude::StoreError> {
+    fn input_schema(&self, _subgraph_id: &DeploymentHash) -> Result<Arc<InputSchema>, StoreError> {
         unreachable!()
     }
 
     fn api_schema(
         &self,
         _subgraph_id: &DeploymentHash,
-    ) -> Result<Arc<graph::prelude::ApiSchema>, graph::prelude::StoreError> {
+        _api_version: &ApiVersion,
+    ) -> Result<Arc<ApiSchema>, StoreError> {
         unreachable!()
     }
 
@@ -104,6 +153,7 @@ impl SubgraphStore for MockSubgraphStore {
         self: Arc<Self>,
         _logger: Logger,
         _deployment: DeploymentId,
+        _manifest_idx_and_name: Arc<Vec<(u32, String)>>,
     ) -> Result<
         Arc<dyn graph::components::store::WritableStore>,
         graph::components::store::StoreError,
