@@ -789,7 +789,7 @@ mod tests {
             &context.wasm_ctx,
             result,
             &GasCounter::new(),
-            0
+            0,
         )
         .expect("Couldn't unwrap result.");
         assert_eq!(fn_args[0], Token::Bool(false));
@@ -1110,13 +1110,15 @@ mod tests {
             .unwrap()
             .wasm_ptr();
 
-        let address: Address = asc_get(&context.wasm_ctx, address_ptr, &GasCounter::new(), 0).unwrap();
-        let network: String = asc_get(&context.wasm_ctx, network_ptr, &GasCounter::new(), 0).unwrap();
+        let address: Address =
+            asc_get(&context.wasm_ctx, address_ptr, &GasCounter::new(), 0).unwrap();
+        let network: String =
+            asc_get(&context.wasm_ctx, network_ptr, &GasCounter::new(), 0).unwrap();
         let context: HashMap<String, Value> = asc_get(
             &context.wasm_ctx,
             AscPtr::new(context_ptr),
             &GasCounter::new(),
-            0
+            0,
         )
         .unwrap();
 
@@ -1197,7 +1199,8 @@ mod tests {
             .unwrap();
 
         let result_ptr = context.mock_ipfs_cat(&GasCounter::new(), hash_ptr).unwrap();
-        let result: Vec<u8> = asc_get(&context.wasm_ctx, result_ptr, &GasCounter::new(), 0).unwrap();
+        let result: Vec<u8> =
+            asc_get(&context.wasm_ctx, result_ptr, &GasCounter::new(), 0).unwrap();
         let string = std::fs::read_to_string("./mocks/ipfs/cat.json").expect("File not found!");
 
         assert_eq!(result, string.as_bytes());

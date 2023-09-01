@@ -6,7 +6,8 @@ use graph::{
     blockchain::Blockchain,
     data::{
         graphql::ext::DirectiveFinder,
-        store::{Attribute, Value}, value::Word,
+        store::{Attribute, Value},
+        value::Word,
     },
     prelude::ethabi::{Address, Token},
     runtime::{asc_get, asc_new, gas::GasCounter, AscPtr, HostExportError},
@@ -92,6 +93,7 @@ pub struct MatchstickInstanceContext<C: Blockchain> {
     /// }
     /// ```
     pub(crate) derived: HashMap<String, Vec<(String, String, String)>>,
+    /// {"GraphAccount": {"nameSignalTransactions", ("NameSignalTransaction", "signer")}}
     pub(crate) derived_fields: HashMap<String, HashMap<String, (String, String)>>,
     /// Gives guarantee that all derived relations are in order when true
     store_updated: bool,
@@ -121,6 +123,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             ipfs: HashMap::new(),
         };
         derive_schema(&mut context);
+
+        println!("derived {:?}", context.derived_fields);
         context
     }
 
@@ -228,11 +232,12 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         field_name_ptr: AscPtr<AscString>,
         expected_val_ptr: AscPtr<AscString>,
     ) -> Result<bool, HostExportError> {
-        update_derived_relations_in_store(self);
+        // update_derived_relations_in_store(self);
         let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new(), 0)?;
         let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new(), 0)?;
         let field_name: String = asc_get(&self.wasm_ctx, field_name_ptr, &GasCounter::new(), 0)?;
-        let expected_val: String = asc_get(&self.wasm_ctx, expected_val_ptr, &GasCounter::new(), 0)?;
+        let expected_val: String =
+            asc_get(&self.wasm_ctx, expected_val_ptr, &GasCounter::new(), 0)?;
 
         if !self.store.contains_key(&entity_type) {
             logging::error!(
@@ -287,18 +292,18 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         expected_ptr: u32,
         actual_ptr: u32,
     ) -> Result<bool, HostExportError> {
-        update_derived_relations_in_store(self);
+        // update_derived_relations_in_store(self);
         let expected: Token = asc_get::<_, AscEnum<EthereumValueKind>, _>(
             &self.wasm_ctx,
             expected_ptr.into(),
             &GasCounter::new(),
-            0
+            0,
         )?;
         let actual: Token = asc_get::<_, AscEnum<EthereumValueKind>, _>(
             &self.wasm_ctx,
             actual_ptr.into(),
             &GasCounter::new(),
-            0
+            0,
         )?;
 
         let exp_val = get_token_value(expected);
@@ -323,7 +328,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
     ) -> Result<bool, HostExportError> {
-        update_derived_relations_in_store(self);
+        // update_derived_relations_in_store(self);
         let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new(), 0)?;
         let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new(), 0)?;
 
@@ -348,7 +353,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
     ) -> Result<AscPtr<AscEntity>, HostExportError> {
-        update_derived_relations_in_store(self);
+        // update_derived_relations_in_store(self);
         let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new(), 0)?;
         let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new(), 0)?;
 
@@ -386,10 +391,6 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             0,
         )?;
 
-        println!("entity {:?}", entity_type);
-        println!("id {:?}", entity_id);
-        println!("field {:?}", entity_virtual_field);
-
         if self.derived_fields.contains_key(&entity_type)
             && self
                 .derived_fields
@@ -404,8 +405,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 .get(&entity_virtual_field)
                 .unwrap();
 
-            // let mut found_derived_entities: Vec<Vec<(String, Value)>> = Vec::new();
-            let mut found_derived_entities: Vec<Vec<(Word, graph::prelude::Value)>> = Vec::new();
+            let mut related_entities: Vec<Vec<(Word, graph::prelude::Value)>> = Vec::new();
 
             if self.store.contains_key(&derived_from_entity_type.clone()) {
                 for (derived_entity_id, derived_entity_fields) in self
@@ -414,39 +414,50 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                     .unwrap()
                     .iter()
                 {
-                    if derived_entity_fields.contains_key(&derived_from_entity_field.clone())
-                        && derived_entity_fields
-                            .get(&derived_from_entity_field.clone())
+                    if !derived_entity_fields.contains_key(&derived_from_entity_field.clone()) {
+                        continue;
+                    }
+
+                    let derived_field_value = derived_entity_fields
+                        .get(&derived_from_entity_field.clone())
+                        .unwrap()
+                        .clone();
+
+                    // field value could be a single ID(1:1) or array of IDs(1:M)
+                    let derived_field_values = if derived_field_value.is_string() {
+                        vec![derived_field_value]
+                    } else {
+                        derived_field_value.as_list().unwrap_or_default()
+                    };
+
+                    let no_relation_found: bool = derived_field_values
+                        .iter()
+                        .filter(|&field_value| field_value.to_string().eq(&entity_id))
+                        .count()
+                        == 0;
+
+                    if no_relation_found {
+                        continue;
+                    }
+
+                    related_entities.push(
+                        self.store
+                            .get(&derived_from_entity_type.clone())
                             .unwrap()
-                            .clone()
-                            .to_string()
-                            .eq(&entity_id)
-                    {
-                        let derived_entities =
-                            self.store.get(&derived_from_entity_type.clone()).unwrap();
-                        let found_derived_entity = derived_entities
                             .get(&derived_entity_id.clone())
                             .unwrap()
-                            .clone();
-                        let found_derived_entity: Vec<(Word, graph::prelude::Value)> =
-                            found_derived_entity
-                                .into_iter()
-                                .map(|(k, v)| (Word::from(k), v))
-                                .collect();
-
-                        found_derived_entities.push(found_derived_entity);
-                        // found_derived_entities.push(found_derived_entity.sorted().clone());
-                    }
+                            .clone()
+                            // convert to Entity
+                            .into_iter()
+                            .map(|(k, v)| (Word::from(k), v))
+                            .collect(),
+                    );
                 }
-                println!("found {:?}", &found_derived_entities);
 
-                let res: AscPtr<Array<AscPtr<AscEntity>>> = asc_new(
-                    &mut self.wasm_ctx,
-                    &found_derived_entities,
-                    &GasCounter::new(),
-                )?;
+                let related_entities_ptr: AscPtr<Array<AscPtr<AscEntity>>> =
+                    asc_new(&mut self.wasm_ctx, &related_entities, &GasCounter::new())?;
 
-                return Ok(res);
+                return Ok(related_entities_ptr);
             }
         }
 
@@ -463,7 +474,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     ) -> Result<(), HostExportError> {
         let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new(), 0)?;
         let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new(), 0)?;
-        let mut data: HashMap<String, Value> = asc_get(&self.wasm_ctx, data_ptr, &GasCounter::new(), 0)?;
+        let mut data: HashMap<String, Value> =
+            asc_get(&self.wasm_ctx, data_ptr, &GasCounter::new(), 0)?;
 
         let required_fields = SCHEMA
         .definitions
@@ -505,49 +517,49 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             }
         }
 
-        if self.derived.contains_key(&entity_type) {
-            let linking_fields = self
-                .derived
-                .get(&entity_type)
-                .unwrap_or_else(|| {
-                    logging::critical!("Couldn't find value for key {} in derived map", entity_type)
-                })
-                .clone();
-            for linking_field in linking_fields {
-                if data.contains_key(&linking_field.1) && self.store.contains_key(&linking_field.2)
-                {
-                    let original_entity_type = linking_field.2.clone();
-                    let derived_field_value = data
-                        .get(&linking_field.1)
-                        .unwrap_or_else(|| {
-                            logging::critical!(
-                                "Couldn't find value for {} in submitted data",
-                                linking_field.1
-                            )
-                        })
-                        .clone();
-                    if matches!(derived_field_value, Value::List(_)) {
-                        for derived_field_value in derived_field_value.as_list().unwrap().clone() {
-                            insert_derived_field_in_store(
-                                self,
-                                derived_field_value,
-                                original_entity_type.clone(),
-                                linking_field.clone(),
-                                id.clone(),
-                            );
-                        }
-                    } else {
-                        insert_derived_field_in_store(
-                            self,
-                            derived_field_value,
-                            original_entity_type.clone(),
-                            linking_field.clone(),
-                            id.clone(),
-                        );
-                    }
-                }
-            }
-        }
+        // if self.derived.contains_key(&entity_type) {
+        //     let linking_fields = self
+        //         .derived
+        //         .get(&entity_type)
+        //         .unwrap_or_else(|| {
+        //             logging::critical!("Couldn't find value for key {} in derived map", entity_type)
+        //         })
+        //         .clone();
+        //     for linking_field in linking_fields {
+        //         if data.contains_key(&linking_field.1) && self.store.contains_key(&linking_field.2)
+        //         {
+        //             let original_entity_type = linking_field.2.clone();
+        //             let derived_field_value = data
+        //                 .get(&linking_field.1)
+        //                 .unwrap_or_else(|| {
+        //                     logging::critical!(
+        //                         "Couldn't find value for {} in submitted data",
+        //                         linking_field.1
+        //                     )
+        //                 })
+        //                 .clone();
+        //             if matches!(derived_field_value, Value::List(_)) {
+        //                 for derived_field_value in derived_field_value.as_list().unwrap().clone() {
+        //                     insert_derived_field_in_store(
+        //                         self,
+        //                         derived_field_value,
+        //                         original_entity_type.clone(),
+        //                         linking_field.clone(),
+        //                         id.clone(),
+        //                     );
+        //                 }
+        //             } else {
+        //                 insert_derived_field_in_store(
+        //                     self,
+        //                     derived_field_value,
+        //                     original_entity_type.clone(),
+        //                     linking_field.clone(),
+        //                     id.clone(),
+        //                 );
+        //             }
+        //         }
+        //     }
+        // }
 
         let mut entity_type_store = if self.store.contains_key(&entity_type) {
             self.store.get(&entity_type).unwrap().clone()
@@ -556,51 +568,51 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         };
 
         // Collect all child entities for the passed entity_type
-        let child_entities: HashMap<String, Vec<(String, String, String)>> = self
-            .derived
-            .iter()
-            .filter_map(|(linked_entity, linking_fields)| {
-                let mapping = linking_fields
-                    .iter()
-                    .filter(|linking_field| linking_field.2 == entity_type);
+        // let child_entities: HashMap<String, Vec<(String, String, String)>> = self
+        //     .derived
+        //     .iter()
+        //     .filter_map(|(linked_entity, linking_fields)| {
+        //         let mapping = linking_fields
+        //             .iter()
+        //             .filter(|linking_field| linking_field.2 == entity_type);
 
-                if mapping.count() > 0 {
-                    Some((linked_entity.clone(), linking_fields.clone()))
-                } else {
-                    None
-                }
-            })
-            .collect();
+        //         if mapping.count() > 0 {
+        //             Some((linked_entity.clone(), linking_fields.clone()))
+        //         } else {
+        //             None
+        //         }
+        //     })
+        //     .collect();
 
-        // Iterate over all child entities
-        // Fetch all saved records
-        // Collect the ids of the records which derivedFrom field points to the passed entity id
-        // Update the parent's data with the list of child records
-        if !child_entities.is_empty() {
-            for (linked_entity, linking_fields) in child_entities.iter() {
-                for linking_field in linking_fields.iter() {
-                    if let Some(entities) = self.store.get(linked_entity) {
-                        let children: Vec<Value> = entities
-                            .iter()
-                            .filter_map(|(child_id, fields)| {
-                                if let Some(Value::String(parent_id)) = fields.get(&linking_field.1)
-                                {
-                                    if parent_id == &id {
-                                        Some(Value::String(child_id.clone()))
-                                    } else {
-                                        None
-                                    }
-                                } else {
-                                    None
-                                }
-                            })
-                            .collect();
+        // // Iterate over all child entities
+        // // Fetch all saved records
+        // // Collect the ids of the records which derivedFrom field points to the passed entity id
+        // // Update the parent's data with the list of child records
+        // if !child_entities.is_empty() {
+        //     for (linked_entity, linking_fields) in child_entities.iter() {
+        //         for linking_field in linking_fields.iter() {
+        //             if let Some(entities) = self.store.get(linked_entity) {
+        //                 let children: Vec<Value> = entities
+        //                     .iter()
+        //                     .filter_map(|(child_id, fields)| {
+        //                         if let Some(Value::String(parent_id)) = fields.get(&linking_field.1)
+        //                         {
+        //                             if parent_id == &id {
+        //                                 Some(Value::String(child_id.clone()))
+        //                             } else {
+        //                                 None
+        //                             }
+        //                         } else {
+        //                             None
+        //                         }
+        //                     })
+        //                     .collect();
 
-                        data.insert(linking_field.0.clone(), Value::List(children));
-                    }
-                }
-            }
-        }
+        //                 data.insert(linking_field.0.clone(), Value::List(children));
+        //             }
+        //         }
+        //     }
+        // }
 
         entity_type_store.insert(id, data);
         self.store.insert(entity_type, entity_type_store);
@@ -651,7 +663,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             &self.wasm_ctx,
             contract_call_ptr.into(),
             &GasCounter::new(),
-            0
+            0,
         )?;
 
         let contract_address = call.contract_address.to_string();
@@ -714,21 +726,22 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             &self.wasm_ctx,
             contract_address_ptr.into(),
             &GasCounter::new(),
-            0
+            0,
         )?;
         let fn_name: String = asc_get(&self.wasm_ctx, fn_name_ptr, &GasCounter::new(), 0)?;
-        let fn_signature: String = asc_get(&self.wasm_ctx, fn_signature_ptr, &GasCounter::new(), 0)?;
+        let fn_signature: String =
+            asc_get(&self.wasm_ctx, fn_signature_ptr, &GasCounter::new(), 0)?;
         let fn_args: Vec<Token> = asc_get::<_, Array<AscPtr<AscEnum<EthereumValueKind>>>, _>(
             &self.wasm_ctx,
             fn_args_ptr.into(),
             &GasCounter::new(),
-            0
+            0,
         )?;
         let return_value: Vec<Token> = asc_get::<_, Array<AscPtr<AscEnum<EthereumValueKind>>>, _>(
             &self.wasm_ctx,
             return_value_ptr.into(),
             &GasCounter::new(),
-            0
+            0,
         )?;
         let reverts = bool::from(EnumPayload(reverts_ptr.to_payload()));
 
@@ -897,7 +910,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     ) -> Result<(), HostExportError> {
         let address: String = asc_get(&self.wasm_ctx, address_ptr, &GasCounter::new(), 0)?;
         let network: String = asc_get(&self.wasm_ctx, network_ptr, &GasCounter::new(), 0)?;
-        let context: HashMap<String, Value> = asc_get(&self.wasm_ctx, context_ptr, &GasCounter::new(), 0)?;
+        let context: HashMap<String, Value> =
+            asc_get(&self.wasm_ctx, context_ptr, &GasCounter::new(), 0)?;
 
         self.data_source_return_value = (Some(address), Some(network), Some(context));
         Ok(())
