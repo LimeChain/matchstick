@@ -8,7 +8,7 @@ use crate::logging;
 /// This function checks whether all the necessary data is present in the store to avoid linking
 /// entities to other non existent entities which may cause serious collision problems later
 pub(crate) fn insert_derived_field_in_store(
-    store: &mut HashMap<String, HashMap<String, HashMap<String, Value>>>,
+    store: &mut super::Store,
     derived_field_value: Value,
     original_entity: String,
     linking_field: (String, String, String),
