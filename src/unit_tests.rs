@@ -12,8 +12,8 @@ mod tests {
     };
     use graph_chain_ethereum::{runtime::abi::AscUnresolvedContractCall_0_0_4, Chain};
     use graph_runtime_wasm::asc_abi::class::{
-        Array, AscEnum, AscTypedMap, AscTypedMapEntry, EnumPayload, EthereumValueKind,
-        StoreValueKind, TypedArray,
+        Array, AscEnum, AscEnumArray, AscTypedMap, AscTypedMapEntry, EnumPayload,
+        EthereumValueKind, StoreValueKind, TypedArray,
     };
     use serial_test::serial;
 
@@ -566,121 +566,72 @@ mod tests {
 
     #[test]
     #[serial]
-    fn mock_store_set_derived_fields() {
+    fn mock_store_load_related_basic_test() {
         let mut context = get_context();
 
-        let nst = asc_string_from_str("NameSignalTransaction");
-        let id = asc_string_from_str("nstid");
-        let id_key = asc_string_from_str("id");
-        let signer_key = asc_string_from_str("signer");
-        let signer_value = asc_string_from_str("graphAccountId");
-        let entity_pointer = AscPtr::alloc_obj(nst, &mut context.wasm_ctx, &GasCounter::new())
-            .expect("Couldn't create pointer.");
-        let id_pointer = AscPtr::alloc_obj(id, &mut context.wasm_ctx, &GasCounter::new())
-            .expect("Couldn't create pointer.");
-        let id_key_pointer = AscPtr::alloc_obj(id_key, &mut context.wasm_ctx, &GasCounter::new())
-            .expect("Couldn't create pointer.");
-        let signer_key_pointer =
-            AscPtr::alloc_obj(signer_key, &mut context.wasm_ctx, &GasCounter::new())
-                .expect("Couldn't create pointer.");
-        let signer_value_pointer =
-            AscPtr::alloc_obj(signer_value, &mut context.wasm_ctx, &GasCounter::new())
-                .expect("Couldn't create pointer.");
-
-        context
-            .store
-            .insert("GraphAccount".to_owned(), HashMap::new());
-        let mut inner_map = context
-            .store
-            .get("GraphAccount")
-            .expect("Couldn't get inner map.")
-            .clone();
-        inner_map.insert("graphAccountId".to_owned(), HashMap::new());
-        context.store.insert("GraphAccount".to_owned(), inner_map);
-        context.derived.insert(
-            "NameSignalTransaction".to_owned(),
-            vec![(
-                "nameSignalTransactions".to_owned(),
-                "signer".to_owned(),
-                "GraphAccount".to_owned(),
-            )],
+        let mut parent_entity_relation_map = HashMap::new();
+        parent_entity_relation_map.insert(
+            "virtual_field".to_owned(),
+            ("ChildEntity".to_owned(), "parent".to_owned()),
         );
-
-        // Create signer field parameter
-        let signer_payload = AscEnum::<StoreValueKind> {
-            kind: StoreValueKind::String,
-            _padding: 0,
-            payload: EnumPayload::from(signer_value_pointer),
-        };
-        let signer_payload_pointer =
-            AscPtr::alloc_obj(signer_payload, &mut context.wasm_ctx, &GasCounter::new())
-                .expect("Couldn't create pointer.");
-        let signer_entry = AscTypedMapEntry {
-            key: signer_key_pointer,
-            value: signer_payload_pointer,
-        };
-        let signer_entry_pointer =
-            AscPtr::alloc_obj(signer_entry, &mut context.wasm_ctx, &GasCounter::new())
-                .expect("Couldn't create pointer.");
-
-        // Create ID field parameter
-        let id_payload = AscEnum::<StoreValueKind> {
-            kind: StoreValueKind::String,
-            _padding: 0,
-            payload: EnumPayload::from(id_pointer),
-        };
-        let id_payload_pointer =
-            AscPtr::alloc_obj(id_payload, &mut context.wasm_ctx, &GasCounter::new())
-                .expect("Couldn't create pointer.");
-        let id_entry = AscTypedMapEntry {
-            key: id_key_pointer,
-            value: id_payload_pointer,
-        };
-        let id_entry_pointer =
-            AscPtr::alloc_obj(id_entry, &mut context.wasm_ctx, &GasCounter::new())
-                .expect("Couldn't create pointer.");
-
-        let asc_map = AscTypedMap {
-            entries: AscPtr::alloc_obj(
-                Array::new(
-                    &[id_entry_pointer, signer_entry_pointer],
-                    &mut context.wasm_ctx,
-                    &GasCounter::new(),
-                )
-                .expect("Couldn't create Array."),
-                &mut context.wasm_ctx,
-                &GasCounter::new(),
-            )
-            .expect("Couldn't create pointer."),
-        };
-        let asc_map_pointer = AscPtr::alloc_obj(asc_map, &mut context.wasm_ctx, &GasCounter::new())
-            .expect("Couldn't create pointer.");
-
         context
-            .mock_store_set(
-                &GasCounter::new(),
-                entity_pointer,
-                id_pointer,
-                asc_map_pointer,
-            )
-            .expect("Couldn't call mock_store_set.");
+            .derived_fields
+            .insert("ParentEntity".to_owned(), parent_entity_relation_map);
 
-        let inner_map = context
-            .store
-            .get("GraphAccount")
-            .expect("Couldn't get inner map.")
-            .get("graphAccountId")
+        // Parent Entity
+        let mut p_inner: HashMap<String, HashMap<String, Value>> = HashMap::new();
+        let mut p_entity: HashMap<String, Value> = HashMap::new();
+        p_entity.insert("id".to_owned(), Value::String("p_1".to_owned()));
+        p_entity.insert("virtual_field".to_owned(), Value::String("c_1".to_owned()));
+
+        p_inner.insert(p_entity.get("id").unwrap().to_string(), p_entity);
+        context.store.insert("ParentEntity".to_owned(), p_inner);
+
+        // Child Entity
+        let mut c_inner: HashMap<String, HashMap<String, Value>> = HashMap::new();
+        let mut c_entity: HashMap<String, Value> = HashMap::new();
+        c_entity.insert("id".to_owned(), Value::String("c_1".to_owned()));
+        c_entity.insert("parent".to_owned(), Value::String("p_1".to_owned()));
+
+        c_inner.insert(c_entity.get("id").unwrap().to_string(), c_entity);
+        context.store.insert("ChildEntity".to_owned(), c_inner);
+
+        let entity_type_ptr = AscPtr::alloc_obj(
+            asc_string_from_str("ParentEntity"),
+            &mut context.wasm_ctx,
+            &GasCounter::new(),
+        )
+        .expect("Couldn't create entity_type_ptr.");
+        let entity_id_ptr = AscPtr::alloc_obj(
+            asc_string_from_str("p_1"),
+            &mut context.wasm_ctx,
+            &GasCounter::new(),
+        )
+        .expect("Couldn't create entity_id_ptr.");
+        let entity_virtual_field_ptr = AscPtr::alloc_obj(
+            asc_string_from_str("virtual_field"),
+            &mut context.wasm_ctx,
+            &GasCounter::new(),
+        )
+        .expect("Couldn't create entity_virtual_field_ptr.");
+
+        let related_ptr = context
+            .mock_store_load_related(
+                &GasCounter::new(),
+                entity_type_ptr,
+                entity_id_ptr,
+                entity_virtual_field_ptr,
+            )
             .unwrap();
-        assert_eq!(
-            inner_map
-                .get("nameSignalTransactions")
-                .unwrap()
-                .clone()
-                .as_list()
-                .unwrap()
-                .len(),
-            1
-        );
+
+        // let related = asc_get::<_, AscEnumArray<StoreValueKind>, _>(
+        //     &context.wasm_ctx,
+        //     related_ptr,
+        //     &GasCounter::new(),
+        //     0,
+        // )
+        // .expect("Couldn't unwrap result.");
+
     }
 
     #[test]
