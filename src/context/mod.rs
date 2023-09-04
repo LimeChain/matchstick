@@ -32,12 +32,9 @@ use crate::logging;
 use crate::SCHEMA_LOCATION;
 
 mod conversion;
-mod derived_fields;
 mod derived_schema;
 use conversion::{collect_types, get_kind, get_token_value};
-use derived_fields::{
-    cascade_remove, insert_derived_field_in_store, update_derived_relations_in_store,
-};
+
 use derived_schema::derive_schema;
 
 lazy_static! {
@@ -78,10 +75,9 @@ pub struct MatchstickInstanceContext<C: Blockchain> {
     pub(crate) fn_ret_map: HashMap<String, Vec<Token>>,
     /// Registered tests metadata.
     pub meta_tests: Vec<(String, bool, u32, String)>,
-    /// Holding the derived field type and a tuple of the entity it points to
-    /// with a vector of all the field names and the corresponding derived field names.
+    /// Holding the parent entity type, parent virtual field and a tuple of the derived entity type and derived entity field it points to
     /// The example below is taken from a schema.graphql file and will fill the map in the following way:
-    /// {"NameSignalTransaction": [("nameSignalTransactions", "signer", "GraphAccount")])}
+    /// {"GraphAccount": {"nameSignalTransactions", ("NameSignalTransaction", "signer")}}
     /// ```
     /// type GraphAccount @entity {
     ///     id: ID!
@@ -92,8 +88,6 @@ pub struct MatchstickInstanceContext<C: Blockchain> {
     ///     signer: GraphAccount!
     /// }
     /// ```
-    pub(crate) derived: HashMap<String, Vec<(String, String, String)>>,
-    /// {"GraphAccount": {"nameSignalTransactions", ("NameSignalTransaction", "signer")}}
     pub(crate) derived_fields: HashMap<String, HashMap<String, (String, String)>>,
     /// Gives guarantee that all derived relations are in order when true
     store_updated: bool,
@@ -116,15 +110,12 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             store: HashMap::new(),
             fn_ret_map: HashMap::new(),
             meta_tests: Vec::new(),
-            derived: HashMap::new(),
             derived_fields: HashMap::new(),
             store_updated: true,
             data_source_return_value: (None, None, None),
             ipfs: HashMap::new(),
         };
         derive_schema(&mut context);
-
-        println!("derived {:?}", context.derived_fields);
         context
     }
 
@@ -232,7 +223,6 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         field_name_ptr: AscPtr<AscString>,
         expected_val_ptr: AscPtr<AscString>,
     ) -> Result<bool, HostExportError> {
-        // update_derived_relations_in_store(self);
         let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new(), 0)?;
         let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new(), 0)?;
         let field_name: String = asc_get(&self.wasm_ctx, field_name_ptr, &GasCounter::new(), 0)?;
@@ -292,7 +282,6 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         expected_ptr: u32,
         actual_ptr: u32,
     ) -> Result<bool, HostExportError> {
-        // update_derived_relations_in_store(self);
         let expected: Token = asc_get::<_, AscEnum<EthereumValueKind>, _>(
             &self.wasm_ctx,
             expected_ptr.into(),
@@ -328,7 +317,6 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
     ) -> Result<bool, HostExportError> {
-        // update_derived_relations_in_store(self);
         let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new(), 0)?;
         let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new(), 0)?;
 
@@ -353,7 +341,6 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
     ) -> Result<AscPtr<AscEntity>, HostExportError> {
-        // update_derived_relations_in_store(self);
         let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new(), 0)?;
         let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new(), 0)?;
 
@@ -423,7 +410,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                         .unwrap()
                         .clone();
 
-                    // field value could be a single ID(1:1) or array of IDs(1:M)
+                    // field value could be a single ID or list of IDs
                     let derived_field_values = if derived_field_value.is_string() {
                         vec![derived_field_value]
                     } else {
@@ -474,7 +461,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     ) -> Result<(), HostExportError> {
         let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new(), 0)?;
         let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new(), 0)?;
-        let mut data: HashMap<String, Value> =
+        let data: HashMap<String, Value> =
             asc_get(&self.wasm_ctx, data_ptr, &GasCounter::new(), 0)?;
 
         let required_fields = SCHEMA
@@ -517,102 +504,11 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             }
         }
 
-        // if self.derived.contains_key(&entity_type) {
-        //     let linking_fields = self
-        //         .derived
-        //         .get(&entity_type)
-        //         .unwrap_or_else(|| {
-        //             logging::critical!("Couldn't find value for key {} in derived map", entity_type)
-        //         })
-        //         .clone();
-        //     for linking_field in linking_fields {
-        //         if data.contains_key(&linking_field.1) && self.store.contains_key(&linking_field.2)
-        //         {
-        //             let original_entity_type = linking_field.2.clone();
-        //             let derived_field_value = data
-        //                 .get(&linking_field.1)
-        //                 .unwrap_or_else(|| {
-        //                     logging::critical!(
-        //                         "Couldn't find value for {} in submitted data",
-        //                         linking_field.1
-        //                     )
-        //                 })
-        //                 .clone();
-        //             if matches!(derived_field_value, Value::List(_)) {
-        //                 for derived_field_value in derived_field_value.as_list().unwrap().clone() {
-        //                     insert_derived_field_in_store(
-        //                         self,
-        //                         derived_field_value,
-        //                         original_entity_type.clone(),
-        //                         linking_field.clone(),
-        //                         id.clone(),
-        //                     );
-        //                 }
-        //             } else {
-        //                 insert_derived_field_in_store(
-        //                     self,
-        //                     derived_field_value,
-        //                     original_entity_type.clone(),
-        //                     linking_field.clone(),
-        //                     id.clone(),
-        //                 );
-        //             }
-        //         }
-        //     }
-        // }
-
         let mut entity_type_store = if self.store.contains_key(&entity_type) {
             self.store.get(&entity_type).unwrap().clone()
         } else {
             HashMap::new()
         };
-
-        // Collect all child entities for the passed entity_type
-        // let child_entities: HashMap<String, Vec<(String, String, String)>> = self
-        //     .derived
-        //     .iter()
-        //     .filter_map(|(linked_entity, linking_fields)| {
-        //         let mapping = linking_fields
-        //             .iter()
-        //             .filter(|linking_field| linking_field.2 == entity_type);
-
-        //         if mapping.count() > 0 {
-        //             Some((linked_entity.clone(), linking_fields.clone()))
-        //         } else {
-        //             None
-        //         }
-        //     })
-        //     .collect();
-
-        // // Iterate over all child entities
-        // // Fetch all saved records
-        // // Collect the ids of the records which derivedFrom field points to the passed entity id
-        // // Update the parent's data with the list of child records
-        // if !child_entities.is_empty() {
-        //     for (linked_entity, linking_fields) in child_entities.iter() {
-        //         for linking_field in linking_fields.iter() {
-        //             if let Some(entities) = self.store.get(linked_entity) {
-        //                 let children: Vec<Value> = entities
-        //                     .iter()
-        //                     .filter_map(|(child_id, fields)| {
-        //                         if let Some(Value::String(parent_id)) = fields.get(&linking_field.1)
-        //                         {
-        //                             if parent_id == &id {
-        //                                 Some(Value::String(child_id.clone()))
-        //                             } else {
-        //                                 None
-        //                             }
-        //                         } else {
-        //                             None
-        //                         }
-        //                     })
-        //                     .collect();
-
-        //                 data.insert(linking_field.0.clone(), Value::List(children));
-        //             }
-        //         }
-        //     }
-        // }
 
         entity_type_store.insert(id, data);
         self.store.insert(entity_type, entity_type_store);
@@ -633,9 +529,6 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         if self.store.contains_key(&entity_type)
             && self.store.get(&entity_type).unwrap().contains_key(&id)
         {
-            if self.derived.contains_key(&entity_type) {
-                cascade_remove(self, entity_type.clone(), id.clone());
-            }
             let mut entity_type_store = self.store.get(&entity_type).unwrap().clone();
             entity_type_store.remove(&id);
 
@@ -1023,7 +916,6 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
             instance.instance_ctx_mut().store = self.store.clone();
             instance.instance_ctx_mut().fn_ret_map = self.fn_ret_map.clone();
-            instance.instance_ctx_mut().derived = self.derived.clone();
             instance.instance_ctx_mut().data_source_return_value =
                 self.data_source_return_value.clone();
 
@@ -1037,7 +929,6 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
             self.store = instance.instance_ctx().store.clone();
             self.fn_ret_map = instance.instance_ctx().fn_ret_map.clone();
-            self.derived = instance.instance_ctx().derived.clone();
             self.data_source_return_value =
                 instance.instance_ctx().data_source_return_value.clone();
         }
