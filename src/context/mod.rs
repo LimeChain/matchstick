@@ -577,10 +577,13 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         id_ptr: AscPtr<AscString>,
         data_ptr: AscPtr<AscEntity>,
     ) -> Result<(), HostExportError> {
-        self.update_store(StoreScope::Global, entity_type_ptr, id_ptr, data_ptr, _gas);
-        self.store_updated = false;
+        let result = self.update_store(StoreScope::Global, entity_type_ptr, id_ptr, data_ptr, _gas);
 
-        Ok(())
+        if result.is_ok() {
+            self.store_updated = false;
+        }
+
+        result
     }
 
     /// function mockInBlockStore(entityType: string, id: string, data: map): void
