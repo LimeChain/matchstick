@@ -70,13 +70,22 @@ lazy_static! {
 }
 
 type Store = HashMap<String, HashMap<String, HashMap<String, Value>>>;
+
+/// Type of the store that needs to be accessed
+pub enum StoreScope {
+    Global,
+    Cache,
+}
+
 /// The Matchstick Instance Context wraps WASM Instance Context and
 /// implements the external functions.
 pub struct MatchstickInstanceContext<C: Blockchain> {
     /// Handle to WASM Instance Context.
     pub wasm_ctx: WasmInstanceContext<C>,
+    /// global store
     /// Store<EntityType, EntityTypeStore<EntityId, Entity<Field, Value>>>.
     pub(crate) store: Store,
+    /// store for the current block
     /// Store<EntityType, EntityTypeStore<EntityId, Entity<Field, Value>>>.
     pub(crate) cache_store: Store,
     /// Function-Return map storing mocked Smart Contracts' functions' return values.
@@ -352,13 +361,18 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
     fn get_store_entity(
         &mut self,
-        store: Store,
+        scope: StoreScope,
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
         _gas: &GasCounter,
     ) -> Result<AscPtr<AscEntity>, HostExportError> {
         let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new())?;
         let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new())?;
+
+        let store = match scope {
+            StoreScope::Global => &self.store,
+            StoreScope::Cache => &self.cache_store,
+        };
 
         if store.contains_key(&entity_type) && store.get(&entity_type).unwrap().contains_key(&id) {
             let entities = store.get(&entity_type).unwrap();
@@ -381,7 +395,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     ) -> Result<AscPtr<AscEntity>, HostExportError> {
         update_derived_relations_in_store(self);
 
-        self.get_store_entity(self.store.clone(), entity_type_ptr, id_ptr, _gas)
+        self.get_store_entity(StoreScope::Global, entity_type_ptr, id_ptr, _gas)
     }
 
     /// function store.getInBlock(entityType: string, id: string): Entity
@@ -391,17 +405,17 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
     ) -> Result<AscPtr<AscEntity>, HostExportError> {
-        self.get_store_entity(self.cache_store.clone(), entity_type_ptr, id_ptr, _gas)
+        self.get_store_entity(StoreScope::Cache, entity_type_ptr, id_ptr, _gas)
     }
 
     fn update_store(
         &mut self,
-        store: &mut Store,
+        scope: StoreScope,
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
         data_ptr: AscPtr<AscEntity>,
         _gas: &GasCounter,
-    ) -> Result<Store, HostExportError> {
+    ) -> Result<(), HostExportError> {
         let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new())?;
         let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new())?;
         let mut data: HashMap<String, Value> =
@@ -446,6 +460,11 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 .into());
             }
         }
+
+        let store = match scope {
+            StoreScope::Global => &mut self.store,
+            StoreScope::Cache => &mut self.cache_store,
+        };
 
         if self.derived.contains_key(&entity_type) {
             let linking_fields = self
@@ -547,7 +566,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
         store.insert(entity_type, entity_type_store);
 
-        Ok(store.clone())
+        Ok(())
     }
 
     /// function store.set(entityType: string, id: string, data: map): void
@@ -558,17 +577,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         id_ptr: AscPtr<AscString>,
         data_ptr: AscPtr<AscEntity>,
     ) -> Result<(), HostExportError> {
-        let updated_store = self
-            .update_store(
-                &mut self.store.clone(),
-                entity_type_ptr,
-                id_ptr,
-                data_ptr,
-                _gas,
-            )
-            .unwrap();
-
-        self.store = updated_store;
+        self.update_store(StoreScope::Global, entity_type_ptr, id_ptr, data_ptr, _gas);
         self.store_updated = false;
 
         Ok(())
@@ -582,19 +591,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         id_ptr: AscPtr<AscString>,
         data_ptr: AscPtr<AscEntity>,
     ) -> Result<(), HostExportError> {
-        let updated_store = self
-            .update_store(
-                &mut self.cache_store.clone(),
-                entity_type_ptr,
-                id_ptr,
-                data_ptr,
-                _gas,
-            )
-            .unwrap();
-
-        self.cache_store = updated_store;
-
-        Ok(())
+        self.update_store(StoreScope::Cache, entity_type_ptr, id_ptr, data_ptr, _gas)
     }
 
     /// function store.remove(entityType: string, id: string): void
