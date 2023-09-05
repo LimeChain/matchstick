@@ -11,10 +11,7 @@ pub(crate) fn derive_schema<C: graph::blockchain::Blockchain>(
     SCHEMA.definitions.iter().for_each(|def| {
         if let schema::Definition::TypeDefinition(schema::TypeDefinition::Object(o)) = def {
             let entity_type = &o.name;
-            let derived_fields = o.fields.iter().filter(|&f| {
-                //matches!(f.field_type, schema::Type::NonNullType(..)) &&
-                f.is_derived()
-            });
+            let derived_fields = o.fields.iter().filter(|&f| f.is_derived());
             for virtual_field in derived_fields {
                 // field type is received as: '[ExampleClass!]!' and needs to be reduced to a class string
                 let derived_from_entity_type = virtual_field

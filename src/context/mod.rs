@@ -72,6 +72,19 @@ pub enum StoreScope {
     Cache,
 }
 
+type Entity = Vec<(Word, graph::prelude::Value)>;
+
+trait Sortable {
+    fn sorted(&mut self) -> &Vec<(Word, Value)>;
+}
+
+impl Sortable for Entity {
+    fn sorted(&mut self) -> &Vec<(Word, Value)> {
+        self.sort_by(|(k1, _), (k2, _)| k1.cmp(k2));
+        self
+    }
+}
+
 /// The Matchstick Instance Context wraps WASM Instance Context and
 /// implements the external functions.
 pub struct MatchstickInstanceContext<C: Blockchain> {
@@ -370,13 +383,15 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
         if store.contains_key(&entity_type) && store.get(&entity_type).unwrap().contains_key(&id) {
             let entities = store.get(&entity_type).unwrap();
-            let entity = entities.get(&id).unwrap().clone();
-            let entity: Vec<(Word, graph::prelude::Value)> = entity
+            let mut entity: Vec<(Word, Value)> = entities
+                .get(&id)
+                .unwrap()
+                .clone()
                 .into_iter()
                 .map(|(k, v)| (Word::from(k), v))
                 .collect();
 
-            let res = asc_new(&mut self.wasm_ctx, &entity, &GasCounter::new())?;
+            let res = asc_new(&mut self.wasm_ctx, &entity.sorted(), &GasCounter::new())?;
             return Ok(res);
         }
 
@@ -400,7 +415,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             0,
         )?;
 
-        let mut related_entities: Vec<Vec<(Word, graph::prelude::Value)>> = Vec::new();
+        let mut related_entities: Vec<Vec<(Word, Value)>> = Vec::new();
 
         if self.derived.contains_key(&entity_type)
             && self
@@ -465,9 +480,16 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 }
             }
         }
+        let related_entities_sorted: Vec<Vec<(Word, Value)>> = related_entities
+            .into_iter()
+            .map(|mut v| v.sorted().clone())
+            .collect();
 
-        let related_entities_ptr: AscPtr<Array<AscPtr<AscEntity>>> =
-            asc_new(&mut self.wasm_ctx, &related_entities, &GasCounter::new())?;
+        let related_entities_ptr: AscPtr<Array<AscPtr<AscEntity>>> = asc_new(
+            &mut self.wasm_ctx,
+            &related_entities_sorted,
+            &GasCounter::new(),
+        )?;
 
         Ok(related_entities_ptr)
     }
@@ -854,7 +876,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let default_context_val: Vec<(Word, Value)> = Vec::new();
         let result = match &self.data_source_return_value.2 {
             Some(value) => {
-                let entity: Vec<(Word, graph::prelude::Value)> = value
+                let entity: Vec<(Word, Value)> = value
                     .clone()
                     .into_iter()
                     .map(|(k, v)| (Word::from(k), v))
