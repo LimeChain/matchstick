@@ -12,8 +12,8 @@ mod tests {
     };
     use graph_chain_ethereum::{runtime::abi::AscUnresolvedContractCall_0_0_4, Chain};
     use graph_runtime_wasm::asc_abi::class::{
-        Array, AscEnum, AscEnumArray, AscTypedMap, AscTypedMapEntry, EnumPayload,
-        EthereumValueKind, StoreValueKind, TypedArray,
+        Array, AscEntity, AscEnum, AscTypedMap, AscTypedMapEntry, EnumPayload, EthereumValueKind,
+        StoreValueKind, TypedArray,
     };
     use serial_test::serial;
 
@@ -575,26 +575,31 @@ mod tests {
             ("ChildEntity".to_owned(), "parent".to_owned()),
         );
         context
-            .derived_fields
+            .derived
             .insert("ParentEntity".to_owned(), parent_entity_relation_map);
 
-        // Parent Entity
-        let mut p_inner: HashMap<String, HashMap<String, Value>> = HashMap::new();
-        let mut p_entity: HashMap<String, Value> = HashMap::new();
-        p_entity.insert("id".to_owned(), Value::String("p_1".to_owned()));
-        p_entity.insert("virtual_field".to_owned(), Value::String("c_1".to_owned()));
+        let parent_entity_id = Value::String("p_1".to_owned());
+        let mut parent_entity: HashMap<String, Value> = HashMap::new();
+        let mut parent_entity_inner: HashMap<String, HashMap<String, Value>> = HashMap::new();
+        parent_entity.insert("id".to_owned(), parent_entity_id.clone());
+        parent_entity_inner.insert(parent_entity_id.clone().to_string(), parent_entity);
 
-        p_inner.insert(p_entity.get("id").unwrap().to_string(), p_entity);
-        context.store.insert("ParentEntity".to_owned(), p_inner);
+        context
+            .store
+            .insert("ParentEntity".to_owned(), parent_entity_inner);
 
-        // Child Entity
-        let mut c_inner: HashMap<String, HashMap<String, Value>> = HashMap::new();
-        let mut c_entity: HashMap<String, Value> = HashMap::new();
-        c_entity.insert("id".to_owned(), Value::String("c_1".to_owned()));
-        c_entity.insert("parent".to_owned(), Value::String("p_1".to_owned()));
+        let mut child_entity: HashMap<String, Value> = HashMap::new();
+        let mut child_entity_inner: HashMap<String, HashMap<String, Value>> = HashMap::new();
+        child_entity.insert("id".to_owned(), Value::String("c_1".to_owned()));
+        child_entity.insert("parent".to_owned(), parent_entity_id.clone());
+        child_entity_inner.insert(
+            child_entity.get("id").unwrap().to_string(),
+            child_entity.clone(),
+        );
 
-        c_inner.insert(c_entity.get("id").unwrap().to_string(), c_entity);
-        context.store.insert("ChildEntity".to_owned(), c_inner);
+        context
+            .store
+            .insert("ChildEntity".to_owned(), child_entity_inner);
 
         let entity_type_ptr = AscPtr::alloc_obj(
             asc_string_from_str("ParentEntity"),
@@ -603,7 +608,7 @@ mod tests {
         )
         .expect("Couldn't create entity_type_ptr.");
         let entity_id_ptr = AscPtr::alloc_obj(
-            asc_string_from_str("p_1"),
+            asc_string_from_str(&parent_entity_id.clone().to_string()),
             &mut context.wasm_ctx,
             &GasCounter::new(),
         )
@@ -615,7 +620,7 @@ mod tests {
         )
         .expect("Couldn't create entity_virtual_field_ptr.");
 
-        let related_ptr = context
+        let related_entities_ptr = context
             .mock_store_load_related(
                 &GasCounter::new(),
                 entity_type_ptr,
@@ -624,14 +629,159 @@ mod tests {
             )
             .unwrap();
 
-        // let related = asc_get::<_, AscEnumArray<StoreValueKind>, _>(
-        //     &context.wasm_ctx,
-        //     related_ptr,
-        //     &GasCounter::new(),
-        //     0,
-        // )
-        // .expect("Couldn't unwrap result.");
+        let related_entities: Vec<HashMap<String, Value>> =
+            asc_get::<_, Array<AscPtr<AscEntity>>, _>(
+                &context.wasm_ctx,
+                related_entities_ptr,
+                &GasCounter::new(),
+                0,
+            )
+            .unwrap();
 
+        assert_eq!(related_entities.len(), 1);
+        assert_eq!(related_entities.first().unwrap(), &child_entity);
+    }
+
+    #[test]
+    #[serial]
+    fn mock_store_load_related_no_relations_test() {
+        let mut context = get_context();
+
+        let mut parent_entity_relation_map = HashMap::new();
+        parent_entity_relation_map.insert(
+            "virtual_field".to_owned(),
+            ("ChildEntity".to_owned(), "parent".to_owned()),
+        );
+        context
+            .derived
+            .insert("ParentEntity".to_owned(), parent_entity_relation_map);
+
+        let parent_entity_id = Value::String("p_1".to_owned());
+        let mut parent_entity: HashMap<String, Value> = HashMap::new();
+        let mut parent_entity_inner: HashMap<String, HashMap<String, Value>> = HashMap::new();
+        parent_entity.insert("id".to_owned(), parent_entity_id.clone());
+
+        parent_entity_inner.insert(parent_entity_id.clone().to_string(), parent_entity);
+        context
+            .store
+            .insert("ParentEntity".to_owned(), parent_entity_inner);
+
+        let entity_type_ptr = AscPtr::alloc_obj(
+            asc_string_from_str("ParentEntity"),
+            &mut context.wasm_ctx,
+            &GasCounter::new(),
+        )
+        .expect("Couldn't create entity_type_ptr.");
+        let entity_id_ptr = AscPtr::alloc_obj(
+            asc_string_from_str(&parent_entity_id.clone().to_string()),
+            &mut context.wasm_ctx,
+            &GasCounter::new(),
+        )
+        .expect("Couldn't create entity_id_ptr.");
+        let entity_virtual_field_ptr = AscPtr::alloc_obj(
+            asc_string_from_str("virtual_field"),
+            &mut context.wasm_ctx,
+            &GasCounter::new(),
+        )
+        .expect("Couldn't create entity_virtual_field_ptr.");
+
+        let related_entities_ptr = context
+            .mock_store_load_related(
+                &GasCounter::new(),
+                entity_type_ptr,
+                entity_id_ptr,
+                entity_virtual_field_ptr,
+            )
+            .unwrap();
+
+        let related_entities: Vec<HashMap<String, Value>> =
+            asc_get::<_, Array<AscPtr<AscEntity>>, _>(
+                &context.wasm_ctx,
+                related_entities_ptr,
+                &GasCounter::new(),
+                0,
+            )
+            .unwrap();
+
+        assert_eq!(related_entities.len(), 0);
+    }
+
+    #[test]
+    #[serial]
+    fn mock_store_load_related_bytes_id_test() {
+        let mut context = get_context();
+
+        let mut parent_entity_relation_map = HashMap::new();
+        parent_entity_relation_map.insert(
+            "virtual_field".to_owned(),
+            ("ChildEntity".to_owned(), "parent".to_owned()),
+        );
+        context
+            .derived
+            .insert("ParentEntity".to_owned(), parent_entity_relation_map);
+
+        let parent_entity_id = Value::Bytes("p_1".as_bytes().into());
+        let mut parent_entity: HashMap<String, Value> = HashMap::new();
+        let mut parent_entity_inner: HashMap<String, HashMap<String, Value>> = HashMap::new();
+        parent_entity.insert("id".to_owned(), parent_entity_id.clone());
+        parent_entity_inner.insert(parent_entity_id.clone().to_string(), parent_entity);
+
+        context
+            .store
+            .insert("ParentEntity".to_owned(), parent_entity_inner);
+
+        let mut child_entity: HashMap<String, Value> = HashMap::new();
+        let mut child_entity_inner: HashMap<String, HashMap<String, Value>> = HashMap::new();
+        child_entity.insert("id".to_owned(), Value::String("c_1".to_owned()));
+        child_entity.insert("parent".to_owned(), parent_entity_id.clone());
+        child_entity_inner.insert(
+            child_entity.get("id").unwrap().to_string(),
+            child_entity.clone(),
+        );
+
+        context
+            .store
+            .insert("ChildEntity".to_owned(), child_entity_inner);
+
+        let entity_type_ptr = AscPtr::alloc_obj(
+            asc_string_from_str("ParentEntity"),
+            &mut context.wasm_ctx,
+            &GasCounter::new(),
+        )
+        .expect("Couldn't create entity_type_ptr.");
+        let entity_id_ptr = AscPtr::alloc_obj(
+            asc_string_from_str(&parent_entity_id.clone().to_string()),
+            &mut context.wasm_ctx,
+            &GasCounter::new(),
+        )
+        .expect("Couldn't create entity_id_ptr.");
+        let entity_virtual_field_ptr = AscPtr::alloc_obj(
+            asc_string_from_str("virtual_field"),
+            &mut context.wasm_ctx,
+            &GasCounter::new(),
+        )
+        .expect("Couldn't create entity_virtual_field_ptr.");
+
+        let related_entities_ptr = context
+            .mock_store_load_related(
+                &GasCounter::new(),
+                entity_type_ptr,
+                entity_id_ptr,
+                entity_virtual_field_ptr,
+            )
+            .unwrap();
+
+        let related_entities: Vec<HashMap<String, Value>> =
+            asc_get::<_, Array<AscPtr<AscEntity>>, _>(
+                &context.wasm_ctx,
+                related_entities_ptr,
+                &GasCounter::new(),
+                0,
+            )
+            .unwrap();
+
+        assert_eq!(related_entities.len(), 1);
+        assert_eq!(related_entities.first().unwrap(), &child_entity);
     }
 
     #[test]

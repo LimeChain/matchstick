@@ -88,7 +88,7 @@ pub struct MatchstickInstanceContext<C: Blockchain> {
     ///     signer: GraphAccount!
     /// }
     /// ```
-    pub(crate) derived_fields: HashMap<String, HashMap<String, (String, String)>>,
+    pub(crate) derived: HashMap<String, HashMap<String, (String, String)>>,
     /// Gives guarantee that all derived relations are in order when true
     store_updated: bool,
     /// Holds the mocked return values of `dataSource.address()`, `dataSource.network()` and `dataSource.context()` in that order
@@ -110,7 +110,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             store: HashMap::new(),
             fn_ret_map: HashMap::new(),
             meta_tests: Vec::new(),
-            derived_fields: HashMap::new(),
+            derived: HashMap::new(),
             store_updated: true,
             data_source_return_value: (None, None, None),
             ipfs: HashMap::new(),
@@ -378,21 +378,21 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             0,
         )?;
 
-        if self.derived_fields.contains_key(&entity_type)
+        let mut related_entities: Vec<Vec<(Word, graph::prelude::Value)>> = Vec::new();
+
+        if self.derived.contains_key(&entity_type)
             && self
-                .derived_fields
+                .derived
                 .get(&entity_type)
                 .unwrap()
                 .contains_key(&entity_virtual_field)
         {
             let (derived_from_entity_type, derived_from_entity_field) = self
-                .derived_fields
+                .derived
                 .get(&entity_type)
                 .unwrap()
                 .get(&entity_virtual_field)
                 .unwrap();
-
-            let mut related_entities: Vec<Vec<(Word, graph::prelude::Value)>> = Vec::new();
 
             if self.store.contains_key(&derived_from_entity_type.clone()) {
                 for (derived_entity_id, derived_entity_fields) in self
@@ -411,15 +411,16 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                         .clone();
 
                     // field value could be a single ID or list of IDs
-                    let derived_field_values = if derived_field_value.is_string() {
-                        vec![derived_field_value]
-                    } else {
-                        derived_field_value.as_list().unwrap_or_default()
+                    let derived_entity_ids: Vec<Value> = match derived_field_value {
+                        Value::Bytes(id) => vec![Value::from(id)],
+                        Value::String(id) => vec![Value::from(id)],
+                        Value::List(ids) => ids,
+                        _ => vec![],
                     };
 
-                    let no_relation_found: bool = derived_field_values
+                    let no_relation_found: bool = derived_entity_ids
                         .iter()
-                        .filter(|&field_value| field_value.to_string().eq(&entity_id))
+                        .filter(|&derived_id| derived_id.to_string().eq(&entity_id))
                         .count()
                         == 0;
 
@@ -440,15 +441,13 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                             .collect(),
                     );
                 }
-
-                let related_entities_ptr: AscPtr<Array<AscPtr<AscEntity>>> =
-                    asc_new(&mut self.wasm_ctx, &related_entities, &GasCounter::new())?;
-
-                return Ok(related_entities_ptr);
             }
         }
 
-        Ok(AscPtr::null())
+        let related_entities_ptr: AscPtr<Array<AscPtr<AscEntity>>> =
+            asc_new(&mut self.wasm_ctx, &related_entities, &GasCounter::new())?;
+
+        Ok(related_entities_ptr)
     }
 
     /// function store.set(entityType: string, id: string, data: map): void

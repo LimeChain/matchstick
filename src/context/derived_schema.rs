@@ -31,9 +31,8 @@ pub(crate) fn derive_schema<C: graph::blockchain::Blockchain>(
                     .to_string()
                     .replace('\"', "");
 
-                if context.derived_fields.contains_key(entity_type) {
-                    let entity_virtual_fields =
-                        context.derived_fields.get_mut(entity_type).unwrap();
+                if context.derived.contains_key(entity_type) {
+                    let entity_virtual_fields = context.derived.get_mut(entity_type).unwrap();
 
                     if !entity_virtual_fields.contains_key(&virtual_field.name) {
                         entity_virtual_fields.insert(
@@ -49,7 +48,7 @@ pub(crate) fn derive_schema<C: graph::blockchain::Blockchain>(
                         (derived_from_entity_type, derived_from_entity_field.clone()),
                     );
                     context
-                        .derived_fields
+                        .derived
                         .insert(entity_type.to_string(), entity_virtual_fields);
                 }
             }
