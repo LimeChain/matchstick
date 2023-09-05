@@ -75,11 +75,11 @@ pub enum StoreScope {
 type Entity = Vec<(Word, graph::prelude::Value)>;
 
 trait Sortable {
-    fn sorted(&mut self) -> &Vec<(Word, Value)>;
+    fn sorted(&mut self) -> &Entity;
 }
 
 impl Sortable for Entity {
-    fn sorted(&mut self) -> &Vec<(Word, Value)> {
+    fn sorted(&mut self) -> &Entity {
         self.sort_by(|(k1, _), (k2, _)| k1.cmp(k2));
         self
     }
@@ -383,7 +383,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
         if store.contains_key(&entity_type) && store.get(&entity_type).unwrap().contains_key(&id) {
             let entities = store.get(&entity_type).unwrap();
-            let mut entity: Vec<(Word, Value)> = entities
+            let mut entity: Entity = entities
                 .get(&id)
                 .unwrap()
                 .clone()
@@ -415,7 +415,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             0,
         )?;
 
-        let mut related_entities: Vec<Vec<(Word, Value)>> = Vec::new();
+        let mut related_entities: Vec<Entity> = Vec::new();
 
         if self.derived.contains_key(&entity_type)
             && self
@@ -480,7 +480,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 }
             }
         }
-        let related_entities_sorted: Vec<Vec<(Word, Value)>> = related_entities
+        let related_entities_sorted: Vec<Entity> = related_entities
             .into_iter()
             .map(|mut v| v.sorted().clone())
             .collect();
@@ -873,16 +873,16 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         &mut self,
         _gas: &GasCounter,
     ) -> Result<AscPtr<AscEntity>, HostExportError> {
-        let default_context_val: Vec<(Word, Value)> = Vec::new();
+        let default_context_val: Entity = Vec::new();
         let result = match &self.data_source_return_value.2 {
             Some(value) => {
-                let entity: Vec<(Word, Value)> = value
+                let mut entity: Entity = value
                     .clone()
                     .into_iter()
                     .map(|(k, v)| (Word::from(k), v))
                     .collect();
 
-                asc_new(&mut self.wasm_ctx, &entity, &GasCounter::new()).unwrap()
+                asc_new(&mut self.wasm_ctx, &entity.sorted(), &GasCounter::new()).unwrap()
             }
             None => asc_new(&mut self.wasm_ctx, &default_context_val, &GasCounter::new()).unwrap(),
         };
