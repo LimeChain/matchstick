@@ -5,12 +5,14 @@ mod tests {
     use std::path::PathBuf;
 
     use crate::test_suite::{Test, TestGroup, Testable};
-    use crate::{MatchstickInstance, SCHEMA_LOCATION};
+    use crate::{MatchstickInstance, SCHEMA_LOCATION, MANIFEST_LOCATION};
 
     #[test]
     #[serial]
     fn run_all_gravity_demo_subgraph_tests() {
         SCHEMA_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from("./mocks/schema.graphql"));
+        MANIFEST_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from("./mocks/yamls/subgraph.yaml"));
+
         let module = <MatchstickInstance<Chain>>::new("mocks/wasm/gravity.wasm");
         let test_suite = TestGroup::from(&module);
         let mut failed_tests = Box::new(0);
@@ -28,6 +30,8 @@ mod tests {
     #[serial]
     fn run_all_token_lock_wallet_demo_subgraph_tests() {
         SCHEMA_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from("./mocks/schema.graphql"));
+        MANIFEST_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from("./mocks/yamls/subgraph.yaml"));
+        
         let module = <MatchstickInstance<Chain>>::new("mocks/wasm/token-lock-wallet.wasm");
         let test_suite = TestGroup::from(&module);
         let mut failed_tests = Box::new(0);
