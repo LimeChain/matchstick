@@ -247,13 +247,13 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             for virtual_field in virtual_fields.iter() {
                 // convert from graph entity(vec) to store entity(hashmap) for better print result
                 let related_entities: Vec<HashMap<String, Value>> = self
-                    .load_related_entities(&entity_type, &entity_id, &virtual_field)
+                    .load_related_entities(&entity_type, &entity_id, virtual_field)
                     .into_iter()
                     .map(|entity: Entity| {
                         let mut related_entity: HashMap<String, Value> = HashMap::new();
 
                         entity.into_iter().for_each(|(word, value)| {
-                            related_entity.insert(word.to_string(), value.clone());
+                            related_entity.insert(word.to_string(), value);
                         });
 
                         related_entity
