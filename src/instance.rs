@@ -308,6 +308,14 @@ impl<C: Blockchain> MatchstickInstance<C> {
         link!("clearInBlockStore", clear_cache_store,);
         link!("logStore", log_store,);
         link!(
+            "logEntity",
+            log_entity,
+            entity_type_ptr,
+            entity_id_ptr,
+            show_related_ptr
+        );
+
+        link!(
             "store.get",
             mock_store_get,
             "host_export_store_get",

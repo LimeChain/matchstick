@@ -26,6 +26,7 @@ use graph_runtime_wasm::{
     ExperimentalFeatures,
 };
 use lazy_static::lazy_static;
+use serde::Serialize;
 use serde_json::to_string_pretty;
 
 use crate::logging;
@@ -70,6 +71,13 @@ type Store = HashMap<String, HashMap<String, HashMap<String, Value>>>;
 pub enum StoreScope {
     Global,
     Cache,
+}
+
+#[derive(Serialize)]
+#[serde(untagged)]
+enum LogEntityValue {
+    Native(Value),
+    Derived(Vec<HashMap<String, Value>>),
 }
 
 type Entity = Vec<(Word, graph::prelude::Value)>;
@@ -185,6 +193,85 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             "{}",
             to_string_pretty(&self.store).unwrap_or_else(|err| logging::critical!(err)),
         );
+        Ok(())
+    }
+
+    /// function logEntity(entity: string, id: string, showRelated: bool): void
+    pub fn log_entity(
+        &mut self,
+        _gas: &GasCounter,
+        entity_type_ptr: AscPtr<AscString>,
+        entity_id_ptr: AscPtr<AscString>,
+        show_related_ptr: AscPtr<bool>,
+    ) -> Result<(), HostExportError> {
+        let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new(), 0)?;
+        let entity_id: String = asc_get(&self.wasm_ctx, entity_id_ptr, &GasCounter::new(), 0)?;
+        let show_related: bool = bool::from(EnumPayload(show_related_ptr.to_payload()));
+
+        let mut log: HashMap<String, LogEntityValue> = HashMap::new();
+
+        if self.store.contains_key(&entity_type)
+            && self
+                .store
+                .get(&entity_type)
+                .unwrap()
+                .contains_key(&entity_id)
+        {
+            let entity = self
+                .store
+                .get(&entity_type)
+                .unwrap()
+                .get(&entity_id)
+                .unwrap()
+                .clone();
+
+            let mut virtual_fields: Vec<String> = Vec::new();
+            let has_virtual_fields = self.derived.contains_key(&entity_type);
+
+            // prepare entity's native fields
+            for (field, value) in entity.iter() {
+                log.insert(field.clone(), LogEntityValue::Native(value.clone()));
+            }
+
+            // prepare entity's dervied fields
+            if show_related && has_virtual_fields {
+                virtual_fields = self
+                    .derived
+                    .get(&entity_type)
+                    .unwrap()
+                    .clone()
+                    .into_keys()
+                    .collect();
+            }
+
+            for virtual_field in virtual_fields.iter() {
+                // convert from graph entity(vec) to store entity(hashmap) for better print result
+                let related_entities: Vec<HashMap<String, Value>> = self
+                    .load_related_entities(&entity_type, &entity_id, &virtual_field)
+                    .into_iter()
+                    .map(|entity: Entity| {
+                        let mut related_entity: HashMap<String, Value> = HashMap::new();
+
+                        entity.into_iter().for_each(|(word, value)| {
+                            related_entity.insert(word.to_string(), value.clone());
+                        });
+
+                        related_entity
+                    })
+                    .collect();
+
+                log.insert(
+                    virtual_field.clone(),
+                    LogEntityValue::Derived(related_entities),
+                );
+            }
+        }
+
+        logging::debug!(
+            "{}",
+            to_string_pretty(&log).unwrap_or_else(|err| logging::critical!(err)),
+        );
+
         Ok(())
     }
 
@@ -398,37 +485,26 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         Ok(AscPtr::null())
     }
 
-    /// function store.loadRelated(entity: string, id: string, field: string): Array<Entity>;
-    pub fn mock_store_load_related(
+    fn load_related_entities(
         &mut self,
-        _gas: &GasCounter,
-        entity_type_ptr: AscPtr<AscString>,
-        entity_id_ptr: AscPtr<AscString>,
-        entity_virtual_field_ptr: AscPtr<AscString>,
-    ) -> Result<AscPtr<Array<AscPtr<AscEntity>>>, HostExportError> {
-        let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new(), 0)?;
-        let entity_id: String = asc_get(&self.wasm_ctx, entity_id_ptr, &GasCounter::new(), 0)?;
-        let entity_virtual_field: String = asc_get(
-            &self.wasm_ctx,
-            entity_virtual_field_ptr,
-            &GasCounter::new(),
-            0,
-        )?;
-
+        entity_type: &String,
+        entity_id: &String,
+        entity_virtual_field: &String,
+    ) -> Vec<Entity> {
         let mut related_entities: Vec<Entity> = Vec::new();
 
-        if self.derived.contains_key(&entity_type)
+        if self.derived.contains_key(entity_type)
             && self
                 .derived
-                .get(&entity_type)
+                .get(entity_type)
                 .unwrap()
-                .contains_key(&entity_virtual_field)
+                .contains_key(entity_virtual_field)
         {
             let (derived_from_entity_type, derived_from_entity_field) = self
                 .derived
-                .get(&entity_type)
+                .get(entity_type)
                 .unwrap()
-                .get(&entity_virtual_field)
+                .get(entity_virtual_field)
                 .unwrap();
 
             if self.store.contains_key(&derived_from_entity_type.clone()) {
@@ -457,7 +533,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
                     let no_relation_found: bool = derived_entity_ids
                         .iter()
-                        .filter(|&derived_id| derived_id.to_string().eq(&entity_id))
+                        .filter(|&derived_id| derived_id.to_string().eq(entity_id))
                         .count()
                         == 0;
 
@@ -480,16 +556,35 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 }
             }
         }
-        let related_entities_sorted: Vec<Entity> = related_entities
+
+        related_entities
             .into_iter()
             .map(|mut v| v.sorted().clone())
-            .collect();
+            .collect()
+    }
 
-        let related_entities_ptr: AscPtr<Array<AscPtr<AscEntity>>> = asc_new(
-            &mut self.wasm_ctx,
-            &related_entities_sorted,
+    /// function store.loadRelated(entity: string, id: string, field: string): Array<Entity>;
+    pub fn mock_store_load_related(
+        &mut self,
+        _gas: &GasCounter,
+        entity_type_ptr: AscPtr<AscString>,
+        entity_id_ptr: AscPtr<AscString>,
+        entity_virtual_field_ptr: AscPtr<AscString>,
+    ) -> Result<AscPtr<Array<AscPtr<AscEntity>>>, HostExportError> {
+        let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new(), 0)?;
+        let entity_id: String = asc_get(&self.wasm_ctx, entity_id_ptr, &GasCounter::new(), 0)?;
+        let entity_virtual_field: String = asc_get(
+            &self.wasm_ctx,
+            entity_virtual_field_ptr,
             &GasCounter::new(),
+            0,
         )?;
+
+        let related_entities: Vec<Entity> =
+            self.load_related_entities(&entity_type, &entity_id, &entity_virtual_field);
+
+        let related_entities_ptr: AscPtr<Array<AscPtr<AscEntity>>> =
+            asc_new(&mut self.wasm_ctx, &related_entities, &GasCounter::new())?;
 
         Ok(related_entities_ptr)
     }
