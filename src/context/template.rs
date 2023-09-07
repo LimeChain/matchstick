@@ -49,7 +49,7 @@ pub(crate) fn data_source_create(
         kind: "ethereum/contract".to_string(),
         name: name.clone(),
         address: params[0].clone(),
-        context
+        context,
     };
 
     let template = templates.get_mut(&name).expect("Template not found.");
