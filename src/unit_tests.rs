@@ -23,8 +23,7 @@ mod tests {
     };
 
     fn get_context() -> MatchstickInstanceContext<Chain> {
-        SCHEMA_LOCATION
-            .with(|path| *path.borrow_mut() = PathBuf::from("./mocks/schema.graphql"));
+        SCHEMA_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from("./mocks/schema.graphql"));
 
         MANIFEST_LOCATION.with(|path| {
             *path.borrow_mut() = PathBuf::from("./mocks/yamls/subgraph.yaml");
