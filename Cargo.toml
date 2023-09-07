@@ -5,13 +5,11 @@ authors = ["LimeChain <limechain.tech>"]
 edition = "2021"
 
 [dependencies]
-graph = { git = "https://github.com/graphprotocol/graph-node", rev = "2eaf730d48c37c72b49bca9f7536cd59fe5ad254" }
-graph-core = { git = "https://github.com/graphprotocol/graph-node", rev = "2eaf730d48c37c72b49bca9f7536cd59fe5ad254" }
-graph-chain-ethereum = { git = "https://github.com/graphprotocol/graph-node", rev = "2eaf730d48c37c72b49bca9f7536cd59fe5ad254" }
-graph-graphql = { git = "https://github.com/graphprotocol/graph-node", rev = "2eaf730d48c37c72b49bca9f7536cd59fe5ad254" }
-graph-mock = { git = "https://github.com/graphprotocol/graph-node", rev = "2eaf730d48c37c72b49bca9f7536cd59fe5ad254" }
-graph-runtime-test = { git = "https://github.com/graphprotocol/graph-node", rev = "2eaf730d48c37c72b49bca9f7536cd59fe5ad254" }
-graph-runtime-wasm = { git = "https://github.com/graphprotocol/graph-node", rev = "2eaf730d48c37c72b49bca9f7536cd59fe5ad254" }
+graph = { git = "https://github.com/LimeChain/graph-node", rev = "386af066c30d996fb8f9d4b48facf6590997759e" }
+graph-chain-ethereum = { git = "https://github.com/LimeChain/graph-node", rev = "386af066c30d996fb8f9d4b48facf6590997759e" }
+graph-graphql = { git = "https://github.com/LimeChain/graph-node", rev = "386af066c30d996fb8f9d4b48facf6590997759e" }
+graph-runtime-test = { git = "https://github.com/LimeChain/graph-node", rev = "386af066c30d996fb8f9d4b48facf6590997759e" }
+graph-runtime-wasm = { git = "https://github.com/LimeChain/graph-node", rev = "386af066c30d996fb8f9d4b48facf6590997759e" }
 wasmtime = "0.27.0"
 tokio = "1.15.0"
 anyhow = "1.0"
