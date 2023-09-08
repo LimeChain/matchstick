@@ -494,26 +494,31 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     ) -> Vec<StoreEntity> {
         let mut related_entities: Vec<StoreEntity> = Vec::new();
 
+        // gets the derived entity type and derived entity field associated with the parent entity
         let derived_from_entity = self
             .derived
             .get(entity_type)
             .and_then(|fields| fields.get(entity_virtual_field));
 
         if let Some((derived_from_entity_type, derived_from_entity_field)) = derived_from_entity {
-            let derived_entity = self.store.get(&derived_from_entity_type.clone());
+            let derived_entities = self.store.get(derived_from_entity_type);
 
-            if let Some(derived_entity) = derived_entity {
-                for (derived_entity_id, derived_entity_fields) in derived_entity.iter() {
-                    if !derived_entity_fields.contains_key(&derived_from_entity_field.clone()) {
+            if let Some(derived_entities) = derived_entities {
+                // loop through all derived entities from the store to find a relation with the parent entity
+                // if relation is found, it adds the whole entity to the related entities result
+                for (derived_entity_id, derived_entity) in derived_entities.iter() {
+                    if !derived_entity.contains_key(derived_from_entity_field) {
                         continue;
                     }
 
-                    let derived_field_value = derived_entity_fields
-                        .get(&derived_from_entity_field.clone())
+                    // derived field value could be a single ID or list of IDs
+                    let derived_field_value = derived_entity
+                        .get(derived_from_entity_field)
                         .unwrap()
                         .clone();
 
-                    // field value could be a single ID or list of IDs
+                    // converts different value types(string, bytes, list) to a single vector
+                    // that way it would be easier to find relation by entity id
                     let derived_entity_ids: Vec<Value> = match derived_field_value {
                         Value::Bytes(id) => vec![Value::from(id)],
                         Value::String(id) => vec![Value::from(id)],
@@ -521,24 +526,14 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                         _ => vec![],
                     };
 
-                    let no_relation_found: bool = derived_entity_ids
+                    let relation_found: bool = derived_entity_ids
                         .iter()
-                        .filter(|&derived_id| derived_id.to_string().eq(entity_id))
-                        .count()
-                        == 0;
+                        .any(|derived_id| derived_id.to_string().eq(entity_id));
 
-                    if no_relation_found {
-                        continue;
+                    if relation_found {
+                        related_entities
+                            .push(derived_entities.get(derived_entity_id).unwrap().clone());
                     }
-
-                    related_entities.push(
-                        self.store
-                            .get(&derived_from_entity_type.clone())
-                            .unwrap()
-                            .get(&derived_entity_id.clone())
-                            .unwrap()
-                            .clone(),
-                    );
                 }
             }
         }
