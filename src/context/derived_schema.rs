@@ -1,17 +1,17 @@
 use std::collections::HashMap;
 
 use graph::data::graphql::ext::DirectiveFinder;
-use graph_graphql::graphql_parser::schema;
 
-use crate::context::{MatchstickInstanceContext, SCHEMA};
+use crate::context::MatchstickInstanceContext;
 
 pub(crate) fn derive_schema<C: graph::blockchain::Blockchain>(
     context: &mut MatchstickInstanceContext<C>,
 ) {
-    SCHEMA.definitions.iter().for_each(|def| {
-        if let schema::Definition::TypeDefinition(schema::TypeDefinition::Object(o)) = def {
-            let entity_type = &o.name;
-            let derived_fields = o.fields.iter().filter(|&f| f.is_derived());
+    context
+        .schema
+        .iter()
+        .for_each(|(entity_type, entity_object)| {
+            let derived_fields = entity_object.fields.iter().filter(|&f| f.is_derived());
             for virtual_field in derived_fields {
                 // field type is received as: '[ExampleClass!]!' and needs to be reduced to a class string
                 let derived_from_entity_type = virtual_field
@@ -49,6 +49,5 @@ pub(crate) fn derive_schema<C: graph::blockchain::Blockchain>(
                         .insert(entity_type.to_string(), entity_virtual_fields);
                 }
             }
-        }
-    });
+        });
 }
