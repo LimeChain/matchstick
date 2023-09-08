@@ -65,7 +65,7 @@ lazy_static! {
     };
 }
 
-type Store = HashMap<String, HashMap<String, HashMap<String, Value>>>;
+type Store = HashMap<String, HashMap<String, StoreEntity>>;
 
 /// Type of the store that needs to be accessed
 pub enum StoreScope {
@@ -77,19 +77,22 @@ pub enum StoreScope {
 #[serde(untagged)]
 enum LogEntityValue {
     Native(Value),
-    Derived(Vec<HashMap<String, Value>>),
+    Derived(Vec<StoreEntity>),
 }
 
 type Entity = Vec<(Word, graph::prelude::Value)>;
 
-trait Sortable {
-    fn sorted(&mut self) -> &Entity;
+type StoreEntity = HashMap<String, Value>;
+
+trait ConvertableEntity {
+    fn to_entity(&mut self) -> Entity;
 }
 
-impl Sortable for Entity {
-    fn sorted(&mut self) -> &Entity {
-        self.sort_by(|(k1, _), (k2, _)| k1.cmp(k2));
-        self
+impl ConvertableEntity for StoreEntity {
+    fn to_entity(&mut self) -> Entity {
+        self.iter_mut()
+            .map(|(k, v)| (Word::from(k.to_string()), v.clone()))
+            .collect()
     }
 }
 
@@ -210,60 +213,36 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
         let mut log: HashMap<String, LogEntityValue> = HashMap::new();
 
-        if self.store.contains_key(&entity_type)
-            && self
-                .store
-                .get(&entity_type)
-                .unwrap()
-                .contains_key(&entity_id)
-        {
-            let entity = self
-                .store
-                .get(&entity_type)
-                .unwrap()
-                .get(&entity_id)
-                .unwrap()
-                .clone();
+        if let Some(entities) = self.store.get(&entity_type) {
+            if let Some(entity) = entities.get(&entity_id) {
+                let mut virtual_fields: Vec<String> = Vec::new();
+                let has_virtual_fields = self.derived.contains_key(&entity_type);
 
-            let mut virtual_fields: Vec<String> = Vec::new();
-            let has_virtual_fields = self.derived.contains_key(&entity_type);
+                // prepare entity's native fields
+                for (field, value) in entity.iter() {
+                    log.insert(field.clone(), LogEntityValue::Native(value.clone()));
+                }
 
-            // prepare entity's native fields
-            for (field, value) in entity.iter() {
-                log.insert(field.clone(), LogEntityValue::Native(value.clone()));
-            }
+                // prepare entity's dervied fields
+                if show_related && has_virtual_fields {
+                    virtual_fields = self
+                        .derived
+                        .get(&entity_type)
+                        .unwrap()
+                        .clone()
+                        .into_keys()
+                        .collect();
+                }
 
-            // prepare entity's dervied fields
-            if show_related && has_virtual_fields {
-                virtual_fields = self
-                    .derived
-                    .get(&entity_type)
-                    .unwrap()
-                    .clone()
-                    .into_keys()
-                    .collect();
-            }
+                for virtual_field in virtual_fields.iter() {
+                    let related_entities: Vec<HashMap<String, Value>> =
+                        self.load_related_entities(&entity_type, &entity_id, virtual_field);
 
-            for virtual_field in virtual_fields.iter() {
-                // convert from graph entity(vec) to store entity(hashmap) for better print result
-                let related_entities: Vec<HashMap<String, Value>> = self
-                    .load_related_entities(&entity_type, &entity_id, virtual_field)
-                    .into_iter()
-                    .map(|entity: Entity| {
-                        let mut related_entity: HashMap<String, Value> = HashMap::new();
-
-                        entity.into_iter().for_each(|(word, value)| {
-                            related_entity.insert(word.to_string(), value);
-                        });
-
-                        related_entity
-                    })
-                    .collect();
-
-                log.insert(
-                    virtual_field.clone(),
-                    LogEntityValue::Derived(related_entities),
-                );
+                    log.insert(
+                        virtual_field.clone(),
+                        LogEntityValue::Derived(related_entities),
+                    );
+                }
             }
         }
 
@@ -470,15 +449,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
         if store.contains_key(&entity_type) && store.get(&entity_type).unwrap().contains_key(&id) {
             let entities = store.get(&entity_type).unwrap();
-            let mut entity: Entity = entities
-                .get(&id)
-                .unwrap()
-                .clone()
-                .into_iter()
-                .map(|(k, v)| (Word::from(k), v))
-                .collect();
+            let entity: Entity = entities.get(&id).unwrap().clone().to_entity();
 
-            let res = asc_new(&mut self.wasm_ctx, &entity.sorted(), &GasCounter::new())?;
+            let res = asc_new(&mut self.wasm_ctx, &entity, &GasCounter::new())?;
             return Ok(res);
         }
 
@@ -490,8 +463,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         entity_type: &String,
         entity_id: &String,
         entity_virtual_field: &String,
-    ) -> Vec<Entity> {
-        let mut related_entities: Vec<Entity> = Vec::new();
+    ) -> Vec<StoreEntity> {
+        let mut related_entities: Vec<StoreEntity> = Vec::new();
 
         if self.derived.contains_key(entity_type)
             && self
@@ -547,20 +520,13 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                             .unwrap()
                             .get(&derived_entity_id.clone())
                             .unwrap()
-                            .clone()
-                            // convert to Entity
-                            .into_iter()
-                            .map(|(k, v)| (Word::from(k), v))
-                            .collect(),
+                            .clone(),
                     );
                 }
             }
         }
 
         related_entities
-            .into_iter()
-            .map(|mut v| v.sorted().clone())
-            .collect()
     }
 
     /// function store.loadRelated(entity: string, id: string, field: string): Array<Entity>;
@@ -580,8 +546,12 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             0,
         )?;
 
-        let related_entities: Vec<Entity> =
-            self.load_related_entities(&entity_type, &entity_id, &entity_virtual_field);
+        let related_entities: Vec<Entity> = self
+            .load_related_entities(&entity_type, &entity_id, &entity_virtual_field)
+            // convert to Entity
+            .into_iter()
+            .map(|mut v: StoreEntity| v.to_entity())
+            .collect();
 
         let related_entities_ptr: AscPtr<Array<AscPtr<AscEntity>>> =
             asc_new(&mut self.wasm_ctx, &related_entities, &GasCounter::new())?;
@@ -619,8 +589,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     ) -> Result<(), HostExportError> {
         let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new(), 0)?;
         let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new(), 0)?;
-        let data: HashMap<String, Value> =
-            asc_get(&self.wasm_ctx, data_ptr, &GasCounter::new(), 0)?;
+        let data: StoreEntity = asc_get(&self.wasm_ctx, data_ptr, &GasCounter::new(), 0)?;
 
         let required_fields = SCHEMA
         .definitions
@@ -971,13 +940,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let default_context_val: Entity = Vec::new();
         let result = match &self.data_source_return_value.2 {
             Some(value) => {
-                let mut entity: Entity = value
-                    .clone()
-                    .into_iter()
-                    .map(|(k, v)| (Word::from(k), v))
-                    .collect();
+                let entity: Entity = value.clone().to_entity();
 
-                asc_new(&mut self.wasm_ctx, &entity.sorted(), &GasCounter::new()).unwrap()
+                asc_new(&mut self.wasm_ctx, &entity, &GasCounter::new()).unwrap()
             }
             None => asc_new(&mut self.wasm_ctx, &default_context_val, &GasCounter::new()).unwrap(),
         };
