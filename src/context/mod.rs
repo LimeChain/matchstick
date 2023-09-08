@@ -213,17 +213,41 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
         let mut log: HashMap<String, LogEntityValue> = HashMap::new();
 
+        // validates whether the provided entity exists in the schema file
+        let is_invalid_entity = SCHEMA
+            .definitions
+            .iter()
+            .filter(|def| {
+                if let schema::Definition::TypeDefinition(schema::TypeDefinition::Object(
+                    entity_def,
+                )) = def
+                {
+                    entity_def.name.eq(&entity_type)
+                } else {
+                    false
+                }
+            })
+            .count()
+            == 0;
+
+        if is_invalid_entity {
+            panic!(
+                "Entity \"{}\" does not match any of the schema definitions",
+                &entity_type
+            );
+        }
+
         if let Some(entities) = self.store.get(&entity_type) {
             if let Some(entity) = entities.get(&entity_id) {
                 let mut virtual_fields: Vec<String> = Vec::new();
                 let has_virtual_fields = self.derived.contains_key(&entity_type);
 
-                // prepare entity's native fields
+                // prepares entity's native fields
                 for (field, value) in entity.iter() {
                     log.insert(field.clone(), LogEntityValue::Native(value.clone()));
                 }
 
-                // prepare entity's dervied fields
+                // prepares entity's dervied fields
                 if show_related && has_virtual_fields {
                     virtual_fields = self
                         .derived
