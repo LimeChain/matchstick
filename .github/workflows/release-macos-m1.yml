@@ -28,7 +28,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.68.0
-      - run: sudo apt-get install protobuf-compiler
+      - run: brew install protobuf
 
       - name: Build
         run: rustup target add aarch64-apple-darwin && cargo build --release --target aarch64-apple-darwin && mv target/aarch64-apple-darwin/release/${{ matrix.artifact_name }} target/release/${{ matrix.asset_name }}
