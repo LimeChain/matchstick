@@ -3,7 +3,6 @@ mod tests {
     use std::collections::HashMap;
     use std::path::PathBuf;
     use std::str::FromStr;
-    use std::sync::Once;
 
     use graph::{
         data::store::Value,
@@ -20,21 +19,20 @@ mod tests {
     use crate::{
         context::{asc_string_from_str, MatchstickInstanceContext, REVERTS_IDENTIFIER},
         logging::{accum, flush, LOGS},
-        {MatchstickInstance, SCHEMA_LOCATION},
+        {MatchstickInstance, MANIFEST_LOCATION, SCHEMA_LOCATION},
     };
 
-    static GET_SCHEMA: Once = Once::new();
-
     fn get_context() -> MatchstickInstanceContext<Chain> {
-        GET_SCHEMA.call_once(|| {
-            SCHEMA_LOCATION
-                .with(|path| *path.borrow_mut() = PathBuf::from("./mocks/schema.graphql"));
+        SCHEMA_LOCATION.with(|path| *path.borrow_mut() = PathBuf::from("./mocks/schema.graphql"));
+
+        MANIFEST_LOCATION.with(|path| {
+            *path.borrow_mut() = PathBuf::from("./mocks/yamls/subgraph.yaml");
         });
+
         let module = <MatchstickInstance<Chain>>::new("./mocks/wasm/gravity.wasm");
 
         module
             .instance_ctx
-            .take()
             .take()
             .expect("Couldn't get context from module.")
     }

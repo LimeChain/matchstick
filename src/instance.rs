@@ -22,8 +22,7 @@ use graph_runtime_wasm::{
 };
 use wasmtime::Trap;
 
-use crate::subgraph_store::MockSubgraphStore;
-use crate::{context::MatchstickInstanceContext, logging};
+use crate::{context::MatchstickInstanceContext, logging, subgraph_store::MockSubgraphStore};
 
 /// The Matchstick Instance is simply a wrapper around WASM Instance and
 pub struct MatchstickInstance<C: Blockchain> {
@@ -307,6 +306,9 @@ impl<C: Blockchain> MatchstickInstance<C> {
         link!("clearStore", clear_store,);
         link!("clearInBlockStore", clear_cache_store,);
         link!("logStore", log_store,);
+
+        link!("logDataSources", log_data_sources, template_ptr);
+
         link!(
             "logEntity",
             log_entity,
@@ -506,6 +508,18 @@ impl<C: Blockchain> MatchstickInstance<C> {
             assert_not_in_store,
             entity_type_ptr,
             id_ptr
+        );
+        link!(
+            "_assert.dataSourceCount",
+            assert_data_source_count,
+            template_ptr,
+            expected_count_ptr
+        );
+        link!(
+            "_assert.dataSourceExists",
+            assert_data_source_exists,
+            template_ptr,
+            address_ptr
         );
 
         link!("countEntities", count_entities, entity_type);

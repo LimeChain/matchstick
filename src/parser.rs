@@ -93,6 +93,23 @@ pub fn collect_handlers(path: &str) -> HashMap<String, Vec<String>> {
         .collect()
 }
 
+pub fn collect_template_names(path: &str) -> Vec<String> {
+    let subgraph_yaml = parse_yaml(path);
+
+    extract_vec(&subgraph_yaml, "templates")
+        .iter()
+        .filter_map(|template| {
+            let kind = template.get("kind").unwrap().as_str().unwrap().to_owned();
+            if kind == "ethereum/contract" {
+                let name = template.get("name").unwrap().as_str().unwrap().to_owned();
+                Some(name)
+            } else {
+                None
+            }
+        })
+        .collect()
+}
+
 /// Extracts the schema location from subraph.yaml
 /// Will panic if the `schema` or `file` key is missing
 pub fn get_schema_location(path: &str) -> String {

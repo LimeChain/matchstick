@@ -9,7 +9,10 @@ use graph::{
         store::{Attribute, Value},
         value::Word,
     },
-    prelude::ethabi::{Address, Token},
+    prelude::{
+        ethabi::{Address, Token},
+        DataSourceContext,
+    },
     runtime::{asc_get, asc_new, gas::GasCounter, AscPtr, HostExportError},
     semver::Version,
 };
@@ -34,9 +37,10 @@ use crate::SCHEMA_LOCATION;
 
 mod conversion;
 mod derived_schema;
+mod template;
 use conversion::{collect_types, get_kind, get_token_value};
-
 use derived_schema::derive_schema;
+use template::{data_source_create, populate_templates};
 
 lazy_static! {
     /// Special tokens...
@@ -96,6 +100,16 @@ impl ToEntity for StoreEntity {
     }
 }
 
+type TemplateStore = HashMap<String, HashMap<String, TemplateInfo>>;
+
+#[derive(Debug, serde::Serialize)]
+pub(crate) struct TemplateInfo {
+    kind: String,
+    name: String,
+    address: String,
+    context: Option<DataSourceContext>,
+}
+
 /// The Matchstick Instance Context wraps WASM Instance Context and
 /// implements the external functions.
 pub struct MatchstickInstanceContext<C: Blockchain> {
@@ -138,6 +152,7 @@ pub struct MatchstickInstanceContext<C: Blockchain> {
     /// Holds the mocked ipfs files in a HashMap, where key is the file hash, and the value is the
     /// path to the file that matchstick should read and parse
     pub(crate) ipfs: HashMap<String, String>,
+    templates: TemplateStore,
 }
 
 /// Implementation of non-external functions.
@@ -154,6 +169,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             store_updated: true,
             data_source_return_value: (None, None, None),
             ipfs: HashMap::new(),
+            templates: HashMap::new(),
         };
 
         // reads the graphql schema file and extracts all entities and their object types
@@ -168,6 +184,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         });
 
         derive_schema(&mut context);
+        populate_templates(&mut context);
         context
     }
 
@@ -207,10 +224,34 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
     /// function logStore(): void
     pub fn log_store(&mut self, _gas: &GasCounter) -> Result<(), HostExportError> {
-        logging::debug!(
-            "{}",
-            to_string_pretty(&self.store).unwrap_or_else(|err| logging::critical!(err)),
-        );
+        let string_pretty =
+            to_string_pretty(&self.store).unwrap_or_else(|err| logging::critical!(err));
+        logging::debug!(string_pretty);
+
+        Ok(())
+    }
+
+    /// function logDataSources(template: string): void
+    pub fn log_data_sources(
+        &mut self,
+        _gas: &GasCounter,
+        template_ptr: AscPtr<AscString>,
+    ) -> Result<(), HostExportError> {
+        let template: String = asc_get(&self.wasm_ctx, template_ptr, &GasCounter::new(), 0)?;
+        let data_sources = self
+            .templates
+            .get(&template)
+            .unwrap_or_else(|| panic!("No template with name '{}' found.", template));
+
+        let string_pretty = to_string_pretty(&data_sources).unwrap_or_else(|err| {
+            logging::critical!(
+                "Something went wrong when trying to convert data sources to string: {}",
+                err
+            )
+        });
+
+        logging::debug!(string_pretty);
+
         Ok(())
     }
 
@@ -448,6 +489,61 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 "(assert.notInStore) Value for entity type: '{}' and id: '{}' was found in store.",
                 entity_type,
                 id
+            );
+            return Ok(false);
+        }
+
+        Ok(true)
+    }
+
+    pub fn assert_data_source_count(
+        &mut self,
+        _gas: &GasCounter,
+        template_name_ptr: AscPtr<AscString>,
+        expected_count: u32,
+    ) -> Result<bool, HostExportError> {
+        let template_name: String =
+            asc_get(&self.wasm_ctx, template_name_ptr, &GasCounter::new(), 0)?;
+
+        let actual_count = self
+            .templates
+            .get(&template_name)
+            .unwrap_or_else(|| panic!("No template with name '{}' found.", template_name))
+            .len() as u32;
+
+        if actual_count != expected_count {
+            logging::error!(
+                "(assert.dataSourceCount) Expected dataSource count for template `{}` to be '{}' but was '{}'",
+                template_name,
+                expected_count,
+                actual_count
+            );
+            return Ok(false);
+        }
+
+        Ok(true)
+    }
+
+    pub fn assert_data_source_exists(
+        &mut self,
+        _gas: &GasCounter,
+        template_name_ptr: AscPtr<AscString>,
+        address_ptr: AscPtr<AscString>,
+    ) -> Result<bool, HostExportError> {
+        let template_name: String =
+            asc_get(&self.wasm_ctx, template_name_ptr, &GasCounter::new(), 0)?;
+        let address: String = asc_get(&self.wasm_ctx, address_ptr, &GasCounter::new(), 0)?;
+
+        let template = self
+            .templates
+            .get(&template_name)
+            .unwrap_or_else(|| panic!("No template with name '{}' found.", template_name));
+
+        if !template.contains_key(&address) {
+            logging::error!(
+                "(assert.dataSourceExists) No dataSource with address '{}' found for template '{}'",
+                address,
+                template_name
             );
             return Ok(false);
         }
@@ -865,7 +961,10 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         _name_ptr: AscPtr<AscString>,
         _params_ptr: AscPtr<Array<AscPtr<AscString>>>,
     ) -> Result<(), HostExportError> {
-        Ok(())
+        let name: String = asc_get(&self.wasm_ctx, _name_ptr, &GasCounter::new(), 0)?;
+        let params: Vec<String> = asc_get(&self.wasm_ctx, _params_ptr, &GasCounter::new(), 0)?;
+
+        data_source_create(name, params, None, &mut self.templates)
     }
 
     /// function dataSource.createWithContext(
@@ -879,7 +978,13 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         _params_ptr: AscPtr<Array<AscPtr<AscString>>>,
         _context_ptr: AscPtr<AscEntity>,
     ) -> Result<(), HostExportError> {
-        Ok(())
+        let name: String = asc_get(&self.wasm_ctx, _name_ptr, &GasCounter::new(), 0)?;
+        let params: Vec<String> = asc_get(&self.wasm_ctx, _params_ptr, &GasCounter::new(), 0)?;
+        let context: HashMap<Word, Value> =
+            asc_get(&self.wasm_ctx, _context_ptr, &GasCounter::new(), 0)?;
+        let context = DataSourceContext::from(context);
+
+        data_source_create(name, params, Some(context), &mut self.templates)
     }
 
     /// function dataSource.address(): Address
