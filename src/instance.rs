@@ -310,6 +310,14 @@ impl<C: Blockchain> MatchstickInstance<C> {
         link!("logDataSources", log_data_sources, template_ptr);
 
         link!(
+            "logEntity",
+            log_entity,
+            entity_type_ptr,
+            entity_id_ptr,
+            show_related_ptr
+        );
+
+        link!(
             "store.get",
             mock_store_get,
             "host_export_store_get",
