@@ -15,13 +15,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        name: [linux-20, linux-22]
+        name: [linux-22]
 
         include:
-          - name: linux-20
-            os: ubuntu-20.04
-            artifact_name: matchstick
-            asset_name: binary-linux-20
           - name: linux-22
             os: ubuntu-22.04
             artifact_name: matchstick
