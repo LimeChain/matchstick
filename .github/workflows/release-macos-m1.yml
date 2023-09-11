@@ -16,12 +16,16 @@ jobs:
     strategy:
       matrix:
         name: [macos-m1]
-
+        
         include:
-          - name: macos-m1
+          - name: macos-11-m1
             os: macos-11
             artifact_name: matchstick
             asset_name: binary-macos-11-m1
+          - name: macos-12-m1
+            os: macos-12
+            artifact_name: matchstick
+            asset_name: binary-macos-12-m1
             
     steps:
       - uses: actions/checkout@v3
