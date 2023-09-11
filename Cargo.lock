@@ -2112,6 +2112,7 @@ dependencies = [
  "lazy_static",
  "regex",
  "run_script",
+ "serde",
  "serde_json",
  "serde_yaml 0.8.26",
  "serial_test",
