@@ -15,7 +15,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        name: [macos-m1]
+        name: [macos-11-m1, macos-12-m1]
         
         include:
           - name: macos-11-m1
