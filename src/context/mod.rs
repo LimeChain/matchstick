@@ -500,7 +500,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         &mut self,
         _gas: &GasCounter,
         template_name_ptr: AscPtr<AscString>,
-        expected_count_ptr: u32,
+        expected_count: u32,
     ) -> Result<bool, HostExportError> {
         let template_name: String =
             asc_get(&self.wasm_ctx, template_name_ptr, &GasCounter::new(), 0)?;
@@ -511,11 +511,11 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             .unwrap_or_else(|| panic!("No template with name '{}' found.", template_name))
             .len() as u32;
 
-        if actual_count != expected_count_ptr {
+        if actual_count != expected_count {
             logging::error!(
                 "(assert.dataSourceCount) Expected dataSource count for template `{}` to be '{}' but was '{}'",
                 template_name,
-                expected_count_ptr,
+                expected_count,
                 actual_count
             );
             return Ok(false);
