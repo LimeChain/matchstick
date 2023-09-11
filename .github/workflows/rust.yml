@@ -31,7 +31,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.68.0
-      - run: sudo apt-get install protobuf-compiler
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install libpq-dev protobuf-compiler
       - run: cargo test 
 
   fmt:
@@ -53,6 +56,9 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.68.0
-      - run: sudo apt-get install protobuf-compiler
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install libpq-dev protobuf-compiler
       - run: rustup component add clippy
       - run: cargo clippy -- -D warnings

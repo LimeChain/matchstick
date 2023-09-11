@@ -1,4 +1,4 @@
-name: Release (MacOS, Linux)
+name: Release Linux
 
 on:
   release:
@@ -15,13 +15,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        name: [linux-18, linux-20, linux-22]
+        name: [linux-20, linux-22]
 
         include:
-          - name: linux-18
-            os: ubuntu-18.04
-            artifact_name: matchstick
-            asset_name: binary-linux-18
           - name: linux-20
             os: ubuntu-20.04
             artifact_name: matchstick
@@ -36,7 +32,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.68.0
-      - run: sudo apt-get install protobuf-compiler
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install libpq-dev protobuf-compiler
 
       - name: Build
         run: cargo build --release && mv target/release/${{ matrix.artifact_name }} target/release/${{ matrix.asset_name }}
