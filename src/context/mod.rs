@@ -551,6 +551,185 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         Ok(true)
     }
 
+    /// Overloading the assert function with custom error message for backwards compatibility with matchstick-as
+
+    /// function _assert.fieldEquals(
+    ///     entityType: string, id: string,
+    ///     fieldName: string, expectedVal: string,
+    ///     message: string,
+    /// ): bool
+    pub fn assert_field_equals_with_message(
+        &mut self,
+        _gas: &GasCounter,
+        entity_type_ptr: AscPtr<AscString>,
+        id_ptr: AscPtr<AscString>,
+        field_name_ptr: AscPtr<AscString>,
+        expected_val_ptr: AscPtr<AscString>,
+        message_ptr: AscPtr<AscString>,
+    ) -> Result<bool, HostExportError> {
+        let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new(), 0)?;
+        let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new(), 0)?;
+        let field_name: String = asc_get(&self.wasm_ctx, field_name_ptr, &GasCounter::new(), 0)?;
+        let expected_val: String =
+            asc_get(&self.wasm_ctx, expected_val_ptr, &GasCounter::new(), 0)?;
+        let message: String = asc_get(&self.wasm_ctx, message_ptr, &GasCounter::new(), 0)?;
+
+        if !self.store.contains_key(&entity_type) {
+            logging::error!(
+                "(assert.fieldEquals) No entities with type '{}' found.",
+                &entity_type
+            );
+
+            return Ok(false);
+        }
+
+        let entities = self.store.get(&entity_type).unwrap();
+        if !entities.contains_key(&id) {
+            logging::error!(
+                "(assert.fieldEquals) No entity with type '{}' and id '{}' found.",
+                &entity_type,
+                &id
+            );
+
+            return Ok(false);
+        }
+
+        let entity = entities.get(&id).unwrap();
+        if !entity.contains_key(&field_name) {
+            logging::error!(
+                "(assert.fieldEquals) No field named '{}' on entity with type '{}' and id '{}' found.",
+                &field_name,
+                &entity_type,
+                &id
+            );
+
+            return Ok(false);
+        }
+
+        let val = entity.get(&field_name).unwrap();
+        if val.to_string() != expected_val {
+            logging::error!("(assert.fieldEquals) {}", message);
+
+            return Ok(false);
+        };
+
+        Ok(true)
+    }
+
+    /// function _assert.equals(expected: ethereum.Value, actual: ethereum.Value, message: string): bool
+    pub fn assert_equals_with_message(
+        &mut self,
+        _gas: &GasCounter,
+        expected_ptr: u32,
+        actual_ptr: u32,
+        message_ptr: AscPtr<AscString>,
+    ) -> Result<bool, HostExportError> {
+        let expected: Token = asc_get::<_, AscEnum<EthereumValueKind>, _>(
+            &self.wasm_ctx,
+            expected_ptr.into(),
+            &GasCounter::new(),
+            0
+        )?;
+        let actual: Token = asc_get::<_, AscEnum<EthereumValueKind>, _>(
+            &self.wasm_ctx,
+            actual_ptr.into(),
+            &GasCounter::new(),
+            0
+        )?;
+        let message: String = asc_get(&self.wasm_ctx, message_ptr, &GasCounter::new(), 0)?;
+
+        let exp_val = get_token_value(expected);
+        let act_val = get_token_value(actual);
+
+        if exp_val != act_val {
+            logging::error!("(assert.equals) {}", message);
+
+            return Ok(false);
+        }
+
+        Ok(true)
+    }
+
+    /// function _assert.notInStore(entityType: string, id: string, message: string): bool
+    pub fn assert_not_in_store_with_message(
+        &mut self,
+        _gas: &GasCounter,
+        entity_type_ptr: AscPtr<AscString>,
+        id_ptr: AscPtr<AscString>,
+        message_ptr: AscPtr<AscString>,
+    ) -> Result<bool, HostExportError> {
+        let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new(), 0)?;
+        let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new(), 0)?;
+        let message: String = asc_get(&self.wasm_ctx, message_ptr, &GasCounter::new(), 0)?;
+
+        if self.store.contains_key(&entity_type)
+            && self.store.get(&entity_type).unwrap().contains_key(&id)
+        {
+            logging::error!("(assert.notInStore) {}", message);
+
+            return Ok(false);
+        }
+
+        Ok(true)
+    }
+
+    pub fn assert_data_source_count_with_message(
+        &mut self,
+        _gas: &GasCounter,
+        template_name_ptr: AscPtr<AscString>,
+        expected_count: u32,
+        message_ptr: AscPtr<AscString>
+    ) -> Result<bool, HostExportError> {
+        let template_name: String =
+            asc_get(&self.wasm_ctx, template_name_ptr, &GasCounter::new(), 0)?;
+
+        let message: String = asc_get(&self.wasm_ctx, message_ptr, &GasCounter::new(), 0)?;
+
+        let actual_count = self
+            .templates
+            .get(&template_name)
+            .unwrap_or_else(|| panic!("No template with name '{}' found.", template_name))
+            .len() as u32;
+
+        if actual_count != expected_count {
+            logging::error!(
+                "(assert.dataSourceCount) {}",
+                message
+            );
+            return Ok(false);
+        }
+
+        Ok(true)
+    }
+
+    pub fn assert_data_source_exists_with_message(
+        &mut self,
+        _gas: &GasCounter,
+        template_name_ptr: AscPtr<AscString>,
+        address_ptr: AscPtr<AscString>,
+        message_ptr: AscPtr<AscString>
+    ) -> Result<bool, HostExportError> {
+        let template_name: String =
+            asc_get(&self.wasm_ctx, template_name_ptr, &GasCounter::new(), 0)?;
+        let address: String = asc_get(&self.wasm_ctx, address_ptr, &GasCounter::new(), 0)?;
+        let message: String = asc_get(&self.wasm_ctx, message_ptr, &GasCounter::new(), 0)?;
+
+        let template = self
+            .templates
+            .get(&template_name)
+            .unwrap_or_else(|| panic!("No template with name '{}' found.", template_name));
+
+        if !template.contains_key(&address) {
+            logging::error!(
+                "(assert.dataSourceExists) {}",
+                message
+            );
+            return Ok(false);
+        }
+
+        Ok(true)
+    }
+
     fn get_store_entity(
         &mut self,
         scope: StoreScope,
