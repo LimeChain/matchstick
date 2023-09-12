@@ -1,6 +1,6 @@
 use colored::Colorize;
 use graph::blockchain::Blockchain;
-use std::time::Instant;
+use std::{panic, time::Instant};
 use wasmtime::Func;
 
 use crate::{instance::MatchstickInstance, logging};
@@ -32,6 +32,19 @@ pub struct TestGroup {
 pub enum Testable {
     Test(Test),
     Group(TestGroup),
+}
+
+impl std::panic::UnwindSafe for Test {}
+impl std::panic::RefUnwindSafe for Test {}
+
+fn catch_unwind_silent<F: FnOnce() -> R + panic::UnwindSafe, R: std::fmt::Debug>(
+    f: F,
+) -> std::thread::Result<R> {
+    let prev_hook = panic::take_hook();
+    panic::set_hook(Box::new(|_| {}));
+    let result = panic::catch_unwind(f);
+    panic::set_hook(prev_hook);
+    result
 }
 
 impl Test {
@@ -71,34 +84,42 @@ impl Test {
         logging::add_indent();
         let now = Instant::now();
 
-        let passed: bool = match self.func.call(&[]) {
-            Ok(_) => {
+        let passed: bool = match catch_unwind_silent(|| self.func.call(&[])) {
+            Ok(result) => {
                 // Log error and mark test as failed if should_fail is `true`, but test passes
                 // Otherwise mark test as passed
-                if self.should_fail {
-                    logging::error!("Expected test to fail but it passed successfully!");
-                    false
-                } else {
-                    true
+                match result {
+                    Err(error) => {
+                        logging::debug!(format!("{:?}", error));
+                        if self.should_fail { true } else { false }
+                    }
+                    Ok(_) => {
+                        if self.should_fail {
+                            logging::error!("Test passed, but should have failed");
+                            false
+                        } else {
+                            true
+                        }
+                    }
                 }
             }
             Err(err) => {
                 // Mark test as passed if should_fail is `true`
                 // Log error and mark test as failed if should_fail is `false`
-                if self.should_fail {
-                    true
-                } else {
-                    logging::add_indent();
-                    logging::debug!(err);
-                    logging::sub_indent();
-                    false
-                }
+                 logging::add_indent();
+                    match err.downcast::<String>() {
+                        Ok(message) => logging::error!(message),
+                        Err(err) => logging::error!(format!("{:?}", err)),
+                    }
+                logging::sub_indent();
+
+                if self.should_fail { true } else { false }
             }
         };
 
         // Convert the elapsed time to milliseconds
         let elapsed_in_ms = now.elapsed().as_secs_f32() * 1000.0;
-
+        
         logging::sub_indent();
         let logs = logging::flush();
 

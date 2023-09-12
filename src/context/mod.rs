@@ -215,7 +215,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let msg: String = asc_get(&self.wasm_ctx, msg, &GasCounter::new(), 0)?;
 
         match level {
-            0 => logging::critical!(msg),
+            0 => panic!("Aborted by `log.critical` with message: {}", msg),
             _ => logging::log!(level, msg),
         }
 
