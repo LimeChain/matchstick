@@ -628,13 +628,13 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             &self.wasm_ctx,
             expected_ptr.into(),
             &GasCounter::new(),
-            0
+            0,
         )?;
         let actual: Token = asc_get::<_, AscEnum<EthereumValueKind>, _>(
             &self.wasm_ctx,
             actual_ptr.into(),
             &GasCounter::new(),
-            0
+            0,
         )?;
         let message: String = asc_get(&self.wasm_ctx, message_ptr, &GasCounter::new(), 0)?;
 
@@ -678,7 +678,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         _gas: &GasCounter,
         template_name_ptr: AscPtr<AscString>,
         expected_count: u32,
-        message_ptr: AscPtr<AscString>
+        message_ptr: AscPtr<AscString>,
     ) -> Result<bool, HostExportError> {
         let template_name: String =
             asc_get(&self.wasm_ctx, template_name_ptr, &GasCounter::new(), 0)?;
@@ -692,10 +692,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             .len() as u32;
 
         if actual_count != expected_count {
-            logging::error!(
-                "(assert.dataSourceCount) {}",
-                message
-            );
+            logging::error!("(assert.dataSourceCount) {}", message);
             return Ok(false);
         }
 
@@ -707,7 +704,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         _gas: &GasCounter,
         template_name_ptr: AscPtr<AscString>,
         address_ptr: AscPtr<AscString>,
-        message_ptr: AscPtr<AscString>
+        message_ptr: AscPtr<AscString>,
     ) -> Result<bool, HostExportError> {
         let template_name: String =
             asc_get(&self.wasm_ctx, template_name_ptr, &GasCounter::new(), 0)?;
@@ -720,10 +717,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             .unwrap_or_else(|| panic!("No template with name '{}' found.", template_name));
 
         if !template.contains_key(&address) {
-            logging::error!(
-                "(assert.dataSourceExists) {}",
-                message
-            );
+            logging::error!("(assert.dataSourceExists) {}", message);
             return Ok(false);
         }
 
