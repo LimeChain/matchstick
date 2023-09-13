@@ -93,16 +93,17 @@ pub fn collect_handlers(path: &str) -> HashMap<String, Vec<String>> {
         .collect()
 }
 
-pub fn collect_template_names(path: &str) -> Vec<String> {
+pub fn collect_templates(path: &str) -> Vec<(String, String)> {
     let subgraph_yaml = parse_yaml(path);
 
     extract_vec(&subgraph_yaml, "templates")
         .iter()
         .filter_map(|template| {
             let kind = template.get("kind").unwrap().as_str().unwrap().to_owned();
-            if kind == "ethereum/contract" {
+
+            if kind == "ethereum/contract" || kind == "file/ipfs" {
                 let name = template.get("name").unwrap().as_str().unwrap().to_owned();
-                Some(name)
+                Some((name, kind))
             } else {
                 None
             }
