@@ -238,10 +238,12 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         template_ptr: AscPtr<AscString>,
     ) -> Result<(), HostExportError> {
         let template: String = asc_get(&self.wasm_ctx, template_ptr, &GasCounter::new(), 0)?;
-        let data_sources = self
-            .templates
-            .get(&template)
-            .unwrap_or_else(|| logging::critical!("(logDataSources) No template with name '{}' found.", template));
+        let data_sources = self.templates.get(&template).unwrap_or_else(|| {
+            logging::critical!(
+                "(logDataSources) No template with name '{}' found.",
+                template
+            )
+        });
 
         let string_pretty = to_string_pretty(&data_sources).unwrap_or_else(|err| {
             logging::critical!(
