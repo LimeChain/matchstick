@@ -241,7 +241,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let data_sources = self
             .templates
             .get(&template)
-            .unwrap_or_else(|| panic!("No template with name '{}' found.", template));
+            .unwrap_or_else(|| logging::critical!("(logDataSources) No template with name '{}' found.", template));
 
         let string_pretty = to_string_pretty(&data_sources).unwrap_or_else(|err| {
             logging::critical!(
@@ -271,8 +271,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
         // validates whether the provided entity exists in the schema file
         if !self.schema.contains_key(&entity_type) {
-            panic!(
-                "Entity \"{}\" does not match any of the schema definitions",
+            logging::critical!(
+                "(logEntity) Entity \"{}\" does not match any of the schema definitions",
                 &entity_type
             );
         }
@@ -505,18 +505,23 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let template_name: String =
             asc_get(&self.wasm_ctx, template_name_ptr, &GasCounter::new(), 0)?;
 
-        let actual_count = self
-            .templates
-            .get(&template_name)
-            .unwrap_or_else(|| panic!("No template with name '{}' found.", template_name))
-            .len() as u32;
+        if let Some(template) = self.templates.get(&template_name) {
+            let actual_count = template.len() as u32;
 
-        if actual_count != expected_count {
+            if actual_count != expected_count {
+                logging::error!(
+                    "(assert.dataSourceCount) Expected dataSource count for template `{}` to be '{}' but was '{}'",
+                    template_name,
+                    expected_count,
+                    actual_count
+                );
+
+                return Ok(false);
+            }
+        } else {
             logging::error!(
-                "(assert.dataSourceCount) Expected dataSource count for template `{}` to be '{}' but was '{}'",
-                template_name,
-                expected_count,
-                actual_count
+                "(assert.dataSourceCoutn) No template with name '{}' found.",
+                template_name
             );
             return Ok(false);
         }
@@ -534,15 +539,18 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             asc_get(&self.wasm_ctx, template_name_ptr, &GasCounter::new(), 0)?;
         let address: String = asc_get(&self.wasm_ctx, address_ptr, &GasCounter::new(), 0)?;
 
-        let template = self
-            .templates
-            .get(&template_name)
-            .unwrap_or_else(|| panic!("No template with name '{}' found.", template_name));
-
-        if !template.contains_key(&address) {
+        if let Some(template) = self.templates.get(&template_name) {
+            if !template.contains_key(&address) {
+                logging::error!(
+                    "(assert.dataSourceExists) No dataSource with address '{}' found for template '{}'",
+                    address,
+                    template_name
+                );
+                return Ok(false);
+            }
+        } else {
             logging::error!(
-                "(assert.dataSourceExists) No dataSource with address '{}' found for template '{}'",
-                address,
+                "(assert.dataSourceExists) No template with name '{}' found.",
                 template_name
             );
             return Ok(false);
@@ -685,14 +693,19 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
         let message: String = asc_get(&self.wasm_ctx, message_ptr, &GasCounter::new(), 0)?;
 
-        let actual_count = self
-            .templates
-            .get(&template_name)
-            .unwrap_or_else(|| panic!("No template with name '{}' found.", template_name))
-            .len() as u32;
+        if let Some(template) = self.templates.get(&template_name) {
+            let actual_count = template.len() as u32;
 
-        if actual_count != expected_count {
-            logging::error!("(assert.dataSourceCount) {}", message);
+            if actual_count != expected_count {
+                logging::error!("(assert.dataSourceCount) {}", message);
+
+                return Ok(false);
+            }
+        } else {
+            logging::error!(
+                "(assert.dataSourceCoutn) No template with name '{}' found.",
+                template_name
+            );
             return Ok(false);
         }
 
@@ -711,13 +724,16 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let address: String = asc_get(&self.wasm_ctx, address_ptr, &GasCounter::new(), 0)?;
         let message: String = asc_get(&self.wasm_ctx, message_ptr, &GasCounter::new(), 0)?;
 
-        let template = self
-            .templates
-            .get(&template_name)
-            .unwrap_or_else(|| panic!("No template with name '{}' found.", template_name));
-
-        if !template.contains_key(&address) {
-            logging::error!("(assert.dataSourceExists) {}", message);
+        if let Some(template) = self.templates.get(&template_name) {
+            if !template.contains_key(&address) {
+                logging::error!("(assert.dataSourceExists) {}", message);
+                return Ok(false);
+            }
+        } else {
+            logging::error!(
+                "(assert.dataSourceExists) No template with name '{}' found.",
+                template_name
+            );
             return Ok(false);
         }
 
@@ -1253,7 +1269,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
         match self.store.get(&entity_type) {
             Some(inner_map) => Ok(inner_map.len().try_into().unwrap_or_else(|err| {
-                panic!(
+                logging::critical!(
                     "Couldn't cast usize value: {} into i32.\n{}",
                     inner_map.len(),
                     err
