@@ -1003,31 +1003,25 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
                 // otherwise it is considered as ipfs cid
                 // Zero address is considered as valid only if matches the mocked value
                 if !address.is_zero() || value.eq(default_address_val) {
-                    asc_new(
-                        &mut self.wasm_ctx,
-                        &address,
-                        &GasCounter::new(),
-                    )
-                    .expect("Couldn't create pointer.")
+                    asc_new(&mut self.wasm_ctx, &address, &GasCounter::new())
+                        .expect("Couldn't create pointer.")
                 } else {
-                    asc_new(
-                        &mut self.wasm_ctx,
-                        value.as_bytes(),
-                        &GasCounter::new(),
-                    )
-                    .expect("Couldn't create pointer.")
+                    asc_new(&mut self.wasm_ctx, value.as_bytes(), &GasCounter::new())
+                        .expect("Couldn't create pointer.")
                 }
-            },
+            }
             None => {
-                logging::error!("No mocked Eth address or Ipfs CID found, so fallback to Eth Zero address");
+                logging::error!(
+                    "No mocked Eth address or Ipfs CID found, so fallback to Eth Zero address"
+                );
 
                 asc_new(
                     &mut self.wasm_ctx,
-                    &Address::from_str(&default_address_val).expect("Couldn't create address"),
+                    &Address::from_str(default_address_val).expect("Couldn't create address"),
                     &GasCounter::new(),
                 )
                 .expect("Couldn't create pointer.")
-            },
+            }
         };
 
         Ok(result)
