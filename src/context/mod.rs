@@ -153,6 +153,7 @@ pub struct MatchstickInstanceContext<C: Blockchain> {
     /// path to the file that matchstick should read and parse
     pub(crate) ipfs: HashMap<String, String>,
     templates: TemplateStore,
+    template_kinds: HashMap<String, String>,
 }
 
 /// Implementation of non-external functions.
@@ -170,6 +171,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             data_source_return_value: (None, None, None),
             ipfs: HashMap::new(),
             templates: HashMap::new(),
+            template_kinds: HashMap::new(),
         };
 
         // reads the graphql schema file and extracts all entities and their object types
@@ -964,7 +966,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let name: String = asc_get(&self.wasm_ctx, _name_ptr, &GasCounter::new(), 0)?;
         let params: Vec<String> = asc_get(&self.wasm_ctx, _params_ptr, &GasCounter::new(), 0)?;
 
-        data_source_create(name, params, None, &mut self.templates)
+        data_source_create(name, params, None, self)
     }
 
     /// function dataSource.createWithContext(
@@ -984,7 +986,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             asc_get(&self.wasm_ctx, _context_ptr, &GasCounter::new(), 0)?;
         let context = DataSourceContext::from(context);
 
-        data_source_create(name, params, Some(context), &mut self.templates)
+        data_source_create(name, params, Some(context), self)
     }
 
     /// function dataSource.address(): Address
@@ -993,19 +995,39 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         _gas: &GasCounter,
     ) -> Result<AscPtr<Uint8Array>, HostExportError> {
         let default_address_val = "0x0000000000000000000000000000000000000000";
+
         let result = match &self.data_source_return_value.0 {
-            Some(value) => asc_new(
-                &mut self.wasm_ctx,
-                &Address::from_str(value).expect("Couldn't create Address."),
-                &GasCounter::new(),
-            )
-            .expect("Couldn't create pointer."),
-            None => asc_new(
-                &mut self.wasm_ctx,
-                &Address::from_str(default_address_val).expect("Couldn't create Address."),
-                &GasCounter::new(),
-            )
-            .expect("Couldn't create pointer."),
+            Some(value) => {
+                let address = Address::from_str(value).unwrap_or_default();
+                // checks whether the value is a valid ethereum address and parses it
+                // otherwise it is considered as ipfs cid
+                // Zero address is considered as valid only if matches the mocked value
+                if !address.is_zero() || value.eq(default_address_val) {
+                    asc_new(
+                        &mut self.wasm_ctx,
+                        &address,
+                        &GasCounter::new(),
+                    )
+                    .expect("Couldn't create pointer.")
+                } else {
+                    asc_new(
+                        &mut self.wasm_ctx,
+                        value.as_bytes(),
+                        &GasCounter::new(),
+                    )
+                    .expect("Couldn't create pointer.")
+                }
+            },
+            None => {
+                logging::error!("No mocked Eth address or Ipfs CID found, so fallback to Eth Zero address");
+
+                asc_new(
+                    &mut self.wasm_ctx,
+                    &Address::from_str(&default_address_val).expect("Couldn't create address"),
+                    &GasCounter::new(),
+                )
+                .expect("Couldn't create pointer.")
+            },
         };
 
         Ok(result)
@@ -1088,6 +1110,22 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             })),
             None => Ok(0),
         }
+    }
+
+    ///  function readFile(path: string): Bytes
+    pub fn read_file(
+        &mut self,
+        _gas: &GasCounter,
+        file_path_ptr: AscPtr<AscString>,
+    ) -> Result<AscPtr<Uint8Array>, HostExportError> {
+        let file_path: String = asc_get(&self.wasm_ctx, file_path_ptr, &GasCounter::new(), 0)?;
+
+        let string = std::fs::read_to_string(&file_path).unwrap_or_else(|err| {
+            logging::critical!("Failed to read file `{}` with error: {}", &file_path, err)
+        });
+        let result = asc_new(&mut self.wasm_ctx, string.as_bytes(), &GasCounter::new())?;
+
+        Ok(result)
     }
 
     /// function mockIpfsFile(hash: string, file_path: string): void

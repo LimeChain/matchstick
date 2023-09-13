@@ -1,33 +1,37 @@
-use super::{MatchstickInstanceContext, TemplateInfo, TemplateStore};
+use std::collections::HashMap;
+
+use super::{MatchstickInstanceContext, TemplateInfo};
 use anyhow::{Context as _, Result};
 use graph::{
     prelude::DataSourceContext,
     runtime::{DeterministicHostError, HostExportError},
 };
-use std::collections::HashMap;
 
 pub(crate) fn populate_templates<C: graph::blockchain::Blockchain>(
     context: &mut MatchstickInstanceContext<C>,
 ) {
     crate::MANIFEST_LOCATION.with(|path| {
-        let names = crate::parser::collect_template_names(
+        let templates = crate::parser::collect_templates(
             path.borrow().to_str().expect("Cannot convert to string."),
         );
 
-        names.iter().for_each(|name| {
-            context.templates.insert(name.to_string(), HashMap::new());
+        templates.iter().for_each(|(name, kind)| {
+            context
+                .template_kinds
+                .insert(name.to_string(), kind.to_string());
         });
     });
 }
 
-pub(crate) fn data_source_create(
+pub(crate) fn data_source_create<C: graph::blockchain::Blockchain>(
     name: String,
     params: Vec<String>,
     context: Option<DataSourceContext>,
-    templates: &mut TemplateStore,
+    instance_ctx: &mut MatchstickInstanceContext<C>,
 ) -> Result<(), HostExportError> {
     // Resolve the name into the right template
-    templates
+    instance_ctx
+        .template_kinds
         .iter()
         .find(|template| template.0 == &name)
         .with_context(|| {
@@ -36,7 +40,8 @@ pub(crate) fn data_source_create(
                  No template with this name available. \
                  Available names: {}.",
                 name,
-                templates
+                instance_ctx
+                    .template_kinds
                     .iter()
                     .map(|template| template.0.to_owned())
                     .collect::<Vec<_>>()
@@ -45,15 +50,23 @@ pub(crate) fn data_source_create(
         })
         .map_err(DeterministicHostError::from)?;
 
+    let kind = instance_ctx.template_kinds.get(&name).unwrap();
+
     let template_info = TemplateInfo {
-        kind: "ethereum/contract".to_string(),
+        kind: kind.to_string(),
         name: name.clone(),
         address: params[0].clone(),
         context,
     };
 
-    let template = templates.get_mut(&name).expect("Template not found.");
-    template.insert(params[0].clone(), template_info);
+    if instance_ctx.templates.contains_key(&name) {
+        let template = instance_ctx.templates.get_mut(&name).unwrap();
+        template.insert(params[0].clone(), template_info);
+    } else {
+        let mut template: HashMap<String, TemplateInfo> = HashMap::new();
+        template.insert(params[0].clone(), template_info);
+        instance_ctx.templates.insert(name.clone(), template);
+    }
 
     Ok(())
 }
