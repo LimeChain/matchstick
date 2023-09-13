@@ -359,6 +359,7 @@ impl<C: Blockchain> MatchstickInstance<C> {
         );
 
         link!("mockIpfsFile", mock_ipfs_file, hash, file_path);
+        link!("readFile", read_file, file_path);
 
         link!("ipfs.cat", mock_ipfs_cat, "host_export_ipfs_cat", hash_ptr);
         link!(
