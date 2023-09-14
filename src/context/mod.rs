@@ -153,6 +153,7 @@ pub struct MatchstickInstanceContext<C: Blockchain> {
     /// path to the file that matchstick should read and parse
     pub(crate) ipfs: HashMap<String, String>,
     templates: TemplateStore,
+    template_kinds: HashMap<String, String>,
 }
 
 /// Implementation of non-external functions.
@@ -170,6 +171,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             data_source_return_value: (None, None, None),
             ipfs: HashMap::new(),
             templates: HashMap::new(),
+            template_kinds: HashMap::new(),
         };
 
         // reads the graphql schema file and extracts all entities and their object types
@@ -238,10 +240,12 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         template_ptr: AscPtr<AscString>,
     ) -> Result<(), HostExportError> {
         let template: String = asc_get(&self.wasm_ctx, template_ptr, &GasCounter::new(), 0)?;
-        let data_sources = self
-            .templates
-            .get(&template)
-            .unwrap_or_else(|| panic!("No template with name '{}' found.", template));
+        let data_sources = self.templates.get(&template).unwrap_or_else(|| {
+            logging::critical!(
+                "(logDataSources) No template with name '{}' found.",
+                template
+            )
+        });
 
         let string_pretty = to_string_pretty(&data_sources).unwrap_or_else(|err| {
             logging::critical!(
@@ -271,8 +275,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
         // validates whether the provided entity exists in the schema file
         if !self.schema.contains_key(&entity_type) {
-            panic!(
-                "Entity \"{}\" does not match any of the schema definitions",
+            logging::critical!(
+                "(logEntity) Entity \"{}\" does not match any of the schema definitions",
                 &entity_type
             );
         }
@@ -505,18 +509,23 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let template_name: String =
             asc_get(&self.wasm_ctx, template_name_ptr, &GasCounter::new(), 0)?;
 
-        let actual_count = self
-            .templates
-            .get(&template_name)
-            .unwrap_or_else(|| panic!("No template with name '{}' found.", template_name))
-            .len() as u32;
+        if let Some(template) = self.templates.get(&template_name) {
+            let actual_count = template.len() as u32;
 
-        if actual_count != expected_count {
+            if actual_count != expected_count {
+                logging::error!(
+                    "(assert.dataSourceCount) Expected dataSource count for template `{}` to be '{}' but was '{}'",
+                    template_name,
+                    expected_count,
+                    actual_count
+                );
+
+                return Ok(false);
+            }
+        } else {
             logging::error!(
-                "(assert.dataSourceCount) Expected dataSource count for template `{}` to be '{}' but was '{}'",
-                template_name,
-                expected_count,
-                actual_count
+                "(assert.dataSourceCoutn) No template with name '{}' found.",
+                template_name
             );
             return Ok(false);
         }
@@ -534,15 +543,199 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             asc_get(&self.wasm_ctx, template_name_ptr, &GasCounter::new(), 0)?;
         let address: String = asc_get(&self.wasm_ctx, address_ptr, &GasCounter::new(), 0)?;
 
-        let template = self
-            .templates
-            .get(&template_name)
-            .unwrap_or_else(|| panic!("No template with name '{}' found.", template_name));
-
-        if !template.contains_key(&address) {
+        if let Some(template) = self.templates.get(&template_name) {
+            if !template.contains_key(&address) {
+                logging::error!(
+                    "(assert.dataSourceExists) No dataSource with address '{}' found for template '{}'",
+                    address,
+                    template_name
+                );
+                return Ok(false);
+            }
+        } else {
             logging::error!(
-                "(assert.dataSourceExists) No dataSource with address '{}' found for template '{}'",
-                address,
+                "(assert.dataSourceExists) No template with name '{}' found.",
+                template_name
+            );
+            return Ok(false);
+        }
+
+        Ok(true)
+    }
+
+    /// Overloading the assert function with custom error message for backwards compatibility with matchstick-as
+
+    /// function _assert.fieldEquals(
+    ///     entityType: string, id: string,
+    ///     fieldName: string, expectedVal: string,
+    ///     message: string,
+    /// ): bool
+    pub fn assert_field_equals_with_message(
+        &mut self,
+        _gas: &GasCounter,
+        entity_type_ptr: AscPtr<AscString>,
+        id_ptr: AscPtr<AscString>,
+        field_name_ptr: AscPtr<AscString>,
+        expected_val_ptr: AscPtr<AscString>,
+        message_ptr: AscPtr<AscString>,
+    ) -> Result<bool, HostExportError> {
+        let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new(), 0)?;
+        let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new(), 0)?;
+        let field_name: String = asc_get(&self.wasm_ctx, field_name_ptr, &GasCounter::new(), 0)?;
+        let expected_val: String =
+            asc_get(&self.wasm_ctx, expected_val_ptr, &GasCounter::new(), 0)?;
+        let message: String = asc_get(&self.wasm_ctx, message_ptr, &GasCounter::new(), 0)?;
+
+        if !self.store.contains_key(&entity_type) {
+            logging::error!(
+                "(assert.fieldEquals) No entities with type '{}' found.",
+                &entity_type
+            );
+
+            return Ok(false);
+        }
+
+        let entities = self.store.get(&entity_type).unwrap();
+        if !entities.contains_key(&id) {
+            logging::error!(
+                "(assert.fieldEquals) No entity with type '{}' and id '{}' found.",
+                &entity_type,
+                &id
+            );
+
+            return Ok(false);
+        }
+
+        let entity = entities.get(&id).unwrap();
+        if !entity.contains_key(&field_name) {
+            logging::error!(
+                "(assert.fieldEquals) No field named '{}' on entity with type '{}' and id '{}' found.",
+                &field_name,
+                &entity_type,
+                &id
+            );
+
+            return Ok(false);
+        }
+
+        let val = entity.get(&field_name).unwrap();
+        if val.to_string() != expected_val {
+            logging::error!("(assert.fieldEquals) {}", message);
+
+            return Ok(false);
+        };
+
+        Ok(true)
+    }
+
+    /// function _assert.equals(expected: ethereum.Value, actual: ethereum.Value, message: string): bool
+    pub fn assert_equals_with_message(
+        &mut self,
+        _gas: &GasCounter,
+        expected_ptr: u32,
+        actual_ptr: u32,
+        message_ptr: AscPtr<AscString>,
+    ) -> Result<bool, HostExportError> {
+        let expected: Token = asc_get::<_, AscEnum<EthereumValueKind>, _>(
+            &self.wasm_ctx,
+            expected_ptr.into(),
+            &GasCounter::new(),
+            0,
+        )?;
+        let actual: Token = asc_get::<_, AscEnum<EthereumValueKind>, _>(
+            &self.wasm_ctx,
+            actual_ptr.into(),
+            &GasCounter::new(),
+            0,
+        )?;
+        let message: String = asc_get(&self.wasm_ctx, message_ptr, &GasCounter::new(), 0)?;
+
+        let exp_val = get_token_value(expected);
+        let act_val = get_token_value(actual);
+
+        if exp_val != act_val {
+            logging::error!("(assert.equals) {}", message);
+
+            return Ok(false);
+        }
+
+        Ok(true)
+    }
+
+    /// function _assert.notInStore(entityType: string, id: string, message: string): bool
+    pub fn assert_not_in_store_with_message(
+        &mut self,
+        _gas: &GasCounter,
+        entity_type_ptr: AscPtr<AscString>,
+        id_ptr: AscPtr<AscString>,
+        message_ptr: AscPtr<AscString>,
+    ) -> Result<bool, HostExportError> {
+        let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new(), 0)?;
+        let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new(), 0)?;
+        let message: String = asc_get(&self.wasm_ctx, message_ptr, &GasCounter::new(), 0)?;
+
+        if self.store.contains_key(&entity_type)
+            && self.store.get(&entity_type).unwrap().contains_key(&id)
+        {
+            logging::error!("(assert.notInStore) {}", message);
+
+            return Ok(false);
+        }
+
+        Ok(true)
+    }
+
+    pub fn assert_data_source_count_with_message(
+        &mut self,
+        _gas: &GasCounter,
+        template_name_ptr: AscPtr<AscString>,
+        expected_count: u32,
+        message_ptr: AscPtr<AscString>,
+    ) -> Result<bool, HostExportError> {
+        let template_name: String =
+            asc_get(&self.wasm_ctx, template_name_ptr, &GasCounter::new(), 0)?;
+
+        let message: String = asc_get(&self.wasm_ctx, message_ptr, &GasCounter::new(), 0)?;
+
+        if let Some(template) = self.templates.get(&template_name) {
+            let actual_count = template.len() as u32;
+
+            if actual_count != expected_count {
+                logging::error!("(assert.dataSourceCount) {}", message);
+
+                return Ok(false);
+            }
+        } else {
+            logging::error!(
+                "(assert.dataSourceCoutn) No template with name '{}' found.",
+                template_name
+            );
+            return Ok(false);
+        }
+
+        Ok(true)
+    }
+
+    pub fn assert_data_source_exists_with_message(
+        &mut self,
+        _gas: &GasCounter,
+        template_name_ptr: AscPtr<AscString>,
+        address_ptr: AscPtr<AscString>,
+        message_ptr: AscPtr<AscString>,
+    ) -> Result<bool, HostExportError> {
+        let template_name: String =
+            asc_get(&self.wasm_ctx, template_name_ptr, &GasCounter::new(), 0)?;
+        let address: String = asc_get(&self.wasm_ctx, address_ptr, &GasCounter::new(), 0)?;
+        let message: String = asc_get(&self.wasm_ctx, message_ptr, &GasCounter::new(), 0)?;
+
+        if let Some(template) = self.templates.get(&template_name) {
+            if !template.contains_key(&address) {
+                logging::error!("(assert.dataSourceExists) {}", message);
+                return Ok(false);
+            }
+        } else {
+            logging::error!(
+                "(assert.dataSourceExists) No template with name '{}' found.",
                 template_name
             );
             return Ok(false);
@@ -964,7 +1157,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let name: String = asc_get(&self.wasm_ctx, _name_ptr, &GasCounter::new(), 0)?;
         let params: Vec<String> = asc_get(&self.wasm_ctx, _params_ptr, &GasCounter::new(), 0)?;
 
-        data_source_create(name, params, None, &mut self.templates)
+        data_source_create(name, params, None, self)
     }
 
     /// function dataSource.createWithContext(
@@ -984,7 +1177,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             asc_get(&self.wasm_ctx, _context_ptr, &GasCounter::new(), 0)?;
         let context = DataSourceContext::from(context);
 
-        data_source_create(name, params, Some(context), &mut self.templates)
+        data_source_create(name, params, Some(context), self)
     }
 
     /// function dataSource.address(): Address
@@ -993,19 +1186,33 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         _gas: &GasCounter,
     ) -> Result<AscPtr<Uint8Array>, HostExportError> {
         let default_address_val = "0x0000000000000000000000000000000000000000";
+
         let result = match &self.data_source_return_value.0 {
-            Some(value) => asc_new(
-                &mut self.wasm_ctx,
-                &Address::from_str(value).expect("Couldn't create Address."),
-                &GasCounter::new(),
-            )
-            .expect("Couldn't create pointer."),
-            None => asc_new(
-                &mut self.wasm_ctx,
-                &Address::from_str(default_address_val).expect("Couldn't create Address."),
-                &GasCounter::new(),
-            )
-            .expect("Couldn't create pointer."),
+            Some(value) => {
+                let address = Address::from_str(value).unwrap_or_default();
+                // checks whether the value is a valid ethereum address and parses it
+                // otherwise it is considered as ipfs cid
+                // Zero address is considered as valid only if matches the mocked value
+                if !address.is_zero() || value.eq(default_address_val) {
+                    asc_new(&mut self.wasm_ctx, &address, &GasCounter::new())
+                        .expect("Couldn't create pointer.")
+                } else {
+                    asc_new(&mut self.wasm_ctx, value.as_bytes(), &GasCounter::new())
+                        .expect("Couldn't create pointer.")
+                }
+            }
+            None => {
+                logging::error!(
+                    "No mocked Eth address or Ipfs CID found, so fallback to Eth Zero address"
+                );
+
+                asc_new(
+                    &mut self.wasm_ctx,
+                    &Address::from_str(default_address_val).expect("Couldn't create address"),
+                    &GasCounter::new(),
+                )
+                .expect("Couldn't create pointer.")
+            }
         };
 
         Ok(result)
@@ -1080,7 +1287,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
         match self.store.get(&entity_type) {
             Some(inner_map) => Ok(inner_map.len().try_into().unwrap_or_else(|err| {
-                panic!(
+                logging::critical!(
                     "Couldn't cast usize value: {} into i32.\n{}",
                     inner_map.len(),
                     err
@@ -1088,6 +1295,22 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             })),
             None => Ok(0),
         }
+    }
+
+    ///  function readFile(path: string): Bytes
+    pub fn read_file(
+        &mut self,
+        _gas: &GasCounter,
+        file_path_ptr: AscPtr<AscString>,
+    ) -> Result<AscPtr<Uint8Array>, HostExportError> {
+        let file_path: String = asc_get(&self.wasm_ctx, file_path_ptr, &GasCounter::new(), 0)?;
+
+        let string = std::fs::read_to_string(&file_path).unwrap_or_else(|err| {
+            logging::critical!("Failed to read file `{}` with error: {}", &file_path, err)
+        });
+        let result = asc_new(&mut self.wasm_ctx, string.as_bytes(), &GasCounter::new())?;
+
+        Ok(result)
     }
 
     /// function mockIpfsFile(hash: string, file_path: string): void

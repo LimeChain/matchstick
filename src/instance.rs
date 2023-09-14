@@ -359,6 +359,7 @@ impl<C: Blockchain> MatchstickInstance<C> {
         );
 
         link!("mockIpfsFile", mock_ipfs_file, hash, file_path);
+        link!("readFile", read_file, file_path);
 
         link!("ipfs.cat", mock_ipfs_cat, "host_export_ipfs_cat", hash_ptr);
         link!(
@@ -520,6 +521,44 @@ impl<C: Blockchain> MatchstickInstance<C> {
             assert_data_source_exists,
             template_ptr,
             address_ptr
+        );
+
+        link!(
+            "_assert.fieldEqualsWithMessage",
+            assert_field_equals_with_message,
+            entity_type_ptr,
+            id_ptr,
+            field_name_ptr,
+            expected_val_ptr,
+            message_ptr
+        );
+        link!(
+            "_assert.equalsWithMessage",
+            assert_equals_with_message,
+            expected_ptr,
+            actual_ptr,
+            message_ptr
+        );
+        link!(
+            "_assert.notInStoreWithMessage",
+            assert_not_in_store_with_message,
+            entity_type_ptr,
+            id_ptr,
+            message_ptr
+        );
+        link!(
+            "_assert.dataSourceCountWithMessage",
+            assert_data_source_count_with_message,
+            template_ptr,
+            expected_count_ptr,
+            message_ptr
+        );
+        link!(
+            "_assert.dataSourceExistsWithMessage",
+            assert_data_source_exists_with_message,
+            template_ptr,
+            address_ptr,
+            message_ptr
         );
 
         link!("countEntities", count_entities, entity_type);
