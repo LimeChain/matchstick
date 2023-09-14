@@ -5,7 +5,6 @@ use anyhow::{anyhow, Context};
 use graph::{
     blockchain::Blockchain,
     data::{
-        graphql::ext::DirectiveFinder,
         store::{Attribute, Value},
         value::Word,
     },
@@ -19,7 +18,6 @@ use graph::{
 use graph_chain_ethereum::runtime::{
     abi::AscUnresolvedContractCall_0_0_4, runtime_adapter::UnresolvedContractCall,
 };
-use graph_graphql::graphql_parser::schema;
 use graph_runtime_wasm::{
     asc_abi::class::{
         Array, AscEntity, AscEnum, AscEnumArray, AscString, EnumPayload, EthereumValueKind,
@@ -33,40 +31,18 @@ use serde::Serialize;
 use serde_json::to_string_pretty;
 
 use crate::logging;
-use crate::SCHEMA_LOCATION;
 
 mod conversion;
-mod derived_schema;
+mod schema;
 mod template;
 use conversion::{collect_types, get_kind, get_token_value};
-use derived_schema::derive_schema;
+use schema::{get_entity_required_fields, populate_derived_fields, populate_schema_definitions};
 use template::{data_source_create, populate_templates};
 
 lazy_static! {
     /// Special tokens...
     pub(crate) static ref REVERTS_IDENTIFIER: Vec<Token> =
         vec![Token::Bytes(vec![255, 255, 255, 255, 255, 255, 255])];
-
-    /// The global GraphQL Schema from `schema.graphql`.
-    static ref SCHEMA: schema::Document<'static, String> = {
-        let mut s = "".to_owned();
-        SCHEMA_LOCATION.with(|path| {
-            s = std::fs::read_to_string(&*path.borrow()).unwrap_or_else(|err| {
-                logging::critical!(
-                    "Something went wrong when trying to read `{:?}`: {}",
-                    &*path.borrow(),
-                    err,
-                )
-            });
-        });
-
-        schema::parse_schema::<String>(&s).unwrap_or_else(|err| {
-            logging::critical!(
-                "Something went wrong when trying to parse `schema.graphql`: {}",
-                err
-            )
-        }).into_static()
-    };
 }
 
 type Store = HashMap<String, HashMap<String, StoreEntity>>;
@@ -174,18 +150,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             template_kinds: HashMap::new(),
         };
 
-        // reads the graphql schema file and extracts all entities and their object types
-        SCHEMA.definitions.iter().for_each(|def| {
-            if let schema::Definition::TypeDefinition(schema::TypeDefinition::Object(entity_def)) =
-                def
-            {
-                context
-                    .schema
-                    .insert(entity_def.name.clone(), entity_def.clone());
-            }
-        });
-
-        derive_schema(&mut context);
+        populate_schema_definitions(&mut context);
+        populate_derived_fields(&mut context);
         populate_templates(&mut context);
         context
     }
@@ -314,10 +280,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             }
         }
 
-        logging::debug!(
-            "{}",
-            to_string_pretty(&log).unwrap_or_else(|err| logging::critical!(err)),
-        );
+        let pretty_log = to_string_pretty(&log).unwrap_or_else(|err| logging::critical!(err));
+
+        logging::debug!("{}", pretty_log);
 
         Ok(())
     }
@@ -892,13 +857,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new(), 0)?;
         let data: StoreEntity = asc_get(&self.wasm_ctx, data_ptr, &GasCounter::new(), 0)?;
 
-        let required_fields = self.schema.get(&entity_type).unwrap_or_else(|| {
-            logging::critical!("Something went wrong! Could not find the entity defined in the GraphQL schema.")
-        })
-        .fields
-        .iter()
-        .clone()
-        .filter(|&f| matches!(f.field_type, schema::Type::NonNullType(..)) && !f.is_derived());
+        let required_fields = get_entity_required_fields(self, entity_type.clone());
 
         for f in required_fields {
             if !data.contains_key(&f.name) {

@@ -1,10 +1,50 @@
 use std::collections::HashMap;
-
 use graph::data::graphql::ext::DirectiveFinder;
+use graph_graphql::graphql_parser::schema;
 
 use crate::context::MatchstickInstanceContext;
+use crate::logging;
+use crate::SCHEMA_LOCATION;
 
-pub(crate) fn derive_schema<C: graph::blockchain::Blockchain>(
+// reads the graphql schema file and parses it
+fn load_schema_document() -> schema::Document<'static, String> {
+    let mut schema_file = "".to_owned();
+    SCHEMA_LOCATION.with(|path| {
+        schema_file = std::fs::read_to_string(&*path.borrow()).unwrap_or_else(|err| {
+            logging::critical!(
+                "Something went wrong when trying to read `{:?}`: {}",
+                &*path.borrow(),
+                err,
+            )
+        });
+    });
+
+    schema::parse_schema::<String>(&schema_file)
+        .unwrap_or_else(|err| {
+            logging::critical!(
+                "Something went wrong when trying to parse `schema.graphql`: {}",
+                err
+            )
+        })
+        .into_static()
+}
+
+pub(crate) fn populate_schema_definitions<C: graph::blockchain::Blockchain>(
+    context: &mut MatchstickInstanceContext<C>,
+) {
+    let schema_document = load_schema_document();
+
+    schema_document.definitions.iter().for_each(|def| {
+        if let schema::Definition::TypeDefinition(schema::TypeDefinition::Object(entity_def)) = def
+        {
+            context
+                .schema
+                .insert(entity_def.name.clone(), entity_def.clone());
+        }
+    });
+}
+
+pub(crate) fn populate_derived_fields<C: graph::blockchain::Blockchain>(
     context: &mut MatchstickInstanceContext<C>,
 ) {
     context
@@ -50,4 +90,23 @@ pub(crate) fn derive_schema<C: graph::blockchain::Blockchain>(
                 }
             }
         });
+}
+
+pub(crate) fn get_entity_required_fields<C: graph::blockchain::Blockchain>(
+    context: &mut MatchstickInstanceContext<C>,
+    entity_type: String,
+) -> Vec<&schema::Field<'static, String>> {
+    context
+        .schema
+        .get(&entity_type)
+        .unwrap_or_else(|| {
+            logging::critical!(
+                "Something went wrong! Could not find the entity defined in the GraphQL schema."
+            )
+        })
+        .fields
+        .iter()
+        .clone()
+        .filter(|&f| matches!(f.field_type, schema::Type::NonNullType(..)) && !f.is_derived())
+        .collect()
 }
