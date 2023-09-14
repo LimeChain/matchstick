@@ -12,7 +12,10 @@ use graph::{
         ethabi::{Address, Token},
         DataSourceContext,
     },
-    runtime::{asc_get, asc_new, gas::GasCounter, AscPtr, HostExportError},
+    runtime::{
+        asc_get, asc_new, gas::GasCounter, AscIndexId, AscPtr, AscType, FromAscObj,
+        HostExportError, ToAscObj,
+    },
     semver::Version,
 };
 use graph_chain_ethereum::runtime::{
@@ -173,14 +176,30 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
 /// Implementation of external functions (used in AssemblyScript sources).
 impl<C: Blockchain> MatchstickInstanceContext<C> {
+    fn resolve_asc_pointer<T, R>(&mut self, pointer: AscPtr<R>) -> T
+    where
+        R: AscType + AscIndexId,
+        T: FromAscObj<R>,
+    {
+        asc_get(&self.wasm_ctx, pointer, &GasCounter::new(), 0).unwrap()
+    }
+
+    fn create_asc_pointer<E, T: ?Sized>(&mut self, rust_obj: &T) -> AscPtr<E>
+    where
+        E: AscType + AscIndexId,
+        T: ToAscObj<E>,
+    {
+        asc_new(&mut self.wasm_ctx, rust_obj, &GasCounter::new()).unwrap()
+    }
+
     /// function log(level: enum Level (u32), msg: string): void
     pub fn log(
         &mut self,
         _gas: &GasCounter,
         level: u32,
-        msg: AscPtr<AscString>,
+        msg_ptr: AscPtr<AscString>,
     ) -> Result<(), HostExportError> {
-        let msg: String = asc_get(&self.wasm_ctx, msg, &GasCounter::new(), 0)?;
+        let msg: String = self.resolve_asc_pointer(msg_ptr);
 
         match level {
             0 => logging::critical!(msg),
@@ -205,7 +224,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         _gas: &GasCounter,
         template_ptr: AscPtr<AscString>,
     ) -> Result<(), HostExportError> {
-        let template: String = asc_get(&self.wasm_ctx, template_ptr, &GasCounter::new(), 0)?;
+        let template: String = self.resolve_asc_pointer(template_ptr);
+
         let data_sources = self.templates.get(&template).unwrap_or_else(|| {
             logging::critical!(
                 "(logDataSources) No template with name '{}' found.",
@@ -233,8 +253,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         entity_id_ptr: AscPtr<AscString>,
         show_related_ptr: AscPtr<bool>,
     ) -> Result<(), HostExportError> {
-        let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new(), 0)?;
-        let entity_id: String = asc_get(&self.wasm_ctx, entity_id_ptr, &GasCounter::new(), 0)?;
+        let entity_type: String = self.resolve_asc_pointer(entity_type_ptr);
+        let entity_id: String = self.resolve_asc_pointer(entity_id_ptr);
         let show_related: bool = bool::from(EnumPayload(show_related_ptr.to_payload()));
 
         let mut log: HashMap<String, LogEntityValue> = HashMap::new();
@@ -308,7 +328,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         should_fail: AscPtr<bool>,
         func_idx: u32,
     ) -> Result<(), HostExportError> {
-        let name: String = asc_get(&self.wasm_ctx, name, &GasCounter::new(), 0)?;
+        let name: String = self.resolve_asc_pointer(name);
         let should_fail = bool::from(EnumPayload(should_fail.to_payload()));
         self.meta_tests
             .push((name, should_fail, func_idx, "test".to_owned()));
@@ -322,7 +342,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         name: AscPtr<AscString>,
         func_idx: u32,
     ) -> Result<(), HostExportError> {
-        let name: String = asc_get(&self.wasm_ctx, name, &GasCounter::new(), 0)?;
+        let name: String = self.resolve_asc_pointer(name);
         self.meta_tests
             .push((name, false, func_idx, "describe".to_owned()));
 
@@ -336,7 +356,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         func_idx: u32,
         role: AscPtr<AscString>,
     ) -> Result<(), HostExportError> {
-        let role: String = asc_get(&self.wasm_ctx, role, &GasCounter::new(), 0)?;
+        let role: String = self.resolve_asc_pointer(role);
         self.meta_tests
             .push((String::from(""), false, func_idx, role));
         Ok(())
@@ -354,11 +374,10 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         field_name_ptr: AscPtr<AscString>,
         expected_val_ptr: AscPtr<AscString>,
     ) -> Result<bool, HostExportError> {
-        let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new(), 0)?;
-        let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new(), 0)?;
-        let field_name: String = asc_get(&self.wasm_ctx, field_name_ptr, &GasCounter::new(), 0)?;
-        let expected_val: String =
-            asc_get(&self.wasm_ctx, expected_val_ptr, &GasCounter::new(), 0)?;
+        let entity_type: String = self.resolve_asc_pointer(entity_type_ptr);
+        let id: String = self.resolve_asc_pointer(id_ptr);
+        let field_name: String = self.resolve_asc_pointer(field_name_ptr);
+        let expected_val: String = self.resolve_asc_pointer(expected_val_ptr);
 
         if !self.store.contains_key(&entity_type) {
             logging::error!(
@@ -413,18 +432,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         expected_ptr: u32,
         actual_ptr: u32,
     ) -> Result<bool, HostExportError> {
-        let expected: Token = asc_get::<_, AscEnum<EthereumValueKind>, _>(
-            &self.wasm_ctx,
-            expected_ptr.into(),
-            &GasCounter::new(),
-            0,
-        )?;
-        let actual: Token = asc_get::<_, AscEnum<EthereumValueKind>, _>(
-            &self.wasm_ctx,
-            actual_ptr.into(),
-            &GasCounter::new(),
-            0,
-        )?;
+        let expected: Token = self.resolve_asc_pointer(expected_ptr.into());
+        let actual: Token = self.resolve_asc_pointer(actual_ptr.into());
 
         let exp_val = get_token_value(expected);
         let act_val = get_token_value(actual);
@@ -448,8 +457,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
     ) -> Result<bool, HostExportError> {
-        let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new(), 0)?;
-        let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new(), 0)?;
+        let entity_type: String = self.resolve_asc_pointer(entity_type_ptr);
+        let id: String = self.resolve_asc_pointer(id_ptr);
 
         if self.store.contains_key(&entity_type)
             && self.store.get(&entity_type).unwrap().contains_key(&id)
@@ -471,8 +480,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         template_name_ptr: AscPtr<AscString>,
         expected_count: u32,
     ) -> Result<bool, HostExportError> {
-        let template_name: String =
-            asc_get(&self.wasm_ctx, template_name_ptr, &GasCounter::new(), 0)?;
+        let template_name: String = self.resolve_asc_pointer(template_name_ptr);
 
         if let Some(template) = self.templates.get(&template_name) {
             let actual_count = template.len() as u32;
@@ -504,9 +512,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         template_name_ptr: AscPtr<AscString>,
         address_ptr: AscPtr<AscString>,
     ) -> Result<bool, HostExportError> {
-        let template_name: String =
-            asc_get(&self.wasm_ctx, template_name_ptr, &GasCounter::new(), 0)?;
-        let address: String = asc_get(&self.wasm_ctx, address_ptr, &GasCounter::new(), 0)?;
+        let template_name: String = self.resolve_asc_pointer(template_name_ptr);
+        let address: String = self.resolve_asc_pointer(address_ptr);
 
         if let Some(template) = self.templates.get(&template_name) {
             if !template.contains_key(&address) {
@@ -544,12 +551,11 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         expected_val_ptr: AscPtr<AscString>,
         message_ptr: AscPtr<AscString>,
     ) -> Result<bool, HostExportError> {
-        let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new(), 0)?;
-        let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new(), 0)?;
-        let field_name: String = asc_get(&self.wasm_ctx, field_name_ptr, &GasCounter::new(), 0)?;
-        let expected_val: String =
-            asc_get(&self.wasm_ctx, expected_val_ptr, &GasCounter::new(), 0)?;
-        let message: String = asc_get(&self.wasm_ctx, message_ptr, &GasCounter::new(), 0)?;
+        let entity_type: String = self.resolve_asc_pointer(entity_type_ptr);
+        let id: String = self.resolve_asc_pointer(id_ptr);
+        let field_name: String = self.resolve_asc_pointer(field_name_ptr);
+        let expected_val: String = self.resolve_asc_pointer(expected_val_ptr);
+        let message: String = self.resolve_asc_pointer(message_ptr);
 
         if !self.store.contains_key(&entity_type) {
             logging::error!(
@@ -601,19 +607,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         actual_ptr: u32,
         message_ptr: AscPtr<AscString>,
     ) -> Result<bool, HostExportError> {
-        let expected: Token = asc_get::<_, AscEnum<EthereumValueKind>, _>(
-            &self.wasm_ctx,
-            expected_ptr.into(),
-            &GasCounter::new(),
-            0,
-        )?;
-        let actual: Token = asc_get::<_, AscEnum<EthereumValueKind>, _>(
-            &self.wasm_ctx,
-            actual_ptr.into(),
-            &GasCounter::new(),
-            0,
-        )?;
-        let message: String = asc_get(&self.wasm_ctx, message_ptr, &GasCounter::new(), 0)?;
+        let expected: Token = self.resolve_asc_pointer(expected_ptr.into());
+        let actual: Token = self.resolve_asc_pointer(actual_ptr.into());
+        let message: String = self.resolve_asc_pointer(message_ptr);
 
         let exp_val = get_token_value(expected);
         let act_val = get_token_value(actual);
@@ -635,9 +631,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         id_ptr: AscPtr<AscString>,
         message_ptr: AscPtr<AscString>,
     ) -> Result<bool, HostExportError> {
-        let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new(), 0)?;
-        let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new(), 0)?;
-        let message: String = asc_get(&self.wasm_ctx, message_ptr, &GasCounter::new(), 0)?;
+        let entity_type: String = self.resolve_asc_pointer(entity_type_ptr);
+        let id: String = self.resolve_asc_pointer(id_ptr);
+        let message: String = self.resolve_asc_pointer(message_ptr);
 
         if self.store.contains_key(&entity_type)
             && self.store.get(&entity_type).unwrap().contains_key(&id)
@@ -657,10 +653,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         expected_count: u32,
         message_ptr: AscPtr<AscString>,
     ) -> Result<bool, HostExportError> {
-        let template_name: String =
-            asc_get(&self.wasm_ctx, template_name_ptr, &GasCounter::new(), 0)?;
-
-        let message: String = asc_get(&self.wasm_ctx, message_ptr, &GasCounter::new(), 0)?;
+        let template_name: String = self.resolve_asc_pointer(template_name_ptr);
+        let message: String = self.resolve_asc_pointer(message_ptr);
 
         if let Some(template) = self.templates.get(&template_name) {
             let actual_count = template.len() as u32;
@@ -688,10 +682,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         address_ptr: AscPtr<AscString>,
         message_ptr: AscPtr<AscString>,
     ) -> Result<bool, HostExportError> {
-        let template_name: String =
-            asc_get(&self.wasm_ctx, template_name_ptr, &GasCounter::new(), 0)?;
-        let address: String = asc_get(&self.wasm_ctx, address_ptr, &GasCounter::new(), 0)?;
-        let message: String = asc_get(&self.wasm_ctx, message_ptr, &GasCounter::new(), 0)?;
+        let template_name: String = self.resolve_asc_pointer(template_name_ptr);
+        let address: String = self.resolve_asc_pointer(address_ptr);
+        let message: String = self.resolve_asc_pointer(message_ptr);
 
         if let Some(template) = self.templates.get(&template_name) {
             if !template.contains_key(&address) {
@@ -716,8 +709,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         id_ptr: AscPtr<AscString>,
         _gas: &GasCounter,
     ) -> Result<AscPtr<AscEntity>, HostExportError> {
-        let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new(), 0)?;
-        let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new(), 0)?;
+        let entity_type: String = self.resolve_asc_pointer(entity_type_ptr);
+        let id: String = self.resolve_asc_pointer(id_ptr);
 
         let store = match scope {
             StoreScope::Global => &self.store,
@@ -728,12 +721,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             .get(&entity_type)
             .and_then(|entities| entities.get(&id));
 
-        if entity.is_some() {
-            let res = asc_new(
-                &mut self.wasm_ctx,
-                &entity.unwrap().clone().to_entity(),
-                &GasCounter::new(),
-            )?;
+        if let Some(entity) = entity {
+            let res = self.create_asc_pointer(&entity.clone().to_entity());
+
             return Ok(res);
         }
 
@@ -803,14 +793,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         entity_id_ptr: AscPtr<AscString>,
         entity_virtual_field_ptr: AscPtr<AscString>,
     ) -> Result<AscPtr<Array<AscPtr<AscEntity>>>, HostExportError> {
-        let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new(), 0)?;
-        let entity_id: String = asc_get(&self.wasm_ctx, entity_id_ptr, &GasCounter::new(), 0)?;
-        let entity_virtual_field: String = asc_get(
-            &self.wasm_ctx,
-            entity_virtual_field_ptr,
-            &GasCounter::new(),
-            0,
-        )?;
+        let entity_type: String = self.resolve_asc_pointer(entity_type_ptr);
+        let entity_id: String = self.resolve_asc_pointer(entity_id_ptr);
+        let entity_virtual_field: String = self.resolve_asc_pointer(entity_virtual_field_ptr);
 
         let related_entities: Vec<Entity> = self
             .load_related_entities(&entity_type, &entity_id, &entity_virtual_field)
@@ -820,7 +805,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             .collect();
 
         let related_entities_ptr: AscPtr<Array<AscPtr<AscEntity>>> =
-            asc_new(&mut self.wasm_ctx, &related_entities, &GasCounter::new())?;
+            self.create_asc_pointer(&related_entities);
 
         Ok(related_entities_ptr)
     }
@@ -853,9 +838,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         data_ptr: AscPtr<AscEntity>,
         _gas: &GasCounter,
     ) -> Result<(), HostExportError> {
-        let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new(), 0)?;
-        let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new(), 0)?;
-        let data: StoreEntity = asc_get(&self.wasm_ctx, data_ptr, &GasCounter::new(), 0)?;
+        let entity_type: String = self.resolve_asc_pointer(entity_type_ptr);
+        let id: String = self.resolve_asc_pointer(id_ptr);
+        let data: StoreEntity = self.resolve_asc_pointer(data_ptr);
 
         let required_fields = get_entity_required_fields(self, entity_type.clone());
 
@@ -930,8 +915,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         entity_type_ptr: AscPtr<AscString>,
         id_ptr: AscPtr<AscString>,
     ) -> Result<(), HostExportError> {
-        let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new(), 0)?;
-        let id: String = asc_get(&self.wasm_ctx, id_ptr, &GasCounter::new(), 0)?;
+        let entity_type: String = self.resolve_asc_pointer(entity_type_ptr);
+        let id: String = self.resolve_asc_pointer(id_ptr);
 
         if self.store.contains_key(&entity_type)
             && self.store.get(&entity_type).unwrap().contains_key(&id)
@@ -959,12 +944,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         _gas: &GasCounter,
         contract_call_ptr: u32,
     ) -> Result<AscEnumArray<EthereumValueKind>, HostExportError> {
-        let call: UnresolvedContractCall = asc_get::<_, AscUnresolvedContractCall_0_0_4, _>(
-            &self.wasm_ctx,
-            contract_call_ptr.into(),
-            &GasCounter::new(),
-            0,
-        )?;
+        let call: UnresolvedContractCall = self
+            .resolve_asc_pointer::<_, AscUnresolvedContractCall_0_0_4>(contract_call_ptr.into());
 
         let contract_address = call.contract_address.to_string();
         let fn_name = call.function_name.to_string();
@@ -982,18 +963,12 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
 
         let return_val;
         if self.fn_ret_map.contains_key(&fn_id) {
-            if *self.fn_ret_map.get(&fn_id).unwrap() == REVERTS_IDENTIFIER.clone() {
+            let func: Vec<Token> = self.fn_ret_map.get(&fn_id).unwrap().clone();
+            if *func == REVERTS_IDENTIFIER.clone() {
                 return Ok(AscPtr::null());
             }
 
-            return_val = asc_new(
-                &mut self.wasm_ctx,
-                self.fn_ret_map
-                    .get(&fn_id)
-                    .unwrap_or_else(|| logging::critical!("Could not get value from function map."))
-                    .as_slice(),
-                &GasCounter::new(),
-            )?;
+            return_val = self.create_asc_pointer(func.as_slice());
 
             Ok(return_val)
         } else {
@@ -1022,27 +997,11 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         return_value_ptr: u32,
         reverts_ptr: AscPtr<bool>,
     ) -> Result<(), HostExportError> {
-        let contract_address: Address = asc_get(
-            &self.wasm_ctx,
-            contract_address_ptr.into(),
-            &GasCounter::new(),
-            0,
-        )?;
-        let fn_name: String = asc_get(&self.wasm_ctx, fn_name_ptr, &GasCounter::new(), 0)?;
-        let fn_signature: String =
-            asc_get(&self.wasm_ctx, fn_signature_ptr, &GasCounter::new(), 0)?;
-        let fn_args: Vec<Token> = asc_get::<_, Array<AscPtr<AscEnum<EthereumValueKind>>>, _>(
-            &self.wasm_ctx,
-            fn_args_ptr.into(),
-            &GasCounter::new(),
-            0,
-        )?;
-        let return_value: Vec<Token> = asc_get::<_, Array<AscPtr<AscEnum<EthereumValueKind>>>, _>(
-            &self.wasm_ctx,
-            return_value_ptr.into(),
-            &GasCounter::new(),
-            0,
-        )?;
+        let contract_address: Address = self.resolve_asc_pointer(contract_address_ptr.into());
+        let fn_name: String = self.resolve_asc_pointer(fn_name_ptr);
+        let fn_signature: String = self.resolve_asc_pointer(fn_signature_ptr);
+        let fn_args: Vec<Token> = self.resolve_asc_pointer(fn_args_ptr.into());
+        let return_value: Vec<Token> = self.resolve_asc_pointer(return_value_ptr.into());
         let reverts = bool::from(EnumPayload(reverts_ptr.to_payload()));
 
         // Extracts the arguments part from the function signature
@@ -1110,11 +1069,11 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     pub fn mock_data_source_create(
         &mut self,
         _gas: &GasCounter,
-        _name_ptr: AscPtr<AscString>,
-        _params_ptr: AscPtr<Array<AscPtr<AscString>>>,
+        name_ptr: AscPtr<AscString>,
+        params_ptr: AscPtr<Array<AscPtr<AscString>>>,
     ) -> Result<(), HostExportError> {
-        let name: String = asc_get(&self.wasm_ctx, _name_ptr, &GasCounter::new(), 0)?;
-        let params: Vec<String> = asc_get(&self.wasm_ctx, _params_ptr, &GasCounter::new(), 0)?;
+        let name: String = self.resolve_asc_pointer(name_ptr);
+        let params: Vec<String> = self.resolve_asc_pointer(params_ptr);
 
         data_source_create(name, params, None, self)
     }
@@ -1126,14 +1085,14 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     pub fn mock_data_source_create_with_context(
         &mut self,
         _gas: &GasCounter,
-        _name_ptr: AscPtr<AscString>,
-        _params_ptr: AscPtr<Array<AscPtr<AscString>>>,
-        _context_ptr: AscPtr<AscEntity>,
+        name_ptr: AscPtr<AscString>,
+        params_ptr: AscPtr<Array<AscPtr<AscString>>>,
+        context_ptr: AscPtr<AscEntity>,
     ) -> Result<(), HostExportError> {
-        let name: String = asc_get(&self.wasm_ctx, _name_ptr, &GasCounter::new(), 0)?;
-        let params: Vec<String> = asc_get(&self.wasm_ctx, _params_ptr, &GasCounter::new(), 0)?;
-        let context: HashMap<Word, Value> =
-            asc_get(&self.wasm_ctx, _context_ptr, &GasCounter::new(), 0)?;
+        let name: String = self.resolve_asc_pointer(name_ptr);
+        let params: Vec<String> = self.resolve_asc_pointer(params_ptr);
+        let context: HashMap<Word, Value> = self.resolve_asc_pointer(context_ptr);
+
         let context = DataSourceContext::from(context);
 
         data_source_create(name, params, Some(context), self)
@@ -1146,31 +1105,25 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     ) -> Result<AscPtr<Uint8Array>, HostExportError> {
         let default_address_val = "0x0000000000000000000000000000000000000000";
 
-        let result = match &self.data_source_return_value.0 {
+        let result = match self.data_source_return_value.0.clone() {
             Some(value) => {
-                let address = Address::from_str(value).unwrap_or_default();
+                let eth_address = Address::from_str(&value).unwrap_or_default();
                 // checks whether the value is a valid ethereum address and parses it
                 // otherwise it is considered as ipfs cid
                 // Zero address is considered as valid only if matches the mocked value
-                if !address.is_zero() || value.eq(default_address_val) {
-                    asc_new(&mut self.wasm_ctx, &address, &GasCounter::new())
-                        .expect("Couldn't create pointer.")
+                if !eth_address.is_zero() || value.eq(default_address_val) {
+                    self.create_asc_pointer(&eth_address)
                 } else {
-                    asc_new(&mut self.wasm_ctx, value.as_bytes(), &GasCounter::new())
-                        .expect("Couldn't create pointer.")
+                    self.create_asc_pointer(value.as_bytes())
                 }
             }
             None => {
                 logging::error!(
                     "No mocked Eth address or Ipfs CID found, so fallback to Eth Zero address"
                 );
-
-                asc_new(
-                    &mut self.wasm_ctx,
+                self.create_asc_pointer(
                     &Address::from_str(default_address_val).expect("Couldn't create address"),
-                    &GasCounter::new(),
                 )
-                .expect("Couldn't create pointer.")
             }
         };
 
@@ -1211,9 +1164,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             Some(value) => {
                 let entity: Entity = value.clone().to_entity();
 
-                asc_new(&mut self.wasm_ctx, &entity, &GasCounter::new()).unwrap()
+                self.create_asc_pointer(&entity)
             }
-            None => asc_new(&mut self.wasm_ctx, &default_context_val, &GasCounter::new()).unwrap(),
+            None => self.create_asc_pointer(&default_context_val),
         };
 
         Ok(result)
@@ -1227,10 +1180,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         network_ptr: AscPtr<AscString>,
         context_ptr: AscPtr<AscEntity>,
     ) -> Result<(), HostExportError> {
-        let address: String = asc_get(&self.wasm_ctx, address_ptr, &GasCounter::new(), 0)?;
-        let network: String = asc_get(&self.wasm_ctx, network_ptr, &GasCounter::new(), 0)?;
-        let context: HashMap<String, Value> =
-            asc_get(&self.wasm_ctx, context_ptr, &GasCounter::new(), 0)?;
+        let address: String = self.resolve_asc_pointer(address_ptr);
+        let network: String = self.resolve_asc_pointer(network_ptr);
+        let context: HashMap<String, Value> = self.resolve_asc_pointer(context_ptr);
 
         self.data_source_return_value = (Some(address), Some(network), Some(context));
         Ok(())
@@ -1242,7 +1194,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         _gas: &GasCounter,
         entity_type_ptr: AscPtr<AscString>,
     ) -> Result<i32, HostExportError> {
-        let entity_type: String = asc_get(&self.wasm_ctx, entity_type_ptr, &GasCounter::new(), 0)?;
+        let entity_type: String = self.resolve_asc_pointer(entity_type_ptr);
 
         match self.store.get(&entity_type) {
             Some(inner_map) => Ok(inner_map.len().try_into().unwrap_or_else(|err| {
@@ -1262,12 +1214,12 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         _gas: &GasCounter,
         file_path_ptr: AscPtr<AscString>,
     ) -> Result<AscPtr<Uint8Array>, HostExportError> {
-        let file_path: String = asc_get(&self.wasm_ctx, file_path_ptr, &GasCounter::new(), 0)?;
+        let file_path: String = self.resolve_asc_pointer(file_path_ptr);
 
         let string = std::fs::read_to_string(&file_path).unwrap_or_else(|err| {
             logging::critical!("Failed to read file `{}` with error: {}", &file_path, err)
         });
-        let result = asc_new(&mut self.wasm_ctx, string.as_bytes(), &GasCounter::new())?;
+        let result = self.create_asc_pointer(string.as_bytes());
 
         Ok(result)
     }
@@ -1279,8 +1231,8 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         hash_ptr: AscPtr<AscString>,
         file_path_ptr: AscPtr<AscString>,
     ) -> Result<(), HostExportError> {
-        let hash: String = asc_get(&self.wasm_ctx, hash_ptr, &GasCounter::new(), 0)?;
-        let file_path: String = asc_get(&self.wasm_ctx, file_path_ptr, &GasCounter::new(), 0)?;
+        let hash: String = self.resolve_asc_pointer(hash_ptr);
+        let file_path: String = self.resolve_asc_pointer(file_path_ptr);
 
         self.ipfs.insert(hash, file_path);
         Ok(())
@@ -1292,7 +1244,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         _gas: &GasCounter,
         hash_ptr: AscPtr<AscString>,
     ) -> Result<AscPtr<Uint8Array>, HostExportError> {
-        let hash: String = asc_get(&self.wasm_ctx, hash_ptr, &GasCounter::new(), 0)?;
+        let hash: String = self.resolve_asc_pointer(hash_ptr);
         let file_path = &self
             .ipfs
             .get(&hash)
@@ -1300,7 +1252,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         let string = std::fs::read_to_string(file_path).unwrap_or_else(|err| {
             logging::critical!("Failed to read file `{}` with error: {}", &file_path, err)
         });
-        let result = asc_new(&mut self.wasm_ctx, string.as_bytes(), &GasCounter::new())?;
+        let result = self.create_asc_pointer(string.as_bytes());
 
         Ok(result)
     }
@@ -1314,9 +1266,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         user_data_ptr: AscPtr<AscEnum<StoreValueKind>>,
         _flags_ptr: AscPtr<Array<AscPtr<AscString>>>,
     ) -> Result<(), HostExportError> {
-        let link: String = asc_get(&self.wasm_ctx, link_ptr, &GasCounter::new(), 0)?;
-        let callback: String = asc_get(&self.wasm_ctx, callback_ptr, &GasCounter::new(), 0)?;
-        let user_data: Value = asc_get(&self.wasm_ctx, user_data_ptr, &GasCounter::new(), 0)?;
+        let link: String = self.resolve_asc_pointer(link_ptr);
+        let callback: String = self.resolve_asc_pointer(callback_ptr);
+        let user_data: Value = self.resolve_asc_pointer(user_data_ptr);
 
         let file_path = &self
             .ipfs
@@ -1343,18 +1295,10 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         )
         .unwrap();
 
-        let data_ptr = asc_new(
-            &mut instance.instance_ctx_mut().wasm_ctx,
-            &user_data,
-            &GasCounter::new(),
-        )?;
+        let data_ptr = instance.instance_ctx_mut().create_asc_pointer(&user_data);
 
         for value in json_values {
-            let value_ptr = asc_new(
-                &mut instance.instance_ctx_mut().wasm_ctx,
-                &value,
-                &GasCounter::new(),
-            )?;
+            let value_ptr = instance.instance_ctx_mut().create_asc_pointer(&value);
 
             instance.instance_ctx_mut().store = self.store.clone();
             instance.instance_ctx_mut().fn_ret_map = self.fn_ret_map.clone();

@@ -1,6 +1,6 @@
-use std::collections::HashMap;
 use graph::data::graphql::ext::DirectiveFinder;
 use graph_graphql::graphql_parser::schema;
+use std::collections::HashMap;
 
 use crate::context::MatchstickInstanceContext;
 use crate::logging;
