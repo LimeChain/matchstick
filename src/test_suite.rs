@@ -91,7 +91,11 @@ impl Test {
                 match result {
                     Err(error) => {
                         logging::debug!(format!("{:?}", error));
-                        if self.should_fail { true } else { false }
+                        if self.should_fail {
+                            true
+                        } else {
+                            false
+                        }
                     }
                     Ok(_) => {
                         if self.should_fail {
@@ -106,20 +110,24 @@ impl Test {
             Err(err) => {
                 // Mark test as passed if should_fail is `true`
                 // Log error and mark test as failed if should_fail is `false`
-                 logging::add_indent();
-                    match err.downcast::<String>() {
-                        Ok(message) => logging::error!(message),
-                        Err(err) => logging::error!(format!("{:?}", err)),
-                    }
+                logging::add_indent();
+                match err.downcast::<String>() {
+                    Ok(message) => logging::error!(message),
+                    Err(err) => logging::error!(format!("{:?}", err)),
+                }
                 logging::sub_indent();
 
-                if self.should_fail { true } else { false }
+                if self.should_fail {
+                    true
+                } else {
+                    false
+                }
             }
         };
 
         // Convert the elapsed time to milliseconds
         let elapsed_in_ms = now.elapsed().as_secs_f32() * 1000.0;
-        
+
         logging::sub_indent();
         let logs = logging::flush();
 
