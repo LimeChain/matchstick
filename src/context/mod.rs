@@ -324,12 +324,12 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     pub fn register_test(
         &mut self,
         _gas: &GasCounter,
-        name: AscPtr<AscString>,
-        should_fail: AscPtr<bool>,
+        name_ptr: AscPtr<AscString>,
+        should_fail_ptr: AscPtr<bool>,
         func_idx: u32,
     ) -> Result<(), HostExportError> {
-        let name: String = self.resolve_asc_pointer(name);
-        let should_fail = bool::from(EnumPayload(should_fail.to_payload()));
+        let name: String = self.resolve_asc_pointer(name_ptr);
+        let should_fail = bool::from(EnumPayload(should_fail_ptr.to_payload()));
         self.meta_tests
             .push((name, should_fail, func_idx, "test".to_owned()));
         Ok(())
@@ -339,10 +339,10 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     pub fn register_describe(
         &mut self,
         _gas: &GasCounter,
-        name: AscPtr<AscString>,
+        name_ptr: AscPtr<AscString>,
         func_idx: u32,
     ) -> Result<(), HostExportError> {
-        let name: String = self.resolve_asc_pointer(name);
+        let name: String = self.resolve_asc_pointer(name_ptr);
         self.meta_tests
             .push((name, false, func_idx, "describe".to_owned()));
 
@@ -354,9 +354,9 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         &mut self,
         _gas: &GasCounter,
         func_idx: u32,
-        role: AscPtr<AscString>,
+        role_ptr: AscPtr<AscString>,
     ) -> Result<(), HostExportError> {
-        let role: String = self.resolve_asc_pointer(role);
+        let role: String = self.resolve_asc_pointer(role_ptr);
         self.meta_tests
             .push((String::from(""), false, func_idx, role));
         Ok(())
