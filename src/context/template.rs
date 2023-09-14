@@ -16,6 +16,7 @@ pub(crate) fn populate_templates<C: graph::blockchain::Blockchain>(
         );
 
         templates.iter().for_each(|(name, kind)| {
+            context.templates.insert(name.to_string(), HashMap::new());
             context
                 .template_kinds
                 .insert(name.to_string(), kind.to_string());
@@ -59,14 +60,8 @@ pub(crate) fn data_source_create<C: graph::blockchain::Blockchain>(
         context,
     };
 
-    if instance_ctx.templates.contains_key(&name) {
-        let template = instance_ctx.templates.get_mut(&name).unwrap();
-        template.insert(params[0].clone(), template_info);
-    } else {
-        let mut template: HashMap<String, TemplateInfo> = HashMap::new();
-        template.insert(params[0].clone(), template_info);
-        instance_ctx.templates.insert(name.clone(), template);
-    }
+    let template = instance_ctx.templates.get_mut(&name).unwrap();
+    template.insert(params[0].clone(), template_info);
 
     Ok(())
 }
