@@ -101,10 +101,17 @@ pub fn collect_templates(path: &str) -> Vec<(String, String)> {
         .filter_map(|template| {
             let kind = template.get("kind").unwrap().as_str().unwrap().to_owned();
 
-            if kind == "ethereum/contract" || kind == "file/ipfs" {
+            if ["ethereum", "ethereum/contract", "file/ipfs"]
+                .iter()
+                .any(|k| k == &kind)
+            {
                 let name = template.get("name").unwrap().as_str().unwrap().to_owned();
                 Some((name, kind))
             } else {
+                logging::warning!(
+                    "Template with kind `{}` is not supported by matchstick.",
+                    kind
+                );
                 None
             }
         })

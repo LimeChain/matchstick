@@ -691,7 +691,7 @@ mod tests {
         let mut parent_entity_relation_map = HashMap::new();
         parent_entity_relation_map.insert(
             "virtual_field".to_owned(),
-            ("ChildEntity".to_owned(), "parent".to_owned()),
+            vec![("ChildEntity".to_owned(), "parent".to_owned())],
         );
         context
             .derived
@@ -769,7 +769,7 @@ mod tests {
         let mut parent_entity_relation_map = HashMap::new();
         parent_entity_relation_map.insert(
             "virtual_field".to_owned(),
-            ("ChildEntity".to_owned(), "parent".to_owned()),
+            vec![("ChildEntity".to_owned(), "parent".to_owned())],
         );
         context
             .derived
@@ -833,7 +833,7 @@ mod tests {
         let mut parent_entity_relation_map = HashMap::new();
         parent_entity_relation_map.insert(
             "virtual_field".to_owned(),
-            ("ChildEntity".to_owned(), "parent".to_owned()),
+            vec![("ChildEntity".to_owned(), "parent".to_owned())],
         );
         context
             .derived
