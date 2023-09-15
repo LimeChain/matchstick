@@ -69,8 +69,6 @@ pub(crate) fn populate_schema_definitions<C: graph::blockchain::Blockchain>(
                 .insert(entity_def.name.clone(), entity_def.clone());
         }
     });
-
-    println!("sd {:?}", context.interface_to_entities);
 }
 
 pub(crate) fn populate_derived_fields<C: graph::blockchain::Blockchain>(
@@ -126,27 +124,6 @@ pub(crate) fn populate_derived_fields<C: graph::blockchain::Blockchain>(
                 entity_virtual_fields
                     .entry(virtual_field.name.clone())
                     .or_insert(derived_from_entities);
-
-                // if context.derived.contains_key(entity_type) {
-                //     let entity_virtual_fields = context.derived.get_mut(entity_type).unwrap();
-
-                //     if !entity_virtual_fields.contains_key(&virtual_field.name) {
-                //         entity_virtual_fields.insert(
-                //             virtual_field.name.clone(),
-                //             (derived_from_entity_type, derived_from_entity_field.clone()),
-                //         );
-                //     }
-                // } else {
-                //     let mut entity_virtual_fields: HashMap<String, (String, String)> =
-                //         HashMap::new();
-                //     entity_virtual_fields.insert(
-                //         virtual_field.name.clone(),
-                //         (derived_from_entity_type, derived_from_entity_field.clone()),
-                //     );
-                //     context
-                //         .derived
-                //         .insert(entity_type.to_string(), entity_virtual_fields);
-                // }
             }
         });
 }
