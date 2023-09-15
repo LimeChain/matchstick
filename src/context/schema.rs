@@ -35,8 +35,35 @@ pub(crate) fn populate_schema_definitions<C: graph::blockchain::Blockchain>(
     let schema_document = load_schema_document();
 
     schema_document.definitions.iter().for_each(|def| {
+        if let schema::Definition::TypeDefinition(schema::TypeDefinition::Interface(entity_def)) =
+            def
+        {
+            // initiate all interfaces defined in the schema
+            // to be easier to check if a given entity is an interface or not
+            if !context.interface_to_entities.contains_key(&entity_def.name) {
+                context
+                    .interface_to_entities
+                    .insert(entity_def.name.clone(), Vec::new());
+            }
+        }
+
         if let schema::Definition::TypeDefinition(schema::TypeDefinition::Object(entity_def)) = def
         {
+            // map current entity to its interfaces
+            if !entity_def.implements_interfaces.is_empty() {
+                entity_def
+                    .implements_interfaces
+                    .iter()
+                    .for_each(|interface_name| {
+                        let entities = context
+                            .interface_to_entities
+                            .entry(interface_name.to_string())
+                            .or_insert(Vec::new());
+
+                        entities.push(entity_def.name.clone());
+                    });
+            }
+
             context
                 .schema
                 .insert(entity_def.name.clone(), entity_def.clone());
@@ -54,6 +81,7 @@ pub(crate) fn populate_derived_fields<C: graph::blockchain::Blockchain>(
             let derived_fields = entity_object.fields.iter().filter(|&f| f.is_derived());
             for virtual_field in derived_fields {
                 // field type is received as: '[ExampleClass!]!' and needs to be reduced to a class string
+                // it could be an entity or interface
                 let derived_from_entity_type = virtual_field
                     .field_type
                     .to_string()
@@ -68,26 +96,35 @@ pub(crate) fn populate_derived_fields<C: graph::blockchain::Blockchain>(
                     .to_string()
                     .replace('\"', "");
 
-                if context.derived.contains_key(entity_type) {
-                    let entity_virtual_fields = context.derived.get_mut(entity_type).unwrap();
+                let mut derived_from_entities = vec![(
+                    derived_from_entity_type.clone(),
+                    derived_from_entity_field.clone(),
+                )];
 
-                    if !entity_virtual_fields.contains_key(&virtual_field.name) {
-                        entity_virtual_fields.insert(
-                            virtual_field.name.clone(),
-                            (derived_from_entity_type, derived_from_entity_field.clone()),
-                        );
-                    }
-                } else {
-                    let mut entity_virtual_fields: HashMap<String, (String, String)> =
-                        HashMap::new();
-                    entity_virtual_fields.insert(
-                        virtual_field.name.clone(),
-                        (derived_from_entity_type, derived_from_entity_field.clone()),
-                    );
-                    context
-                        .derived
-                        .insert(entity_type.to_string(), entity_virtual_fields);
+                // checks whether the derived entity is an interface
+                // and maps all entities that implements it
+                if context
+                    .interface_to_entities
+                    .contains_key(&derived_from_entity_type)
+                {
+                    derived_from_entities = context
+                        .interface_to_entities
+                        .get(&derived_from_entity_type)
+                        .unwrap()
+                        .iter()
+                        .map(|entity_name| (entity_name.clone(), derived_from_entity_field.clone()))
+                        .collect();
                 }
+
+                let default_entity_virtual_fields: HashMap<String, Vec<(String, String)>> =
+                    HashMap::new();
+                let entity_virtual_fields = context
+                    .derived
+                    .entry(entity_type.clone())
+                    .or_insert(default_entity_virtual_fields);
+                entity_virtual_fields
+                    .entry(virtual_field.name.clone())
+                    .or_insert(derived_from_entities);
             }
         });
 }
