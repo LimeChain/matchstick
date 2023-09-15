@@ -121,8 +121,6 @@ pub struct MatchstickInstanceContext<C: Blockchain> {
     /// Holds the graphql schema for easier access
     schema: HashMap<String, graphql_parser::schema::ObjectType<'static, String>>,
     interface_to_entities: HashMap<String, Vec<String>>,
-    /// Gives guarantee that all derived relations are in order when true
-    store_updated: bool,
     /// Holds the mocked return values of `dataSource.address()`, `dataSource.network()` and `dataSource.context()` in that order
     data_source_return_value: (
         Option<String>,
@@ -148,7 +146,6 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             derived: HashMap::new(),
             schema: HashMap::new(),
             interface_to_entities: HashMap::new(),
-            store_updated: true,
             data_source_return_value: (None, None, None),
             ipfs: HashMap::new(),
             templates: HashMap::new(),
@@ -312,7 +309,6 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     /// function clearStore(): void
     pub fn clear_store(&mut self, _gas: &GasCounter) -> Result<(), HostExportError> {
         self.store.clear();
-        self.store_updated = true;
         Ok(())
     }
 
@@ -892,13 +888,7 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
         id_ptr: AscPtr<AscString>,
         data_ptr: AscPtr<AscEntity>,
     ) -> Result<(), HostExportError> {
-        let result = self.update_store(StoreScope::Global, entity_type_ptr, id_ptr, data_ptr, _gas);
-
-        if result.is_ok() {
-            self.store_updated = false;
-        }
-
-        result
+        self.update_store(StoreScope::Global, entity_type_ptr, id_ptr, data_ptr, _gas)
     }
 
     /// function mockInBlockStore(entityType: string, id: string, data: map): void
@@ -929,7 +919,6 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
             entity_type_store.remove(&id);
 
             self.store.insert(entity_type, entity_type_store);
-            self.store_updated = false;
         } else {
             return Err(anyhow!(
                 "(store.remove) Entity with type '{}' and id '{}' does not exist.",

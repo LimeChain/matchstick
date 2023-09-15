@@ -81,6 +81,7 @@ pub(crate) fn populate_derived_fields<C: graph::blockchain::Blockchain>(
             let derived_fields = entity_object.fields.iter().filter(|&f| f.is_derived());
             for virtual_field in derived_fields {
                 // field type is received as: '[ExampleClass!]!' and needs to be reduced to a class string
+                // it could be an entity or interface
                 let derived_from_entity_type = virtual_field
                     .field_type
                     .to_string()
