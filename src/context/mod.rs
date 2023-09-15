@@ -106,7 +106,7 @@ pub struct MatchstickInstanceContext<C: Blockchain> {
     pub meta_tests: Vec<(String, bool, u32, String)>,
     /// Holding the parent entity type, parent virtual field and a tuple of the derived entity type and derived entity field it points to
     /// The example below is taken from a schema.graphql file and will fill the map in the following way:
-    /// {"GraphAccount": {"nameSignalTransactions", ("NameSignalTransaction", "signer")}}
+    /// {"GraphAccount": {"nameSignalTransactions", [("NameSignalTransaction", "signer")]}}
     /// ```
     /// type GraphAccount @entity {
     ///     id: ID!
@@ -740,49 +740,51 @@ impl<C: Blockchain> MatchstickInstanceContext<C> {
     ) -> Vec<StoreEntity> {
         let mut related_entities: Vec<StoreEntity> = Vec::new();
 
-        // gets the derived entity type and derived entity field associated with the parent entity
-        // let derived_from_entity = self
-        //     .derived
-        //     .get(entity_type)
-        //     .and_then(|fields| fields.get(entity_virtual_field));
+        // Gets the derived entity type and derived entity field associated with the parent entity
+        let derived_from = self
+            .derived
+            .get(entity_type)
+            .and_then(|fields| fields.get(entity_virtual_field));
 
-        // if let Some((derived_from_entity_type, derived_from_entity_field)) = derived_from_entity {
-        //     let derived_entities = self.store.get(derived_from_entity_type);
+        if let Some(entities) = derived_from {
+            for (derived_from_entity_type, derived_from_entity_field) in entities.iter() {
+                let derived_entities = self.store.get(derived_from_entity_type);
 
-        //     if let Some(derived_entities) = derived_entities {
-        //         // loop through all derived entities from the store to find a relation with the parent entity
-        //         // if relation is found, it adds the whole entity to the related entities result
-        //         for (derived_entity_id, derived_entity) in derived_entities.iter() {
-        //             if !derived_entity.contains_key(derived_from_entity_field) {
-        //                 continue;
-        //             }
+                if let Some(derived_entities) = derived_entities {
+                    // loop through all derived entities from the store to find a relation with the parent entity
+                    // if relation is found, it adds the whole entity to the related entities result
+                    for (derived_entity_id, derived_entity) in derived_entities.iter() {
+                        if !derived_entity.contains_key(derived_from_entity_field) {
+                            continue;
+                        }
 
-        //             // derived field value could be a single ID or list of IDs
-        //             let derived_field_value = derived_entity
-        //                 .get(derived_from_entity_field)
-        //                 .unwrap()
-        //                 .clone();
+                        // derived field value could be a single ID or list of IDs
+                        let derived_field_value = derived_entity
+                            .get(derived_from_entity_field)
+                            .unwrap()
+                            .clone();
 
-        //             // converts different value types(string, bytes, list) to a single vector
-        //             // that way it would be easier to find relation by entity id
-        //             let derived_entity_ids: Vec<Value> = match derived_field_value {
-        //                 Value::Bytes(id) => vec![Value::from(id)],
-        //                 Value::String(id) => vec![Value::from(id)],
-        //                 Value::List(ids) => ids,
-        //                 _ => vec![],
-        //             };
+                        // converts different value types(string, bytes, list) to a single vector
+                        // that way it would be easier to find relation by entity id
+                        let derived_entity_ids: Vec<Value> = match derived_field_value {
+                            Value::Bytes(id) => vec![Value::from(id)],
+                            Value::String(id) => vec![Value::from(id)],
+                            Value::List(ids) => ids,
+                            _ => vec![],
+                        };
 
-        //             let relation_found: bool = derived_entity_ids
-        //                 .iter()
-        //                 .any(|derived_id| derived_id.to_string().eq(entity_id));
+                        let relation_found: bool = derived_entity_ids
+                            .iter()
+                            .any(|derived_id| derived_id.to_string().eq(entity_id));
 
-        //             if relation_found {
-        //                 related_entities
-        //                     .push(derived_entities.get(derived_entity_id).unwrap().clone());
-        //             }
-        //         }
-        //     }
-        // }
+                        if relation_found {
+                            related_entities
+                                .push(derived_entities.get(derived_entity_id).unwrap().clone());
+                        }
+                    }
+                }
+            }
+        }
 
         related_entities
     }
