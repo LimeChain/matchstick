@@ -43,7 +43,7 @@ docker run -e ARGS="gravity" -it --rm --mount type=bind,source=<absolute/path/to
 
 ❗ **Note:** The command will mount the project folder in the container, so you don't need to rebuild the image after every change to your code. Also any changes that happen to files during the run will persist on the host machine as well. [More info about docker bind mounts](https://docs.docker.com/storage/bind-mounts/)
 
-After that you can go straight to [the final setup step](https://github.com/LimeChain/matchstick/tree/dockerize#install-dependencies) and you'll be all set to start writing your first unit test.
+After that you can go straight to [the final setup step](https://github.com/LimeChain/matchstick/#install-dependencies) and you'll be all set to start writing your first unit test.
 
 ❗ If you have previously ran `graph test` you may encounter the following error during `docker build`: `error from sender: failed to xattr node_modules/binary-install-raw/bin/binary-<platform>: permission denied`. In this case create a file named `.dockerignore` in the root folder and add `node_modules/binary-install-raw/bin`
 
